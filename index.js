@@ -36,7 +36,11 @@ const allowedOrigins = (process.env.CORS_ORIGIN || `http://localhost:${PORT}`)
 
 app.use(cors({
     origin(origin, cb) {
-        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+        // Permitir peticiones sin origen (como apps móviles o Postman)
+        // o si el origen está en la lista de permitidos
+        if (!origin || allowedOrigins.includes(origin) || origin.includes('onrender.com')) {
+            return cb(null, true);
+        }
         cb(new Error('Not allowed by CORS'));
     },
     credentials: true

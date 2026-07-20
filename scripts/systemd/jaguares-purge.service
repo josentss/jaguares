@@ -1,0 +1,13 @@
+[Unit]
+Description=Jaguares audit purge (one-shot)
+After=network.target mysql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/jaguares
+ExecStart=/usr/bin/node /srv/jaguares/scripts/purge_audit.js --days 90 --batch 1000
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

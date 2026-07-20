@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    image: jaguares_app:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - private_uploads:/usr/src/app/private_uploads
+      - ./logs:/usr/src/app/logs
+      - ./:/usr/src/app:ro
+    depends_on:
+      - db
+      - clamav
+    environment:
+      - DB_HOST=${DB_HOST:-db}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - NODE_ENV=production
+      - TRUST_PROXY=1
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-club_jaguares}
+      MYSQL_USER: ${DB_USER:-user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+    volumes:
+      - db_data:/var/lib/mysql
+
+  clamav:
+    image: mkodockx/docker-clamav:alpine
+    restart: unless-stopped
+    volumes:
+      - clamav_db:/var/lib/clamav
+
+  purge:
+    image: node:20-slim
+    restart: unless-stopped
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
+    env_file: .env
+    command: sh -c "npm install --no-audit --no-fund && while true; do node scripts/purge_audit.js --days ${PURGE_DAYS:-90} --batch ${PURGE_BATCH:-1000}; sleep 86400; done"
+
+volumes:
+  private_uploads:
+  db_data:
+  clamav_db:

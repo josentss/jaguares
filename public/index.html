@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Club de Voleibol Jaguares | Socopó</title>
+      <link rel="stylesheet" href="style.css">
+      <link rel="icon" href="img/logo-favicon.ico" type="image/x-icon">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+   </head>
+   <body>
+      <header>
+         <nav class="navbar">
+            <div class="logo-container">
+               <img src="img/logo-fvv-nobg.png" alt="Logo FVV" class="logo-img">
+               <img src="img/logo-deporte-nobg.png" alt="Logo Deporte" class="logo-img">
+               <!-- <img src="img/logo-sinfondo.png" alt="Logo Jaguares" class="logo-img"> -->
+               <!-- <span class="logo-text">Jaguares</span> -->
+            </div>
+            <ul class="nav-links">
+               <li><a href="#inicio">Inicio</a></li>
+               <li><a href="#nosotros">Nosotros</a></li>
+               <li><a href="#categorias">Categorías</a></li>
+               <li><a href="#contacto">Contacto</a></li>
+               <li><a href="admin/login.html" class="btn-login">Ingresar</a></li>
+               <li class="theme-item">
+                  <button id="theme-toggle" title="Cambiar modo">
+                  <i class="fas fa-moon"></i>
+                  </button>
+               </li>
+            </ul>
+         </nav>
+      </header>
+      <main>
+         <section id="inicio" class="hero">
+            <div class="hero-content reveal">
+               <h1>Club de Voleibol Jaguares</h1>
+               <p>Disciplina, pasión y victoria.</p>
+               <div class="hero-btns">
+                  <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" class="btn-inscribete">Inscríbete ahora</a>
+                  <a href="#categorias" class="btn-main">Ver categorías</a>
+               </div>
+            </div>
+         </section>
+         <section id="nosotros" class="info-section">
+            <div class="nosotros-container">
+               <div class="nosotros-texto reveal-left">
+                  <h2>Sobre nosotros</h2>
+                  <p>
+                     Fundado el 3 de marzo de 2024 en Socopó, Estado Barinas por el Lcdo. Joe Guarecuco y la Mcs. Nubia Acero, el <strong>Club de Voleibol Jaguares</strong> nació en la EBB Orlando García con el fin de masificar el deporte en Barinas. Lo que inició con 85 jóvenes es hoy una institución de 165 atletas, desde categorías Semillitas hasta Juvenil, que bajo la guía de 5 entrenadores titulados, fomenta la disciplina y los valores de sana convivencia en nuestra sede del Barrio Las Américas.
+                  </p>
+                  <p>
+                     Nuestra trayectoria nos ha consolidado rápidamente como referentes regionales, logrando el campeonato de la Zona Andina y participando con éxito en torneos en <strong>Valencia, Barquisimeto y la Liga de Barinas</strong>. Más que un club, somos un semillero de talento que representa con orgullo nuestros colores en cada competencia, trabajando diariamente para formar las próximas generaciones de selecciones estadales y nacionales.
+                  </p>
+                  <button class="btn-secundario">Ver galería completa</button>
+               </div>
+               <div class="nosotros-fotos reveal-right">
+                  <img src="img/foto-entrenadores.jpg" alt="Entrenadores Jaguares" class="foto-main">
+                  <img src="img/cat-1.jpg" alt="Equipo Jaguares" class="foto-sec">
+               </div>
+            </div>
+         </section>
+         <section id="categorias" class="services-section">
+            <div class="section-title reveal">
+               <h2>Categorías</h2>
+               <p>Haz clic en cada una para conocer más detalles.</p>
+            </div>
+            <div class="services-grid">
+               <div class="category-card reveal" style="background-image: url('img/u7-card.jpg'); transition-delay: 0.1s;">
+                  <div class="card-overlay">
+                     <h3>U-7</h3>
+                     <span class="card-tag">Año 2019-2020</span>
+                  </div>
+               </div>
+               <div class="category-card reveal" style="background-image: url('img/u11-card.jpg'); transition-delay: 0.2s;">
+                  <div class="card-overlay">
+                     <h3>U-11</h3>
+                     <span class="card-tag">Desarrollo</span>
+                  </div>
+               </div>
+               <div class="category-card reveal" style="background-image: url('img/u17-card.jpeg'); transition-delay: 0.3s;">
+                  <div class="card-overlay">
+                     <h3>U-17</h3>
+                     <span class="card-tag">Competencia</span>
+                  </div>
+               </div>
+               <div class="category-card reveal" style="background-image: url('img/indumentaria-card.jpg'); transition-delay: 0.4s;">
+                  <div class="card-overlay">
+                     <h3>Indumentaria</h3>
+                     <span class="card-tag">Oficial</span>
+                  </div>
+               </div>
+            </div>
+         </section>
+         <section id="contacto" class="map-section">
+            <div class="section-title reveal">
+               <h2>Ubícanos</h2>
+               <p>Visita nuestra sede principal en Socopó.</p>
+               <p>Calle 6 entre Carreras 12 y 13 del Barrio las Americas<br>Cancha de la Escuela Básica Estadal Orlando García</p>
+            </div>
+            <div class="contacto-wrapper">
+               <div class="map-container reveal-left">
+                  <iframe 
+                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3948.69613592308!2d-70.83131532633556!3d8.233279900939502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e64e90017b2546b%3A0x4e2be2373116db01!2sAcademia%20de%20Voleibol%20JAGUARES!5e0!3m2!1ses!2sve!4v1776648751572!5m2!1ses!2sve" 
+                     allowfullscreen="" 
+                     loading="lazy">
+                  </iframe>
+               </div>
+               <div class="siguenos-container reveal-right">
+                  <h3>Síguenos</h3>
+                  <p>Mantente al día con nuestros torneos y actividades.</p>
+                  <div class="redes-lista">
+                     <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" class="red-item whatsapp">
+                     <i class="fab fa-whatsapp"></i> <span>WhatsApp</span>
+                     </a>
+                     <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" class="red-item instagram">
+                     <i class="fab fa-instagram"></i> <span>Instagram</span>
+                     </a>
+                     <a href="#" class="red-item tiktok">
+                     <i class="fab fa-tiktok"></i> <span>TikTok</span>
+                     </a>
+                  </div>
+               </div>
+            </div>
+         </section>
+      </main>
+      <footer>
+         <div class="footer-content">
+            <div class="footer-logo">
+               <img src="img/logo-sinfondo.png" alt="Logo Jaguares" class="logo-footer">
+               <img src="img/bandera-barinas.jpg" alt="Bandera de Barinas" class="bandera-footer">
+            </div>
+            <div class="footer-info">
+               <span class="logo-text">Jaguares</span>
+               <p>Formando atletas con disciplina y pasión.</p>
+          
+        </div>
+            <div class="footer-redes">
+               <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" class="social-icon whatsapp"><i class="fab fa-whatsapp"></i></a>
+               <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" class="social-icon instagram"><i class="fab fa-instagram"></i></a>
+               <a href="#" class="social-icon tiktok"><i class="fab fa-tiktok"></i></a>
+            </div>
+         </div>
+         <div class="footer-bottom">
+            <p>© 2026 Club de Voleibol Jaguares. Todos los derechos reservados.</p>
+         </div>
+      </footer>
+      <script src="script.js"></script>
+   </body>
+</html>

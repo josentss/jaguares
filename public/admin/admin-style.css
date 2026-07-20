@@ -1,0 +1,681 @@
+/* VARIABLES GLOBALES (Alineadas con la paleta de la Capa 1) */
+:root {
+    --naranja: #ff6600;
+    --naranja-dark: #e05500;
+    --bg-dark: #121212;
+    --card-bg-light: #ffffff;
+    --text-main: #333333;
+    --text-muted: #666666;
+    --border-color: #dddddd;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* ESTILOS BASE */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* CONTENEDOR PRINCIPAL */
+.login-container {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+}
+
+/* BOTÓN VOLVER ATRÁS */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 15px;
+    transition: color 0.3s ease;
+}
+
+.btn-back:hover {
+    color: var(--naranja);
+}
+
+/* TARJETA DE AUTENTICACIÓN */
+.login-card {
+    background: var(--card-bg-light);
+    padding: 40px 30px;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    width: 100%;
+}
+
+/* ENCABEZADO */
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.login-logo {
+    width: 80px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.login-header h2 {
+    color: var(--text-main);
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.login-header p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+/* PESTAÑAS (TABS) */
+.form-tabs {
+    display: flex;
+    border-bottom: 2px solid #eeeeee;
+    margin-bottom: 25px;
+}
+
+.tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.tab-btn.active {
+    color: var(--naranja);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--naranja);
+}
+
+/* FORMULARIOS */
+.auth-form {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.auth-form.active {
+    display: flex;
+}
+
+/* CAMPOS DE ENTRADA (INPUT GROUPS) */
+.input-group {
+    position: relative;
+    width: 100%;
+}
+
+.input-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1rem;
+    transition: color 0.3s ease;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    outline: none;
+    background: #f9f9f9;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    border-color: var(--naranja);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+}
+
+.input-group input:focus + i {
+    color: var(--naranja);
+}
+
+/* NOTAS INFORMATIVAS */
+.info-note {
+    font-size: 0.75rem;
+    color: #856404;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    padding: 10px;
+    border-radius: 8px;
+    line-height: 1.4;
+}
+
+.info-note i {
+    margin-right: 4px;
+}
+
+/* BOTONES DE ACCIÓN */
+.btn-auth {
+    background: var(--naranja);
+    color: white;
+    border: none;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.btn-auth:hover {
+    background: var(--naranja-dark);
+}
+
+.btn-auth:active {
+    transform: scale(0.98);
+}
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+    .login-card {
+        padding: 30px 20px;
+    }
+}
+
+
+/* =========================================================================
+   ESTILOS EXCLUSIVOS DEL PANEL DE ADMINISTRACIÓN / REPRESENTANTE
+   ========================================================================= */
+
+/* Cuerpo adaptado para diseño de paneles */
+body.panel-body {
+    background: #f4f6f9;
+    display: flex;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* BARRA LATERAL (SIDEBAR) */
+.sidebar {
+    width: 260px;
+    background: #1e1e24;
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 25px 0;
+    position: fixed;
+    left: 0;
+    top: 0;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 25px 25px 25px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-logo img {
+    width: 45px;
+    height: auto;
+}
+
+.sidebar-logo h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #ff6600;
+}
+
+.sidebar-menu {
+    list-style: none;
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sidebar-menu li {
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #b3b3b3;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.sidebar-menu li i {
+    font-size: 1.1rem;
+    width: 20px;
+}
+
+.sidebar-menu li:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.sidebar-menu li.active {
+    background: rgba(255, 102, 0, 0.1);
+    color: var(--naranja);
+    border-left-color: var(--naranja);
+    font-weight: 600;
+}
+
+#btn-logout {
+    margin-top: auto;
+    color: #ff4d4d;
+}
+
+#btn-logout:hover {
+    background: rgba(255, 77, 77, 0.1);
+    color: #ff4d4d;
+}
+
+/* CONTENEDOR DE CONTENIDO PRINCIPAL */
+.main-content {
+    margin-left: 260px; /* Desplazamiento por el ancho del sidebar */
+    flex: 1;
+    padding: 40px;
+    background: #f4f6f9;
+    min-height: 100vh;
+}
+
+/* ENCABEZADO DEL PANEL */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 15px;
+}
+
+.panel-header h2 {
+    font-size: 1.7rem;
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+.user-badge {
+    background: #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* CONTROL DE SECCIONES (OCULTAR/MOSTRAR) */
+.panel-section {
+    display: none;
+}
+
+.panel-section.active {
+    display: block;
+}
+
+/* TARJETAS INFORMATIVAS (DASHBOARD CARDS) */
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.card-status {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-status i {
+    font-size: 2.2rem;
+    color: var(--naranja);
+    opacity: 0.8;
+}
+
+.card-status h3 {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.card-status p {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+/* CONTENEDORES DE FORMULARIOS Y TABLAS */
+.form-container-panel, .table-container {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    margin-bottom: 30px;
+}
+
+.form-container-panel h3, .table-container h3 {
+    font-size: 1.2rem;
+    color: var(--text-main);
+    margin-bottom: 25px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* REJILLA DINÁMICA PARA FORMULARIOS (GRID) */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-grid-panel {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group-panel.full-width {
+    grid-column: span 2;
+}
+
+.form-group-panel label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.form-group-panel input, 
+.form-group-panel select, 
+.form-group-panel textarea {
+    width: 100%;
+    padding: 11px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.form-group-panel input:focus, 
+.form-group-panel select:focus, 
+.form-group-panel textarea:focus {
+    border-color: var(--naranja);
+    box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+}
+
+/* TABLAS REFACTORIZADAS */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+}
+
+th {
+    background-color: #f8fafc;
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* BOTONES DEL PANEL */
+.btn-panel-submit {
+    background: var(--naranja);
+    color: white;
+    border: none;
+    padding: 13px 25px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-panel-submit:hover {
+    background: var(--naranja-dark);
+    transform: translateY(-2px);
+}
+
+/* RESPONSIVIDAD PARA PANELES */
+@media (max-width: 992px) {
+    .sidebar { width: 70px; padding: 20px 0; }
+    .sidebar-logo h3, .sidebar-menu li span, .sidebar-menu li text { display: none; }
+    .sidebar-logo { padding: 0; justify-content: center; border: none; }
+    .sidebar-menu li { justify-content: center; padding: 15px; }
+    .main-content { margin-left: 70px; padding: 25px; }
+}
+
+@media (max-width: 768px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group-panel.full-width { grid-column: span 1; }
+    .panel-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
+
+/* =========================================
+   NOTIFICACIONES TOAST (Sustituye a alert)
+   ========================================= */
+#toast-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.toast {
+    background: #fff;
+    color: #333;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    padding: 15px 25px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 300px;
+    position: relative;
+    overflow: hidden;
+    animation: slideInRight 0.4s ease forwards;
+    border-left: 6px solid #ff6600;
+}
+
+.toast.success { border-color: #2ecc71; }
+.toast.error { border-color: #e74c3c; }
+
+.toast-icon { font-size: 1.5rem; }
+.toast.success .toast-icon { color: #2ecc71; }
+.toast.error .toast-icon { color: #e74c3c; }
+
+.toast-message {
+    font-size: 0.95rem;
+    font-weight: 500;
+    flex: 1;
+}
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    width: 100%;
+    background: #ff6600;
+    animation: progressShrink 5s linear forwards;
+}
+.toast.success .toast-progress { background: #2ecc71; }
+.toast.error .toast-progress { background: #e74c3c; }
+
+@keyframes slideInRight { from { transform: translateX(120%); } to { transform: translateX(0); } }
+@keyframes slideOutRight { from { transform: translateX(0); } to { transform: translateX(120%); } }
+@keyframes progressShrink { from { width: 100%; } to { width: 0%; } }
+
+/* =========================================
+   ESTILOS ADICIONALES PARA FORMULARIOS
+   ========================================= */
+.cedula-group { display: flex; gap: 10px; }
+.cedula-group select { width: 80px; }
+.cedula-group input { flex: 1; }
+.hidden-section { display: none; }
+
+/* =========================================================================
+   DISEÑO RESPONSIVO (Soporte completo para Celulares)
+   ========================================================================= */
+
+/* Estilo para el input deshabilitado de herencia */
+.disabled-input {
+    background: #e9ecef;
+    color: #6c757d;
+    border: 1px solid #ced4da;
+    cursor: not-allowed;
+    padding: 10px;
+    border-radius: 5px;
+    width: 100%;
+}
+
+/* Botón flotante del menú móvil */
+.mobile-menu-toggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 10000;
+    background: #ff6600;
+    color: white;
+    border: none;
+    padding: 12px 15px;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: block; /* Solo visible en teléfonos */
+    }
+
+    /* Ocultar barra lateral a la izquierda por defecto */
+    .sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 999;
+        transition: transform 0.3s ease;
+        width: 260px;
+    }
+
+    /* Cuando el menú esté abierto */
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    /* El contenido principal ocupa toda la pantalla */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 70px 15px 20px 15px !important;
+    }
+
+    /* Ajuste de cabecera */
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding-left: 60px; /* Espacio para no tapar el botón hamburguesa */
+    }
+
+    /* Formularios en una sola columna */
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .form-group-panel.full-width {
+        grid-column: span 1 !important;
+    }
+
+    /* Tarjetas de Dashboard */
+    .dashboard-cards {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Forzar desplazamiento horizontal solo en tablas si son muy anchas */
+    .table-container {
+        padding: 10px;
+    }
+}

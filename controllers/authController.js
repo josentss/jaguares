@@ -86,7 +86,6 @@ exports.me = (req, res) => {
 };
 
 // REGISTRO
-// REGISTRO
 exports.register = async (req, res) => {
     const nombres = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
@@ -100,19 +99,33 @@ exports.register = async (req, res) => {
         });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    try {
+        const passwordHash = await bcrypt.hash(password, 10);
 
-    // Se añadió la columna 'estado' con el valor predeterminado 'pendiente'
-    const query = 'INSERT INTO usuarios (nombres, apellidos, correo, password_hash, rol, estado) VALUES (?, ?, ?, ?, "representante", "pendiente")';
-
-    db.query(query, [nombres, apellidos, email, passwordHash], (err) => {
-        if (err) {
-            if (err.code === 'ER_DUP_ENTRY') {
-                return res.status(409).json({ success: false, message: 'Ese correo ya está registrado' });
+        // Obtenemos el ID máximo actual y calculamos el siguiente de forma segura
+        db.query('SELECT MAX(id_usuario) AS max_id FROM usuarios', (errId, resultId) => {
+            if (errId) {
+                console.error('Error al calcular ID:', errId);
+                return res.status(500).json({ success: false, message: 'Error al procesar registro' });
             }
-            console.error(err);
-            return res.status(500).json({ success: false, message: 'Error al registrar en BD' });
-        }
-        res.json({ success: true, message: 'Usuario registrado correctamente y en espera de aprobación' });
-    });
+
+            const nextId = (resultId[0]?.max_id || 0) + 1;
+
+            const query = 'INSERT INTO usuarios (id_usuario, nombres, apellidos, correo, password_hash, rol, estado) VALUES (?, ?, ?, ?, ?, "representante", "pendiente")';
+
+            db.query(query, [nextId, nombres, apellidos, email, passwordHash], (err) => {
+                if (err) {
+                    if (err.code === 'ER_DUP_ENTRY') {
+                        return res.status(409).json({ success: false, message: 'Ese correo ya está registrado' });
+                    }
+                    console.error('Error al insertar usuario:', err);
+                    return res.status(500).json({ success: false, message: 'Error al registrar en BD' });
+                }
+                res.json({ success: true, message: 'Usuario registrado correctamente y en espera de aprobación' });
+            });
+        });
+    } catch (error) {
+        console.error('Error en hash de contraseña:', error);
+        res.status(500).json({ success: false, message: 'Error de servidor' });
+    }
 };

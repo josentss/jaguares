@@ -86,6 +86,7 @@ exports.me = (req, res) => {
 };
 
 // REGISTRO
+// REGISTRO
 exports.register = async (req, res) => {
     const nombres = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
@@ -101,7 +102,9 @@ exports.register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const query = 'INSERT INTO usuarios (nombres, apellidos, correo, password_hash, rol) VALUES (?, ?, ?, ?, "representante")';
+    // Se añadió la columna 'estado' con el valor predeterminado 'pendiente'
+    const query = 'INSERT INTO usuarios (nombres, apellidos, correo, password_hash, rol, estado) VALUES (?, ?, ?, ?, "representante", "pendiente")';
+
     db.query(query, [nombres, apellidos, email, passwordHash], (err) => {
         if (err) {
             if (err.code === 'ER_DUP_ENTRY') {
@@ -110,6 +113,6 @@ exports.register = async (req, res) => {
             console.error(err);
             return res.status(500).json({ success: false, message: 'Error al registrar en BD' });
         }
-        res.json({ success: true, message: 'Usuario registrado correctamente' });
+        res.json({ success: true, message: 'Usuario registrado correctamente y en espera de aprobación' });
     });
 };

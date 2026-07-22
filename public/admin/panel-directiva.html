@@ -64,6 +64,7 @@
         </div>
         <ul class="sidebar-menu">
             <li class="active" data-target="sec-dashboard"><i class="fas fa-chart-pie"></i> Dashboard</li>
+            <li data-target="sec-solicitudes"><i class="fas fa-user-plus"></i> Solicitudes de Registro</li>
             <li data-target="sec-atletas"><i class="fas fa-running"></i> Gestión de Atletas</li>
             <li data-target="sec-pagos"><i class="fas fa-file-invoice-dollar"></i> Auditoría de Pagos</li>
             <li id="btn-logout" style="margin-top: 40px; color: #e74c3c;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
@@ -76,13 +77,13 @@
             <div id="user-info" style="font-weight: bold; color: #2c3e50;"><i class="fas fa-user-circle"></i> Cargando...</div>
         </header>
 
-<section id="sec-dashboard" class="panel-section active">
+        <section id="sec-dashboard" class="panel-section active">
             <div class="dashboard-grid">
                 <div class="card-stat" style="border-left-color: #2ecc71;">
                     <div class="card-info"><h3>Atletas Activos</h3><p id="stat-activos">0</p></div><i class="fas fa-user-check card-icon"></i>
                 </div>
                 <div class="card-stat" style="border-left-color: #f1c40f;">
-                    <div class="card-info"><h3>Solicitudes Pendientes</h3><p id="stat-espera">0</p></div><i class="fas fa-user-clock card-icon"></i>
+                    <div class="card-info"><h3>Atletas en Espera</h3><p id="stat-espera">0</p></div><i class="fas fa-user-clock card-icon"></i>
                 </div>
                 <div class="card-stat" style="border-left-color: #e74c3c;">
                     <div class="card-info"><h3>Pagos a Revisar</h3><p id="stat-pendientes">0</p></div><i class="fas fa-bell card-icon"></i>
@@ -110,7 +111,27 @@
                     </div>
                     <i class="fas fa-money-bill-trend-up card-icon"></i>
                 </div>
-                </div>
+            </div>
+        </section>
+
+        <!-- NUEVA SECCIÓN DE SOLICITUDES DE REGISTRO -->
+        <section id="sec-solicitudes" class="panel-section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                <h3 style="margin: 0;"><i class="fas fa-user-plus"></i> Solicitudes de Registro de Representantes</h3>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Correo Electrónico</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-solicitudes"></tbody>
+                </table>
+            </div>
         </section>
 
         <section id="sec-atletas" class="panel-section" style="display: none;">
@@ -175,8 +196,6 @@
 
     <script src="api-client.js"></script>
     <script>
-        // Se rellena en DOMContentLoaded; lo necesita verComprobante() para
-        // mandar las cabeceras de identidad al pedir un comprobante.
         let currentUser = null;
 
         function showToast(msg, type = 'success') {
@@ -208,7 +227,6 @@
 
         function closeModal() {
             const img = document.getElementById('modalImage');
-            // Liberamos el blob URL anterior para no acumular memoria
             if (img.src && img.src.startsWith('blob:')) {
                 URL.revokeObjectURL(img.src);
             }
@@ -216,8 +234,6 @@
             setTimeout(() => img.src = '', 200);
         }
 
-        // Pide el comprobante al endpoint autenticado (ya no es un link
-        // público a /uploads/<archivo>) y lo muestra en el modal.
         async function verComprobante(idPago) {
             if (!currentUser) {
                 showToast('Sesión no disponible, vuelve a iniciar sesión', 'error');
@@ -232,7 +248,6 @@
                     throw new Error(data.message || 'No se pudo cargar el comprobante');
                 }
 
-                // Abrir el modal asignando la URL recibida del servidor
                 openModal(data.url);
             } catch (err) {
                 showToast(err.message || 'Error al cargar el comprobante', 'error');
@@ -270,25 +285,78 @@
         document.getElementById('search-pagos').addEventListener('input', aplicarFiltrosPagos);
         document.getElementById('filter-estado-pagos').addEventListener('change', aplicarFiltrosPagos);
 
-        // --- CARGAR AUDITORÍA, CALCULOS LOGICOS Y TASAS BCV ---
+        // --- CARGAR SOLICITUDES DE REGISTRO PENDIENTES ---
+        async function cargarSolicitudesPendientes() {
+            try {
+                const res = await apiFetch('/api/directiva/pendientes');
+                const data = await res.json();
+                const bodySolicitudes = document.getElementById('body-solicitudes');
+
+                if (!data.success) {
+                    bodySolicitudes.innerHTML = '<tr><td colspan="4" style="text-align:center;">Error al cargar solicitudes</td></tr>';
+                    return;
+                }
+
+                if (data.datos.length === 0) {
+                    bodySolicitudes.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay solicitudes de registro pendientes</td></tr>';
+                    return;
+                }
+
+                bodySolicitudes.innerHTML = '';
+                data.datos.forEach(usr => {
+                    bodySolicitudes.innerHTML += `
+                        <tr>
+                            <td><strong>${usr.nombres} ${usr.apellidos}</strong></td>
+                            <td>${usr.correo}</td>
+                            <td><span class="badge badge-espera">Pendiente</span></td>
+                            <td>
+                                <button class="btn-action btn-aprob" onclick="procesarUsuario(${usr.id_usuario}, 'aprobar')"><i class="fas fa-check"></i> Aprobar</button>
+                                <button class="btn-action btn-rech" onclick="procesarUsuario(${usr.id_usuario}, 'rechazar')"><i class="fas fa-times"></i> Rechazar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                console.error('Error al cargar pendientes:', err);
+                document.getElementById('body-solicitudes').innerHTML = '<tr><td colspan="4" style="text-align:center;">Error de conexión</td></tr>';
+            }
+        }
+
+        // --- PROCESAR APROBACIÓN O RECHAZO DE USUARIO ---
+        async function procesarUsuario(id_usuario, accion) {
+            if(!confirm(`¿Estás seguro de ${accion} a este usuario?`)) return;
+            try {
+                const res = await apiFetch('/api/directiva/gestionar-aprobacion', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id_usuario, accion })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    cargarSolicitudesPendientes();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (err) {
+                showToast('Error al procesar la solicitud', 'error');
+            }
+        }
+
+        // --- CARGAR AUDITORÍA ---
         async function cargarAuditoria() {
             try {
                 const res = await apiFetch('/api/directiva/auditoria');
                 const data = await res.json();
 
-                // Métricas numéricas base
                 document.getElementById('stat-activos').textContent = data.metricas.activos || 0;
                 document.getElementById('stat-espera').textContent = data.metricas.espera || 0;
                 document.getElementById('stat-pendientes').textContent = data.metricas.pagos_pendientes || 0;
 
-                // -------------------------------------------------------------
-                //  LOGICA DE VINCULACIÓN DE MONTOS Y CONVERSIÓN BCV
-                // -------------------------------------------------------------
                 let acumuladoPuroUSD = 0;
                 let acumuladoPuroBs = 0;
 
-                // Captura la tasa BCV dinámica enviada desde tu JSON backend.
-                // Si aún no la adjuntas en la API, leerá por defecto una aproximada (ej: 36.50)
                 const tasaBCV = parseFloat(data.tasa_bcv || (data.metricas && data.metricas.tasa_bcv) || 36.50);
                 document.getElementById('stat-tasa-bcv').textContent = `${tasaBCV.toFixed(2)} Bs`;
                 document.getElementById('stat-tasa-fecha').textContent = data.tasa_fecha
@@ -297,7 +365,6 @@
 
                 if (data.pagos && data.pagos.length > 0) {
                     data.pagos.forEach(p => {
-                        // Importante: Solo sumamos los fondos de estados CONFIRMADOS / APROBADOS
                         if ((p.estado_pago || '').toLowerCase() === 'aprobado') {
                             const montoNum = parseFloat(p.monto) || 0;
                             const monedaStr = (p.moneda || '').toUpperCase();
@@ -311,16 +378,9 @@
                     });
                 }
 
-                // Cálculo cruzado inteligente unificado:
-                // Total USD = Todo lo recaudado en USD + (Todo lo de Bs convertido al cambio oficial)
                 const granTotalGlobalUSD = acumuladoPuroUSD + (acumuladoPuroBs / tasaBCV);
-
-                // Total Bs = Todo lo recaudado en Bs + (Todo lo de USD multiplicado por la tasa oficial)
                 const granTotalGlobalBs = acumuladoPuroBs + (acumuladoPuroUSD * tasaBCV);
 
-
-
-                // Inyección visual detallada en el Dashboard
                 document.getElementById('stat-total-usd').innerHTML = `
                     ${granTotalGlobalUSD.toFixed(2)} $
                     <br><span style="font-size:0.75rem; font-weight:400; color:#7f8c8d;">Neto: ${acumuladoPuroUSD.toFixed(2)} $</span>
@@ -329,9 +389,7 @@
                     ${granTotalGlobalBs.toFixed(2)} Bs
                     <br><span style="font-size:0.75rem; font-weight:400; color:#7f8c8d;">Neto: ${acumuladoPuroBs.toFixed(2)} Bs</span>
                 `;
-                // -------------------------------------------------------------
 
-                // Renderizar Tabla Atletas
                 const bodyAtletas = document.getElementById('body-atletas');
                 bodyAtletas.innerHTML = data.atletas.length === 0 ? '<tr><td colspan="5" style="text-align:center;">No hay registros de atletas</td></tr>' : '';
 
@@ -349,7 +407,6 @@
                     </tr>`;
                 });
 
-                // Renderizar Tabla Pagos
                 const bodyPagos = document.getElementById('body-pagos');
                 bodyPagos.innerHTML = data.pagos.length === 0 ? '<tr><td colspan="6" style="text-align:center;">No hay registros de pagos</td></tr>' : '';
 
@@ -462,7 +519,10 @@
                 }
                 currentUser = user;
                 document.getElementById('user-info').innerHTML = `<i class="fas fa-user-shield"></i> Directiva: ${user.nombres} ${user.apellidos}`;
+
+                // Ejecutamos la carga inicial de ambos conjuntos de datos
                 cargarAuditoria();
+                cargarSolicitudesPendientes();
             } catch (e) {
                 console.error('Error verificando sesión:', e);
                 window.location.href = 'login.html';

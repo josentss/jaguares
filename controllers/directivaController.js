@@ -1,20 +1,11 @@
-// controllers/directivaController.js
 const db = require('../config/db');
 const { crearNotificacion } = require('./notificacionesController');
 const { esEnteroPositivo, esEstadoAtletaValido, esEstadoPagoValido } = require('../utils/validators');
 
-// -----------------------------------------------------------------------
-// TASA BCV (fuente externa) — NO se lee de archivos locales (sin fs/path)
-// -----------------------------------------------------------------------
 const BCV_API_KEY = process.env.EXCHANGERATE_API_KEY || 'TU_API_KEY_AQUI';
 const BCV_API_URL = `https://v6.exchangerate-api.com/v6/${BCV_API_KEY}/latest/USD`;
 const TASA_BCV_DEFAULT = 36.50;
 
-/**
- * Consulta la tasa USD -> VES en exchangerate-api.com.
- * Nunca lanza (throw): si la API falla, tarda demasiado o el formato
- * cambia, cae al valor por defecto para no romper el resto del dashboard.
- */
 async function obtenerTasaBCV() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -49,22 +40,16 @@ async function obtenerTasaBCV() {
 
 // 1. Obtener todas las métricas, atletas y pagos para el dashboard de administración
 exports.obtenerAuditoria = async (req, res) => {
-    // Log inicial si el middleware lo soporta
     try { if (req.logAdmin) req.logAdmin({ action: 'obtenerAuditoria_start' }); } catch(e) { console.error('logAdmin error', e); }
 
-
-    // Resolvemos primero la tasa BCV. Esta función NUNCA rechaza/lanza,
-    // así que jamás bloquea ni rompe la carga de atletas/pagos de abajo.
     const { tasa_bcv, tasa_fecha } = await obtenerTasaBCV();
 
-    // Consultas de conteo para las tarjetas superiores (Verificadas con tus columnas)
     const qActivos = "SELECT COUNT(*) AS activos FROM atletas WHERE estado = 'activo'";
     const qEspera = "SELECT COUNT(*) AS espera FROM atletas WHERE estado = 'espera'";
     const qPagosPendientes = "SELECT COUNT(*) AS pendientes FROM pagos WHERE estado_pago = 'pendiente'";
 
-    // Consulta de atletas vinculada a usuarios (Representantes)
     const qAtletas = `
-        SELECT a.id_atleta, a.id_representante, a.nombres, a.apellidos, 
+        SELECT a.id_atleta, a.id_representante, a.nombres, a.apellidos,
                a.fecha_nacimiento AS fecha_nac, a.estado,
                u.nombres AS rep_nombres, u.apellidos AS rep_apellidos
         FROM atletas a
@@ -72,8 +57,6 @@ exports.obtenerAuditoria = async (req, res) => {
         ORDER BY a.id_atleta DESC
     `;
 
-    // SOLUCIÓN AL ERROR: Buscamos id_representante desde la tabla de atletas 'a'
-    // El resto de los campos coincide al 100% con las columnas de tu tabla 'pagos'
     const qPagos = `
         SELECT p.id_pago, a.id_representante, p.mes_pagado, p.monto, p.moneda, p.ruta_captura, p.estado_pago,
                a.nombres AS atl_nombres, a.apellidos AS atl_apellidos
@@ -82,7 +65,6 @@ exports.obtenerAuditoria = async (req, res) => {
         ORDER BY p.id_pago DESC
     `;
 
-    // Ejecución secuencial con capturadores de diagnóstico activos
     db.query(qActivos, (err, resActivos) => {
         if (err) {
             console.error("❌ Error en qActivos:", err.message);
@@ -103,38 +85,37 @@ exports.obtenerAuditoria = async (req, res) => {
 
                 db.query(qAtletas, (err, listaAtletas) => {
                     if (err) {
-                        console.error("❌ Error en qAtletas (Verifica si en 'usuarios' es 'id_usuario'):", err.message);
+                        console.error("❌ Error en qAtletas:", err.message);
                         return res.status(500).json({ success: false, message: err.message });
                     }
 
                     db.query(qPagos, (err, listaPagos) => {
                         if (err) {
                             console.error("❌ Error en qPagos:", err.message);
-                                                try { if (req.logAdmin) req.logAdmin({ action: 'obtenerAuditoria_qPagos_error', err: err.message }); } catch(e){}
-                                                return res.status(500).json({ success: false, message: err.message });
-                                            }
+                            try { if (req.logAdmin) req.logAdmin({ action: 'obtenerAuditoria_qPagos_error', err: err.message }); } catch(e){}
+                            return res.status(500).json({ success: false, message: err.message });
+                        }
 
-                                            // Respuesta con la estructura exacta que tu función cargarAuditoria() necesita mapear
-                                            try { if (req.logAdmin) req.logAdmin({ action: 'obtenerAuditoria_success', atletas: listaAtletas.length, pagos: listaPagos.length }); } catch(e){}
-                                            res.json({
-                                                metricas: {
-                                                    activos: resActivos[0]?.activos || 0,
-                                                    espera: resEspera[0]?.espera || 0,
-                                                    pagos_pendientes: resPendientes[0]?.pendientes || 0
-                                                },
-                                                tasa_bcv,
-                                                tasa_fecha,
-                                                atletas: listaAtletas,
-                                                pagos: listaPagos
-                                            });
-                                        });
+                        try { if (req.logAdmin) req.logAdmin({ action: 'obtenerAuditoria_success', atletas: listaAtletas.length, pagos: listaPagos.length }); } catch(e){}
+                        res.json({
+                            metricas: {
+                                activos: resActivos[0]?.activos || 0,
+                                espera: resEspera[0]?.espera || 0,
+                                pagos_pendientes: resPendientes[0]?.pendientes || 0
+                            },
+                            tasa_bcv,
+                            tasa_fecha,
+                            atletas: listaAtletas,
+                            pagos: listaPagos
+                        });
+                    });
                 });
             });
         });
     });
 };
 
-// 2. Cambiar el estado de un atleta (Aprobar / Rechazar)
+// 2. Cambiar el estado de un atleta
 exports.actualizarEstadoAtleta = (req, res) => {
     const { id_atleta, estado } = req.body;
 
@@ -145,7 +126,7 @@ exports.actualizarEstadoAtleta = (req, res) => {
     }
 
     const query = 'UPDATE atletas SET estado = ? WHERE id_atleta = ?';
-    
+
     db.query(query, [estado, id_atleta], (err, result) => {
         if (err) {
             console.error("Error al actualizar atleta:", err);
@@ -153,8 +134,6 @@ exports.actualizarEstadoAtleta = (req, res) => {
             return res.status(500).json({ success: false, message: 'Error en la base de datos' });
         }
 
-        // Buscamos al representante para notificarle el cambio.
-        // No bloquea la respuesta: si esto falla, el cambio de estado igual se guardó.
         db.query('SELECT id_representante, nombres FROM atletas WHERE id_atleta = ?', [id_atleta], (errRep, rows) => {
             if (errRep || rows.length === 0) return;
             const mensaje = estado === 'activo'
@@ -168,7 +147,7 @@ exports.actualizarEstadoAtleta = (req, res) => {
     });
 };
 
-// 3. Cambiar el estado de un pago (Aprobar / Rechazar)
+// 3. Cambiar el estado de un pago
 exports.actualizarEstadoPago = (req, res) => {
     const { id_pago, estado_pago } = req.body;
 
@@ -203,4 +182,49 @@ exports.actualizarEstadoPago = (req, res) => {
         try { if (req.logAdmin) req.logAdmin({ action: 'actualizarEstadoPago_success', id_pago, estado_pago }); } catch(e){}
         res.json({ success: true, message: 'Pago auditado con éxito' });
     });
+};
+
+// 4. Obtener lista de usuarios pendientes por aprobar
+exports.obtenerUsuariosPendientes = (req, res) => {
+    const query = `
+        SELECT id_usuario, nombres, apellidos, correo, rol, estado
+        FROM usuarios
+        WHERE estado = 'pendiente'
+        ORDER BY id_usuario DESC
+    `;
+
+    db.query(query, (err, resultados) => {
+        if (err) {
+            console.error('Error al consultar usuarios pendientes:', err);
+            return res.status(500).json({ success: false, message: 'Error en la base de datos' });
+        }
+        res.json({ success: true, datos: resultados });
+    });
+};
+
+// 5. Aprobar o Rechazar a un usuario
+exports.gestionarAprobacion = (req, res) => {
+    const { id_usuario, accion } = req.body;
+
+    if (!['aprobar', 'rechazar'].includes(accion)) {
+        return res.status(400).json({ success: false, message: 'Acción no válida' });
+    }
+
+    const nuevoEstado = accion === 'aprobar' ? 'aprobado' : 'rechazado';
+
+    db.query(
+        'UPDATE usuarios SET estado = ? WHERE id_usuario = ?',
+        [nuevoEstado, id_usuario],
+        (err, result) => {
+            if (err) {
+                console.error('Error al actualizar estado:', err);
+                return res.status(500).json({ success: false, message: 'Error en la base de datos' });
+            }
+
+            res.json({
+                success: true,
+                message: `Usuario ${accion === 'aprobar' ? 'aprobado' : 'rechazado'} exitosamente`
+            });
+        }
+    );
 };

@@ -9,5 +9,7 @@ const { verificarSesion, esDirectiva } = require('../middlewares/authMiddleware'
 router.get('/auditoria', verificarSesion, esDirectiva, directivaController.obtenerAuditoria);
 router.put('/atleta/estado', verificarSesion, esDirectiva, directivaController.actualizarEstadoAtleta);
 router.put('/pago/estado', verificarSesion, esDirectiva, directivaController.actualizarEstadoPago);
+router.get('/pendientes', verificarSesion, esDirectiva, directivaController.obtenerUsuariosPendientes);
+router.post('/gestionar-aprobacion', verificarSesion, esDirectiva, directivaController.gestionarAprobacion);
 
 module.exports = router;

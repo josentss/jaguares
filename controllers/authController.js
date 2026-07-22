@@ -6,9 +6,9 @@ const { logAdminRequest } = require('../utils/requestLogger');
 
 const COOKIE_OPTS = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // en dev (http) el navegador rechazaría la cookie si esto fuera true
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 12 * 60 * 60 * 1000 // 12 horas, igual al expiresIn del token
+    maxAge: 12 * 60 * 60 * 1000
 };
 
 // LOGIN
@@ -26,6 +26,22 @@ exports.login = (req, res) => {
 
         const usuario = results[0];
 
+        // --- VALIDACIÓN DEL ANILLO DE SEGURIDAD ---
+        if (usuario.estado === 'pendiente') {
+            return res.status(403).json({
+                success: false,
+                message: 'Tu cuenta está pendiente de aprobación por la directiva.'
+            });
+        }
+
+        if (usuario.estado === 'rechazado') {
+            return res.status(403).json({
+                success: false,
+                message: 'Tu solicitud de registro ha sido rechazada por la directiva.'
+            });
+        }
+        // ------------------------------------------
+
         try {
             const match = await bcrypt.compare(password, usuario.password_hash);
 
@@ -33,12 +49,8 @@ exports.login = (req, res) => {
                 return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
             }
 
-            // SEGURIDAD: Eliminamos el hash de la contraseña antes de mandarlo al frontend
             delete usuario.password_hash;
 
-            // El token es la única fuente de verdad sobre quién eres y qué rol
-            // tienes en el resto de la API. Va firmado, así que el cliente no
-            // puede alterarlo (a diferencia de las viejas cabeceras x-user-id/x-user-role).
             const token = jwt.sign(
                 { id_usuario: usuario.id_usuario, rol: usuario.rol },
                 process.env.JWT_SECRET,
@@ -47,10 +59,6 @@ exports.login = (req, res) => {
 
             res.cookie('token', token, COOKIE_OPTS);
 
-            // Enviamos los datos limpios (id, nombres, apellidos, correo, rol, etc.)
-            // El frontend los sigue guardando en localStorage, pero solo para
-            // mostrar en pantalla (nombre, bienvenida) — ya no se usan para
-            // autenticar peticiones.
             res.json({ success: true, message: 'Login exitoso', usuario });
         } catch (errCompare) {
             console.error('Error verificando contraseña:', errCompare.message);

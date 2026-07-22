@@ -43,13 +43,13 @@
     </style>
 </head>
 <body class="panel-body">
-    
+
     <button class="mobile-menu-toggle" id="mobile-menu-btn">
         <i class="fas fa-bars"></i>
     </button>
 
     <div id="toast-container"></div>
-    
+
     <div class="modal-overlay" id="imageModal">
         <div class="modal-content">
             <button class="btn-close-modal" onclick="closeModal()"><i class="fas fa-times"></i></button>
@@ -244,7 +244,7 @@
             const estado = document.getElementById('filter-estado-atletas').value;
 
             document.querySelectorAll('#body-atletas tr').forEach(row => {
-                if (row.cells.length === 1) return; 
+                if (row.cells.length === 1) return;
                 const textoMatch = row.textContent.toLowerCase().includes(term);
                 const estadoFila = row.getAttribute('data-estado');
                 const estadoMatch = (estado === 'todos') || (estadoFila === estado);
@@ -257,7 +257,7 @@
             const estado = document.getElementById('filter-estado-pagos').value;
 
             document.querySelectorAll('#body-pagos tr').forEach(row => {
-                if (row.cells.length === 1) return; 
+                if (row.cells.length === 1) return;
                 const textoMatch = row.textContent.toLowerCase().includes(term);
                 const estadoFila = row.getAttribute('data-estado');
                 const estadoMatch = (estado === 'todos') || (estadoFila === estado);
@@ -275,7 +275,7 @@
             try {
                 const res = await apiFetch('/api/directiva/auditoria');
                 const data = await res.json();
-                
+
                 // Métricas numéricas base
                 document.getElementById('stat-activos').textContent = data.metricas.activos || 0;
                 document.getElementById('stat-espera').textContent = data.metricas.espera || 0;
@@ -314,11 +314,11 @@
                 // Cálculo cruzado inteligente unificado:
                 // Total USD = Todo lo recaudado en USD + (Todo lo de Bs convertido al cambio oficial)
                 const granTotalGlobalUSD = acumuladoPuroUSD + (acumuladoPuroBs / tasaBCV);
-                
+
                 // Total Bs = Todo lo recaudado en Bs + (Todo lo de USD multiplicado por la tasa oficial)
                 const granTotalGlobalBs = acumuladoPuroBs + (acumuladoPuroUSD * tasaBCV);
 
-                
+
 
                 // Inyección visual detallada en el Dashboard
                 document.getElementById('stat-total-usd').innerHTML = `
@@ -334,7 +334,7 @@
                 // Renderizar Tabla Atletas
                 const bodyAtletas = document.getElementById('body-atletas');
                 bodyAtletas.innerHTML = data.atletas.length === 0 ? '<tr><td colspan="5" style="text-align:center;">No hay registros de atletas</td></tr>' : '';
-                
+
                 data.atletas.forEach(a => {
                     const nombreCompleto = `${a.nombres} ${a.apellidos}`;
                     bodyAtletas.innerHTML += `<tr data-estado="${a.estado.toLowerCase()}">
@@ -352,11 +352,11 @@
                 // Renderizar Tabla Pagos
                 const bodyPagos = document.getElementById('body-pagos');
                 bodyPagos.innerHTML = data.pagos.length === 0 ? '<tr><td colspan="6" style="text-align:center;">No hay registros de pagos</td></tr>' : '';
-                
+
                 data.pagos.forEach(p => {
-                    const apellidoAtleta = p.atl_apellidos || ''; 
-                    const btnVerCaptura = p.ruta_captura 
-                        ? `<button class="btn-action btn-view" onclick="verComprobante(${p.id_pago})"><i class="fas fa-eye"></i> Ver Recibo</button>` 
+                    const apellidoAtleta = p.atl_apellidos || '';
+                    const btnVerCaptura = p.ruta_captura
+                        ? `<button class="btn-action btn-view" onclick="verComprobante(${p.ruta_captura})"><i class="fas fa-eye"></i> Ver Recibo</button>`
                         : '<span style="color:#95a5a6; font-size:0.8rem;">Efectivo</span>';
 
                     bodyPagos.innerHTML += `<tr data-estado="${p.estado_pago.toLowerCase()}">
@@ -371,9 +371,9 @@
                         </td>
                     </tr>`;
                 });
-            } catch (err) { 
-                showToast('Error al cargar datos', 'error'); 
-                console.error(err); 
+            } catch (err) {
+                showToast('Error al cargar datos', 'error');
+                console.error(err);
             }
         }
 
@@ -413,7 +413,7 @@
                 item.classList.add('active');
                 document.querySelectorAll('.panel-section').forEach(s => s.style.display = 'none');
                 document.getElementById(item.getAttribute('data-target')).style.display = 'block';
-                
+
                 if (window.innerWidth <= 768) {
                     document.getElementById('sidebar').classList.remove('open');
                 }

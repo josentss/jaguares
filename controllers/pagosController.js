@@ -126,7 +126,7 @@ exports.obtenerHistorial = (req, res) => {
     });
 };
 
-// 3. SERVIR EL COMPROBANTE DE UN PAGO (soporta Cloudinary y archivos locales)
+// 3. SERVIR LA URL DEL COMPROBANTE DE UN PAGO
 exports.obtenerCaptura = (req, res) => {
     const { id_pago } = req.params;
 
@@ -163,26 +163,19 @@ exports.obtenerCaptura = (req, res) => {
             return res.status(403).json({ success: false, message: 'No tienes permiso para ver este comprobante' });
         }
 
-        // Si es una URL completa de Cloudinary (https://res.cloudinary.com/...)
-        if (ruta_captura.startsWith('http://') || ruta_captura.startsWith('https://')) {
-            return res.redirect(ruta_captura);
-        }
-
-        // Si se guardó el identificador relativo de Cloudinary (ej: jaguares_comprobantes/xyz)
-        if (ruta_captura.includes('jaguares_comprobantes/')) {
-            const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-            return res.redirect(`https://res.cloudinary.com/${cloudName}/image/upload/${ruta_captura}`);
-        }
-
-        // Fallback: Archivos locales antiguos guardados en el servidor
-        const nombreArchivo = path.basename(ruta_captura);
-        const rutaAbsoluta = path.join(__dirname, '..', 'uploads', nombreArchivo);
-
-        res.sendFile(rutaAbsoluta, (errEnvio) => {
-            if (errEnvio && !res.headersSent) {
-                console.error('❌ Error al enviar comprobante:', errEnvio.message);
-                res.status(404).json({ success: false, message: 'Archivo no encontrado en disco' });
+        // Construcción de la URL de Cloudinary
+        let urlFinal = ruta_captura;
+        if (!ruta_captura.startsWith('http://') && !ruta_captura.startsWith('https://')) {
+            if (ruta_captura.includes('jaguares_comprobantes/')) {
+                const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+                urlFinal = `https://res.cloudinary.com/${cloudName}/image/upload/${ruta_captura}`;
             }
+        }
+
+        // Responder con la URL limpia en JSON
+        res.json({
+            success: true,
+            url: urlFinal
         });
     });
 };

@@ -223,17 +223,17 @@
                 showToast('Sesión no disponible, vuelve a iniciar sesión', 'error');
                 return;
             }
+
             try {
                 const res = await apiFetch(`/api/pagos/captura/${idPago}`);
+                const data = await res.json();
 
-                if (!res.ok) {
-                    const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
                     throw new Error(data.message || 'No se pudo cargar el comprobante');
                 }
 
-                const blob = await res.blob();
-                const objectUrl = URL.createObjectURL(blob);
-                openModal(objectUrl);
+                // Abrir el modal asignando la URL recibida del servidor
+                openModal(data.url);
             } catch (err) {
                 showToast(err.message || 'Error al cargar el comprobante', 'error');
             }

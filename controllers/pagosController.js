@@ -10,8 +10,8 @@ function insertarPago(res, datos) {
     const estado_pago = 'pendiente';
 
     const query = `
-        INSERT INTO pagos 
-        (id_atleta, mes_pagado, metodo_pago, fecha_pago, monto, moneda, referencia, ruta_captura, estado_pago) 
+        INSERT INTO pagos
+        (id_atleta, mes_pagado, metodo_pago, fecha_pago, monto, moneda, referencia, ruta_captura, estado_pago)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
@@ -60,7 +60,8 @@ exports.reportarPago = (req, res) => {
         return res.status(400).json({ success: false, message: 'Debe adjuntar la captura de la transferencia' });
     }
 
-    const ruta_captura = req.file ? req.file.filename : null;
+    // Guardar la URL completa de Cloudinary (req.file.path)
+    const ruta_captura = req.file ? (req.file.path || req.file.filename) : null;
 
     // Solo puede reportar pagos de atletas que pertenezcan al representante logueado.
     db.query(
@@ -105,7 +106,7 @@ exports.obtenerHistorial = (req, res) => {
     }
 
     const query = `
-        SELECT p.*, a.nombres AS atl_nombres, a.apellidos AS atl_apellidos 
+        SELECT p.*, a.nombres AS atl_nombres, a.apellidos AS atl_apellidos
         FROM pagos p
         INNER JOIN atletas a ON p.id_atleta = a.id_atleta
         WHERE a.id_representante = ?
@@ -125,7 +126,7 @@ exports.obtenerHistorial = (req, res) => {
     });
 };
 
-// 3. SERVIR EL COMPROBANTE DE UN PAGO (con control de acceso)
+// 3. SERVIR EL COMPROBANTE DE UN PAGO (soporta Cloudinary y archivos locales)
 exports.obtenerCaptura = (req, res) => {
     const { id_pago } = req.params;
 
@@ -162,6 +163,18 @@ exports.obtenerCaptura = (req, res) => {
             return res.status(403).json({ success: false, message: 'No tienes permiso para ver este comprobante' });
         }
 
+        // Si es una URL completa de Cloudinary (https://res.cloudinary.com/...)
+        if (ruta_captura.startsWith('http://') || ruta_captura.startsWith('https://')) {
+            return res.redirect(ruta_captura);
+        }
+
+        // Si se guardó el identificador relativo de Cloudinary (ej: jaguares_comprobantes/xyz)
+        if (ruta_captura.includes('jaguares_comprobantes/')) {
+            const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+            return res.redirect(`https://res.cloudinary.com/${cloudName}/image/upload/${ruta_captura}`);
+        }
+
+        // Fallback: Archivos locales antiguos guardados en el servidor
         const nombreArchivo = path.basename(ruta_captura);
         const rutaAbsoluta = path.join(__dirname, '..', 'uploads', nombreArchivo);
 

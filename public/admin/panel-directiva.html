@@ -356,7 +356,7 @@
                 data.pagos.forEach(p => {
                     const apellidoAtleta = p.atl_apellidos || '';
                     const btnVerCaptura = p.ruta_captura
-                        ? `<button class="btn-action btn-view" onclick="verComprobante(${p.ruta_captura})"><i class="fas fa-eye"></i> Ver Recibo</button>`
+                        ? `<button class="btn-action btn-view" onclick="verComprobante(${p.id_pago})"><i class="fas fa-eye"></i> Ver Recibo</button>`
                         : '<span style="color:#95a5a6; font-size:0.8rem;">Efectivo</span>';
 
                     bodyPagos.innerHTML += `<tr data-estado="${p.estado_pago.toLowerCase()}">

@@ -1,16 +1,13 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const router = express.Router();
 const pagosController = require('../controllers/pagosController');
 const { verificarSesion } = require('../middlewares/authMiddleware');
-const { upload, validarMagicBytes, uploadDir } = require('../middlewares/uploadMiddleware');
+const { upload, validarMagicBytes } = require('../middlewares/uploadMiddleware');
 const { logUploadEvent } = require('../utils/auditLogger');
 
 function manejarUpload(req, res, next) {
     upload.single('captura')(req, res, async (err) => {
         if (err) {
-            // Auditar error de multer (mimetype, size, etc.)
             try {
                 logUploadEvent({
                     success: false,
@@ -28,14 +25,11 @@ function manejarUpload(req, res, next) {
             });
         }
 
-        // Si no hay archivo, seguir (algunos métodos como Efectivo no requieren captura)
         if (!req.file) return next();
 
         try {
             const valido = await validarMagicBytes(req.file.filename, req.file.originalname);
             if (!valido) {
-                // borrar archivo sospechoso
-                try { fs.unlinkSync(path.join(uploadDir, req.file.filename)); } catch (e) { /* ignorar */ }
                 try {
                     logUploadEvent({
                         success: false,
@@ -51,7 +45,6 @@ function manejarUpload(req, res, next) {
             }
         } catch (errVal) {
             console.error('Error validando archivo:', errVal);
-            try { fs.unlinkSync(path.join(uploadDir, req.file.filename)); } catch (e) { /* ignorar */ }
             try {
                 logUploadEvent({
                     success: false,

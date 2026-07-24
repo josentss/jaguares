@@ -1,31 +1,153 @@
+// ==========================================
+// RUTAS DE CMS (NODE.JS + EXPRESS)
+// Club Jaguares - Gestión Web
+// ==========================================
+
 const express = require('express');
 const router = express.Router();
 const cmsController = require('../controllers/cmsController');
 
-// Importa aquí tus middlewares existentes (los mismos que usas para pagos y autenticación)
-// const { verificarDirectivo } = require('../middlewares/authMiddleware');
-// const { uploadCloudinary } = require('../middlewares/uploadMiddleware');
+// Importar middlewares
+const { verificarAutenticacion, verificarRol } = require('../middlewares/authMiddleware');
+const {
+    uploadNoticias,
+    handleUploadError,
+    validarArchivoSubido,
+    logUploadExitoso
+} = require('../middlewares/uploadMiddleware');
 
-// ------------------------------------------
-// RUTAS PÚBLICAS (Para el index.html del Visitante)
-// ------------------------------------------
+// ==========================================
+// RUTAS PÚBLICAS (Sin autenticación)
+// ==========================================
+
+/**
+ * GET /api/cms/public/noticias
+ * Obtiene las 3 noticias más recientes
+ * Acceso: Público
+ */
 router.get('/public/noticias', cmsController.obtenerNoticiasPublicas);
+
+/**
+ * GET /api/cms/public/noticias/:id
+ * Obtiene una noticia específica por ID
+ * Acceso: Público
+ */
+router.get('/public/noticias/:id', cmsController.obtenerNoticiaDetalle);
+
+/**
+ * GET /api/cms/public/eventos
+ * Obtiene los próximos eventos
+ * Acceso: Público
+ */
 router.get('/public/eventos', cmsController.obtenerEventosPublicos);
 
-// ------------------------------------------
-// RUTAS PROTEGIDAS (Para el Panel Directiva)
-// ------------------------------------------
-// Aquí aplicarás tu "anillo de seguridad" y la carga de imágenes
+// ==========================================
+// RUTAS PROTEGIDAS - NOTICIAS (Admin)
+// ==========================================
+
+/**
+ * POST /api/cms/admin/noticias
+ * Crea una nueva noticia
+ * Acceso: Solo Directiva, Staff, Admin
+ * Body: FormData con titulo, resumen, contenido, imagen_noticia (file)
+ */
 router.post(
     '/admin/noticias',
-    /* verificarDirectivo, uploadCloudinary.single('imagen_noticia'), */
+    verificarAutenticacion,                                    // Verificar token JWT
+    verificarRol(['directiva', 'staff', 'admin']),           // Verificar rol
+    uploadNoticias.single('imagen_noticia'),                 // Multer + Cloudinary
+    handleUploadError,                                         // Manejo de errores de upload
+    validarArchivoSubido,                                      // Validar que se subió archivo
+    logUploadExitoso,                                          // Log de subida exitosa
     cmsController.crearNoticiaAdmin
 );
 
+/**
+ * GET /api/cms/admin/noticias
+ * Obtiene todas las noticias (para panel admin)
+ * Acceso: Solo Directiva, Staff, Admin
+ */
+router.get(
+    '/admin/noticias',
+    verificarAutenticacion,
+    verificarRol(['directiva', 'staff', 'admin']),
+    cmsController.obtenerNoticiasAdmin
+);
+
+/**
+ * DELETE /api/cms/admin/noticias/:id
+ * Archiva una noticia
+ * Acceso: Solo Directiva, Admin
+ */
+router.delete(
+    '/admin/noticias/:id',
+    verificarAutenticacion,
+    verificarRol(['directiva', 'admin']),
+    cmsController.eliminarNoticiaAdmin
+);
+
+// ==========================================
+// RUTAS PROTEGIDAS - EVENTOS (Admin)
+// ==========================================
+
+/**
+ * POST /api/cms/admin/eventos
+ * Crea un nuevo evento
+ * Acceso: Solo Directiva, Staff, Admin
+ * Body: { titulo, fecha_evento, lugar, descripcion?, capacidad? }
+ */
 router.post(
     '/admin/eventos',
-    /* verificarDirectivo, */
+    verificarAutenticacion,
+    verificarRol(['directiva', 'staff', 'admin']),
     cmsController.crearEventoAdmin
 );
+
+/**
+ * GET /api/cms/admin/eventos
+ * Obtiene todos los eventos (para panel admin)
+ * Acceso: Solo Directiva, Staff, Admin
+ */
+router.get(
+    '/admin/eventos',
+    verificarAutenticacion,
+    verificarRol(['directiva', 'staff', 'admin']),
+    cmsController.obtenerEventosAdmin
+);
+
+/**
+ * PUT /api/cms/admin/eventos/:id
+ * Actualiza el estado de un evento
+ * Acceso: Solo Directiva, Admin
+ * Body: { estado: 'proximo' | 'en_progreso' | 'completado' | 'cancelado' }
+ */
+router.put(
+    '/admin/eventos/:id',
+    verificarAutenticacion,
+    verificarRol(['directiva', 'admin']),
+    cmsController.actualizarEventoAdmin
+);
+
+// ==========================================
+// MANEJO DE ERRORES GLOBAL
+// ==========================================
+
+router.use((err, req, res, next) => {
+    console.error('Error en rutas CMS:', err);
+
+    // Errores de validación de multer
+    if (err instanceof express.multer.MulterError) {
+        return res.status(400).json({
+            success: false,
+            error: 'Error en la carga del archivo: ' + err.message
+        });
+    }
+
+    // Errores genéricos
+    res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor'
+    });
+});
 
 module.exports = router;

@@ -305,10 +305,10 @@ const crearEventoAdmin = async (req, res) => {
             });
         }
 
-        // Insertar en base de datos utilizando únicamente columnas existentes
+        // Insertar en base de datos omitiendo 'estado' para que use el default de la tabla
         const [result] = await db.promise().query(
-            `INSERT INTO eventos (titulo, fecha_evento, lugar, estado)
-             VALUES (?, ?, ?, 'proximo')`,
+            `INSERT INTO eventos (titulo, fecha_evento, lugar)
+             VALUES (?, ?, ?)`,
             [
                 titulo.trim(),
                 fecha_evento,

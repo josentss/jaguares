@@ -313,15 +313,14 @@ const crearEventoAdmin = async (req, res) => {
             });
         }
 
-        // Insertar en base de datos
+        // Insertar en base de datos (sin organizador_id)
         const [result] = await db.promise().query(
-            `INSERT INTO eventos (titulo, fecha_evento, lugar, organizador_id, capacidad, estado)
-             VALUES (?, ?, ?, ?, ?, 'proximo')`,
+            `INSERT INTO eventos (titulo, fecha_evento, lugar, capacidad, estado)
+             VALUES (?, ?, ?, ?, 'proximo')`,
             [
                 titulo.trim(),
                 fecha_evento,
                 lugar.trim(),
-                usuario_id,
                 capacidad || null
             ]
         );
@@ -349,10 +348,7 @@ const crearEventoAdmin = async (req, res) => {
 const obtenerEventosAdmin = async (req, res) => {
     try {
         const [eventos] = await db.promise().query(
-            `SELECT e.*, u.nombres, u.apellidos
-             FROM eventos e
-             LEFT JOIN usuarios u ON e.organizador_id = u.id_usuario
-             ORDER BY e.fecha_evento ASC`
+            `SELECT * FROM eventos ORDER BY fecha_evento ASC`
         );
 
         res.status(200).json({

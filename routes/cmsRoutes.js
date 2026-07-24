@@ -8,7 +8,7 @@ const router = express.Router();
 const cmsController = require('../controllers/cmsController');
 
 // Importar middlewares
-const { verificarAutenticacion, verificarRol } = require('../middlewares/authMiddleware');
+const { verificarSesion, verificarSesionRole } = require('../middlewares/authMiddleware');
 const {
     uploadNoticias,
     handleUploadError,
@@ -51,16 +51,16 @@ router.get('/public/eventos', cmsController.obtenerEventosPublicos);
  * Acceso: Solo Directiva, Staff, Admin
  * Body: FormData con titulo, resumen, contenido, imagen_noticia (file)
  */
-router.post(
-    '/admin/noticias',
-    verificarAutenticacion,                                    // Verificar token JWT
-    verificarRol(['directiva', 'staff', 'admin']),           // Verificar rol
-    uploadNoticias.single('imagen_noticia'),                 // Multer + Cloudinary
-    handleUploadError,                                         // Manejo de errores de upload
-    validarArchivoSubido,                                      // Validar que se subió archivo
-    logUploadExitoso,                                          // Log de subida exitosa
-    cmsController.crearNoticiaAdmin
-);
+ router.post(
+     '/admin/noticias',
+     verificarSesion,
+     verificarSesionRole(['directiva', 'staff', 'admin']),
+     uploadNoticias.single('imagen_noticia'),
+     handleUploadError,
+     validarArchivoSubido,
+     logUploadExitoso,
+     cmsController.crearNoticiaAdmin
+ );
 
 /**
  * GET /api/cms/admin/noticias
@@ -69,8 +69,8 @@ router.post(
  */
 router.get(
     '/admin/noticias',
-    verificarAutenticacion,
-    verificarRol(['directiva', 'staff', 'admin']),
+    verificarSesion,
+    verificarSesionRole(['directiva', 'staff', 'admin']),
     cmsController.obtenerNoticiasAdmin
 );
 
@@ -81,8 +81,8 @@ router.get(
  */
 router.delete(
     '/admin/noticias/:id',
-    verificarAutenticacion,
-    verificarRol(['directiva', 'admin']),
+    verificarSesion,
+    verificarSesionRole(['directiva', 'admin']),
     cmsController.eliminarNoticiaAdmin
 );
 
@@ -98,8 +98,8 @@ router.delete(
  */
 router.post(
     '/admin/eventos',
-    verificarAutenticacion,
-    verificarRol(['directiva', 'staff', 'admin']),
+    verificarSesion,
+    verificarSesionRole(['directiva', 'staff', 'admin']),
     cmsController.crearEventoAdmin
 );
 
@@ -110,8 +110,8 @@ router.post(
  */
 router.get(
     '/admin/eventos',
-    verificarAutenticacion,
-    verificarRol(['directiva', 'staff', 'admin']),
+    verificarSesion,
+    verificarSesionRole(['directiva', 'staff', 'admin']),
     cmsController.obtenerEventosAdmin
 );
 
@@ -123,8 +123,8 @@ router.get(
  */
 router.put(
     '/admin/eventos/:id',
-    verificarAutenticacion,
-    verificarRol(['directiva', 'admin']),
+    verificarSesion,
+    verificarSesionRole(['directiva', 'admin']),
     cmsController.actualizarEventoAdmin
 );
 

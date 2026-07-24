@@ -140,7 +140,7 @@ const obtenerNoticiaDetalle = async (req, res) => {
 const crearNoticiaAdmin = async (req, res) => {
     try {
         const { titulo, resumen, contenido } = req.body;
-        const usuario_id = req.usuario?.id_usuario; // Del middleware de autenticación
+        const usuario_id = req.usuarioId; // <-- Ajustado al middleware
 
         // Validar datos
         const erroresValidacion = validarNoticiaData(titulo, resumen, contenido);
@@ -293,7 +293,7 @@ const obtenerEventosPublicos = async (req, res) => {
 const crearEventoAdmin = async (req, res) => {
     try {
         const { titulo, fecha_evento, lugar, descripcion, capacidad } = req.body;
-        const usuario_id = req.usuario?.id_usuario;
+        const usuario_id = req.usuarioId; // <-- Ajustado al middleware
 
         // Validar datos
         const erroresValidacion = validarEventoData(titulo, fecha_evento, lugar);

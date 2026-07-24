@@ -260,7 +260,7 @@ const eliminarNoticiaAdmin = async (req, res) => {
 const obtenerEventosPublicos = async (req, res) => {
     try {
         const [eventos] = await db.promise().query(
-            `SELECT id_evento, titulo, fecha_evento, lugar, registrados, capacidad
+            `SELECT id_evento, titulo, fecha_evento, lugar, estado
              FROM eventos
              WHERE estado IN ('proximo', 'en_progreso')
              ORDER BY fecha_evento ASC
@@ -288,11 +288,11 @@ const obtenerEventosPublicos = async (req, res) => {
 /**
  * POST /api/cms/admin/eventos
  * Crea un nuevo evento (solo directiva/admin)
- * Body: { titulo, fecha_evento, lugar, capacidad? }
+ * Body: { titulo, fecha_evento, lugar }
  */
 const crearEventoAdmin = async (req, res) => {
     try {
-        const { titulo, fecha_evento, lugar, capacidad } = req.body;
+        const { titulo, fecha_evento, lugar } = req.body;
         const usuario_id = req.usuarioId;
 
         // Validar datos
@@ -305,23 +305,14 @@ const crearEventoAdmin = async (req, res) => {
             });
         }
 
-        // Validar capacidad si se proporciona
-        if (capacidad && (isNaN(capacidad) || capacidad < 1)) {
-            return res.status(400).json({
-                success: false,
-                error: 'La capacidad debe ser un número mayor a 0'
-            });
-        }
-
-        // Insertar en base de datos (sin organizador_id)
+        // Insertar en base de datos utilizando únicamente columnas existentes
         const [result] = await db.promise().query(
-            `INSERT INTO eventos (titulo, fecha_evento, lugar, capacidad, estado)
-             VALUES (?, ?, ?, ?, 'proximo')`,
+            `INSERT INTO eventos (titulo, fecha_evento, lugar, estado)
+             VALUES (?, ?, ?, 'proximo')`,
             [
                 titulo.trim(),
                 fecha_evento,
-                lugar.trim(),
-                capacidad || null
+                lugar.trim()
             ]
         );
 

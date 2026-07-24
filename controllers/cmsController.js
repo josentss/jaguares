@@ -6,8 +6,13 @@
 const db = require('../config/db');
 
 // ==========================================
-// UTILIDADES DE VALIDACIÓN
+// UTILIDADES
 // ==========================================
+
+const logAccion = (accion, detalles = {}) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ✓ ${accion}`, detalles);
+};
 
 const validarNoticiaData = (titulo, resumen, contenido) => {
     const errores = [];
@@ -64,10 +69,6 @@ const validarEventoData = (titulo, fecha_evento, lugar) => {
 // CONTROLADORES DE NOTICIAS (Público)
 // ==========================================
 
-/**
- * GET /api/cms/public/noticias
- * Obtiene las 3 noticias más recientes para la página principal
- */
 const obtenerNoticiasPublicas = async (req, res) => {
     try {
         const [noticias] = await db.promise().query(
@@ -92,10 +93,6 @@ const obtenerNoticiasPublicas = async (req, res) => {
     }
 };
 
-/**
- * GET /api/cms/public/noticias/:id
- * Obtiene una noticia específica por ID (para página de detalle)
- */
 const obtenerNoticiaDetalle = async (req, res) => {
     try {
         const { id } = req.params;
@@ -132,11 +129,6 @@ const obtenerNoticiaDetalle = async (req, res) => {
 // CONTROLADORES DE NOTICIAS (Admin)
 // ==========================================
 
-/**
- * POST /api/cms/admin/noticias
- * Crea una nueva noticia (solo directiva/admin)
- * Body: FormData con { titulo, resumen, contenido, imagen_noticia (file) }
- */
 const crearNoticiaAdmin = async (req, res) => {
     try {
         const { titulo, resumen, contenido } = req.body;
@@ -152,15 +144,8 @@ const crearNoticiaAdmin = async (req, res) => {
             });
         }
 
-        // Validar que se subió la imagen
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                error: 'La imagen es obligatoria para publicar una noticia'
-            });
-        }
-
-        const imagen_url = req.file.path; // URL de Cloudinary
+        // Ya validamos archivo en middleware, no aquí
+        const imagen_url = req.file.path;
 
         // Insertar en base de datos
         const [result] = await db.promise().query(
@@ -169,7 +154,11 @@ const crearNoticiaAdmin = async (req, res) => {
             [titulo.trim(), resumen.trim(), contenido.trim(), imagen_url, usuario_id]
         );
 
-        console.log(`✓ Noticia creada exitosamente (ID: ${result.insertId}) por usuario ${usuario_id}`);
+        logAccion('Noticia creada', {
+            id: result.insertId,
+            usuario: usuario_id,
+            titulo: titulo.substring(0, 50) + (titulo.length > 50 ? '...' : '')
+        });
 
         res.status(201).json({
             success: true,
@@ -186,10 +175,6 @@ const crearNoticiaAdmin = async (req, res) => {
     }
 };
 
-/**
- * GET /api/cms/admin/noticias
- * Obtiene todas las noticias (para panel de administración)
- */
 const obtenerNoticiasAdmin = async (req, res) => {
     try {
         const [noticias] = await db.promise().query(
@@ -213,15 +198,10 @@ const obtenerNoticiasAdmin = async (req, res) => {
     }
 };
 
-/**
- * DELETE /api/cms/admin/noticias/:id
- * Elimina una noticia (la archiva)
- */
 const eliminarNoticiaAdmin = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Cambiar estado a archivada en lugar de eliminar
         const [result] = await db.promise().query(
             `UPDATE noticias SET estado = 'archivada' WHERE id_noticia = ?`,
             [id]
@@ -234,7 +214,7 @@ const eliminarNoticiaAdmin = async (req, res) => {
             });
         }
 
-        console.log(`✓ Noticia archivada (ID: ${id})`);
+        logAccion('Noticia archivada', { id });
 
         res.status(200).json({
             success: true,
@@ -253,10 +233,6 @@ const eliminarNoticiaAdmin = async (req, res) => {
 // CONTROLADORES DE EVENTOS (Público)
 // ==========================================
 
-/**
- * GET /api/cms/public/eventos
- * Obtiene los próximos eventos ordenados por fecha
- */
 const obtenerEventosPublicos = async (req, res) => {
     try {
         const [eventos] = await db.promise().query(
@@ -285,17 +261,11 @@ const obtenerEventosPublicos = async (req, res) => {
 // CONTROLADORES DE EVENTOS (Admin)
 // ==========================================
 
-/**
- * POST /api/cms/admin/eventos
- * Crea un nuevo evento (solo directiva/admin)
- * Body: { titulo, fecha_evento, lugar }
- */
 const crearEventoAdmin = async (req, res) => {
     try {
         const { titulo, fecha_evento, lugar } = req.body;
         const usuario_id = req.usuarioId;
 
-        // Validar datos
         const erroresValidacion = validarEventoData(titulo, fecha_evento, lugar);
         if (erroresValidacion.length > 0) {
             return res.status(400).json({
@@ -305,18 +275,17 @@ const crearEventoAdmin = async (req, res) => {
             });
         }
 
-        // Insertar en base de datos omitiendo 'estado' para que use el default de la tabla
         const [result] = await db.promise().query(
             `INSERT INTO eventos (titulo, fecha_evento, lugar)
              VALUES (?, ?, ?)`,
-            [
-                titulo.trim(),
-                fecha_evento,
-                lugar.trim()
-            ]
+            [titulo.trim(), fecha_evento, lugar.trim()]
         );
 
-        console.log(`✓ Evento creado exitosamente (ID: ${result.insertId}) por usuario ${usuario_id}`);
+        logAccion('Evento creado', {
+            id: result.insertId,
+            usuario: usuario_id,
+            titulo: titulo.substring(0, 50)
+        });
 
         res.status(201).json({
             success: true,
@@ -332,10 +301,6 @@ const crearEventoAdmin = async (req, res) => {
     }
 };
 
-/**
- * GET /api/cms/admin/eventos
- * Obtiene todos los eventos (para panel de administración)
- */
 const obtenerEventosAdmin = async (req, res) => {
     try {
         const [eventos] = await db.promise().query(
@@ -356,10 +321,6 @@ const obtenerEventosAdmin = async (req, res) => {
     }
 };
 
-/**
- * PUT /api/cms/admin/eventos/:id
- * Actualiza el estado de un evento
- */
 const actualizarEventoAdmin = async (req, res) => {
     try {
         const { id } = req.params;
@@ -385,7 +346,7 @@ const actualizarEventoAdmin = async (req, res) => {
             });
         }
 
-        console.log(`✓ Evento actualizado (ID: ${id}) - Nuevo estado: ${estado}`);
+        logAccion('Evento actualizado', { id, nuevoEstado: estado });
 
         res.status(200).json({
             success: true,
@@ -405,19 +366,12 @@ const actualizarEventoAdmin = async (req, res) => {
 // ==========================================
 
 module.exports = {
-    // Noticias Públicas
     obtenerNoticiasPublicas,
     obtenerNoticiaDetalle,
-
-    // Noticias Admin
     crearNoticiaAdmin,
     obtenerNoticiasAdmin,
     eliminarNoticiaAdmin,
-
-    // Eventos Públicos
     obtenerEventosPublicos,
-
-    // Eventos Admin
     crearEventoAdmin,
     obtenerEventosAdmin,
     actualizarEventoAdmin

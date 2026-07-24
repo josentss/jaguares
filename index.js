@@ -6,6 +6,7 @@ const path    = require('path');
 const cookieParser = require('cookie-parser');
 const app = express();
 
+
 // ── Guardia de arranque ─────────────────────────────────────────────────────
 if (!process.env.JWT_SECRET) {
     console.error('❌ Falta JWT_SECRET en .env. Genera uno con:\n   node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
@@ -64,7 +65,9 @@ app.use('/api/auth',          require('./routes/authRoutes'));
 app.use('/api/pagos',         require('./routes/pagosRoutes'));
 app.use('/api/usuarios',      require('./routes/userRoutes'));
 app.use('/api/atletas',       require('./routes/atletaRoutes'));
-app.use('/api/notificaciones',require('./routes/notificacionesRoutes'));
+app.use('/api/notificaciones', require('./routes/notificacionesRoutes'));
+const cmsRoutes = require('./routes/cmsRoutes');
+app.use('/api/cms', cmsRoutes);
 
 // Las rutas de directiva exigen rol; verificarSesionRole ya lleva verificarSesion
 app.use('/api/directiva',

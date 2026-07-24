@@ -67,6 +67,8 @@
             <li data-target="sec-solicitudes"><i class="fas fa-user-plus"></i> Solicitudes de Registro</li>
             <li data-target="sec-atletas"><i class="fas fa-running"></i> Gestión de Atletas</li>
             <li data-target="sec-pagos"><i class="fas fa-file-invoice-dollar"></i> Auditoría de Pagos</li>
+            <!-- ENLACE A LA NUEVA SECCIÓN CMS -->
+            <li data-target="sec-cms"><i class="fas fa-globe"></i> Gestión Web</li>
             <li id="btn-logout" style="margin-top: 40px; color: #e74c3c;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
         </ul>
     </div>
@@ -114,7 +116,7 @@
             </div>
         </section>
 
-        <!-- NUEVA SECCIÓN DE SOLICITUDES DE REGISTRO -->
+        <!-- SECCIÓN DE SOLICITUDES DE REGISTRO -->
         <section id="sec-solicitudes" class="panel-section" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
                 <h3 style="margin: 0;"><i class="fas fa-user-plus"></i> Solicitudes de Registro de Representantes</h3>
@@ -190,6 +192,60 @@
                     </thead>
                     <tbody id="body-pagos"></tbody>
                 </table>
+            </div>
+        </section>
+
+        <!-- NUEVA SECCIÓN DE GESTIÓN WEB (CMS) -->
+        <section id="sec-cms" class="panel-section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                <h3 style="margin: 0;"><i class="fas fa-globe"></i> Gestión de Contenido Web</h3>
+            </div>
+            <div class="dashboard-grid">
+
+                <!-- Formulario para Noticias -->
+                <div class="card-stat" style="display: block; border-left-color: #9b59b6;">
+                    <h3 style="margin-top: 0; color: #2c3e50; font-size: 1.1rem; margin-bottom: 15px;"><i class="fas fa-newspaper"></i> Publicar Nueva Noticia</h3>
+                    <form id="form-noticia">
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #7f8c8d;">Título:</label><br>
+                            <input type="text" id="noticia-titulo" class="search-box" style="width: 100%; max-width: 100%; box-sizing: border-box;" required>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #7f8c8d;">Resumen corto:</label><br>
+                            <input type="text" id="noticia-resumen" class="search-box" maxlength="255" style="width: 100%; max-width: 100%; box-sizing: border-box;" required>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #7f8c8d;">Contenido completo:</label><br>
+                            <textarea id="noticia-contenido" class="search-box" rows="5" style="width: 100%; max-width: 100%; box-sizing: border-box; resize: vertical;" required></textarea>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #7f8c8d;">Imagen (Cloudinary):</label><br>
+                            <input type="file" id="noticia-imagen" accept="image/*" style="width: 100%; margin-top: 5px;" required>
+                        </div>
+                        <button type="submit" class="btn-action btn-view" style="width: 100%; justify-content: center; padding: 10px; font-size: 1rem;"><i class="fas fa-upload"></i> Subir Noticia</button>
+                    </form>
+                </div>
+
+                <!-- Formulario para Eventos -->
+                <div class="card-stat" style="display: block; border-left-color: #e67e22;">
+                    <h3 style="margin-top: 0; color: #2c3e50; font-size: 1.1rem; margin-bottom: 15px;"><i class="fas fa-calendar-alt"></i> Agendar Nuevo Evento</h3>
+                    <form id="form-evento">
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #7f8c8d;">Título del Encuentro:</label><br>
+                            <input type="text" id="evento-titulo" class="search-box" placeholder="Ej: Final Sub-15 vs Equipo B" style="width: 100%; max-width: 100%; box-sizing: border-box;" required>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #7f8c8d;">Fecha:</label><br>
+                            <input type="date" id="evento-fecha" class="search-box" style="width: 100%; max-width: 100%; box-sizing: border-box;" required>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #7f8c8d;">Lugar:</label><br>
+                            <input type="text" id="evento-lugar" class="search-box" placeholder="Ej: Cancha Principal" style="width: 100%; max-width: 100%; box-sizing: border-box;" required>
+                        </div>
+                        <button type="submit" class="btn-action btn-aprob" style="width: 100%; justify-content: center; padding: 10px; font-size: 1rem;"><i class="fas fa-calendar-plus"></i> Agendar Calendario</button>
+                    </form>
+                </div>
+
             </div>
         </section>
     </div>
@@ -528,6 +584,88 @@
                 window.location.href = 'login.html';
             }
         });
+
+        // ==========================================
+        // LÓGICA DEL CMS - PANEL DIRECTIVA
+        // ==========================================
+
+        document.getElementById('form-noticia')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('titulo', document.getElementById('noticia-titulo').value);
+            formData.append('resumen', document.getElementById('noticia-resumen').value);
+            formData.append('contenido', document.getElementById('noticia-contenido').value);
+            formData.append('imagen_noticia', document.getElementById('noticia-imagen').files[0]);
+
+            const btnSubmit = e.target.querySelector('button');
+            const originalText = btnSubmit.innerHTML;
+
+            try {
+                btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+                btnSubmit.disabled = true;
+
+                const response = await apiFetch('/api/cms/admin/noticias', {
+                    method: 'POST',
+                    body: formData // FormData asigna el Content-Type automáticamente
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('Noticia publicada exitosamente.', 'success');
+                    document.getElementById('form-noticia').reset();
+                } else {
+                    showToast('Error al publicar: ' + (data.message || data.error), 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Ocurrió un error en la conexión.', 'error');
+            } finally {
+                btnSubmit.innerHTML = originalText;
+                btnSubmit.disabled = false;
+            }
+        });
+
+        document.getElementById('form-evento')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const bodyData = {
+                titulo: document.getElementById('evento-titulo').value,
+                fecha_evento: document.getElementById('evento-fecha').value,
+                lugar: document.getElementById('evento-lugar').value
+            };
+
+            const btnSubmit = e.target.querySelector('button');
+            const originalText = btnSubmit.innerHTML;
+
+            try {
+                btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Agendando...';
+                btnSubmit.disabled = true;
+
+                const response = await apiFetch('/api/cms/admin/eventos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('Evento agendado exitosamente.', 'success');
+                    document.getElementById('form-evento').reset();
+                } else {
+                    showToast('Error al agendar: ' + (data.message || data.error), 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Ocurrió un error en la conexión.', 'error');
+            } finally {
+                btnSubmit.innerHTML = originalText;
+                btnSubmit.disabled = false;
+            }
+        });
+
     </script>
 </body>
 </html>

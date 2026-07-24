@@ -2,7 +2,7 @@ const db = require('../config/db');
 const { crearNotificacion } = require('./notificacionesController');
 const { esEnteroPositivo, esEstadoAtletaValido, esEstadoPagoValido } = require('../utils/validators');
 
-const BCV_API_KEY = process.env.EXCHANGERATE_API_KEY || 'TU_API_KEY_AQUI';
+const BCV_API_KEY = process.env.EXCHANGERATE_API_KEY;
 const BCV_API_URL = `https://v6.exchangerate-api.com/v6/${BCV_API_KEY}/latest/USD`;
 const TASA_BCV_DEFAULT = 36.50;
 

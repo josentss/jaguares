@@ -1,6 +1,6 @@
 // ==========================================
-// CONTROLADORES DE CMS (NODE.JS + EXPRESS)
-// Club Jaguares - Gestión Web
+// CONTROLADORES DE CMS - VERSIÓN SIN AUTOR_ID
+// Si tu tabla noticias NO tiene columna autor_id
 // ==========================================
 
 const db = require('../config/db');
@@ -98,10 +98,9 @@ const obtenerNoticiaDetalle = async (req, res) => {
         const { id } = req.params;
 
         const [noticia] = await db.promise().query(
-            `SELECT n.*, u.nombres, u.apellidos
-             FROM noticias n
-             LEFT JOIN usuarios u ON n.autor_id = u.id_usuario
-             WHERE n.id_noticia = ? AND n.estado = 'publicada'`,
+            `SELECT id_noticia, titulo, resumen, contenido, imagen_url, fecha_publicacion
+             FROM noticias
+             WHERE id_noticia = ? AND estado = 'publicada'`,
             [id]
         );
 
@@ -129,10 +128,15 @@ const obtenerNoticiaDetalle = async (req, res) => {
 // CONTROLADORES DE NOTICIAS (Admin)
 // ==========================================
 
+/**
+ * POST /api/cms/admin/noticias
+ * Crea una nueva noticia SIN autor_id
+ * Body: FormData con { titulo, resumen, contenido, imagen_noticia (file) }
+ */
 const crearNoticiaAdmin = async (req, res) => {
     try {
         const { titulo, resumen, contenido } = req.body;
-        const usuario_id = req.usuarioId;
+        const usuario_id = req.usuarioId;  // Se usa solo para logs
 
         // Validar datos
         const erroresValidacion = validarNoticiaData(titulo, resumen, contenido);
@@ -144,20 +148,22 @@ const crearNoticiaAdmin = async (req, res) => {
             });
         }
 
-        // Ya validamos archivo en middleware, no aquí
+        // Ya validamos archivo en middleware
         const imagen_url = req.file.path;
 
-        // Insertar en base de datos
+        // ==========================================
+        // OPCIÓN 1: SIN autor_id (simple)
+        // ==========================================
         const [result] = await db.promise().query(
-            `INSERT INTO noticias (titulo, resumen, contenido, imagen_url, autor_id, estado)
-             VALUES (?, ?, ?, ?, ?, 'publicada')`,
-            [titulo.trim(), resumen.trim(), contenido.trim(), imagen_url, usuario_id]
+            `INSERT INTO noticias (titulo, resumen, contenido, imagen_url, estado)
+             VALUES (?, ?, ?, ?, 'publicada')`,
+            [titulo.trim(), resumen.trim(), contenido.trim(), imagen_url]
         );
 
         logAccion('Noticia creada', {
             id: result.insertId,
-            usuario: usuario_id,
-            titulo: titulo.substring(0, 50) + (titulo.length > 50 ? '...' : '')
+            creador: usuario_id,
+            titulo: titulo.substring(0, 50)
         });
 
         res.status(201).json({
@@ -175,13 +181,64 @@ const crearNoticiaAdmin = async (req, res) => {
     }
 };
 
+// ==========================================
+// ALTERNATIVA: CON autor_id (comentada)
+// ==========================================
+// Descomenta esto si ya agregaste la columna autor_id a tu tabla
+/*
+const crearNoticiaAdmin = async (req, res) => {
+    try {
+        const { titulo, resumen, contenido } = req.body;
+        const usuario_id = req.usuarioId;
+
+        const erroresValidacion = validarNoticiaData(titulo, resumen, contenido);
+        if (erroresValidacion.length > 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Datos inválidos',
+                detalles: erroresValidacion
+            });
+        }
+
+        const imagen_url = req.file.path;
+
+        // CON autor_id
+        const [result] = await db.promise().query(
+            `INSERT INTO noticias (titulo, resumen, contenido, imagen_url, autor_id, estado)
+             VALUES (?, ?, ?, ?, ?, 'publicada')`,
+            [titulo.trim(), resumen.trim(), contenido.trim(), imagen_url, usuario_id]
+        );
+
+        logAccion('Noticia creada', {
+            id: result.insertId,
+            autor: usuario_id,
+            titulo: titulo.substring(0, 50)
+        });
+
+        res.status(201).json({
+            success: true,
+            mensaje: 'Noticia publicada con éxito',
+            id_noticia: result.insertId,
+            imagen_url: imagen_url
+        });
+    } catch (error) {
+        console.error('Error al registrar noticia:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al registrar la noticia. Intenta de nuevo.'
+        });
+    }
+};
+*/
+
 const obtenerNoticiasAdmin = async (req, res) => {
     try {
+        // SIN autor_id - versión simple
         const [noticias] = await db.promise().query(
-            `SELECT n.*, u.nombres, u.apellidos
-             FROM noticias n
-             LEFT JOIN usuarios u ON n.autor_id = u.id_usuario
-             ORDER BY n.fecha_publicacion DESC`
+            `SELECT id_noticia, titulo, resumen, contenido, imagen_url,
+                    estado, fecha_publicacion
+             FROM noticias
+             ORDER BY fecha_publicacion DESC`
         );
 
         res.status(200).json({
@@ -189,6 +246,16 @@ const obtenerNoticiasAdmin = async (req, res) => {
             cantidad: noticias.length,
             noticias: noticias
         });
+
+        // CON autor_id - descomenta si tienes la columna
+        /*
+        const [noticias] = await db.promise().query(
+            `SELECT n.*, u.nombres, u.apellidos
+             FROM noticias n
+             LEFT JOIN usuarios u ON n.autor_id = u.id_usuario
+             ORDER BY n.fecha_publicacion DESC`
+        );
+        */
     } catch (error) {
         console.error('Error al obtener noticias (admin):', error);
         res.status(500).json({

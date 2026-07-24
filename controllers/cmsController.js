@@ -70,7 +70,7 @@ const validarEventoData = (titulo, fecha_evento, lugar) => {
  */
 const obtenerNoticiasPublicas = async (req, res) => {
     try {
-        const [noticias] = await db.query(
+        const [noticias] = await db.promise().query(
             `SELECT id_noticia, titulo, resumen, imagen_url, fecha_publicacion
              FROM noticias
              WHERE estado = 'publicada'
@@ -100,7 +100,7 @@ const obtenerNoticiaDetalle = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const [noticia] = await db.query(
+        const [noticia] = await db.promise().query(
             `SELECT n.*, u.nombres, u.apellidos
              FROM noticias n
              LEFT JOIN usuarios u ON n.autor_id = u.id_usuario
@@ -140,7 +140,7 @@ const obtenerNoticiaDetalle = async (req, res) => {
 const crearNoticiaAdmin = async (req, res) => {
     try {
         const { titulo, resumen, contenido } = req.body;
-        const usuario_id = req.usuarioId; // <-- Ajustado al middleware
+        const usuario_id = req.usuarioId;
 
         // Validar datos
         const erroresValidacion = validarNoticiaData(titulo, resumen, contenido);
@@ -163,7 +163,7 @@ const crearNoticiaAdmin = async (req, res) => {
         const imagen_url = req.file.path; // URL de Cloudinary
 
         // Insertar en base de datos
-        const [result] = await db.query(
+        const [result] = await db.promise().query(
             `INSERT INTO noticias (titulo, resumen, contenido, imagen_url, autor_id, estado)
              VALUES (?, ?, ?, ?, ?, 'publicada')`,
             [titulo.trim(), resumen.trim(), contenido.trim(), imagen_url, usuario_id]
@@ -192,7 +192,7 @@ const crearNoticiaAdmin = async (req, res) => {
  */
 const obtenerNoticiasAdmin = async (req, res) => {
     try {
-        const [noticias] = await db.query(
+        const [noticias] = await db.promise().query(
             `SELECT n.*, u.nombres, u.apellidos
              FROM noticias n
              LEFT JOIN usuarios u ON n.autor_id = u.id_usuario
@@ -222,7 +222,7 @@ const eliminarNoticiaAdmin = async (req, res) => {
         const { id } = req.params;
 
         // Cambiar estado a archivada en lugar de eliminar
-        const [result] = await db.query(
+        const [result] = await db.promise().query(
             `UPDATE noticias SET estado = 'archivada' WHERE id_noticia = ?`,
             [id]
         );
@@ -259,7 +259,7 @@ const eliminarNoticiaAdmin = async (req, res) => {
  */
 const obtenerEventosPublicos = async (req, res) => {
     try {
-        const [eventos] = await db.query(
+        const [eventos] = await db.promise().query(
             `SELECT id_evento, titulo, descripcion, fecha_evento, lugar, registrados, capacidad
              FROM eventos
              WHERE estado IN ('proximo', 'en_progreso')
@@ -293,7 +293,7 @@ const obtenerEventosPublicos = async (req, res) => {
 const crearEventoAdmin = async (req, res) => {
     try {
         const { titulo, fecha_evento, lugar, descripcion, capacidad } = req.body;
-        const usuario_id = req.usuarioId; // <-- Ajustado al middleware
+        const usuario_id = req.usuarioId;
 
         // Validar datos
         const erroresValidacion = validarEventoData(titulo, fecha_evento, lugar);
@@ -314,7 +314,7 @@ const crearEventoAdmin = async (req, res) => {
         }
 
         // Insertar en base de datos
-        const [result] = await db.query(
+        const [result] = await db.promise().query(
             `INSERT INTO eventos (titulo, descripcion, fecha_evento, lugar, organizador_id, capacidad, estado)
              VALUES (?, ?, ?, ?, ?, ?, 'proximo')`,
             [
@@ -349,7 +349,7 @@ const crearEventoAdmin = async (req, res) => {
  */
 const obtenerEventosAdmin = async (req, res) => {
     try {
-        const [eventos] = await db.query(
+        const [eventos] = await db.promise().query(
             `SELECT e.*, u.nombres, u.apellidos
              FROM eventos e
              LEFT JOIN usuarios u ON e.organizador_id = u.id_usuario
@@ -387,7 +387,7 @@ const actualizarEventoAdmin = async (req, res) => {
             });
         }
 
-        const [result] = await db.query(
+        const [result] = await db.promise().query(
             `UPDATE eventos SET estado = ? WHERE id_evento = ?`,
             [estado, id]
         );

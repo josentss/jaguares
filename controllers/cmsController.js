@@ -260,7 +260,7 @@ const eliminarNoticiaAdmin = async (req, res) => {
 const obtenerEventosPublicos = async (req, res) => {
     try {
         const [eventos] = await db.promise().query(
-            `SELECT id_evento, titulo, descripcion, fecha_evento, lugar, registrados, capacidad
+            `SELECT id_evento, titulo, fecha_evento, lugar, registrados, capacidad
              FROM eventos
              WHERE estado IN ('proximo', 'en_progreso')
              ORDER BY fecha_evento ASC
@@ -288,11 +288,11 @@ const obtenerEventosPublicos = async (req, res) => {
 /**
  * POST /api/cms/admin/eventos
  * Crea un nuevo evento (solo directiva/admin)
- * Body: { titulo, fecha_evento, lugar, descripcion?, capacidad? }
+ * Body: { titulo, fecha_evento, lugar, capacidad? }
  */
 const crearEventoAdmin = async (req, res) => {
     try {
-        const { titulo, fecha_evento, lugar, descripcion, capacidad } = req.body;
+        const { titulo, fecha_evento, lugar, capacidad } = req.body;
         const usuario_id = req.usuarioId;
 
         // Validar datos
@@ -315,11 +315,10 @@ const crearEventoAdmin = async (req, res) => {
 
         // Insertar en base de datos
         const [result] = await db.promise().query(
-            `INSERT INTO eventos (titulo, descripcion, fecha_evento, lugar, organizador_id, capacidad, estado)
-             VALUES (?, ?, ?, ?, ?, ?, 'proximo')`,
+            `INSERT INTO eventos (titulo, fecha_evento, lugar, organizador_id, capacidad, estado)
+             VALUES (?, ?, ?, ?, ?, 'proximo')`,
             [
                 titulo.trim(),
-                descripcion?.trim() || null,
                 fecha_evento,
                 lugar.trim(),
                 usuario_id,

@@ -9,12 +9,7 @@ const cmsController = require('../controllers/cmsController');
 
 // Importar middlewares
 const { verificarSesion, verificarSesionRole } = require('../middlewares/authMiddleware');
-const {
-    uploadNoticias,
-    handleUploadError,
-    validarArchivoSubido,
-    logUploadExitoso
-} = require('../middlewares/uploadMiddleware');
+const { upload } = require('../middlewares/uploadMiddleware');
 
 // ==========================================
 // RUTAS PÚBLICAS (Sin autenticación)
@@ -55,10 +50,7 @@ router.get('/public/eventos', cmsController.obtenerEventosPublicos);
      '/admin/noticias',
      verificarSesion,
      verificarSesionRole(['directiva', 'staff', 'admin']),
-     uploadNoticias.single('imagen_noticia'),
-     handleUploadError,
-     validarArchivoSubido,
-     logUploadExitoso,
+     upload.single('imagen_noticia'),
      cmsController.crearNoticiaAdmin
  );
 

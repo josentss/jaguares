@@ -1,10 +1,6 @@
-// middlewares/rateLimitMiddleware.js
-// Rate-limit básico en memoria para el endpoint de login/registro.
-// Sin dependencias externas — si en producción quieres express-rate-limit,
-// instálalo y reemplaza esto; para desarrollo local funciona igual.
 const contadores = new Map();
 const VENTANA_MS  = 15 * 60 * 1000; // 15 minutos
-const MAX_INTENTOS = 20;             // más que suficiente para dev
+const MAX_INTENTOS = 5;
 
 exports.limiteAuth = (req, res, next) => {
     const ip  = req.ip || req.connection.remoteAddress || 'unknown';

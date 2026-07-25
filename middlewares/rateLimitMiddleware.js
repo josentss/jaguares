@@ -1,6 +1,6 @@
 const contadores = new Map();
 const VENTANA_MS  = 15 * 60 * 1000; // 15 minutos
-const MAX_INTENTOS = 5;
+const MAX_INTENTOS = 20; // 20 intentos de inicio de sesión
 
 exports.limiteAuth = (req, res, next) => {
     const ip  = req.ip || req.connection.remoteAddress || 'unknown';

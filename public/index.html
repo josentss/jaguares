@@ -15,17 +15,26 @@
             <div class="logo-container">
                <img src="img/logo-fvv-nobg.png" alt="Logo FVV" class="logo-img">
                <img src="img/logo-deporte-nobg.png" alt="Logo Deporte" class="logo-img">
-               <!-- <img src="img/logo-sinfondo.png" alt="Logo Jaguares" class="logo-img"> -->
-               <!-- <span class="logo-text">Jaguares</span> -->
             </div>
-            <ul class="nav-links">
+
+            <div class="nav-controls-mobile">
+                <button id="theme-toggle" title="Cambiar modo">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="menu-toggle" id="mobile-menu">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+
+            <ul class="nav-links" id="nav-links">
                <li><a href="#inicio">Inicio</a></li>
                <li><a href="#nosotros">Nosotros</a></li>
                <li><a href="#categorias">Categorías</a></li>
+               <li><a href="#calendario">Calendario</a></li>
                <li><a href="#contacto">Contacto</a></li>
                <li><a href="admin/login.html" class="btn-login">Ingresar</a></li>
-               <li class="theme-item">
-                  <button id="theme-toggle" title="Cambiar modo">
+               <li class="theme-item desktop-theme">
+                  <button id="theme-toggle-desktop" title="Cambiar modo">
                   <i class="fas fa-moon"></i>
                   </button>
                </li>
@@ -43,12 +52,13 @@
                </div>
             </div>
          </section>
+
          <section id="nosotros" class="info-section">
             <div class="nosotros-container">
                <div class="nosotros-texto reveal-left">
                   <h2>Sobre nosotros</h2>
                   <p>
-                     Fundado el 3 de marzo de 2024 en Socopó, Estado Barinas por el Lcdo. Joe Guarecuco y la Mcs. Nubia Acero, el <strong>Club de Voleibol Jaguares</strong> nació en la EBB Orlando García con el fin de masificar el deporte en Barinas. Lo que inició con 85 jóvenes es hoy una institución de 165 atletas, desde categorías Semillitas hasta Juvenil, que bajo la guía de 5 entrenadores titulados, fomenta la disciplina y los valores de sana convivencia en nuestra sede del Barrio Las Américas.
+                     Fundado el 3 de marzo de 2024 en Socopó, Estado Barinas por el Lcdo. Joe Guarecuco y la Mcs. Nubia Acero, el <strong>Club de Voleibol Jaguares</strong> nació en la EBB Orlando García con el fin de masificar el deporte en Barinas. Lo que inició con 85 jóvenes es hoy una institución de 165 atletas, que bajo la guía de 5 entrenadores titulados, fomenta la disciplina y los valores de sana convivencia en nuestra sede del Barrio Las Américas.
                   </p>
                   <p>
                      Nuestra trayectoria nos ha consolidado rápidamente como referentes regionales, logrando el campeonato de la Zona Andina y participando con éxito en torneos en <strong>Valencia, Barquisimeto y la Liga de Barinas</strong>. Más que un club, somos un semillero de talento que representa con orgullo nuestros colores en cada competencia, trabajando diariamente para formar las próximas generaciones de selecciones estadales y nacionales.
@@ -61,38 +71,65 @@
                </div>
             </div>
          </section>
+
          <section id="categorias" class="services-section">
             <div class="section-title reveal">
                <h2>Categorías</h2>
                <p>Haz clic en cada una para conocer más detalles.</p>
             </div>
             <div class="services-grid">
-               <div class="category-card reveal" style="background-image: url('img/u7-card.jpg'); transition-delay: 0.1s;">
+               <div class="category-card reveal cat-trigger" data-cat="u7" style="background-image: url('img/u7-card.jpeg'); transition-delay: 0.1s;">
                   <div class="card-overlay">
-                     <h3>U-7</h3>
-                     <span class="card-tag">Año 2019-2020</span>
+                     <h3>U-7 Semillitas</h3>
                   </div>
                </div>
-               <div class="category-card reveal" style="background-image: url('img/u11-card.jpg'); transition-delay: 0.2s;">
+               <div class="category-card reveal cat-trigger" data-cat="u9" style="background-image: url('img/u9-card.jpeg'); transition-delay: 0.2s;">
                   <div class="card-overlay">
-                     <h3>U-11</h3>
-                     <span class="card-tag">Desarrollo</span>
+                     <h3>U-9 Iniciación</h3>
                   </div>
                </div>
-               <div class="category-card reveal" style="background-image: url('img/u17-card.jpeg'); transition-delay: 0.3s;">
+               <div class="category-card reveal cat-trigger" data-cat="u11" style="background-image: url('img/u11-card.jpeg'); transition-delay: 0.3s;">
                   <div class="card-overlay">
-                     <h3>U-17</h3>
-                     <span class="card-tag">Competencia</span>
+                     <h3>U-11 Formación</h3>
                   </div>
                </div>
-               <div class="category-card reveal" style="background-image: url('img/indumentaria-card.jpg'); transition-delay: 0.4s;">
+               <div class="category-card reveal cat-trigger" data-cat="u13" style="background-image: url('img/u13-card.jpeg'); transition-delay: 0.4s;">
                   <div class="card-overlay">
-                     <h3>Indumentaria</h3>
-                     <span class="card-tag">Oficial</span>
+                     <h3>U-13 Mini Voleibol</h3>
+                  </div>
+               </div>
+               <div class="category-card reveal cat-trigger" data-cat="u15" style="background-image: url('img/u15-card.jpeg'); transition-delay: 0.5s;">
+                  <div class="card-overlay">
+                     <h3>U-15 Infantil (M)</h3>
                   </div>
                </div>
             </div>
          </section>
+
+         <!-- NUEVA SECCIÓN: CALENDARIO -->
+         <section id="calendario" class="calendar-section">
+            <div class="section-title reveal">
+               <h2>Calendario de Actividades</h2>
+               <p>Próximos torneos, juegos y eventos del club.</p>
+            </div>
+            <div class="calendar-container reveal">
+                <div class="calendar-header">
+                    <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                    <h3 id="month-year">Cargando...</h3>
+                    <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+                </div>
+                <div class="calendar-days" id="calendar-days">
+                    <!-- Los días se generan con JS -->
+                </div>
+                <div class="calendar-footer">
+                    <p><i class="fas fa-info-circle"></i> Actualmente visualizando el calendario. Los eventos oficiales se actualizarán pronto.</p>
+                </div>
+            </div>
+         </section>
+
          <section id="contacto" class="map-section">
             <div class="section-title reveal">
                <h2>Ubícanos</h2>
@@ -101,9 +138,9 @@
             </div>
             <div class="contacto-wrapper">
                <div class="map-container reveal-left">
-                  <iframe 
-                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3948.69613592308!2d-70.83131532633556!3d8.233279900939502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e64e90017b2546b%3A0x4e2be2373116db01!2sAcademia%20de%20Voleibol%20JAGUARES!5e0!3m2!1ses!2sve!4v1776648751572!5m2!1ses!2sve" 
-                     allowfullscreen="" 
+                  <iframe
+                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3948.69613592308!2d-70.83131532633556!3d8.233279900939502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e64e90017b2546b%3A0x4e2be2373116db01!2sAcademia%20de%20Voleibol%20JAGUARES!5e0!3m2!1ses!2sve!4v1776648751572!5m2!1ses!2sve"
+                     allowfullscreen=""
                      loading="lazy">
                   </iframe>
                </div>
@@ -134,8 +171,7 @@
             <div class="footer-info">
                <span class="logo-text">Jaguares</span>
                <p>Formando atletas con disciplina y pasión.</p>
-          
-        </div>
+            </div>
             <div class="footer-redes">
                <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" class="social-icon whatsapp"><i class="fab fa-whatsapp"></i></a>
                <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" class="social-icon instagram"><i class="fab fa-instagram"></i></a>
@@ -146,6 +182,44 @@
             <p>© 2026 Club de Voleibol Jaguares. Todos los derechos reservados.</p>
          </div>
       </footer>
+
+      <!-- VENTANA EMERGENTE (MODAL) DE CATEGORÍAS -->
+      <div id="modal-categoria" class="modal-overlay">
+          <div class="modal-content">
+              <button class="close-modal"><i class="fas fa-times"></i></button>
+              <h2 id="modal-titulo">Nombre Categoría</h2>
+
+              <div class="modal-info">
+                  <div class="info-item">
+                      <i class="fas fa-birthday-cake"></i>
+                      <div>
+                          <strong>Edades:</strong>
+                          <span id="modal-edades">...</span>
+                      </div>
+                  </div>
+                  <div class="info-item">
+                      <i class="fas fa-users"></i>
+                      <div>
+                          <strong>Atletas:</strong>
+                          <span id="modal-atletas">...</span>
+                      </div>
+                  </div>
+                  <div class="info-item">
+                      <i class="fas fa-trophy"></i>
+                      <div>
+                          <strong>Participaciones:</strong>
+                          <span id="modal-torneos">...</span>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="modal-gallery">
+                  <img id="modal-img-1" src="" alt="Foto 1">
+                  <img id="modal-img-2" src="" alt="Foto 2">
+              </div>
+          </div>
+      </div>
+
       <script src="script.js"></script>
    </body>
 </html>

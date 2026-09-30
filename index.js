@@ -6,20 +6,21 @@ const path    = require('path');
 const cookieParser = require('cookie-parser');
 const app = express();
 
-
-// ── Guardia de arranque ─────────────────────────────────────────────────────
+// ── Guardia de arranque (solo avisa, no mata el proceso en Vercel) ──────────
 if (!process.env.JWT_SECRET) {
-    console.error('❌ Falta JWT_SECRET en .env. Genera uno con:\n   node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
-    process.exit(1);
+    console.error('❌ Falta JWT_SECRET. Configúralo en las Environment Variables de Vercel.');
+    // En Vercel NO hacemos process.exit(1) porque tumba la función
+    // Solo lo hacemos en local
+    if (process.env.VERCEL !== '1') {
+        process.exit(1);
+    }
 }
 
 const PORT = process.env.PORT || 3000;
 const NODE_ENV    = process.env.NODE_ENV || 'development';
 const TRUST_PROXY = process.env.TRUST_PROXY === '1';
 
-// ── Proxy / HTTPS (solo producción con TRUST_PROXY=1) ──────────────────────
-// En local NUNCA activar, o express creerá que viene de HTTPS y las cookies
-// "secure" no se setearán en http://localhost.
+// ── Proxy / HTTPS ──────────────────────────────────────────────────────────
 if (TRUST_PROXY) {
     app.set('trust proxy', 1);
     app.use((req, res, next) => {
@@ -37,9 +38,8 @@ const allowedOrigins = (process.env.CORS_ORIGIN || `http://localhost:${PORT}`)
 
 app.use(cors({
     origin(origin, cb) {
-        // Permitir peticiones sin origen (como apps móviles o Postman)
-        // o si el origen está en la lista de permitidos
-        if (!origin || allowedOrigins.includes(origin) || origin.includes('onrender.com')) {
+        if (!origin || allowedOrigins.includes(origin) ||
+            origin.includes('vercel.app') || origin.includes('onrender.com')) {
             return cb(null, true);
         }
         cb(new Error('Not allowed by CORS'));
@@ -51,11 +51,7 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
-// ── Estáticos ──────────────────────────────────────────────────────────────
-// /public/admin queda atrás de la verificación de sesión en los paneles HTML;
-// los paneles ya verifican el JWT ellos mismos en DOMContentLoaded y redirigen
-// a login si no hay sesión, que es suficiente para desarrollo local.
-// Para producción: activar verificarSesionRedirect en este middleware.
+// ── Estáticos (en Vercel se sirven automáticamente desde /public) ──────────
 app.use(express.static(path.join(__dirname, './public')));
 
 // ── Rutas API ──────────────────────────────────────────────────────────────
@@ -66,10 +62,8 @@ app.use('/api/pagos',         require('./routes/pagosRoutes'));
 app.use('/api/usuarios',      require('./routes/userRoutes'));
 app.use('/api/atletas',       require('./routes/atletaRoutes'));
 app.use('/api/notificaciones', require('./routes/notificacionesRoutes'));
-const cmsRoutes = require('./routes/cmsRoutes');
-app.use('/api/cms', cmsRoutes);
+app.use('/api/cms',           require('./routes/cmsRoutes'));
 
-// Las rutas de directiva exigen rol; verificarSesionRole ya lleva verificarSesion
 app.use('/api/directiva',
     verificarSesionRole(['admin', 'staff', 'directiva']),
     require('./routes/directivaRoutes')
@@ -83,6 +77,12 @@ app.use((err, req, res, next) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+// ── Exportar para Vercel + listen solo en local ────────────────────────────
+module.exports = app;
+
+// Solo arrancar servidor cuando se ejecuta directamente (local / Docker)
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Servidor corriendo en el puerto ${PORT}`);
+    });
+}

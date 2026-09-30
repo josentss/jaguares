@@ -1,4 +1,3 @@
-// controllers/atletaController.js
 const db = require('../config/db');
 
 // Obtener los atletas asociados a un representante específico
@@ -28,9 +27,6 @@ exports.registrarAtleta = (req, res) => {
     // Recibimos los datos enviados desde el formulario del frontend
     const { nombres, apellidos, cedula, fecha_nac, direccion, telefono, allergies_medicas } = req.body;
 
-    // id_representante ya NO se toma del body: antes, cualquier usuario
-    // logueado podía mandar el id de otro representante y registrarle un
-    // atleta a su nombre (o a un id inventado).
     const id_representante = req.usuarioId;
 
     // Validación de campos obligatorios
@@ -40,7 +36,7 @@ exports.registrarAtleta = (req, res) => {
 
     // CORRECCIÓN TOTAL: 'fecha_nacimiento' y 'alergias_medicas' exactamente como tu MySQL
     const query = `
-        INSERT INTO atletas (id_representante, nombres, apellidos, cedula, fecha_nacimiento, direccion, telefono, alergias_medicas, estado) 
+        INSERT INTO atletas (id_representante, nombres, apellidos, cedula, fecha_nacimiento, direccion, telefono, alergias_medicas, estado)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'espera')
     `;
 

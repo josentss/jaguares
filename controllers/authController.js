@@ -21,10 +21,8 @@ exports.login = (req, res) => {
     }
 
     db.query('SELECT * FROM usuarios WHERE correo = ?', [email], async (err, results) => {
-        if (err) {
-            console.error('LOGIN DB ERROR:', err.code, err.message, err.sqlMessage || '');
-            return res.status(500).json({ success: false, message: 'Error de servidor' });
-        }
+        if (err) return res.status(500).json({ success: false, message: 'Error de servidor' });
+        if (results.length === 0) return res.status(401).json({ success: false, message: 'Usuario no encontrado' });
 
         const usuario = results[0];
 

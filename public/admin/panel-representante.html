@@ -15,7 +15,7 @@
         .notification-wrapper i { font-size: 1.3rem; color: #555; transition: color 0.3s; }
         .notification-wrapper:hover i { color: var(--primary); }
         .notif-badge { position: absolute; top: -6px; right: -8px; background: #e74c3c; color: white; font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 50%; display: none; }
-        
+
         .notif-dropdown { position: absolute; top: 35px; right: -10px; width: 300px; background: white; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 1000; flex-direction: column; overflow: hidden; }
         .notif-dropdown.show { display: flex; }
         .notif-header { padding: 12px 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
@@ -30,12 +30,12 @@
         .n-icon.success { color: #2ecc71; }
         .n-icon.error { color: #e74c3c; }
         .n-icon.info { color: #3498db; }
-        
+
         /* ESTILOS BOTON CONTRASEÑA Y ESTADOS DE CARGA */
         .btn-toggle-password { background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
         .btn-toggle-password:hover { text-decoration: underline; }
         .btn-panel-submit:disabled { background-color: #95a5a6; cursor: not-allowed; opacity: 0.8; }
-        
+
         /* BUSCADOR HISTORIAL */
         .search-box-container { margin-bottom: 15px; display: flex; justify-content: flex-end; }
         .search-box-container input { width: 100%; max-width: 300px; padding: 8px 35px 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-family: 'Poppins', sans-serif; }
@@ -66,12 +66,12 @@
     <div class="main-content">
         <header class="panel-header">
             <h2 id="welcome-text">Bienvenido, Representante</h2>
-            
+
             <div class="header-actions">
                 <div class="notification-wrapper" id="notif-bell">
                     <i class="fas fa-bell"></i>
                     <span class="notif-badge" id="notif-badge">0</span>
-                    
+
                     <div class="notif-dropdown" id="notif-dropdown">
                         <div class="notif-header">
                             <h4>Notificaciones</h4>
@@ -95,7 +95,7 @@
                     <p id="count-atletas">0 Registrados</p>
                 </div>
             </div>
-            
+
             <div class="table-container">
                 <h3>Estatus de mis Atletas Inscritos</h3>
                 <div style="overflow-x: auto;">
@@ -110,25 +110,89 @@
         <section id="sec-atletas" class="panel-section">
             <div class="form-container-panel">
                 <h3><i class="fas fa-id-card"></i> Planilla de Inscripción</h3>
-                <form id="form-add-atleta">
+                <form id="form-add-atleta" enctype="multipart/form-data">
                     <div class="form-grid">
-                        <div class="form-group-panel"><label>Nombres</label><input type="text" id="atl-nombres" required></div>
-                        <div class="form-group-panel"><label>Apellidos</label><input type="text" id="atl-apellidos" required></div>
                         <div class="form-group-panel">
-                            <label style="display:flex; justify-content:space-between; align-items:center;">Cédula de Identidad <span style="font-size:0.8rem; color:#ff6600;"><input type="checkbox" id="atl-has-cedula" onchange="toggleCedulaAtleta()" checked> ¿Tiene propia?</span></label>
-                            <div class="cedula-group" id="group-cedula-input"><select id="atl-nac"><option value="V-">V-</option><option value="E-">E-</option></select><input type="text" id="atl-cedula"></div>
-                            <input type="text" id="atl-cedula-disabled" class="disabled-input" style="display:none;" disabled placeholder="Heredará cédula del representante">
+                            <label>Nombres</label>
+                            <input type="text" id="atl-nombres" name="nombres" required maxlength="80">
                         </div>
-                        <div class="form-group-panel"><label>Fecha Nacimiento</label><input type="date" id="atl-fecha-nac" required></div>
-                        <div class="form-group-panel full-width"><label>Dirección</label><input type="text" id="atl-direccion" required></div>
+                        <div class="form-group-panel">
+                            <label>Apellidos</label>
+                            <input type="text" id="atl-apellidos" name="apellidos" required maxlength="80">
+                        </div>
+
+                        <div class="form-group-panel">
+                            <label style="display:flex; justify-content:space-between; align-items:center;">
+                                Cédula de Identidad
+                                <span style="font-size:0.8rem; color:#ff6600;">
+                                    <input type="checkbox" id="atl-has-cedula" onchange="toggleCedulaAtleta()" checked>
+                                    ¿Tiene propia?
+                                </span>
+                            </label>
+                            <div class="cedula-group" id="group-cedula-input">
+                                <select id="atl-nac">
+                                    <option value="V-">V-</option>
+                                    <option value="E-">E-</option>
+                                </select>
+                                <input type="text" id="atl-cedula" placeholder="Número" inputmode="numeric">
+                            </div>
+                            <input type="text" id="atl-cedula-disabled" class="disabled-input"
+                                   style="display:none;" disabled
+                                   placeholder="Heredará cédula del representante (prefijo H-)">
+                        </div>
+
+                        <div class="form-group-panel">
+                            <label>Fecha Nacimiento</label>
+                            <input type="date" id="atl-fecha-nac" name="fecha_nac" required>
+                        </div>
+
                         <div class="form-group-panel full-width">
-                            <label style="display:flex; justify-content:space-between; align-items:center;">Teléfono de Contacto <span style="font-size:0.8rem; color:#ff6600;"><input type="checkbox" id="atl-has-telefono" onchange="toggleTelefonoAtleta()" checked> ¿Tiene propio?</span></label>
-                            <input type="text" id="atl-telefono">
-                            <input type="text" id="atl-telefono-disabled" class="disabled-input" style="display:none;" disabled placeholder="Heredará el teléfono del representante">
+                            <label>Dirección</label>
+                            <input type="text" id="atl-direccion" name="direccion" required maxlength="255">
+                        </div>
+
+                        <div class="form-group-panel full-width">
+                            <label style="display:flex; justify-content:space-between; align-items:center;">
+                                Teléfono de Contacto
+                                <span style="font-size:0.8rem; color:#ff6600;">
+                                    <input type="checkbox" id="atl-has-telefono" onchange="toggleTelefonoAtleta()" checked>
+                                    ¿Tiene propio?
+                                </span>
+                            </label>
+                            <input type="text" id="atl-telefono" name="telefono">
+                            <input type="text" id="atl-telefono-disabled" class="disabled-input"
+                                   style="display:none;" disabled
+                                   placeholder="Heredará el teléfono del representante">
                         </div>
                     </div>
-                    <div class="form-group-panel full-width" style="margin-top: 15px; margin-bottom: 15px;"><label>Alergias o Condiciones Médicas</label><textarea id="atl-alergias" rows="2" placeholder="Opcional..."></textarea></div>
-                    <button type="submit" class="btn-panel-submit">Registrar Atleta <i class="fas fa-save"></i></button>
+
+                    <div class="form-group-panel full-width" style="margin-top:15px; margin-bottom:15px;">
+                        <label>Alergias o Condiciones Médicas</label>
+                        <textarea id="atl-alergias" name="allergies_medicas" rows="2" placeholder="Opcional..." maxlength="500"></textarea>
+                    </div>
+
+                    <!-- Documentos -->
+                    <div class="form-grid" style="margin-top:10px; border-top:1px dashed #ddd; padding-top:15px;">
+                        <div class="form-group-panel">
+                            <label>Foto del atleta <small style="color:#888;">(JPG/PNG/WebP, máx. 8 MB)</small></label>
+                            <input type="file" id="atl-foto" name="foto" accept="image/jpeg,image/png,image/webp">
+                            <div id="preview-foto" style="display:none; margin-top:8px; text-align:center;">
+                                <img id="atl-preview-foto" alt="Vista previa" style="max-height:120px; border-radius:8px; object-fit:cover;">
+                            </div>
+                        </div>
+                        <div class="form-group-panel">
+                            <label>Cédula (escaneada) <small style="color:#888;">(imagen o PDF)</small></label>
+                            <input type="file" id="atl-cedula-archivo" name="cedula_archivo" accept="image/jpeg,image/png,image/webp,application/pdf">
+                        </div>
+                        <div class="form-group-panel">
+                            <label>Partida de nacimiento <small style="color:#888;">(imagen o PDF)</small></label>
+                            <input type="file" id="atl-partida" name="partida_nacimiento" accept="image/jpeg,image/png,image/webp,application/pdf">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-panel-submit" style="margin-top:20px;">
+                        Registrar Atleta <i class="fas fa-save"></i>
+                    </button>
                 </form>
             </div>
         </section>
@@ -142,7 +206,7 @@
                         <div class="form-group-panel"><label>Mes a Pagar</label><select id="pay-mes" required><option value="Enero">Enero</option><option value="Febrero">Febrero</option><option value="Marzo">Marzo</option><option value="Abril">Abril</option><option value="Mayo">Mayo</option><option value="Junio">Junio</option><option value="Julio">Julio</option><option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Diciembre">Diciembre</option></select></div>
                         <div class="form-group-panel full-width"><label>Método de Pago</label><select id="pay-metodo" required onchange="toggleMetodoPago()"><option value="">-- Seleccione método --</option><option value="Transferencia Bancaria">Transferencia Bancaria / Pago Móvil</option><option value="Efectivo">Efectivo</option></select></div>
                     </div>
-                    
+
                     <div id="panel-transferencia" class="hidden-section">
                         <div class="form-grid" style="margin-top: 15px;">
                             <div class="form-group-panel"><label>Monto (Bs)</label><input type="number" step="0.01" id="pay-monto-trans"></div>
@@ -158,7 +222,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div id="panel-efectivo" class="hidden-section">
                         <div class="form-grid" style="margin-top: 15px;">
                             <div class="form-group-panel"><label>Monto</label><input type="number" step="0.01" id="pay-monto-efec"></div>
@@ -175,7 +239,7 @@
             <div class="table-container">
                 <h3><i class="fas fa-history"></i> Mi Historial de Pagos</h3>
                 <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Aquí puedes llevar el control y demostrar el respaldo de todos los reportes enviados al club.</p>
-                
+
                 <div class="search-box-container">
                     <div class="search-wrapper">
                         <input type="text" id="search-historial" placeholder="Buscar mes, atleta o estado...">
@@ -213,7 +277,7 @@
                         <div class="form-group-panel"><label>Correo</label><input type="email" id="perfil-correo" disabled style="background:#f4f4f4;"></div>
                         <div class="form-group-panel"><label>Teléfono Principal</label><input type="text" id="perfil-tel1" required></div>
                         <div class="form-group-panel"><label>Teléfono Secundario</label><input type="text" id="perfil-tel2"></div>
-                        
+
                         <div class="form-group-panel full-width" style="border-top: 1px dashed #ccc; margin-top: 15px; padding-top: 15px;">
                             <button type="button" class="btn-toggle-password" id="btn-toggle-password">
                                 <i class="fas fa-lock"></i> ¿Desea cambiar su contraseña?
@@ -242,7 +306,7 @@
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             let iconClass = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
-            
+
             toast.innerHTML = `<i class="fas ${iconClass} toast-icon"></i> <div class="toast-message">${message}</div>`;
             container.appendChild(toast);
             setTimeout(() => {
@@ -256,7 +320,7 @@
             const metodo = document.getElementById('pay-metodo').value;
             const transPanel = document.getElementById('panel-transferencia');
             const efecPanel = document.getElementById('panel-efectivo');
-            
+
             if (metodo === 'Transferencia Bancaria') {
                 transPanel.style.display = 'block';
                 efecPanel.style.display = 'none';
@@ -303,7 +367,7 @@
                     if (!userData || userData.rol !== 'representante') { window.location.href = 'login.html'; return; }
 
                     document.getElementById('welcome-text').textContent = `Bienvenido, ${userData.nombres}`;
-            
+
             const userBadge = document.querySelector('.header-actions .user-badge');
             if (userBadge) {
                 userBadge.innerHTML = `<i class="fas fa-user"></i> Representante: ${userData.nombres} ${userData.apellidos}`;
@@ -342,11 +406,11 @@
                         }
                     });
                     const data = await res.json();
-                    
+
                     if(data.success) {
                         const listDiv = document.getElementById('notif-list');
                         const badge = document.getElementById('notif-badge');
-                        
+
                         if (!data.notificaciones || data.notificaciones.length === 0) {
                             listDiv.innerHTML = '<div class="notif-item empty">No tienes notificaciones recientes.</div>';
                             badge.style.display = 'none';
@@ -354,12 +418,12 @@
                             badge.style.display = 'block';
                             badge.textContent = data.notificaciones.length;
                             listDiv.innerHTML = '';
-                            
+
                             data.notificaciones.forEach(notif => {
                                 let iconClass = notif.tipo === 'success' ? 'fa-check-circle' : (notif.tipo === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
                                 let dateObj = new Date(notif.fecha);
                                 let fechaStr = dateObj.toLocaleDateString('es-VE') + ' - ' + dateObj.toLocaleTimeString('es-VE', {hour: '2-digit', minute:'2-digit'});
-                                
+
                                 listDiv.innerHTML += `
                                     <div class="notif-item">
                                         <i class="fas ${iconClass} n-icon ${notif.tipo}"></i>
@@ -378,7 +442,7 @@
             document.getElementById('btn-clear-notifs').addEventListener('click', async function(e) {
                 e.stopPropagation();
                 try {
-                    const res = await apiFetch(`/api/notificaciones/${userData.id_usuario}`, { 
+                    const res = await apiFetch(`/api/notificaciones/${userData.id_usuario}`, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
@@ -425,7 +489,7 @@
                         showToast('Formato inválido. Por favor, selecciona solo imágenes.', 'error');
                         this.value = ''; previewContainer.style.display = 'none'; return;
                     }
-                    if (file.size > 5 * 1024 * 1024) { 
+                    if (file.size > 5 * 1024 * 1024) {
                         showToast('La imagen es muy pesada. El límite es 5MB.', 'error');
                         this.value = ''; previewContainer.style.display = 'none'; return;
                     }
@@ -444,7 +508,7 @@
                     this.style.color = '#e74c3c';
                 } else {
                     container.style.display = 'none';
-                    document.getElementById('perfil-password').value = ''; 
+                    document.getElementById('perfil-password').value = '';
                     this.innerHTML = '<i class="fas fa-lock"></i> ¿Desea cambiar su contraseña?';
                     this.style.color = 'var(--primary)';
                 }
@@ -480,16 +544,16 @@
                             'Content-Type': 'application/json',
                         }
                     });
-                    
+
                     const data = await response.json();
-                    
+
                     if (data.success && data.atletas) {
                         const tbody = document.querySelector('#table-my-atletas tbody');
                         const selectAtleta = document.getElementById('pay-atleta');
-                        
+
                         document.getElementById('count-atletas').textContent = `${data.atletas.length} Registrados`;
                         selectAtleta.innerHTML = '<option value="">-- Seleccione --</option>';
-                        
+
                         if (data.atletas.length === 0) {
                             tbody.innerHTML = `<tr><td colspan="3" style="text-align: center;">Sin atletas inscritos.</td></tr>`;
                             return;
@@ -505,14 +569,14 @@
                                 <td>${atleta.cedula || 'N/A'}</td>
                                 <td><span class="status-badge ${badgeClass}">${estadoTexto}</span></td>
                             </tr>`;
-                            
+
                             selectAtleta.innerHTML += `<option value="${atleta.id_atleta}">${atleta.nombres} ${atleta.apellidos}</option>`;
                         });
 
                         tbody.innerHTML = htmlContenido;
                     }
-                } catch (error) { 
-                    console.error("Error al cargar atletas en el panel:", error); 
+                } catch (error) {
+                    console.error("Error al cargar atletas en el panel:", error);
                 }
             }
 
@@ -530,9 +594,9 @@
                     if (data.success && data.datos) {
                         const tbody = document.querySelector('#table-my-pagos tbody');
                         tbody.innerHTML = '';
-                        
+
                         const pagosFiltrados = data.datos.filter(p => p.mes_pagado !== null);
-                        
+
                         if(pagosFiltrados.length === 0) {
                             tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No hay reportes de pagos.</td></tr>`;
                             return;
@@ -541,7 +605,7 @@
                         pagosFiltrados.forEach(pago => {
                             let badgeClass = pago.estado_pago === 'aprobado' ? 'estado-activo' : (pago.estado_pago === 'rechazado' ? 'estado-inactivo' : 'estado-espera');
                             let fechaStr = pago.fecha_pago ? new Date(pago.fecha_pago).toLocaleDateString('es-VE') : 'N/A';
-                            
+
                             tbody.innerHTML += `<tr>
                                 <td>${fechaStr}</td>
                                 <td>${pago.atl_nombres} ${pago.atl_apellidos}</td>
@@ -555,10 +619,10 @@
             }
 
             // Inicialización coordinada de datos
-            cargarPerfil().then(() => { 
-                cargarAtletasPanel(); 
-                cargarHistorialPagos(); 
-                cargarNotificacionesServidor(); 
+            cargarPerfil().then(() => {
+                cargarAtletasPanel();
+                cargarHistorialPagos();
+                cargarNotificacionesServidor();
             });
 
             // Consulta automática de notificaciones cada 15 segundos
@@ -585,7 +649,7 @@
                 try {
                     const res = await apiFetch('/api/usuarios/perfil', {
                         method: 'PUT',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify(updatedData)
@@ -598,15 +662,15 @@
                         localStorage.setItem('usuario', JSON.stringify(userData));
                         document.getElementById('welcome-text').textContent = `Bienvenido, ${userData.nombres}`;
                         document.getElementById('perfil-password').value = "";
-                        
+
                         const pContainer = document.getElementById('password-field-container');
                         if(pContainer) pContainer.style.display = "none";
                         document.getElementById('btn-toggle-password').innerHTML = '<i class="fas fa-lock"></i> ¿Desea cambiar su contraseña?';
                         document.getElementById('btn-toggle-password').style.color = 'var(--primary)';
                         await cargarPerfil();
                     } else { showToast(data.message || 'Error al actualizar', 'error'); }
-                } catch (err) { 
-                    showToast('Error al conectar con el servidor.', 'error'); 
+                } catch (err) {
+                    showToast('Error al conectar con el servidor.', 'error');
                 } finally {
                     btn.innerHTML = btnText;
                     btn.disabled = false;
@@ -614,53 +678,82 @@
             });
 
             // --- SUBMIT: PLANILLA DE INSCRIPCIÓN DE ATLETAS ---
+            // Preview de foto
+            document.getElementById('atl-foto')?.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                const box = document.getElementById('preview-foto');
+                const img = document.getElementById('atl-preview-foto');
+                if (file && file.type.startsWith('image/')) {
+                    img.src = URL.createObjectURL(file);
+                    box.style.display = 'block';
+                } else {
+                    box.style.display = 'none';
+                    img.src = '';
+                }
+            });
+
             document.getElementById('form-add-atleta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const btn = e.target.querySelector('button[type="submit"]');
                 const btnText = btn.innerHTML;
-                
+
                 const hasCedula = document.getElementById('atl-has-cedula').checked;
-                let cedulaFinal = hasCedula ? document.getElementById('atl-nac').value + document.getElementById('atl-cedula').value.trim() : repCache.cedula;
                 const hasTelefono = document.getElementById('atl-has-telefono').checked;
-                let telefonoFinal = hasTelefono ? document.getElementById('atl-telefono').value.trim() : repCache.telefono1;
+
+                let telefonoFinal = hasTelefono
+                    ? document.getElementById('atl-telefono').value.trim()
+                    : (repCache?.telefono1 || '');
 
                 btn.innerHTML = 'Procesando... <i class="fas fa-spinner fa-spin"></i>';
                 btn.disabled = true;
 
-                const atletaData = {
-                    nombres: document.getElementById('atl-nombres').value,
-                    apellidos: document.getElementById('atl-apellidos').value,
-                    cedula: cedulaFinal,
-                    fecha_nac: document.getElementById('atl-fecha-nac').value,
-                    direccion: document.getElementById('atl-direccion').value,
-                    telefono: telefonoFinal,
-                    allergies_medicas: document.getElementById('atl-alergias').value
-                };
+                const fd = new FormData();
+                fd.append('nombres', document.getElementById('atl-nombres').value.trim());
+                fd.append('apellidos', document.getElementById('atl-apellidos').value.trim());
+                fd.append('fecha_nac', document.getElementById('atl-fecha-nac').value);
+                fd.append('direccion', document.getElementById('atl-direccion').value.trim());
+                fd.append('telefono', telefonoFinal);
+                fd.append('allergies_medicas', document.getElementById('atl-alergias').value.trim());
+                fd.append('hereda_cedula', hasCedula ? '0' : '1');
+
+                if (hasCedula) {
+                    const nac = document.getElementById('atl-nac').value;
+                    const num = document.getElementById('atl-cedula').value.trim().replace(/\s+/g, '');
+                    fd.append('cedula', nac + num);
+                }
+
+                const foto = document.getElementById('atl-foto').files[0];
+                const cedulaArch = document.getElementById('atl-cedula-archivo').files[0];
+                const partida = document.getElementById('atl-partida').files[0];
+                if (foto) fd.append('foto', foto);
+                if (cedulaArch) fd.append('cedula_archivo', cedulaArch);
+                if (partida) fd.append('partida_nacimiento', partida);
 
                 try {
-                    const res = await apiFetch('/api/atletas/registrar-atleta', { 
-                        method: 'POST', 
-                        headers: { 
-                            'Content-Type': 'application/json',
-                        }, 
-                        body: JSON.stringify(atletaData) 
+                    // NO pongas Content-Type manual: el browser lo setea con el boundary
+                    const res = await apiFetch('/api/atletas/registrar-atleta', {
+                        method: 'POST',
+                        body: fd
                     });
                     const data = await res.json();
+
                     if (data.success) {
                         showToast('¡Atleta registrado y en espera de aprobación!', 'success');
-                        e.target.reset(); 
-                        toggleCedulaAtleta(); 
+                        e.target.reset();
+                        document.getElementById('preview-foto').style.display = 'none';
+                        toggleCedulaAtleta();
                         toggleTelefonoAtleta();
-                        cargarAtletasPanel(); 
-                        document.querySelector('[data-target="sec-inicio"]').click(); 
+                        cargarAtletasPanel();
+                        document.querySelector('[data-target="sec-inicio"]')?.click();
                     } else {
                         showToast(data.message || 'Error al registrar', 'error');
                     }
-                } catch (err) { 
-                    showToast('Error en el servidor', 'error'); 
-                } finally { 
-                    btn.innerHTML = btnText; 
-                    btn.disabled = false; 
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error en el servidor', 'error');
+                } finally {
+                    btn.innerHTML = btnText;
+                    btn.disabled = false;
                 }
             });
 
@@ -669,7 +762,7 @@
                 e.preventDefault();
                 const form = e.target;
                 const metodo = document.getElementById('pay-metodo').value;
-                
+
                 // Obtenemos los datos de sesión actuales
                 const userData = JSON.parse(localStorage.getItem('usuario'));
                 if (!userData) {
@@ -684,7 +777,7 @@
 
                 // 1. CREACIÓN MANUAL DEL FORMDATA
                 const formData = new FormData();
-                
+
                 // Datos comunes
                 formData.append('id_atleta', document.getElementById('pay-atleta').value);
                 formData.append('mes', document.getElementById('pay-mes').value);
@@ -696,7 +789,7 @@
                     formData.append('referencia', document.getElementById('pay-referencia').value);
                     formData.append('fecha_pago', document.getElementById('pay-fecha-trans').value);
                     formData.append('moneda', 'Bs'); // Por defecto para transferencias
-                    
+
                     // Adjuntar la imagen exactamente con el nombre 'captura'
                     const fileInput = document.getElementById('pay-captura');
                     if (fileInput.files.length > 0) {
@@ -714,25 +807,25 @@
                 }
 
                 try {
-                    const res = await apiFetch('/api/pagos/reportar', { 
-                        method: 'POST', 
-                        body: formData 
+                    const res = await apiFetch('/api/pagos/reportar', {
+                        method: 'POST',
+                        body: formData
                     });
-                    
+
                     const data = await res.json();
                     if (data.success) {
                         showToast('Pago reportado con éxito', 'success');
-                        form.reset(); 
+                        form.reset();
                         document.getElementById('preview-container').style.display = 'none';
                         document.getElementById('panel-transferencia').style.display = 'none';
                         document.getElementById('panel-efectivo').style.display = 'none';
-                        cargarHistorialPagos(); 
+                        cargarHistorialPagos();
                     } else {
                         showToast(data.message || 'Error al enviar pago', 'error');
                     }
-                } catch (err) { 
-                    showToast('Error de conexión con el servidor', 'error'); 
-                } finally { 
+                } catch (err) {
+                    showToast('Error de conexión con el servidor', 'error');
+                } finally {
                     btn.disabled = false;
                     btn.innerHTML = btnText;
                 }

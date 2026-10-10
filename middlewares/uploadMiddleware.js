@@ -45,13 +45,12 @@ const uploadNoticias = multer({
 });
 
 // ── Documentos del atleta (foto + cédula + partida) ────────────────────────
-// resource_type: 'auto' evita el 400 al mezclar imagen y PDF en el mismo request
 const storageAtletas = new CloudinaryStorage({
     cloudinary,
     params: {
         folder: 'jaguares/atletas',
         resource_type: 'auto',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+        // NO poner allowed_formats aquí: rompe la firma de Cloudinary
         public_id: (req, file) =>
             `${Date.now()}-${file.fieldname}-${Math.random().toString(36).slice(2, 8)}`
     }
@@ -59,7 +58,7 @@ const storageAtletas = new CloudinaryStorage({
 
 const uploadAtleta = multer({
     storage: storageAtletas,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB por archivo (seguro en Vercel)
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const okImage = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         const okDoc = [...okImage, 'application/pdf', 'application/x-pdf'];

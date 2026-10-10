@@ -9,7 +9,7 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// ── Comprobantes de pago (existente) ───────────────────────────────────────
+// ── Comprobantes de pago ───────────────────────────────────────────────────
 const storage = new CloudinaryStorage({
     cloudinary,
     params: {
@@ -24,7 +24,7 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// ── Noticias CMS (existente) ───────────────────────────────────────────────
+// ── Noticias CMS ───────────────────────────────────────────────────────────
 const storageNoticias = new CloudinaryStorage({
     cloudinary,
     params: {
@@ -44,43 +44,38 @@ const uploadNoticias = multer({
     }
 });
 
-// ── Documentos del atleta (NUEVO) ──────────────────────────────────────────
-// Foto: solo imágenes
-// Cédula y partida: imágenes o PDF
+// ── Documentos del atleta (foto + cédula + partida) ────────────────────────
+// resource_type: 'auto' evita el 400 al mezclar imagen y PDF en el mismo request
 const storageAtletas = new CloudinaryStorage({
     cloudinary,
-    params: async (req, file) => {
-        const isPdf = file.mimetype === 'application/pdf';
-        return {
-            folder: 'jaguares/atletas',
-            resource_type: isPdf ? 'raw' : 'image',
-            allowed_formats: isPdf ? ['pdf'] : ['jpg', 'jpeg', 'png', 'webp'],
-            public_id: `${Date.now()}-${file.fieldname}-${Math.random().toString(36).slice(2, 8)}`,
-            ...(isPdf ? {} : { transformation: [{ width: 1600, crop: 'limit', quality: 'auto' }] })
-        };
+    params: {
+        folder: 'jaguares/atletas',
+        resource_type: 'auto',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+        public_id: (req, file) =>
+            `${Date.now()}-${file.fieldname}-${Math.random().toString(36).slice(2, 8)}`
     }
 });
 
 const uploadAtleta = multer({
     storage: storageAtletas,
-    limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB por archivo (seguro en Vercel)
     fileFilter: (req, file, cb) => {
-        const allowedImages = ['image/jpeg', 'image/png', 'image/webp'];
-        const allowedDocs = [...allowedImages, 'application/pdf'];
+        const okImage = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        const okDoc = [...okImage, 'application/pdf', 'application/x-pdf'];
 
         if (file.fieldname === 'foto') {
-            if (allowedImages.includes(file.mimetype)) return cb(null, true);
+            if (okImage.includes(file.mimetype)) return cb(null, true);
             return cb(new Error('La foto debe ser JPG, PNG o WebP'));
         }
-        if (['cedula_archivo', 'partida_nacimiento'].includes(file.fieldname)) {
-            if (allowedDocs.includes(file.mimetype)) return cb(null, true);
-            return cb(new Error('Cédula y partida deben ser imagen o PDF'));
+        if (file.fieldname === 'cedula_archivo' || file.fieldname === 'partida_nacimiento') {
+            if (okDoc.includes(file.mimetype)) return cb(null, true);
+            return cb(new Error('Cédula y partida deben ser imagen (JPG/PNG/WebP) o PDF'));
         }
-        return cb(new Error('Campo de archivo no permitido'));
+        return cb(new Error(`Campo de archivo no permitido: ${file.fieldname}`));
     }
 });
 
-// Campos esperados del formulario de atleta
 const uploadAtletaFields = uploadAtleta.fields([
     { name: 'foto', maxCount: 1 },
     { name: 'cedula_archivo', maxCount: 1 },
@@ -88,14 +83,30 @@ const uploadAtletaFields = uploadAtleta.fields([
 ]);
 
 const handleUploadError = (err, req, res, next) => {
+    console.error('UPLOAD ERROR:', err?.code || '', err?.message || err);
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ success: false, message: 'Archivo demasiado grande (máx. 8 MB)' });
+            return res.status(400).json({
+                success: false,
+                message: 'Archivo demasiado grande (máximo 5 MB por archivo)'
+            });
         }
-        return res.status(400).json({ success: false, message: 'Error de carga: ' + err.message });
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(400).json({
+                success: false,
+                message: 'Campo de archivo inesperado. Usa: foto, cedula_archivo, partida_nacimiento'
+            });
+        }
+        return res.status(400).json({
+            success: false,
+            message: 'Error de carga: ' + err.message
+        });
     }
     if (err) {
-        return res.status(400).json({ success: false, message: err.message || 'Error al subir archivo' });
+        return res.status(400).json({
+            success: false,
+            message: err.message || 'Error al subir archivo'
+        });
     }
     next();
 };

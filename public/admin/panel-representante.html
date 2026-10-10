@@ -735,7 +735,7 @@
                         method: 'POST',
                         body: fd
                     });
-                    const data = await res.json();
+                    const data = await res.json().catch(() => ({}));
 
                     if (data.success) {
                         showToast('¡Atleta registrado y en espera de aprobación!', 'success');
@@ -746,11 +746,11 @@
                         cargarAtletasPanel();
                         document.querySelector('[data-target="sec-inicio"]')?.click();
                     } else {
-                        showToast(data.message || 'Error al registrar', 'error');
+                        showToast(data.message || `Error al registrar (${res.status})`, 'error');
                     }
                 } catch (err) {
                     console.error(err);
-                    showToast('Error en el servidor', 'error');
+                    showToast('Error de conexión con el servidor', 'error');
                 } finally {
                     btn.innerHTML = btnText;
                     btn.disabled = false;

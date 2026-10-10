@@ -10,13 +10,15 @@ router.get(
     atletaController.obtenerAtletasPorRepresentante
 );
 
-// multipart/form-data: texto + hasta 3 archivos
 router.post(
     '/registrar-atleta',
     verificarSesion,
     (req, res, next) => {
         uploadAtletaFields(req, res, (err) => {
-            if (err) return handleUploadError(err, req, res, next);
+            if (err) {
+                console.error('UPLOAD ATLETA ERROR:', err.message || err);
+                return handleUploadError(err, req, res, next);
+            }
             next();
         });
     },

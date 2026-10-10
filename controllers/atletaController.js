@@ -1,29 +1,28 @@
 const db = require('../config/db');
 const { normalizarTexto } = require('../utils/validators');
 
-// ── Helpers ────────────────────────────────────────────────────────────────
 function urlDeArchivo(file) {
     if (!file) return null;
-    // Cloudinary (multer-storage-cloudinary) expone .path como URL segura
     return file.path || file.secure_url || null;
 }
 
 function construirCedulaHeredada(cedulaRep) {
-    // Prefijo H- para identificar que es heredada (estilo similar al RIF J-...)
     const limpia = String(cedulaRep || '').trim();
     if (!limpia) return null;
     if (limpia.startsWith('H-')) return limpia;
     return `H-${limpia}`;
 }
 
-// ── Listar atletas de un representante ─────────────────────────────────────
 exports.obtenerAtletasPorRepresentante = (req, res) => {
     const { id } = req.params;
     const esDirectiva = ['directiva', 'staff', 'admin'].includes(req.usuarioRol);
     const esDueño = String(req.usuarioId) === String(id);
 
     if (!esDueño && !esDirectiva) {
-        return res.status(403).json({ success: false, message: 'No puedes ver los atletas de otro representante' });
+        return res.status(403).json({
+            success: false,
+            message: 'No puedes ver los atletas de otro representante'
+        });
     }
 
     const query = `
@@ -43,40 +42,38 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
     });
 };
 
-// ── Registrar atleta (con archivos opcionales) ─────────────────────────────
 exports.registrarAtleta = (req, res) => {
     const id_representante = req.usuarioId;
 
     const nombres   = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
-    const fecha_nac = (req.body.fecha_nac || '').trim();
+    const fecha_nac = String(req.body.fecha_nac || '').trim();
     const direccion = normalizarTexto(req.body.direccion, 255);
     const telefono  = normalizarTexto(req.body.telefono, 30);
-    const alergias  = normalizarTexto(req.body.allergies_medicas || req.body.alergias_medicas || '', 500);
+    const alergias  = normalizarTexto(
+        req.body.allergies_medicas || req.body.alergias_medicas || '',
+        500
+    );
 
-    // Flag que envía el frontend: "1" | "true" | true
     const heredaCedula = ['1', 'true', true, 'on'].includes(req.body.hereda_cedula);
 
-    if (!id_representante || !nombres || !apellidos || !fecha_nac) {
+    if (!id_representante || !nombres || !apellidos || !fecha_nac || !direccion) {
         return res.status(400).json({
             success: false,
-            message: 'Faltan campos obligatorios (nombres, apellidos, fecha de nacimiento)'
+            message: 'Faltan campos obligatorios (nombres, apellidos, fecha de nacimiento, dirección)'
         });
     }
 
-    // Validar fecha (formato YYYY-MM-DD y no futura)
-    const fecha = new Date(fecha_nac);
+    const fecha = new Date(fecha_nac + 'T12:00:00');
     if (Number.isNaN(fecha.getTime()) || fecha > new Date()) {
         return res.status(400).json({ success: false, message: 'Fecha de nacimiento inválida' });
     }
 
-    // Archivos (multer.fields)
     const files = req.files || {};
-    const fotoUrl     = urlDeArchivo(files.foto?.[0]);
-    const cedulaUrl   = urlDeArchivo(files.cedula_archivo?.[0]);
-    const partidaUrl  = urlDeArchivo(files.partida_nacimiento?.[0]);
+    const fotoUrl    = urlDeArchivo(files.foto?.[0]);
+    const cedulaUrl  = urlDeArchivo(files.cedula_archivo?.[0]);
+    const partidaUrl = urlDeArchivo(files.partida_nacimiento?.[0]);
 
-    // Si hereda cédula, necesitamos la del representante
     const continuarConCedula = (cedulaFinal, cedulaHeredadaFlag) => {
         const query = `
             INSERT INTO atletas (
@@ -93,7 +90,7 @@ exports.registrarAtleta = (req, res) => {
             cedulaFinal,
             cedulaHeredadaFlag ? 1 : 0,
             fecha_nac,
-            direccion || null,
+            direccion,
             telefono || null,
             alergias || null,
             fotoUrl,
@@ -105,9 +102,15 @@ exports.registrarAtleta = (req, res) => {
             if (err) {
                 console.error('Error al insertar atleta:', err.code, err.message);
                 if (err.code === 'ER_DUP_ENTRY') {
-                    return res.status(409).json({ success: false, message: 'Ya existe un atleta con esa cédula' });
+                    return res.status(409).json({
+                        success: false,
+                        message: 'Ya existe un atleta con esa cédula'
+                    });
                 }
-                return res.status(500).json({ success: false, message: 'Error al registrar al atleta' });
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error al registrar al atleta'
+                });
             }
 
             res.json({
@@ -126,7 +129,6 @@ exports.registrarAtleta = (req, res) => {
     };
 
     if (heredaCedula) {
-        // Obtener cédula del representante
         db.query(
             'SELECT cedula FROM usuarios WHERE id_usuario = ? LIMIT 1',
             [id_representante],
@@ -143,16 +145,14 @@ exports.registrarAtleta = (req, res) => {
                 if (!cedulaRep) {
                     return res.status(400).json({
                         success: false,
-                        message: 'El representante no tiene cédula registrada en su perfil. Actualiza tu perfil primero.'
+                        message: 'El representante no tiene cédula en su perfil. Actualízala primero.'
                     });
                 }
 
-                const cedulaFinal = construirCedulaHeredada(cedulaRep);
-                continuarConCedula(cedulaFinal, true);
+                continuarConCedula(construirCedulaHeredada(cedulaRep), true);
             }
         );
     } else {
-        // Cédula propia (puede venir como "V-12345678" o solo el número + nacionalidad)
         let cedulaRaw = normalizarTexto(req.body.cedula, 30);
         if (!cedulaRaw) {
             return res.status(400).json({
@@ -160,7 +160,6 @@ exports.registrarAtleta = (req, res) => {
                 message: 'Debes indicar la cédula del atleta o marcar que hereda la del representante'
             });
         }
-        // Normalizar: quitar espacios
         cedulaRaw = cedulaRaw.replace(/\s+/g, '');
         continuarConCedula(cedulaRaw, false);
     }

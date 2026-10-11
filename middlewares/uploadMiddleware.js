@@ -50,9 +50,19 @@ const storageAtletas = new CloudinaryStorage({
     params: {
         folder: 'jaguares/atletas',
         resource_type: 'auto',
-        // NO poner allowed_formats aquí: rompe la firma de Cloudinary
-        public_id: (req, file) =>
-            `${Date.now()}-${file.fieldname}-${Math.random().toString(36).slice(2, 8)}`
+        public_id: (req, file) => {
+            const base = `${Date.now()}-${file.fieldname}-${Math.random().toString(36).slice(2, 8)}`;
+            // Extensión según mimetype (evita public_id sin .pdf)
+            const ext =
+                file.mimetype === 'application/pdf' || file.mimetype === 'application/x-pdf'
+                    ? 'pdf'
+                    : file.mimetype === 'image/png'
+                      ? 'png'
+                      : file.mimetype === 'image/webp'
+                        ? 'webp'
+                        : 'jpg';
+            return `${base}.${ext}`;
+        }
     }
 });
 

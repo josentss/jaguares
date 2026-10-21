@@ -10,6 +10,13 @@ router.get(
     atletaController.obtenerAtletasPorRepresentante
 );
 
+// Planilla completa — debe ir ANTES de rutas genéricas si las hubiera
+router.get(
+    '/:id',
+    verificarSesion,
+    atletaController.obtenerAtletaPorId
+);
+
 router.post(
     '/registrar-atleta',
     verificarSesion,

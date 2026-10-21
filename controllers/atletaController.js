@@ -164,3 +164,93 @@ exports.registrarAtleta = (req, res) => {
         continuarConCedula(cedulaRaw, false);
     }
 };
+
+// ── Ficha completa (planilla) ──────────────────────────────────────────────
+exports.obtenerAtletaPorId = (req, res) => {
+    const { id } = req.params;
+    const idNum = parseInt(id, 10);
+
+    if (!idNum || idNum < 1) {
+        return res.status(400).json({ success: false, message: 'ID de atleta no válido' });
+    }
+
+    const query = `
+        SELECT
+            a.id_atleta,
+            a.id_representante,
+            a.nombres,
+            a.apellidos,
+            a.cedula,
+            a.cedula_heredada,
+            a.fecha_nacimiento,
+            a.direccion,
+            a.telefono,
+            a.alergias_medicas,
+            a.foto_url,
+            a.cedula_archivo_url,
+            a.partida_nacimiento_url,
+            a.estado,
+            u.nombres   AS rep_nombres,
+            u.apellidos AS rep_apellidos,
+            u.correo    AS rep_correo,
+            u.telefono1 AS rep_telefono1,
+            u.telefono2 AS rep_telefono2,
+            u.cedula    AS rep_cedula
+        FROM atletas a
+        LEFT JOIN usuarios u ON a.id_representante = u.id_usuario
+        WHERE a.id_atleta = ?
+        LIMIT 1
+    `;
+
+    db.query(query, [idNum], (err, rows) => {
+        if (err) {
+            console.error('Error al obtener planilla:', err.code, err.message);
+            return res.status(500).json({ success: false, message: 'Error al consultar el atleta' });
+        }
+
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Atleta no encontrado' });
+        }
+
+        const a = rows[0];
+        const esDirectiva = ['directiva', 'staff', 'admin'].includes(req.usuarioRol);
+        const esDueño = String(req.usuarioId) === String(a.id_representante);
+
+        if (!esDirectiva && !esDueño) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para ver esta planilla'
+            });
+        }
+
+        res.json({
+            success: true,
+            atleta: {
+                id_atleta: a.id_atleta,
+                nombres: a.nombres,
+                apellidos: a.apellidos,
+                cedula: a.cedula,
+                cedula_heredada: !!a.cedula_heredada,
+                fecha_nacimiento: a.fecha_nacimiento,
+                direccion: a.direccion,
+                telefono: a.telefono,
+                alergias_medicas: a.alergias_medicas,
+                estado: a.estado,
+                documentos: {
+                    foto_url: a.foto_url || null,
+                    cedula_archivo_url: a.cedula_archivo_url || null,
+                    partida_nacimiento_url: a.partida_nacimiento_url || null
+                },
+                representante: {
+                    id_representante: a.id_representante,
+                    nombres: a.rep_nombres,
+                    apellidos: a.rep_apellidos,
+                    correo: a.rep_correo,
+                    telefono1: a.rep_telefono1,
+                    telefono2: a.rep_telefono2,
+                    cedula: a.rep_cedula
+                }
+            }
+        });
+    });
+};

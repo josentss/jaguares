@@ -30,6 +30,64 @@
 
         .search-box { width: 100%; max-width: 300px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.3s; }
         .search-box:focus { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1); }
+
+        .modal-planilla {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 720px;
+            width: 94%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            position: relative;
+            text-align: left;
+        }
+        .modal-planilla h3 { margin: 0 0 16px; color: var(--naranja, #e67e22); }
+        .planilla-grid {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .planilla-foto {
+            width: 140px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 10px;
+            background: #f0f0f0;
+        }
+        .planilla-foto.placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 2rem;
+        }
+        .planilla-dl { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; margin: 0; }
+        .planilla-dl dt { color: #888; font-weight: 600; font-size: 0.85rem; }
+        .planilla-dl dd { margin: 0; font-size: 0.95rem; }
+        .planilla-docs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .planilla-docs a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #3498db;
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .planilla-docs a.disabled {
+            background: #ccc;
+            pointer-events: none;
+        }
+        .planilla-actions { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+        @media (max-width: 560px) {
+            .planilla-grid { grid-template-columns: 1fr; }
+            .planilla-dl { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body class="panel-body">
@@ -40,11 +98,13 @@
 
     <div id="toast-container"></div>
 
-    <div class="modal-overlay" id="imageModal">
-        <div class="modal-content">
-            <button class="btn-close-modal" onclick="closeModal()"><i class="fas fa-times"></i></button>
-            <h3 style="margin-top: 0; color: var(--text-main); margin-bottom: 15px;">Captura de Pago</h3>
-            <img id="modalImage" src="" alt="Comprobante de pago">
+    <div class="modal-overlay" id="planillaModal">
+        <div class="modal-planilla">
+            <button type="button" class="btn-close-modal" onclick="cerrarPlanilla()">&times;</button>
+            <h3><i class="fas fa-id-card"></i> Planilla del atleta</h3>
+            <div id="planilla-contenido">
+                <p style="text-align:center;color:#888;">Cargando...</p>
+            </div>
         </div>
     </div>
 
@@ -256,6 +316,96 @@
             setTimeout(() => img.src = '', 200);
         }
 
+        function cerrarPlanilla() {
+            document.getElementById('planillaModal').classList.remove('active');
+        }
+
+        function linkDoc(url, label, icon) {
+            if (!url) {
+                return `<a href="#" class="disabled"><i class="fas ${icon}"></i> ${label} (no adjunto)</a>`;
+            }
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer"><i class="fas ${icon}"></i> ${label}</a>`;
+        }
+
+        async function verPlanilla(idAtleta) {
+            const modal = document.getElementById('planillaModal');
+            const box = document.getElementById('planilla-contenido');
+            box.innerHTML = '<p style="text-align:center;color:#888;">Cargando planilla...</p>';
+            modal.classList.add('active');
+
+            try {
+                const res = await apiFetch(`/api/atletas/${idAtleta}`);
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    box.innerHTML = `<p style="color:#c0392b;">${data.message || 'No se pudo cargar'}</p>`;
+                    return;
+                }
+
+                const a = data.atleta;
+                const d = a.documentos || {};
+                const r = a.representante || {};
+                const fotoHtml = d.foto_url
+                    ? `<img class="planilla-foto" src="${d.foto_url}" alt="Foto">`
+                    : `<div class="planilla-foto placeholder"><i class="fas fa-user"></i></div>`;
+
+                box.innerHTML = `
+                    <div class="planilla-grid">
+                        ${fotoHtml}
+                        <div>
+                            <h4 style="margin:0 0 8px;">${a.nombres} ${a.apellidos}</h4>
+                            <span class="badge ${getBadgeClase(a.estado)}">${a.estado}</span>
+                            <dl class="planilla-dl" style="margin-top:12px;">
+                                <dt>Cédula</dt>
+                                <dd>${a.cedula || '—'} ${a.cedula_heredada ? '<small>(heredada)</small>' : ''}</dd>
+                                <dt>Nacimiento</dt>
+                                <dd>${formatFecha(a.fecha_nacimiento)}</dd>
+                                <dt>Teléfono</dt>
+                                <dd>${a.telefono || '—'}</dd>
+                                <dt>Dirección</dt>
+                                <dd>${a.direccion || '—'}</dd>
+                                <dt>Alergias</dt>
+                                <dd>${a.alergias_medicas || 'Ninguna registrada'}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <h4 style="margin:16px 0 8px;"><i class="fas fa-user-tie"></i> Representante</h4>
+                    <dl class="planilla-dl">
+                        <dt>Nombre</dt>
+                        <dd>${r.nombres || ''} ${r.apellidos || ''}</dd>
+                        <dt>Correo</dt>
+                        <dd>${r.correo || '—'}</dd>
+                        <dt>Teléfono</dt>
+                        <dd>${r.telefono1 || r.telefono2 || '—'}</dd>
+                        <dt>Cédula</dt>
+                        <dd>${r.cedula || '—'}</dd>
+                    </dl>
+
+                    <h4 style="margin:16px 0 8px;"><i class="fas fa-paperclip"></i> Documentos</h4>
+                    <div class="planilla-docs">
+                        ${linkDoc(d.foto_url, 'Foto', 'fa-image')}
+                        ${linkDoc(d.cedula_archivo_url, 'Cédula escaneada', 'fa-id-card')}
+                        ${linkDoc(d.partida_nacimiento_url, 'Partida de nacimiento', 'fa-file-pdf')}
+                    </div>
+
+                    <div class="planilla-actions">
+                        ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob" onclick="actualizarAtleta(${a.id_atleta}, 'activo', ${r.id_representante}, '${(a.nombres + ' ' + a.apellidos).replace(/'/g, "\\'")}'); cerrarPlanilla();"><i class="fas fa-check"></i> Aprobar</button>` : ''}
+                        ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech" onclick="actualizarAtleta(${a.id_atleta}, 'inactivo', ${r.id_representante}, '${(a.nombres + ' ' + a.apellidos).replace(/'/g, "\\'")}'); cerrarPlanilla();"><i class="fas fa-ban"></i> Marcar inactivo</button>` : ''}
+                        <button class="btn-action btn-view" type="button" onclick="cerrarPlanilla()">Cerrar</button>
+                    </div>
+                `;
+            } catch (err) {
+                console.error(err);
+                box.innerHTML = '<p style="color:#c0392b;">Error de conexión al cargar la planilla</p>';
+            }
+        }
+
+        // Cerrar al hacer clic fuera del contenido
+        document.getElementById('planillaModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'planillaModal') cerrarPlanilla();
+        });
+
         async function verComprobante(idPago) {
             if (!currentUser) {
                 showToast('Sesión no disponible, vuelve a iniciar sesión', 'error');
@@ -414,14 +564,18 @@
 
                 data.atletas.forEach(a => {
                     const nombreCompleto = `${a.nombres} ${a.apellidos}`;
-                    bodyAtletas.innerHTML += `<tr data-estado="${a.estado.toLowerCase()}">
+                    const nombreSafe = nombreCompleto.replace(/'/g, "\\'");
+                    bodyAtletas.innerHTML += `<tr data-estado="${(a.estado || '').toLowerCase()}">
                         <td><strong>${nombreCompleto}</strong></td>
-                        <td><i class="fas fa-user-tie" style="color:var(--text-muted);"></i> ${a.rep_nombres} ${a.rep_apellidos}</td>
+                        <td><i class="fas fa-user-tie" style="color:var(--text-muted);"></i> ${a.rep_nombres || ''} ${a.rep_apellidos || ''}</td>
                         <td>${formatFecha(a.fecha_nac)}</td>
                         <td><span class="badge ${getBadgeClase(a.estado)}">${a.estado}</span></td>
                         <td>
-                            ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob" onclick="actualizarAtleta(${a.id_atleta}, 'activo', ${a.id_representante}, '${nombreCompleto}')"><i class="fas fa-check"></i> Aprobar</button>` : ''}
-                            ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech" onclick="actualizarAtleta(${a.id_atleta}, 'inactivo', ${a.id_representante}, '${nombreCompleto}')"><i class="fas fa-ban"></i> Rechazar</button>` : ''}
+                            <button class="btn-action btn-view" onclick="verPlanilla(${a.id_atleta})">
+                                <i class="fas fa-folder-open"></i> Planilla
+                            </button>
+                            ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob" onclick="actualizarAtleta(${a.id_atleta}, 'activo', ${a.id_representante}, '${nombreSafe}')"><i class="fas fa-check"></i> Aprobar</button>` : ''}
+                            ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech" onclick="actualizarAtleta(${a.id_atleta}, 'inactivo', ${a.id_representante}, '${nombreSafe}')"><i class="fas fa-ban"></i> Inactivo</button>` : ''}
                         </td>
                     </tr>`;
                 });

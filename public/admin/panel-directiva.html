@@ -31,46 +31,63 @@
         .search-box { width: 100%; max-width: 300px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.3s; }
         .search-box:focus { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1); }
 
-        /* ── Modal planilla formal ───────────────────────────────── */
+        .modal-overlay#planillaModal {
+            align-items: flex-start;
+            justify-content: center;
+            padding: 12px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .modal-planilla {
             background: #f5f6f8;
             border-radius: 12px;
-            max-width: 800px;
-            width: 96%;
-            max-height: 92vh;
-            overflow-y: auto;
-            padding: 16px;
+            width: min(800px, 100%);
+            max-height: none;
+            margin: 12px auto 24px;
+            padding: 12px;
             position: relative;
             text-align: left;
+            box-sizing: border-box;
         }
-        .modal-planilla > .btn-close-modal { z-index: 2; }
+
+        .modal-planilla > .btn-close-modal {
+            position: sticky;
+            top: 8px;
+            float: right;
+            z-index: 5;
+            margin: 0 0 8px 8px;
+        }
 
         .planilla-sheet {
             background: #fff;
             border: 1px solid #d0d5dd;
             border-radius: 4px;
-            padding: 28px 32px;
+            padding: clamp(14px, 3vw, 28px);
             box-shadow: 0 1px 3px rgba(0,0,0,.06);
             font-family: "Segoe UI", system-ui, sans-serif;
             color: #1a1a1a;
+            clear: both;
         }
 
         .planilla-header {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             border-bottom: 3px double #1a1a1a;
-            padding-bottom: 14px;
-            margin-bottom: 18px;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
         }
         .planilla-header-logo {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             object-fit: contain;
+            flex-shrink: 0;
         }
         .planilla-header-text h2 {
             margin: 0;
-            font-size: 1.15rem;
+            font-size: clamp(0.95rem, 2.5vw, 1.15rem);
             letter-spacing: 0.04em;
             text-transform: uppercase;
         }
@@ -82,11 +99,11 @@
 
         .planilla-title {
             text-align: center;
-            font-size: 1.05rem;
+            font-size: clamp(0.9rem, 2.2vw, 1.05rem);
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            margin: 0 0 18px;
+            margin: 0 0 14px;
             padding: 8px;
             background: #f0f2f5;
             border: 1px solid #d0d5dd;
@@ -94,24 +111,25 @@
 
         .planilla-body {
             display: grid;
-            grid-template-columns: 130px 1fr;
-            gap: 20px;
-            margin-bottom: 18px;
+            grid-template-columns: 120px minmax(0, 1fr);
+            gap: 14px;
+            margin-bottom: 14px;
+            align-items: start;
         }
         .planilla-foto-box {
             border: 1px solid #bbb;
             padding: 4px;
             background: #fafafa;
-            text-align: center;
+            width: 120px;
         }
         .planilla-foto-box img {
-            width: 120px;
+            width: 100%;
             height: 140px;
             object-fit: cover;
             display: block;
         }
         .planilla-foto-box .no-foto {
-            width: 120px;
+            width: 100%;
             height: 140px;
             display: flex;
             align-items: center;
@@ -123,27 +141,27 @@
         .planilla-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            table-layout: fixed;
         }
         .planilla-table th,
         .planilla-table td {
             border: 1px solid #ccc;
-            padding: 7px 10px;
+            padding: 6px 8px;
             vertical-align: top;
+            word-break: break-word;
         }
         .planilla-table th {
-            width: 38%;
+            width: 36%;
             background: #f7f8fa;
             font-weight: 600;
             text-align: left;
             color: #333;
         }
 
-        .planilla-section {
-            margin-top: 16px;
-        }
+        .planilla-section { margin-top: 14px; }
         .planilla-section-title {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -154,16 +172,16 @@
         }
 
         .planilla-footer {
-            margin-top: 28px;
+            margin-top: 24px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 24px;
+            gap: 16px;
             font-size: 0.8rem;
             color: #444;
         }
         .planilla-firma {
             border-top: 1px solid #333;
-            margin-top: 48px;
+            margin-top: 40px;
             padding-top: 6px;
             text-align: center;
         }
@@ -172,27 +190,25 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-top: 14px;
+            margin-top: 12px;
             justify-content: flex-end;
         }
-
-        @media (max-width: 560px) {
-            .planilla-body { grid-template-columns: 1fr; justify-items: center; }
-            .planilla-sheet { padding: 16px; }
+        .planilla-toolbar .btn-action {
+            flex: 1 1 auto;
+            min-width: 120px;
+            justify-content: center;
         }
 
-        /* Impresión / PDF */
-        @media print {
-            body * { visibility: hidden; }
-            #planilla-print-root, #planilla-print-root * { visibility: visible; }
-            #planilla-print-root {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: #fff;
+        @media (max-width: 600px) {
+            .planilla-body {
+                grid-template-columns: 1fr;
+                justify-items: center;
             }
-            .planilla-toolbar, .btn-close-modal, .sidebar, .panel-header { display: none !important; }
+            .planilla-table th { width: 42%; }
+            .planilla-footer { grid-template-columns: 1fr; gap: 8px; }
+            .planilla-firma { margin-top: 36px; }
+            .planilla-toolbar { justify-content: stretch; }
+            .planilla-toolbar .btn-action { width: 100%; }
         }
     </style>
 </head>
@@ -550,7 +566,7 @@
             }
         }
 
-        /** Abre diálogo de impresión → el usuario elige "Guardar como PDF" */
+        /** Imprime / guarda PDF sin window.open (evita bloqueo de popups) */
         function imprimirPlanilla() {
             const sheet = document.getElementById('planilla-print-root');
             if (!sheet) {
@@ -558,45 +574,92 @@
                 return;
             }
 
-            const w = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700');
-            if (!w) {
-                showToast('Permite ventanas emergentes para generar el PDF', 'error');
-                return;
-            }
+            // Quitar iframe anterior si existe
+            const old = document.getElementById('iframe-print-planilla');
+            if (old) old.remove();
 
-            w.document.write(`<!DOCTYPE html><html lang="es"><head>
+            const iframe = document.createElement('iframe');
+            iframe.id = 'iframe-print-planilla';
+            iframe.setAttribute('aria-hidden', 'true');
+            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            const html = `<!DOCTYPE html><html lang="es"><head>
                 <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
                 <title>Planilla — Club Jaguares</title>
                 <style>
                     * { box-sizing: border-box; }
-                    body { margin: 0; padding: 24px; font-family: "Segoe UI", system-ui, sans-serif; color: #1a1a1a; }
+                    body { margin: 0; padding: 16px; font-family: "Segoe UI", system-ui, sans-serif; color: #1a1a1a; }
                     .planilla-sheet { max-width: 800px; margin: 0 auto; }
-                    .planilla-header { display: flex; align-items: center; gap: 16px; border-bottom: 3px double #1a1a1a; padding-bottom: 14px; margin-bottom: 18px; }
-                    .planilla-header-logo { width: 56px; height: 56px; object-fit: contain; }
-                    .planilla-header-text h2 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: .04em; }
+                    .planilla-header { display: flex; align-items: center; gap: 12px; border-bottom: 3px double #1a1a1a; padding-bottom: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+                    .planilla-header-logo { width: 48px; height: 48px; object-fit: contain; }
+                    .planilla-header-text h2 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: .04em; }
                     .planilla-header-text p { margin: 2px 0 0; font-size: .8rem; color: #555; }
-                    .planilla-title { text-align: center; font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 18px; padding: 8px; background: #f0f2f5; border: 1px solid #d0d5dd; }
-                    .planilla-body { display: grid; grid-template-columns: 130px 1fr; gap: 20px; margin-bottom: 18px; }
-                    .planilla-foto-box { border: 1px solid #bbb; padding: 4px; }
-                    .planilla-foto-box img { width: 120px; height: 140px; object-fit: cover; display: block; }
+                    .planilla-title { text-align: center; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 14px; padding: 8px; background: #f0f2f5; border: 1px solid #d0d5dd; }
+                    .planilla-body { display: grid; grid-template-columns: 120px 1fr; gap: 14px; margin-bottom: 14px; }
+                    .planilla-foto-box { border: 1px solid #bbb; padding: 4px; width: 120px; }
+                    .planilla-foto-box img { width: 100%; height: 140px; object-fit: cover; display: block; }
                     .planilla-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-                    .planilla-table th, .planilla-table td { border: 1px solid #ccc; padding: 7px 10px; vertical-align: top; }
-                    .planilla-table th { width: 38%; background: #f7f8fa; text-align: left; }
-                    .planilla-section { margin-top: 16px; }
-                    .planilla-section-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; background: #1a1a1a; color: #fff; padding: 6px 10px; margin: 0; }
-                    .planilla-footer { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; font-size: .8rem; }
-                    .planilla-firma { border-top: 1px solid #333; margin-top: 48px; padding-top: 6px; text-align: center; }
-                    a { color: #000; }
-                    @media print { body { padding: 0; } }
+                    .planilla-table th, .planilla-table td { border: 1px solid #ccc; padding: 6px 8px; vertical-align: top; word-break: break-word; }
+                    .planilla-table th { width: 36%; background: #f7f8fa; text-align: left; }
+                    .planilla-section { margin-top: 14px; }
+                    .planilla-section-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; background: #1a1a1a; color: #fff; padding: 6px 10px; margin: 0; }
+                    .planilla-footer { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: .8rem; }
+                    .planilla-firma { border-top: 1px solid #333; margin-top: 40px; padding-top: 6px; text-align: center; }
+                    a { color: #000; text-decoration: none; }
+                    @media print {
+                        body { padding: 0; }
+                        @page { margin: 12mm; }
+                    }
+                    @media (max-width: 600px) {
+                        .planilla-body { grid-template-columns: 1fr; justify-items: center; }
+                        .planilla-footer { grid-template-columns: 1fr; }
+                    }
                 </style>
-            </head><body>${sheet.outerHTML}</body></html>`);
-            w.document.close();
+            </head><body>${sheet.outerHTML}</body></html>`;
 
-            // Esperar imágenes (foto Cloudinary) antes de imprimir
-            setTimeout(() => {
-                w.focus();
-                w.print();
-            }, 400);
+            doc.open();
+            doc.write(html);
+            doc.close();
+
+            const win = iframe.contentWindow;
+            const triggerPrint = () => {
+                try {
+                    win.focus();
+                    win.print();
+                } catch (e) {
+                    console.error(e);
+                    showToast('No se pudo abrir el diálogo de impresión', 'error');
+                }
+                // Limpiar después (no inmediato: el diálogo de print es async)
+                setTimeout(() => {
+                    try { iframe.remove(); } catch (_) {}
+                }, 2000);
+            };
+
+            // Esperar a que carguen imágenes (foto Cloudinary)
+            const imgs = doc.images ? Array.from(doc.images) : [];
+            if (imgs.length === 0) {
+                setTimeout(triggerPrint, 200);
+                return;
+            }
+
+            let pending = imgs.length;
+            const done = () => {
+                pending -= 1;
+                if (pending <= 0) setTimeout(triggerPrint, 150);
+            };
+            imgs.forEach((img) => {
+                if (img.complete) done();
+                else {
+                    img.onload = done;
+                    img.onerror = done;
+                }
+            });
+            // Fallback por si alguna imagen no dispara evento
+            setTimeout(triggerPrint, 2500);
         }
 
         document.getElementById('planillaModal')?.addEventListener('click', (e) => {

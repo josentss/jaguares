@@ -8,45 +8,12 @@ const logFile = path.join(logDir, 'upload_audit.log');
 try {
     if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
 } catch (e) {
+    // FS limitado en Vercel — best-effort
 }
 
 function safeString(v) {
     if (v === undefined || v === null) return null;
     try { return String(v); } catch (e) { return null; }
-}
-
-// Postgres (Supabase) — sin AUTO_INCREMENT / ENGINE
-const createTableSql = `
-CREATE TABLE IF NOT EXISTS audit_uploads (
-  id              SERIAL PRIMARY KEY,
-  ts              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  success         BOOLEAN NOT NULL DEFAULT false,
-  reason          VARCHAR(255),
-  user_id         INTEGER,
-  original_name   VARCHAR(255),
-  stored_filename VARCHAR(255),
-  ip              VARCHAR(64),
-  meta            TEXT
-);
-`;
-
-try {
-    db.query(createTableSql, (err) => {
-        if (err) {
-            console.error('No se pudo crear la tabla audit_uploads:', err.message);
-            return;
-        }
-        db.query(
-            'CREATE INDEX IF NOT EXISTS idx_audit_ts ON audit_uploads (ts)',
-            () => {}
-        );
-        db.query(
-            'CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_uploads (user_id)',
-            () => {}
-        );
-    });
-} catch (e) {
-    console.error('Error creando tabla audit_uploads:', e.message);
 }
 
 function logUploadEvent(data) {
@@ -64,25 +31,27 @@ function logUploadEvent(data) {
     try {
         fs.appendFileSync(logFile, JSON.stringify(entry) + '\n', { encoding: 'utf8' });
     } catch (err) {
-        // Ignore en serverless
+        // ignore
     }
 
+    // Solo INSERT (la tabla ya existe en Supabase). Fallo = log, no tumba la app.
+    const sql = `
+        INSERT INTO audit_uploads
+          (ts, success, reason, user_id, original_name, stored_filename, ip, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [
+        new Date(),
+        entry.success,
+        entry.reason,
+        entry.userId,
+        entry.originalName,
+        entry.storedFilename,
+        entry.ip,
+        entry.extra ? JSON.stringify(entry.extra) : null
+    ];
+
     try {
-        const sql = `
-            INSERT INTO audit_uploads
-              (ts, success, reason, user_id, original_name, stored_filename, ip, meta)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        const params = [
-            new Date(),
-            entry.success,
-            entry.reason,
-            entry.userId,
-            entry.originalName,
-            entry.storedFilename,
-            entry.ip,
-            entry.extra ? JSON.stringify(entry.extra) : null
-        ];
         db.query(sql, params, (err) => {
             if (err) console.error('Fallo insert audit_uploads:', err.message);
         });

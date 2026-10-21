@@ -10,9 +10,9 @@ if (!connectionString) {
 const pool = new Pool({
     connectionString: connectionString || undefined,
     ssl: connectionString ? { rejectUnauthorized: false } : false,
-    max: 3, // Vercel serverless
+    max: 3,
     idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 10000
+    connectionTimeoutMillis: 20000
 });
 
 /** Convierte ? → $1, $2, ... */

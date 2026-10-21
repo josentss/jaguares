@@ -5,72 +5,86 @@ const db = require('../config/db');
 const logDir = path.join(__dirname, '..', 'logs');
 const logFile = path.join(logDir, 'upload_audit.log');
 
-if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+try {
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+} catch (e) {
+}
 
 function safeString(v) {
-    if (v === undefined) return null;
+    if (v === undefined || v === null) return null;
     try { return String(v); } catch (e) { return null; }
 }
 
-// Ensure audit table exists. Best-effort: failure to create should not break app.
+// Postgres (Supabase) — sin AUTO_INCREMENT / ENGINE
 const createTableSql = `
 CREATE TABLE IF NOT EXISTS audit_uploads (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  ts DATETIME NOT NULL,
-  success TINYINT(1) NOT NULL,
-  reason VARCHAR(255),
-  user_id INT,
-  original_name VARCHAR(255),
+  id              SERIAL PRIMARY KEY,
+  ts              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  success         BOOLEAN NOT NULL DEFAULT false,
+  reason          VARCHAR(255),
+  user_id         INTEGER,
+  original_name   VARCHAR(255),
   stored_filename VARCHAR(255),
-  ip VARCHAR(64),
-  meta TEXT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  ip              VARCHAR(64),
+  meta            TEXT
+);
 `;
+
 try {
     db.query(createTableSql, (err) => {
-        if (err) console.error('No se pudo crear la tabla audit_uploads:', err.message);
-        else {
-            // Create helpful indexes (best-effort; ignore errors)
-            try {
-                db.query('CREATE INDEX idx_audit_ts ON audit_uploads(ts)', () => {});
-                db.query('CREATE INDEX idx_audit_user ON audit_uploads(user_id)', () => {});
-            } catch (idxErr) {
-                // ignore
-            }
+        if (err) {
+            console.error('No se pudo crear la tabla audit_uploads:', err.message);
+            return;
         }
+        db.query(
+            'CREATE INDEX IF NOT EXISTS idx_audit_ts ON audit_uploads (ts)',
+            () => {}
+        );
+        db.query(
+            'CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_uploads (user_id)',
+            () => {}
+        );
     });
 } catch (e) {
     console.error('Error creando tabla audit_uploads:', e.message);
 }
 
-// data: { success: boolean, reason: string, userId, originalName, storedFilename, ip, extra }
 function logUploadEvent(data) {
-    const entry = Object.assign({}, {
+    const entry = {
         timestamp: new Date().toISOString(),
         success: !!data.success,
-        reason: safeString(data.reason) || null,
+        reason: safeString(data.reason),
         userId: data.userId || null,
-        originalName: safeString(data.originalName) || null,
-        storedFilename: safeString(data.storedFilename) || null,
-        ip: safeString(data.ip) || null,
+        originalName: safeString(data.originalName),
+        storedFilename: safeString(data.storedFilename),
+        ip: safeString(data.ip),
         extra: data.extra || null
-    });
+    };
 
     try {
         fs.appendFileSync(logFile, JSON.stringify(entry) + '\n', { encoding: 'utf8' });
     } catch (err) {
-        console.error('Fallo al escribir audit log:', err.message);
+        // Ignore en serverless
     }
 
-    // Also insert into DB (best-effort)
     try {
-        const sql = `INSERT INTO audit_uploads (ts, success, reason, user_id, original_name, stored_filename, ip, meta) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-        const params = [new Date(), entry.success ? 1 : 0, entry.reason, entry.userId, entry.originalName, entry.storedFilename, entry.ip, entry.extra ? JSON.stringify(entry.extra) : null];
+        const sql = `
+            INSERT INTO audit_uploads
+              (ts, success, reason, user_id, original_name, stored_filename, ip, meta)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const params = [
+            new Date(),
+            entry.success,
+            entry.reason,
+            entry.userId,
+            entry.originalName,
+            entry.storedFilename,
+            entry.ip,
+            entry.extra ? JSON.stringify(entry.extra) : null
+        ];
         db.query(sql, params, (err) => {
-            if (err) {
-                // Log DB insert error to stderr but don't throw
-                console.error('Fallo insert audit_uploads:', err.message);
-            }
+            if (err) console.error('Fallo insert audit_uploads:', err.message);
         });
     } catch (e) {
         console.error('Error insertando en audit_uploads:', e.message);

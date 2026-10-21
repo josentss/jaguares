@@ -237,7 +237,6 @@
         }
     </style>
 </head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <body class="panel-body">
 
     <button class="mobile-menu-toggle" id="mobile-menu-btn">
@@ -248,11 +247,16 @@
 
     <div class="modal-overlay" id="planillaModal">
         <div class="modal-planilla">
-            <button type="button" class="btn-close-modal" onclick="cerrarPlanilla()">&times;</button>
-            <h3><i class="fas fa-id-card"></i> Planilla del atleta</h3>
             <div id="planilla-contenido">
                 <p style="text-align:center;color:#888;">Cargando...</p>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="imageModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-modal" onclick="closeModal()">&times;</button>
+            <img id="modalImage" src="" alt="Comprobante de pago">
         </div>
     </div>
 
@@ -424,6 +428,7 @@
         </section>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="api-client.js"></script>
     <script>
         let currentUser = null;
@@ -569,17 +574,17 @@
                 const nombreSafe = `${a.nombres || ''} ${a.apellidos || ''}`.replace(/'/g, "\\'");
 
                 box.innerHTML = renderPlanillaHTML(a) + `
-                  <div class="planilla-toolbar">
-                    <button type="button" class="btn-action btn-view" onclick="imprimirPlanilla()">
-                      <i class="fas fa-print"></i> Imprimir
-                    </button>
-                    <button type="button" class="btn-action btn-aprob" onclick="descargarPlanillaPDF()">
-                      <i class="fas fa-download"></i> Descargar PDF
-                    </button>
-                    <button type="button" class="btn-action" style="background:#7f8c8d;color:#fff;" onclick="cerrarPlanilla()">
-                      Cerrar
-                    </button>
-                  </div>`;
+                            <div class="planilla-toolbar">
+                                <button type="button" class="btn-action btn-view" onclick="imprimirPlanilla()">
+                                    <i class="fas fa-print"></i> Imprimir
+                                </button>
+                                <button type="button" class="btn-action btn-aprob" onclick="descargarPlanillaPDF()">
+                                    <i class="fas fa-download"></i> Descargar PDF
+                                </button>
+                                <button type="button" class="btn-action" style="background:#7f8c8d;color:#fff;" onclick="cerrarPlanilla()">
+                                    Cerrar
+                                </button>
+                            </div>`;
             } catch (err) {
                 console.error(err);
                 box.innerHTML = '<p style="color:#c0392b;padding:16px;">Error de conexión al cargar la planilla</p>';

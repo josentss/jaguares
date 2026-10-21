@@ -116,26 +116,51 @@
             margin-bottom: 14px;
             align-items: start;
         }
+        .planilla-foto-frame {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            width: 128px;
+        }
         .planilla-foto-box {
-            border: 1px solid #bbb;
-            padding: 4px;
-            background: #fafafa;
             width: 120px;
+            height: 140px;
+            border: 3px double #1a1a1a;
+            padding: 3px;
+            background: #fff;
+            box-sizing: border-box;
         }
         .planilla-foto-box img {
             width: 100%;
-            height: 140px;
+            height: 100%;
             object-fit: cover;
             display: block;
         }
         .planilla-foto-box .no-foto {
             width: 100%;
-            height: 140px;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #aaa;
             font-size: 2rem;
+            background: #f5f5f5;
+        }
+        .planilla-foto-caption {
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .planilla-generated {
+            margin: 36px 0 0;
+            padding-top: 12px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #888;
+            border-top: 1px solid #e5e5e5;
         }
 
         .planilla-table {
@@ -212,6 +237,7 @@
         }
     </style>
 </head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <body class="panel-body">
 
     <button class="mobile-menu-toggle" id="mobile-menu-btn">
@@ -463,12 +489,12 @@
         function renderPlanillaHTML(a) {
             const d = a.documentos || {};
             const r = a.representante || {};
+            const nombre = `${a.nombres || ''} ${a.apellidos || ''}`.trim();
+            const repNombre = `${r.nombres || ''} ${r.apellidos || ''}`.trim();
+
             const foto = d.foto_url
                 ? `<img src="${esc(d.foto_url)}" alt="Foto del atleta">`
                 : `<div class="no-foto"><i class="fas fa-user"></i></div>`;
-
-            const nombre = `${a.nombres || ''} ${a.apellidos || ''}`.trim();
-            const repNombre = `${r.nombres || ''} ${r.apellidos || ''}`.trim();
 
             return `
             <div class="planilla-sheet" id="planilla-print-root">
@@ -484,12 +510,15 @@
                 <div class="planilla-title">Planilla de inscripción</div>
 
                 <div class="planilla-body">
-                    <div class="planilla-foto-box">${foto}</div>
+                    <div class="planilla-foto-frame">
+                        <div class="planilla-foto-box">${foto}</div>
+                        <span class="planilla-foto-caption">Foto carnet</span>
+                    </div>
                     <table class="planilla-table">
                         <tr><th>Nombre completo</th><td><strong>${esc(nombre)}</strong></td></tr>
                         <tr><th>Estado en el club</th><td>${esc(a.estado || '—')}</td></tr>
                         <tr><th>Cédula de identidad</th>
-                            <td>${esc(a.cedula || '—')}${a.cedula_heredada ? ' <em>(heredada del representante)</em>' : ''}</td>
+                            <td>${esc(a.cedula || '—')}${a.cedula_heredada ? ' <em>(heredada)</em>' : ''}</td>
                         </tr>
                         <tr><th>Fecha de nacimiento</th><td>${esc(formatFecha(a.fecha_nacimiento))}</td></tr>
                         <tr><th>Teléfono</th><td>${esc(a.telefono || '—')}</td></tr>
@@ -508,24 +537,12 @@
                     </table>
                 </div>
 
-                <div class="planilla-section">
-                    <p class="planilla-section-title">Documentos adjuntos (digital)</p>
-                    <div style="padding:10px;border:1px solid #ccc;border-top:none;display:flex;flex-wrap:wrap;gap:8px;">
-                        ${linkDoc(d.foto_url, 'Foto', 'fa-image')}
-                        ${linkDoc(d.cedula_archivo_url, 'Cédula escaneada', 'fa-id-card')}
-                        ${linkDoc(d.partida_nacimiento_url, 'Partida de nacimiento', 'fa-file-pdf')}
-                    </div>
+                <div class="planilla-footer">
+                    <div><div class="planilla-firma">Firma del representante</div></div>
+                    <div><div class="planilla-firma">Sello / firma de la directiva</div></div>
                 </div>
 
-                <div class="planilla-footer">
-                    <div>
-                        <div class="planilla-firma">Firma del representante</div>
-                    </div>
-                    <div>
-                        <div class="planilla-firma">Sello / firma de la directiva</div>
-                    </div>
-                </div>
-                <p style="margin-top:16px;font-size:0.7rem;color:#888;text-align:center;">
+                <p class="planilla-generated">
                     Generado digitalmente · Club Jaguares · ${esc(new Date().toLocaleDateString('es-VE'))}
                     · ID atleta: ${esc(a.id_atleta)}
                 </p>
@@ -552,14 +569,17 @@
                 const nombreSafe = `${a.nombres || ''} ${a.apellidos || ''}`.replace(/'/g, "\\'");
 
                 box.innerHTML = renderPlanillaHTML(a) + `
-                    <div class="planilla-toolbar">
-                        <button type="button" class="btn-action btn-view" onclick="imprimirPlanilla()">
-                            <i class="fas fa-file-pdf"></i> Descargar / Imprimir PDF
-                        </button>
-                        ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob" onclick="actualizarAtleta(${a.id_atleta}, 'activo', ${r.id_representante}, '${nombreSafe}'); cerrarPlanilla();"><i class="fas fa-check"></i> Aprobar</button>` : ''}
-                        ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech" onclick="actualizarAtleta(${a.id_atleta}, 'inactivo', ${r.id_representante}, '${nombreSafe}'); cerrarPlanilla();"><i class="fas fa-ban"></i> Marcar inactivo</button>` : ''}
-                        <button type="button" class="btn-action" style="background:#7f8c8d;color:#fff;" onclick="cerrarPlanilla()">Cerrar</button>
-                    </div>`;
+                  <div class="planilla-toolbar">
+                    <button type="button" class="btn-action btn-view" onclick="imprimirPlanilla()">
+                      <i class="fas fa-print"></i> Imprimir
+                    </button>
+                    <button type="button" class="btn-action btn-aprob" onclick="descargarPlanillaPDF()">
+                      <i class="fas fa-download"></i> Descargar PDF
+                    </button>
+                    <button type="button" class="btn-action" style="background:#7f8c8d;color:#fff;" onclick="cerrarPlanilla()">
+                      Cerrar
+                    </button>
+                  </div>`;
             } catch (err) {
                 console.error(err);
                 box.innerHTML = '<p style="color:#c0392b;padding:16px;">Error de conexión al cargar la planilla</p>';
@@ -611,7 +631,7 @@
                     a { color: #000; text-decoration: none; }
                     @media print {
                         body { padding: 0; }
-                        @page { margin: 12mm; }
+                        @page { size: A4; margin: 14mm; }
                     }
                     @media (max-width: 600px) {
                         .planilla-body { grid-template-columns: 1fr; justify-items: center; }
@@ -665,6 +685,39 @@
         document.getElementById('planillaModal')?.addEventListener('click', (e) => {
             if (e.target.id === 'planillaModal') cerrarPlanilla();
         });
+
+        async function descargarPlanillaPDF() {
+            const sheet = document.getElementById('planilla-print-root');
+            if (!sheet) {
+                showToast('No hay planilla para descargar', 'error');
+                return;
+            }
+            if (typeof html2pdf === 'undefined') {
+                showToast('No se pudo cargar el generador de PDF', 'error');
+                return;
+            }
+
+            const nombre = (sheet.querySelector('.planilla-table td strong')?.textContent || 'atleta')
+                .trim()
+                .replace(/\s+/g, '_');
+
+            const opt = {
+                margin:       [10, 10, 12, 10],
+                filename:     `Planilla_Jaguares_${nombre}.pdf`,
+                image:        { type: 'jpeg', quality: 0.95 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['avoid-all'] }
+            };
+
+            try {
+                showToast('Generando PDF...', 'success');
+                await html2pdf().set(opt).from(sheet).save();
+            } catch (err) {
+                console.error(err);
+                showToast('Error al generar el PDF', 'error');
+            }
+        }
 
         async function verComprobante(idPago) {
             if (!currentUser) {

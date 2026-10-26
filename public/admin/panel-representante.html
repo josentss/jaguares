@@ -46,6 +46,38 @@
 <body class="panel-body">
 
     <div id="toast-container"></div>
+    <!-- Onboarding: perfil incompleto -->
+    <div class="modal-overlay" id="onboardingModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:2000; justify-content:center; align-items:center; padding:16px;">
+        <div style="background:#fff; border-radius:12px; max-width:440px; width:100%; padding:24px; position:relative; box-shadow:0 10px 40px rgba(0,0,0,.25);">
+            <h3 style="margin:0 0 8px; color:#e67e22;">
+                <i class="fas fa-user-check"></i> Completa tu perfil
+            </h3>
+            <p style="margin:0 0 16px; font-size:0.9rem; color:#555; line-height:1.45;">
+                La directiva necesita tu <strong>cédula</strong> y <strong>teléfono</strong> para planillas, WhatsApp y el registro de atletas.
+                Completa estos datos para continuar.
+            </p>
+            <form id="form-onboarding">
+                <div style="margin-bottom:12px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Cédula *</label>
+                    <input type="text" id="ob-cedula" required maxlength="30"
+                           style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:4px; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Teléfono principal (WhatsApp) *</label>
+                    <input type="text" id="ob-tel1" required maxlength="30" placeholder="Ej: 04141234567"
+                           style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:4px; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Teléfono secundario (opcional)</label>
+                    <input type="text" id="ob-tel2" maxlength="30"
+                           style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:4px; box-sizing:border-box;">
+                </div>
+                <button type="submit" class="btn-panel-submit" style="width:100%; background:#2ecc71;">
+                    Guardar y continuar <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
     <button class="mobile-menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
 
     <div class="sidebar" id="sidebar">
@@ -515,6 +547,53 @@
             });
 
             // --- CARGAS ASÍNCRONAS DEL BACKEND ---
+
+            function perfilEstaCompleto(perfil) {
+                if (!perfil) return false;
+                const ced = String(perfil.cedula || '').trim();
+                const tel = String(perfil.telefono1 || '').trim();
+                return ced.length > 0 && tel.length > 0;
+            }
+
+            function setAccionesBloqueadas(bloquear) {
+                document.querySelectorAll('.sidebar-menu li[data-target="sec-atletas"], .sidebar-menu li[data-target="sec-pagos"]')
+                    .forEach(li => {
+                        if (bloquear) {
+                            li.style.opacity = '0.45';
+                            li.style.pointerEvents = 'none';
+                            li.title = 'Completa tu perfil primero';
+                        } else {
+                            li.style.opacity = '';
+                            li.style.pointerEvents = '';
+                            li.title = '';
+                        }
+                    });
+            }
+
+            function mostrarOnboarding(perfil) {
+                const modal = document.getElementById('onboardingModal');
+                if (!modal) return;
+                document.getElementById('ob-cedula').value = (perfil && perfil.cedula) || '';
+                document.getElementById('ob-tel1').value = (perfil && perfil.telefono1) || '';
+                document.getElementById('ob-tel2').value = (perfil && perfil.telefono2) || '';
+                modal.style.display = 'flex';
+                setAccionesBloqueadas(true);
+            }
+
+            function cerrarOnboarding() {
+                const modal = document.getElementById('onboardingModal');
+                if (modal) modal.style.display = 'none';
+                setAccionesBloqueadas(false);
+            }
+
+            function revisarOnboarding(perfil) {
+                if (perfilEstaCompleto(perfil)) {
+                    cerrarOnboarding();
+                } else {
+                    mostrarOnboarding(perfil || {});
+                }
+            }
+
             async function cargarPerfil() {
                 try {
                     const response = await apiFetch(`/api/usuarios/perfil/${userData.id_usuario}`, {
@@ -532,6 +611,7 @@
                         document.getElementById('perfil-correo').value = data.perfil.correo || '';
                         document.getElementById('perfil-tel1').value = data.perfil.telefono1 || '';
                         document.getElementById('perfil-tel2').value = data.perfil.telefono2 || '';
+                        revisarOnboarding(data.perfil);
                     }
                 } catch (err) { console.error("Error al cargar perfil", err); }
             }
@@ -674,6 +754,52 @@
                 } finally {
                     btn.innerHTML = btnText;
                     btn.disabled = false;
+                }
+            });
+
+            // --- SUBMIT: ONBOARDING PERFIL ---
+            document.getElementById('form-onboarding').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const btnText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = 'Guardando...';
+
+                const body = {
+                    nombres: document.getElementById('perfil-nombres').value || userData.nombres,
+                    apellidos: document.getElementById('perfil-apellidos').value || userData.apellidos,
+                    cedula: document.getElementById('ob-cedula').value.trim(),
+                    telefono1: document.getElementById('ob-tel1').value.trim(),
+                    telefono2: document.getElementById('ob-tel2').value.trim(),
+                    password: ''
+                };
+
+                if (!body.cedula || !body.telefono1) {
+                    showToast('Cédula y teléfono principal son obligatorios', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = btnText;
+                    return;
+                }
+
+                try {
+                    const res = await apiFetch('/api/usuarios/perfil', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast('Perfil completado. ¡Ya puedes usar el panel!', 'success');
+                        await cargarPerfil();
+                        cerrarOnboarding();
+                    } else {
+                        showToast(data.message || 'No se pudo guardar', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error de conexión', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = btnText;
                 }
             });
 

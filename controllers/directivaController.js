@@ -51,7 +51,8 @@ exports.obtenerAuditoria = async (req, res) => {
     const qAtletas = `
         SELECT a.id_atleta, a.id_representante, a.nombres, a.apellidos,
                a.fecha_nacimiento AS fecha_nac, a.estado,
-               u.nombres AS rep_nombres, u.apellidos AS rep_apellidos
+               u.nombres AS rep_nombres, u.apellidos AS rep_apellidos,
+               u.telefono1 AS rep_telefono1, u.telefono2 AS rep_telefono2
         FROM atletas a
         LEFT JOIN usuarios u ON a.id_representante = u.id_usuario
         ORDER BY a.id_atleta DESC

@@ -481,6 +481,57 @@
                 .replace(/"/g, '&quot;');
         }
 
+        function soloDigitos(tel) {
+            return String(tel || '').replace(/\D/g, '');
+        }
+
+        function telefonoParaWhatsApp(tel) {
+            let d = soloDigitos(tel);
+            if (!d) return null;
+
+            if (d.startsWith('00')) d = d.slice(2);
+
+            if (d.startsWith('58') && d.length >= 11 && d.length <= 13) {
+                return d;
+            }
+
+            if (d.length === 11 && d.startsWith('0')) {
+                const sinCero = d.slice(1);
+                const prefijo = sinCero.slice(0, 3);
+                const movilesVE = ['412', '414', '416', '422', '424', '426'];
+                if (movilesVE.includes(prefijo)) {
+                    return '58' + sinCero;
+                }
+                return '58' + sinCero;
+            }
+
+            if (d.length === 10) {
+                const prefijo = d.slice(0, 3);
+                const movilesVE = ['412', '414', '416', '422', '424', '426'];
+                if (movilesVE.includes(prefijo)) {
+                    return '58' + d;
+                }
+            }
+
+            if (d.length >= 11 && d.length <= 15 && !d.startsWith('0')) {
+                return d;
+            }
+
+            return null;
+        }
+
+        function primerTelefonoUtil(...candidatos) {
+            for (const t of candidatos) {
+                const n = telefonoParaWhatsApp(t);
+                if (n) return n;
+            }
+            return null;
+        }
+
+        function urlWhatsApp(telefonoWa, texto) {
+            return 'https://wa.me/' + telefonoWa + '?text=' + encodeURIComponent(texto || '');
+        }
+
         function linkDoc(url, label, icon) {
             if (!url) {
                 return `<span style="opacity:.5;font-size:.85rem;"><i class="fas ${icon}"></i> ${label}: no adjunto</span>`;
@@ -496,6 +547,35 @@
             const r = a.representante || {};
             const nombre = `${a.nombres || ''} ${a.apellidos || ''}`.trim();
             const repNombre = `${r.nombres || ''} ${r.apellidos || ''}`.trim();
+            const wa = primerTelefonoUtil(r.telefono1, r.telefono2);
+            const telMostrar = r.telefono1 || r.telefono2 || '—';
+            const textoWa = 'Hola ' + (repNombre || '') +
+                ', le escribimos de Club Jaguares respecto al atleta ' + nombre +
+                ' (estado: ' + (a.estado || '—') + ').';
+
+            const filaWhatsApp = wa
+                ? `<tr>
+                        <th>Contacto</th>
+                        <td>
+                            ${esc(telMostrar)}
+                            <a href="${urlWhatsApp(wa, textoWa)}"
+                               target="_blank" rel="noopener noreferrer"
+                               style="display:inline-flex;align-items:center;gap:6px;margin-left:10px;
+                                      padding:5px 10px;border-radius:6px;background:#25D366;color:#fff;
+                                      text-decoration:none;font-size:0.8rem;font-weight:600;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </a>
+                        </td>
+                   </tr>`
+                : `<tr>
+                        <th>Contacto</th>
+                        <td>
+                            ${esc(telMostrar)}
+                            <span style="margin-left:8px;font-size:0.8rem;color:#999;">
+                                (Sin teléfono válido en el perfil)
+                            </span>
+                        </td>
+                   </tr>`;
 
             const foto = d.foto_url
                 ? `<img src="${esc(d.foto_url)}" alt="Foto del atleta">`
@@ -537,7 +617,7 @@
                     <table class="planilla-table">
                         <tr><th>Nombre</th><td>${esc(repNombre || '—')}</td></tr>
                         <tr><th>Correo</th><td>${esc(r.correo || '—')}</td></tr>
-                        <tr><th>Teléfono</th><td>${esc(r.telefono1 || r.telefono2 || '—')}</td></tr>
+                        ${filaWhatsApp}
                         <tr><th>Cédula</th><td>${esc(r.cedula || '—')}</td></tr>
                     </table>
                 </div>
@@ -883,6 +963,18 @@
                 data.atletas.forEach(a => {
                     const nombreCompleto = `${a.nombres} ${a.apellidos}`;
                     const nombreSafe = nombreCompleto.replace(/'/g, "\\'");
+                    const waRep = primerTelefonoUtil(a.rep_telefono1, a.rep_telefono2);
+                    const nombreRep = ((a.rep_nombres || '') + ' ' + (a.rep_apellidos || '')).trim();
+                    const textoWaLista = 'Hola ' + nombreRep +
+                        ', le escribimos de Club Jaguares respecto al atleta ' + nombreCompleto + '.';
+                    const btnWa = waRep
+                        ? `<a class="btn-action" href="${urlWhatsApp(waRep, textoWaLista)}"
+                              target="_blank" rel="noopener noreferrer"
+                              style="background:#25D366;color:#fff;text-decoration:none;">
+                              <i class="fab fa-whatsapp"></i> WA
+                           </a>`
+                        : '';
+
                     bodyAtletas.innerHTML += `<tr data-estado="${(a.estado || '').toLowerCase()}">
                         <td><strong>${nombreCompleto}</strong></td>
                         <td><i class="fas fa-user-tie" style="color:var(--text-muted);"></i> ${a.rep_nombres || ''} ${a.rep_apellidos || ''}</td>
@@ -892,6 +984,7 @@
                             <button class="btn-action btn-view" onclick="verPlanilla(${a.id_atleta})">
                                 <i class="fas fa-folder-open"></i> Planilla
                             </button>
+                            ${btnWa}
                             ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob" onclick="actualizarAtleta(${a.id_atleta}, 'activo', ${a.id_representante}, '${nombreSafe}')"><i class="fas fa-check"></i> Aprobar</button>` : ''}
                             ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech" onclick="actualizarAtleta(${a.id_atleta}, 'inactivo', ${a.id_representante}, '${nombreSafe}')"><i class="fas fa-ban"></i> Inactivo</button>` : ''}
                         </td>

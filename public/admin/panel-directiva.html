@@ -390,8 +390,11 @@
                         <thead>
                             <tr>
                                 <th>Atleta</th>
-                                <th>Mes Pagado</th>
+                                <th>Mes</th>
+                                <th>Fecha</th>
+                                <th>Método</th>
                                 <th>Monto</th>
+                                <th>Referencia</th>
                                 <th>Comprobante</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
@@ -992,23 +995,32 @@
                 });
 
                 const bodyPagos = document.getElementById('body-pagos');
-                bodyPagos.innerHTML = data.pagos.length === 0 ? '<tr><td colspan="6" style="text-align:center;">No hay registros de pagos</td></tr>' : '';
+                bodyPagos.innerHTML = data.pagos.length === 0
+                    ? '<tr><td colspan="9" style="text-align:center;">No hay registros de pagos</td></tr>'
+                    : '';
 
                 data.pagos.forEach(p => {
                     const apellidoAtleta = p.atl_apellidos || '';
+                    const mesSafe = String(p.mes_pagado || '').replace(/'/g, "\\'");
                     const btnVerCaptura = p.ruta_captura
-                        ? `<button class="btn-action btn-view" onclick="verComprobante(${p.id_pago})"><i class="fas fa-eye"></i> Ver Recibo</button>`
-                        : '<span style="color:var(--text-muted); font-size:0.85rem; font-weight:500;">Efectivo</span>';
+                        ? `<button class="btn-action btn-view" onclick="verComprobante(${p.id_pago})"><i class="fas fa-eye"></i> Ver</button>`
+                        : '<span style="color:var(--text-muted); font-size:0.85rem;">—</span>';
 
-                    bodyPagos.innerHTML += `<tr data-estado="${p.estado_pago.toLowerCase()}">
-                        <td><strong>${p.atl_nombres} ${apellidoAtleta}</strong></td>
-                        <td><i class="fas fa-calendar-alt" style="color:var(--text-muted);"></i> ${p.mes_pagado}</td>
-                        <td style="font-weight:bold;">${p.monto} ${p.moneda}</td>
+                    const metodoCorto = (p.metodo_pago || '—').replace('Transferencia Bancaria', 'Transferencia');
+                    const ref = p.referencia ? esc(p.referencia) : '—';
+
+                    bodyPagos.innerHTML += `<tr data-estado="${(p.estado_pago || '').toLowerCase()}">
+                        <td><strong>${esc(p.atl_nombres || '')} ${esc(apellidoAtleta)}</strong></td>
+                        <td>${esc(p.mes_pagado || '—')}</td>
+                        <td>${formatFecha(p.fecha_pago)}</td>
+                        <td>${esc(metodoCorto)}</td>
+                        <td style="font-weight:bold; white-space:nowrap;">${esc(String(p.monto ?? ''))} ${esc(p.moneda || '')}</td>
+                        <td style="font-size:0.85rem; max-width:120px; overflow:hidden; text-overflow:ellipsis;" title="${ref}">${ref}</td>
                         <td>${btnVerCaptura}</td>
-                        <td><span class="badge ${getBadgeClase(p.estado_pago)}">${p.estado_pago}</span></td>
+                        <td><span class="badge ${getBadgeClase(p.estado_pago || '')}">${esc(p.estado_pago || '')}</span></td>
                         <td>
-                            ${p.estado_pago !== 'aprobado' ? `<button class="btn-action btn-aprob" onclick="actualizarPago(${p.id_pago}, 'aprobado', ${p.id_representante}, '${p.mes_pagado}')"><i class="fas fa-check-double"></i> Aprobar</button>` : ''}
-                            ${p.estado_pago !== 'rechazado' ? `<button class="btn-action btn-rech" onclick="actualizarPago(${p.id_pago}, 'rechazado', ${p.id_representante}, '${p.mes_pagado}')"><i class="fas fa-times"></i> Rechazar</button>` : ''}
+                            ${p.estado_pago !== 'aprobado' ? `<button class="btn-action btn-aprob" onclick="actualizarPago(${p.id_pago}, 'aprobado', ${p.id_representante}, '${mesSafe}')"><i class="fas fa-check-double"></i> Aprobar</button>` : ''}
+                            ${p.estado_pago !== 'rechazado' ? `<button class="btn-action btn-rech" onclick="actualizarPago(${p.id_pago}, 'rechazado', ${p.id_representante}, '${mesSafe}')"><i class="fas fa-times"></i> Rechazar</button>` : ''}
                         </td>
                     </tr>`;
                 });
@@ -1105,6 +1117,12 @@
                 document.getElementById('user-info').innerHTML = `<strong>${user.nombres} ${user.apellidos}</strong> <span style="color:var(--text-muted); font-size:0.85rem;">(${user.rol})</span>`;
 
                 cargarAuditoria();
+                const filtroPagos = document.getElementById('filter-estado-pagos');
+                if (filtroPagos) {
+                    filtroPagos.value = 'pendiente';
+                    // aplicar cuando ya se pintó la tabla
+                    setTimeout(() => aplicarFiltrosPagos(), 300);
+                }
                 cargarSolicitudesPendientes();
             } catch (e) {
                 console.error('Error verificando sesión:', e);

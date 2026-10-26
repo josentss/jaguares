@@ -59,7 +59,9 @@ exports.obtenerAuditoria = async (req, res) => {
     `;
 
     const qPagos = `
-        SELECT p.id_pago, a.id_representante, p.mes_pagado, p.monto, p.moneda, p.ruta_captura, p.estado_pago,
+        SELECT p.id_pago, a.id_representante,
+               p.mes_pagado, p.metodo_pago, p.fecha_pago,
+               p.monto, p.moneda, p.referencia, p.ruta_captura, p.estado_pago,
                a.nombres AS atl_nombres, a.apellidos AS atl_apellidos
         FROM pagos p
         LEFT JOIN atletas a ON p.id_atleta = a.id_atleta
@@ -203,7 +205,7 @@ exports.obtenerUsuariosPendientes = (req, res) => {
     });
 };
 
-// 5. Aprobar o Rechazar a un usuario
+// 5. Aprobar o Rechazar a un usuario (representante)
 exports.gestionarAprobacion = (req, res) => {
     const { id_usuario, accion } = req.body;
 
@@ -211,16 +213,34 @@ exports.gestionarAprobacion = (req, res) => {
         return res.status(400).json({ success: false, message: 'Acción no válida' });
     }
 
+    if (!esEnteroPositivo(id_usuario)) {
+        return res.status(400).json({ success: false, message: 'Usuario no válido' });
+    }
+
     const nuevoEstado = accion === 'aprobar' ? 'aprobado' : 'rechazado';
 
     db.query(
-        'UPDATE usuarios SET estado = ? WHERE id_usuario = ?',
-        [nuevoEstado, id_usuario],
+        'UPDATE usuarios SET estado = ? WHERE id_usuario = ? AND estado = ?',
+        [nuevoEstado, id_usuario, 'pendiente'],
         (err, result) => {
             if (err) {
                 console.error('Error al actualizar estado:', err);
                 return res.status(500).json({ success: false, message: 'Error en la base de datos' });
             }
+
+            if (!result || result.affectedRows === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No hay una solicitud pendiente para ese usuario'
+                });
+            }
+
+            const mensaje = accion === 'aprobar'
+                ? 'Tu registro en Club Jaguares fue aprobado. Ya puedes iniciar sesión y registrar atletas.'
+                : 'Tu solicitud de registro en Club Jaguares fue rechazada. Si crees que es un error, contacta a la directiva.';
+
+            const tipo = accion === 'aprobar' ? 'success' : 'error';
+            crearNotificacion(id_usuario, mensaje, tipo);
 
             res.json({
                 success: true,

@@ -243,6 +243,8 @@
         <i class="fas fa-bars"></i>
     </button>
 
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
     <div id="toast-container"></div>
 
     <div class="modal-overlay" id="planillaModal">
@@ -870,7 +872,13 @@
                 }
 
                 if (data.datos.length === 0) {
-                    bodySolicitudes.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay solicitudes de registro pendientes</td></tr>';
+                  bodySolicitudes.innerHTML = `<tr><td colspan="4">
+                      <div class="empty-state">
+                          <i class="fas fa-user-check"></i>
+                          <p>No hay solicitudes pendientes</p>
+                          <span>Cuando un representante se registre, aparecerá aquí para que lo apruebes o rechaces.</span>
+                      </div>
+                  </td></tr>`;
                     return;
                 }
 
@@ -895,7 +903,8 @@
         }
 
         async function procesarUsuario(id_usuario, accion) {
-            if(!confirm(`¿Estás seguro de ${accion} a este usuario?`)) return;
+          const verbo = accion === 'aprobado' ? 'aprobar' : 'rechazar';
+          if (!confirm(`¿Confirmas ${verbo} el registro de este representante?\n\nEsta acción enviará una notificación al usuario.`)) return;
             try {
                 const res = await apiFetch('/api/directiva/gestionar-aprobacion', {
                     method: 'POST',
@@ -961,7 +970,15 @@
                 `;
 
                 const bodyAtletas = document.getElementById('body-atletas');
-                bodyAtletas.innerHTML = data.atletas.length === 0 ? '<tr><td colspan="5" style="text-align:center;">No hay registros de atletas</td></tr>' : '';
+                bodyAtletas.innerHTML = data.atletas.length === 0
+                    ? `<tr><td colspan="5">
+                        <div class="empty-state">
+                            <i class="fas fa-running"></i>
+                            <p>Aún no hay atletas en el sistema</p>
+                            <span>Los representantes irán registrando atletas; aquí podrás revisarlos y aprobarlos.</span>
+                        </div>
+                    </td></tr>`
+                    : '';
 
                 data.atletas.forEach(a => {
                     const nombreCompleto = `${a.nombres} ${a.apellidos}`;
@@ -996,7 +1013,13 @@
 
                 const bodyPagos = document.getElementById('body-pagos');
                 bodyPagos.innerHTML = data.pagos.length === 0
-                    ? '<tr><td colspan="9" style="text-align:center;">No hay registros de pagos</td></tr>'
+                    ? `<tr><td colspan="9">
+                        <div class="empty-state">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <p>Sin pagos reportados</p>
+                            <span>Cuando un representante envíe un pago, podrás auditarlo desde esta tabla.</span>
+                        </div>
+                    </td></tr>`
                     : '';
 
                 data.pagos.forEach(p => {
@@ -1031,7 +1054,8 @@
         }
 
         async function actualizarAtleta(id, estado, id_rep, nombre_atleta) {
-            if(!confirm(`¿Estás seguro de marcar a este atleta como ${estado.toUpperCase()}?`)) return;
+            const accionAtl = estado === 'activo' ? 'aprobar (activo)' : 'marcar como inactivo';
+            if (!confirm(`¿Confirmas ${accionAtl} a ${nombre_atleta}?\n\nEl representante será notificado.`)) return;
             try {
                 const res = await apiFetch('/api/directiva/atleta/estado', {
                     method: 'PUT',
@@ -1046,7 +1070,8 @@
         }
 
         async function actualizarPago(id, estado, id_rep, mes) {
-            if(!confirm(`¿Confirmas que deseas ${estado.toUpperCase()} este pago?`)) return;
+            const accionPago = estado === 'aprobado' ? 'aprobar' : 'rechazar';
+            if (!confirm(`¿Confirmas ${accionPago} el pago de ${mes}?\n\nEl representante recibirá una notificación.`)) return;
             try {
                 const res = await apiFetch('/api/directiva/pago/estado', {
                     method: 'PUT',
@@ -1067,9 +1092,7 @@
                 document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
                 document.getElementById(item.getAttribute('data-target')).classList.add('active');
 
-                if (window.innerWidth <= 768) {
-                    document.getElementById('sidebar').classList.remove('open');
-                }
+                if (window.innerWidth <= 768) cerrarSidebarMovil();
             });
         });
 
@@ -1085,20 +1108,24 @@
 
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+
+        function cerrarSidebarMovil() {
+            if (sidebar) sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('show');
+        }
 
         if (mobileMenuBtn && sidebar) {
             mobileMenuBtn.addEventListener('click', (e) => {
-                sidebar.classList.toggle('open');
                 e.stopPropagation();
-            });
-
-            document.addEventListener('click', (e) => {
-                if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
-                    if (!sidebar.contains(e.target) && e.target !== mobileMenuBtn) {
-                        sidebar.classList.remove('open');
-                    }
+                sidebar.classList.toggle('open');
+                if (backdrop) {
+                    backdrop.classList.toggle('show', sidebar.classList.contains('open'));
                 }
             });
+        }
+        if (backdrop) {
+            backdrop.addEventListener('click', cerrarSidebarMovil);
         }
 
         document.addEventListener('DOMContentLoaded', async () => {

@@ -430,6 +430,28 @@
                     <button type="submit" class="btn-panel-submit"><i class="fas fa-calendar-plus"></i> Guardar en Calendario</button>
                 </form>
             </div>
+            <div class="table-container" style="margin-top: 10px;">
+                <h3><i class="fas fa-calendar-check" style="color: var(--naranja);"></i> Eventos del calendario</h3>
+                <p style="font-size:0.85rem;color:#666;margin:-10px 0 16px;">
+                    Estos eventos pueden mostrarse en la web pública del club.
+                </p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Fecha</th>
+                                <th>Lugar</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-eventos">
+                            <tr><td colspan="5" style="text-align:center;">Cargando eventos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </section>
     </div>
 
@@ -903,7 +925,7 @@
         }
 
         async function procesarUsuario(id_usuario, accion) {
-          const verbo = accion === 'aprobado' ? 'aprobar' : 'rechazar';
+          const verbo = (accion === 'aprobado' || accion === 'aprobar') ? 'aprobar' : 'rechazar';
           if (!confirm(`¿Confirmas ${verbo} el registro de este representante?\n\nEsta acción enviará una notificación al usuario.`)) return;
             try {
                 const res = await apiFetch('/api/directiva/gestionar-aprobacion', {
@@ -1151,6 +1173,7 @@
                     setTimeout(() => aplicarFiltrosPagos(), 300);
                 }
                 cargarSolicitudesPendientes();
+                cargarEventosAdmin();
             } catch (e) {
                 console.error('Error verificando sesión:', e);
                 window.location.href = 'login.html';
@@ -1161,14 +1184,134 @@
         // LÓGICA DEL CMS - EVENTOS
         // ==========================================
 
+        function badgeEvento(estado) {
+            const e = (estado || 'proximo').toLowerCase();
+            if (e === 'completado') return 'badge badge-activo';
+            if (e === 'cancelado') return 'badge badge-inactivo';
+            if (e === 'en_progreso') return 'badge badge-espera';
+            return 'badge badge-espera';
+        }
+
+        function labelEstadoEvento(estado) {
+            const map = {
+                proximo: 'Próximo',
+                en_progreso: 'En progreso',
+                completado: 'Completado',
+                cancelado: 'Cancelado'
+            };
+            return map[(estado || '').toLowerCase()] || estado || '—';
+        }
+
+        function formatFechaEvento(fecha) {
+            if (!fecha) return '—';
+            try {
+                return new Date(fecha).toLocaleDateString('es-VE', {
+                    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+                });
+            } catch (_) {
+                return String(fecha);
+            }
+        }
+
+        async function cargarEventosAdmin() {
+            const tbody = document.getElementById('body-eventos');
+            if (!tbody) return;
+
+            try {
+                const res = await apiFetch('/api/cms/admin/eventos');
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#c0392b;">
+                        No se pudieron cargar los eventos
+                    </td></tr>`;
+                    return;
+                }
+
+                const eventos = data.eventos || [];
+                if (eventos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-alt"></i>
+                            <p>No hay eventos en el calendario</p>
+                            <span>Agenda el primer encuentro con el formulario de arriba.</span>
+                        </div>
+                    </td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                eventos.forEach(ev => {
+                    const id = ev.id_evento;
+                    const est = (ev.estado || 'proximo').toLowerCase();
+                    let acciones = '';
+
+                    if (est === 'proximo' || est === 'en_progreso') {
+                        acciones += `<button type="button" class="btn-action btn-aprob" onclick="cambiarEstadoEvento(${id}, 'completado')">
+                            <i class="fas fa-check"></i> Completado
+                        </button>
+                        <button type="button" class="btn-action btn-rech" onclick="cambiarEstadoEvento(${id}, 'cancelado')">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>`;
+                    } else {
+                        acciones = `<button type="button" class="btn-action btn-view" onclick="cambiarEstadoEvento(${id}, 'proximo')">
+                            <i class="fas fa-redo"></i> Reactivar
+                        </button>`;
+                    }
+
+                    tbody.innerHTML += `<tr>
+                        <td><strong>${esc(ev.titulo)}</strong></td>
+                        <td>${formatFechaEvento(ev.fecha_evento)}</td>
+                        <td>${esc(ev.lugar || '—')}</td>
+                        <td><span class="${badgeEvento(est)}">${labelEstadoEvento(est)}</span></td>
+                        <td style="white-space:nowrap;">${acciones}</td>
+                    </tr>`;
+                });
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#c0392b;">Error de conexión</td></tr>`;
+            }
+        }
+
+        async function cambiarEstadoEvento(id, estado) {
+            const textos = {
+                completado: 'marcar como completado',
+                cancelado: 'cancelar',
+                proximo: 'reactivar como próximo'
+            };
+            if (!confirm(`¿Confirmas ${textos[estado] || 'cambiar el estado de'} este evento?`)) return;
+
+            try {
+                const res = await apiFetch(`/api/cms/admin/eventos/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estado })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.success !== false) {
+                    showToast(data.mensaje || data.message || 'Evento actualizado', 'success');
+                    cargarEventosAdmin();
+                } else {
+                    showToast(data.error || data.message || 'No se pudo actualizar', 'error');
+                }
+            } catch (err) {
+                showToast('Error de conexión', 'error');
+            }
+        }
+
         document.getElementById('form-evento')?.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const bodyData = {
-                titulo: document.getElementById('evento-titulo').value,
+                titulo: document.getElementById('evento-titulo').value.trim(),
                 fecha_evento: document.getElementById('evento-fecha').value,
-                lugar: document.getElementById('evento-lugar').value
+                lugar: document.getElementById('evento-lugar').value.trim()
             };
+
+            if (!bodyData.titulo || !bodyData.fecha_evento || !bodyData.lugar) {
+                showToast('Completa título, fecha y lugar', 'error');
+                return;
+            }
 
             const btnSubmit = e.target.querySelector('button');
             const originalText = btnSubmit.innerHTML;
@@ -1186,10 +1329,12 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    showToast('Evento agendado exitosamente.', 'success');
+                    showToast(data.mensaje || 'Evento agendado exitosamente.', 'success');
                     document.getElementById('form-evento').reset();
+                    cargarEventosAdmin();
                 } else {
-                    showToast('Error al agendar: ' + (data.message || data.error), 'error');
+                    const detalle = (data.detalles && data.detalles.join(', ')) || data.error || data.message;
+                    showToast('No se pudo agendar: ' + (detalle || 'error'), 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);

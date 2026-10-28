@@ -79,6 +79,7 @@
         </div>
     </div>
     <button class="mobile-menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
     <div class="sidebar" id="sidebar">
         <div class="sidebar-logo">
@@ -411,8 +412,22 @@
             // --- NAVEGACIÓN TABS SIDEBAR ---
             const menuToggle = document.getElementById('menu-toggle');
             const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+
+            function cerrarSidebarMovil() {
+                if (sidebar) sidebar.classList.remove('open');
+                if (backdrop) backdrop.classList.remove('show');
+            }
+
             if (menuToggle && sidebar) {
-                menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+                menuToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('open');
+                    if (backdrop) backdrop.classList.toggle('show', sidebar.classList.contains('open'));
+                });
+            }
+            if (backdrop) {
+                backdrop.addEventListener('click', cerrarSidebarMovil);
             }
 
             const menuItems = document.querySelectorAll('.sidebar-menu li[data-target]');
@@ -424,7 +439,7 @@
                     item.classList.add('active');
                     const targetSec = document.getElementById(item.getAttribute('data-target'));
                     if (targetSec) targetSec.classList.add('active');
-                    if (window.innerWidth <= 768 && sidebar) sidebar.classList.remove('open');
+                    if (window.innerWidth <= 768) cerrarSidebarMovil();
                 });
             });
 
@@ -635,7 +650,16 @@
                         selectAtleta.innerHTML = '<option value="">-- Seleccione --</option>';
 
                         if (data.atletas.length === 0) {
-                            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center;">Sin atletas inscritos.</td></tr>`;
+                          tbody.innerHTML = `<tr><td colspan="3">
+                              <div class="empty-state">
+                                  <i class="fas fa-running"></i>
+                                  <p>Aún no tienes atletas registrados</p>
+                                  <span>Cuando registres uno, aquí verás su estado (en revisión, activo o inactivo).</span>
+                                  <button type="button" class="btn-panel-submit" onclick="document.querySelector('[data-target=sec-atletas]')?.click()">
+                                      <i class="fas fa-user-plus"></i> Registrar atleta
+                                  </button>
+                              </div>
+                          </td></tr>`;
                             return;
                         }
 
@@ -678,7 +702,16 @@
                         const pagosFiltrados = data.datos.filter(p => p.mes_pagado !== null);
 
                         if(pagosFiltrados.length === 0) {
-                            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No hay reportes de pagos.</td></tr>`;
+                          tbody.innerHTML = `<tr><td colspan="5">
+                              <div class="empty-state">
+                                  <i class="fas fa-receipt"></i>
+                                  <p>Sin reportes de pago todavía</p>
+                                  <span>Cada vez que reportes un pago, aparecerá aquí con su estado de revisión.</span>
+                                  <button type="button" class="btn-panel-submit" onclick="document.querySelector('[data-target=sec-pagos]')?.click()">
+                                      <i class="fas fa-money-bill-wave"></i> Reportar pago
+                                  </button>
+                              </div>
+                          </td></tr>`;
                             return;
                         }
 

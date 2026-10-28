@@ -446,8 +446,8 @@ body.panel-body {
     color: var(--text-main);
 }
 
-.form-group-panel input, 
-.form-group-panel select, 
+.form-group-panel input,
+.form-group-panel select,
 .form-group-panel textarea {
     width: 100%;
     padding: 11px 15px;
@@ -459,8 +459,8 @@ body.panel-body {
     transition: all 0.3s ease;
 }
 
-.form-group-panel input:focus, 
-.form-group-panel select:focus, 
+.form-group-panel input:focus,
+.form-group-panel select:focus,
 .form-group-panel textarea:focus {
     border-color: var(--naranja);
     box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
@@ -677,5 +677,98 @@ tr:hover td {
     /* Forzar desplazamiento horizontal solo en tablas si son muy anchas */
     .table-container {
         padding: 10px;
+    }
+}
+
+/* ===== UX: empty states ===== */
+.empty-state {
+    text-align: center;
+    padding: 36px 20px;
+    color: var(--text-muted);
+}
+.empty-state i {
+    font-size: 2.4rem;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+    display: block;
+}
+.empty-state p {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+.empty-state span {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+.empty-state .btn-panel-submit {
+    margin-top: 4px;
+}
+
+/* Overlay al abrir menú móvil */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 998;
+}
+.sidebar-backdrop.show {
+    display: block;
+}
+
+/* Mensajes en login (sustituye alert) */
+.auth-feedback {
+    display: none;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+.auth-feedback.show { display: block; }
+.auth-feedback.error {
+    background: #fdecea;
+    color: #c0392b;
+    border: 1px solid #f5c6cb;
+}
+.auth-feedback.success {
+    background: #e8f8ef;
+    color: #1e7e34;
+    border: 1px solid #c3e6cb;
+}
+.auth-feedback.info {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+@media (max-width: 768px) {
+    .form-grid-panel {
+        grid-template-columns: 1fr !important;
+    }
+
+    #toast-container {
+        left: 12px;
+        right: 12px;
+        bottom: 16px;
+    }
+    .toast {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .btn-panel-submit {
+        width: 100%;
+        justify-content: center;
+    }
+
+    th, td {
+        padding: 10px 12px;
+        font-size: 0.85rem;
     }
 }

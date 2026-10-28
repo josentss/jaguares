@@ -305,9 +305,9 @@ const obtenerEventosPublicos = async (req, res) => {
         const [eventos] = await db.promise().query(
             `SELECT id_evento, titulo, fecha_evento, lugar, estado
              FROM eventos
-             WHERE estado IN ('proximo', 'en_progreso')
+             WHERE COALESCE(estado, 'proximo') IN ('proximo', 'en_progreso')
              ORDER BY fecha_evento ASC
-             LIMIT 5`
+             LIMIT 20`
         );
 
         res.status(200).json({
@@ -343,8 +343,8 @@ const crearEventoAdmin = async (req, res) => {
         }
 
         const [result] = await db.promise().query(
-            `INSERT INTO eventos (titulo, fecha_evento, lugar)
-             VALUES (?, ?, ?)`,
+            `INSERT INTO eventos (titulo, fecha_evento, lugar, estado)
+             VALUES (?, ?, ?, 'proximo')`,
             [titulo.trim(), fecha_evento, lugar.trim()]
         );
 

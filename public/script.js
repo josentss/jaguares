@@ -35,25 +35,55 @@ toggleBtns.forEach(btn => {
 ======================================== */
 const mobileMenuBtn = document.getElementById('mobile-menu');
 const navLinks = document.getElementById('nav-links');
+const navBackdrop = document.getElementById('nav-backdrop');
 
-mobileMenuBtn.addEventListener('click', () => {
-    navLinks.classList.toggle('active');
-    const icon = mobileMenuBtn.querySelector('i');
-    if(navLinks.classList.contains('active')){
-        icon.classList.replace('fa-bars', 'fa-times');
-    } else {
-        icon.classList.replace('fa-times', 'fa-bars');
+function cerrarMenuMovil() {
+    if (!navLinks) return;
+    navLinks.classList.remove('active');
+    if (navBackdrop) {
+        navBackdrop.classList.remove('show');
+        navBackdrop.hidden = true;
     }
-});
+    document.body.classList.remove('nav-open');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.setAttribute('aria-expanded', 'false');
+        const icon = mobileMenuBtn.querySelector('i');
+        if (icon) {
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+        }
+    }
+}
 
-// Cerrar menú móvil al hacer clic en un enlace
-document.querySelectorAll('.nav-links a').forEach(link => {
-    link.addEventListener('click', () => {
-        navLinks.classList.remove('active');
-        mobileMenuBtn.querySelector('i').classList.replace('fa-times', 'fa-bars');
+function abrirMenuMovil() {
+    if (!navLinks || !mobileMenuBtn) return;
+    navLinks.classList.add('active');
+    if (navBackdrop) {
+        navBackdrop.hidden = false;
+        navBackdrop.classList.add('show');
+    }
+    document.body.classList.add('nav-open');
+    mobileMenuBtn.setAttribute('aria-expanded', 'true');
+    const icon = mobileMenuBtn.querySelector('i');
+    if (icon) {
+        icon.classList.remove('fa-bars');
+        icon.classList.add('fa-times');
+    }
+}
+
+if (mobileMenuBtn && navLinks) {
+    mobileMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (navLinks.classList.contains('active')) cerrarMenuMovil();
+        else abrirMenuMovil();
     });
+}
+if (navBackdrop) {
+    navBackdrop.addEventListener('click', cerrarMenuMovil);
+}
+document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', cerrarMenuMovil);
 });
-
 
 /* =====================================
    3. ANIMACIONES DE SCROLL (REVEAL)
@@ -84,15 +114,15 @@ const dataCategorias = {
         edades: "Niños(as) de 5 a 7 años",
         atletas: "32 atletas inscritos",
         torneos: "Eventos internos y amistosos locales",
-        img1: "img/cat-1.jpg",
-        img2: "img/cat-2.jpg"
+        img1: "img/u7-card.jpeg",
+        img2: "img/cat-1.jpg"
     },
     u9: {
         titulo: "U-9 Iniciación",
         edades: "Niños(as) de 8 y 9 años",
         atletas: "28 atletas inscritos",
         torneos: "Liga Menor de Barinas",
-        img1: "img/u9-card.jpg",
+        img1: "img/u9-card.jpeg",
         img2: "img/cat-1.jpg"
     },
     u11: {
@@ -100,7 +130,7 @@ const dataCategorias = {
         edades: "Niños(as) de 10 y 11 años",
         atletas: "35 atletas inscritos",
         torneos: "Campeonatos Estatales e Invitacionales",
-        img1: "img/u11-card.jpg",
+        img1: "img/u11-card.jpeg",
         img2: "img/cat-2.jpg"
     },
     u13: {
@@ -108,7 +138,7 @@ const dataCategorias = {
         edades: "Jóvenes de 12 y 13 años",
         atletas: "40 atletas inscritos",
         torneos: "Liga Nacional de Mini Voleibol",
-        img1: "img/u13-card.jpg",
+        img1: "img/u13-card.jpeg",
         img2: "img/cat-1.jpg"
     },
     u15: {
@@ -116,7 +146,7 @@ const dataCategorias = {
         edades: "Masculino de 14 y 15 años",
         atletas: "30 atletas inscritos",
         torneos: "Campeonato Zonal Andino, Invitacionales Nacionales",
-        img1: "img/u15-card.jpg",
+        img1: "img/u15-card.jpeg",
         img2: "img/foto-entrenadores.jpg"
     }
 };
@@ -134,32 +164,45 @@ const mImg1 = document.getElementById('modal-img-1');
 const mImg2 = document.getElementById('modal-img-2');
 
 // Abrir Modal
+function abrirModalCategoria() {
+    if (!modal) return;
+    modal.classList.add('active');
+    document.body.classList.add('modal-open');
+}
+function cerrarModalCategoria() {
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.classList.remove('modal-open');
+}
+
 cards.forEach(card => {
     card.addEventListener('click', () => {
         const catId = card.getAttribute('data-cat');
         const info = dataCategorias[catId];
-
-        if(info) {
-            mTitulo.textContent = info.titulo;
-            mEdades.textContent = info.edades;
-            mAtletas.textContent = info.atletas;
-            mTorneos.textContent = info.torneos;
-            mImg1.src = info.img1;
-            mImg2.src = info.img2;
-
-            modal.classList.add('active');
-        }
+        if (!info) return;
+        mTitulo.textContent = info.titulo;
+        mEdades.textContent = info.edades;
+        mAtletas.textContent = info.atletas;
+        mTorneos.textContent = info.torneos;
+        mImg1.src = info.img1;
+        mImg2.src = info.img2;
+        abrirModalCategoria();
     });
 });
 
-// Cerrar Modal
-closeModalBtn.addEventListener('click', () => modal.classList.remove('active'));
+if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', cerrarModalCategoria);
+}
+if (modal) {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) cerrarModalCategoria();
+    });
+}
 
-// Cerrar al hacer clic fuera del contenido del modal
-modal.addEventListener('click', (e) => {
-    if(e.target === modal) {
-        modal.classList.remove('active');
-    }
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (modal && modal.classList.contains('active')) cerrarModalCategoria();
+    if (navLinks && navLinks.classList.contains('active')) cerrarMenuMovil();
 });
 
 

@@ -52,12 +52,13 @@
             </div>
 
             <div class="nav-controls-mobile">
-                <button id="theme-toggle" title="Cambiar modo">
+                <button type="button" id="theme-toggle" title="Cambiar modo" aria-label="Cambiar tema">
                     <i class="fas fa-moon"></i>
                 </button>
-                <div class="menu-toggle" id="mobile-menu">
+                <button type="button" class="menu-toggle" id="mobile-menu"
+                        aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
                     <i class="fas fa-bars"></i>
-                </div>
+                </button>
             </div>
 
             <ul class="nav-links" id="nav-links">
@@ -74,6 +75,7 @@
                </li>
             </ul>
          </nav>
+         <div class="nav-backdrop" id="nav-backdrop" hidden></div>
       </header>
       <main>
          <section id="inicio" class="hero">

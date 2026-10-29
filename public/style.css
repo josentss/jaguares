@@ -28,8 +28,16 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
-    transition: background-color 0.4s, color 0.4s, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+html {
     scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 .reveal, .reveal-left, .reveal-right {
@@ -128,10 +136,15 @@ section {
     gap: 15px;
 }
 .menu-toggle {
-    font-size: 1.8rem;
+    background: none;
+    border: none;
+    font-size: 1.6rem;
     color: var(--text-color);
     cursor: pointer;
+    padding: 6px;
+    line-height: 1;
 }
+
 #theme-toggle, #theme-toggle-desktop {
     background: none; border: none; cursor: pointer;
     font-size: 1.3rem; color: var(--naranja);
@@ -215,27 +228,52 @@ section {
 
 /* 7. MODAL CATEGORÍAS */
 .modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.8); z-index: 9999;
-    display: flex; justify-content: center; align-items: center;
-    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-    padding: 20px;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    padding: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 .modal-overlay.active { opacity: 1; pointer-events: auto; }
 .modal-content {
-    background: var(--card-bg); width: 100%; max-width: 600px;
-    border-radius: 25px; padding: 40px; position: relative;
-    transform: translateY(-20px); transition: transform 0.3s ease;
+    background: var(--card-bg);
+    width: 100%;
+    max-width: 600px;
+    margin: 12px auto 24px;
+    border-radius: 20px;
+    padding: 40px;
+    position: relative;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
     box-shadow: 0 20px 40px rgba(0,0,0,0.2);
 }
 .modal-overlay.active .modal-content { transform: translateY(0); }
 
 .close-modal {
-    position: absolute; top: 20px; right: 20px;
-    background: rgba(255, 69, 0, 0.1); border: none;
-    color: var(--naranja); font-size: 1.5rem;
-    width: 40px; height: 40px; border-radius: 50%;
-    cursor: pointer; display: flex; justify-content: center; align-items: center;
+    position: sticky;
+    top: 8px;
+    float: right;
+    z-index: 2;
+    background: rgba(255, 69, 0, 0.12);
+    border: none;
+    color: var(--naranja);
+    font-size: 1.25rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .close-modal:hover { background: var(--naranja); color: white; }
 
@@ -465,4 +503,50 @@ footer { padding: 80px 8% 30px; background-color: var(--section-bg); border-top:
     .cal-day {
         font-size: 0.9rem;
     }
+}
+
+/* menú móvil + body lock  */
+.nav-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 999;
+}
+.nav-backdrop.show { display: block; }
+body.nav-open,
+body.modal-open { overflow: hidden; }
+
+@media (max-width: 768px) {
+    section { padding: 56px 4%; }
+    .hero {
+        min-height: 85vh;
+        height: auto;
+        padding: 100px 4% 48px;
+    }
+    .hero-content h1 {
+        font-size: clamp(1.75rem, 7vw, 2.2rem);
+        line-height: 1.15;
+    }
+    .hero-content p { font-size: 1rem; }
+    .btn-main, .btn-inscribete {
+        padding: 12px 22px;
+        font-size: 0.9rem;
+        width: 100%;
+        max-width: 280px;
+        text-align: center;
+    }
+    .category-card { height: 240px; border-radius: 18px; }
+    .card-overlay { padding: 18px; }
+    .category-card h3 { font-size: 1.15rem; }
+    .modal-content { padding: 20px 16px 24px; border-radius: 16px; }
+    #modal-titulo { font-size: 1.25rem; margin-bottom: 16px; }
+    .info-item { font-size: 0.95rem; gap: 10px; }
+    .modal-gallery img { height: 140px; }
+    .nosotros-fotos { height: 280px; min-width: 0; }
+    .nosotros-texto { min-width: 0; }
+    .map-container { height: 280px; border-width: 6px; border-radius: 18px; min-width: 0; }
+    .siguenos-container { padding: 28px 20px; border-radius: 18px; min-width: 0; }
+    footer { padding: 48px 4% 24px; }
+    .logo-footer { height: 64px; }
 }

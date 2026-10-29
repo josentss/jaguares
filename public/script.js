@@ -1,6 +1,4 @@
-/* =====================================
-   1. MODO OSCURO (DARK MODE)
-======================================== */
+/* 1. Modo oscuro */
 const toggleBtns = document.querySelectorAll('#theme-toggle, #theme-toggle-desktop');
 
 const currentTheme = localStorage.getItem('theme');
@@ -30,9 +28,7 @@ toggleBtns.forEach(btn => {
     });
 });
 
-/* =====================================
-   2. MENÚ MÓVIL (HAMBURGUESA)
-======================================== */
+/* 2. Menú móvil */
 const mobileMenuBtn = document.getElementById('mobile-menu');
 const navLinks = document.getElementById('nav-links');
 const navBackdrop = document.getElementById('nav-backdrop');
@@ -85,14 +81,12 @@ document.querySelectorAll('.nav-links a').forEach(link => {
     link.addEventListener('click', cerrarMenuMovil);
 });
 
-// Si se agranda la ventana (rotar el móvil, redimensionar en PC), se cierra el menú móvil
+// Cierra el menú móvil al agrandar la ventana
 window.addEventListener('resize', () => {
     if (window.innerWidth > 1024) cerrarMenuMovil();
 });
 
-/* =====================================
-   3. ANIMACIONES DE SCROLL (REVEAL)
-======================================== */
+/* 3. Animaciones de scroll */
 function reveal() {
     const reveals = document.querySelectorAll(".reveal, .reveal-left, .reveal-right");
     for (let i = 0; i < reveals.length; i++) {
@@ -103,7 +97,7 @@ function reveal() {
         if (elementTop < windowHeight - elementVisible && !reveals[i].classList.contains("active")) {
             const el = reveals[i];
             el.classList.add("active");
-            // Al terminar la entrada se quita el retraso escalonado en línea, para que el hover responda con suavidad
+            // Quita el retraso inline tras la entrada (hover ágil)
             if (el.style.transitionDelay) {
                 setTimeout(() => { el.style.transitionDelay = ''; }, 1600);
             }
@@ -114,10 +108,8 @@ window.addEventListener("scroll", reveal);
 window.addEventListener("load", reveal);
 
 
-/* =====================================
-   4. MODAL DE CATEGORÍAS
-======================================== */
-// Base de datos de información por categoría
+/* 4. Modal de categorías */
+// Datos por categoría
 const dataCategorias = {
     u7: {
         titulo: "U-7 Semillitas",
@@ -165,7 +157,7 @@ const cards = document.querySelectorAll('.cat-trigger');
 const modal = document.getElementById('modal-categoria');
 const closeModalBtn = document.querySelector('.close-modal');
 
-// Elementos del DOM a actualizar
+// Elementos del modal
 const mTitulo = document.getElementById('modal-titulo');
 const mEdades = document.getElementById('modal-edades');
 const mAtletas = document.getElementById('modal-atletas');
@@ -173,7 +165,7 @@ const mTorneos = document.getElementById('modal-torneos');
 const mImg1 = document.getElementById('modal-img-1');
 const mImg2 = document.getElementById('modal-img-2');
 
-// Abrir Modal (guarda el foco para devolverlo al cerrar)
+// Abrir/cerrar modal (devuelve el foco al cerrar)
 let ultimoFoco = null;
 function abrirModalCategoria() {
     if (!modal) return;
@@ -207,7 +199,7 @@ cards.forEach(card => {
     });
 });
 
-// Abrir con Enter o Espacio cuando la tarjeta tiene el foco
+// Teclado: Enter o Espacio
 cards.forEach(card => {
     card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -233,9 +225,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 
-/* =====================================
-   5. CALENDARIO + EVENTOS (API CMS)
-======================================== */
+/* 5. Calendario y eventos */
 const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 let date = new Date();
 let currentMonth = date.getMonth();
@@ -251,7 +241,7 @@ const nextBtn = document.getElementById('next-month');
 const listaEventosEl = document.getElementById('lista-eventos-publicos');
 const calendarHint = document.getElementById('calendar-hint');
 
-// Evita que texto del CMS se interprete como HTML (seguridad)
+// Escapa texto del CMS (seguridad)
 function escapeHTML(texto) {
     return String(texto == null ? '' : texto)
         .replace(/&/g, '&amp;')
@@ -270,7 +260,7 @@ function fechaLocalISO(d) {
 
 function parseFechaEvento(fecha) {
     if (!fecha) return null;
-    // Postgres / ISO: '2026-11-05' o '2026-11-05T00:00:00.000Z'
+    // Formato '2026-11-05' o ISO completo
     const s = String(fecha).slice(0, 10);
     const [y, m, d] = s.split('-').map(Number);
     if (!y || !m || !d) return null;
@@ -380,7 +370,7 @@ function renderCalendar() {
     }
 }
 
-/* ---- Próximo evento destacado ---- */
+/* Próximo evento */
 const proximoEl = document.getElementById('proximo-evento');
 
 function diasHasta(key) {
@@ -418,7 +408,7 @@ function renderProximoEvento() {
     proximoEl.setAttribute('aria-label', `Próximo evento: ${ev.titulo || 'Evento'}, ${cuando}. ${detalle}. Ver en el calendario`);
     proximoEl.hidden = false;
 
-    // Al tocarlo, el calendario salta a ese mes y muestra el evento
+    // Al tocarlo, el calendario salta a ese día
     proximoEl.onclick = () => {
         currentMonth = p.m;
         currentYear = p.y;
@@ -472,9 +462,7 @@ if (nextBtn) {
 cargarEventosPublicos();
 
 
-/* =====================================
-   6. BARRA SUPERIOR COMPACTA + VOLVER ARRIBA
-======================================== */
+/* 6. Navbar compacta y volver arriba */
 const navbarEl = document.querySelector('.navbar');
 const backTopBtn = document.getElementById('back-to-top');
 
@@ -492,9 +480,7 @@ if (backTopBtn) {
     });
 }
 
-/* =====================================
-   7. SECCIÓN ACTIVA EN EL MENÚ
-======================================== */
+/* 7. Sección activa del menú */
 const enlacesSeccion = Array.from(document.querySelectorAll('.nav-links a[href^="#"]'));
 const mapaSecciones = new Map(enlacesSeccion.map(a => [a.getAttribute('href').slice(1), a]));
 
@@ -520,9 +506,7 @@ if ('IntersectionObserver' in window && mapaSecciones.size) {
     });
 }
 
-/* =====================================
-   8. CONTADORES SUTILES (franja de cifras)
-======================================== */
+/* 8. Contadores */
 const prefiereMenosMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function animarContador(el) {
@@ -551,9 +535,7 @@ if ('IntersectionObserver' in window && contadores.length) {
     contadores.forEach(c => observadorContadores.observe(c));
 }
 
-/* =====================================
-   9. CARRUSEL DE CATEGORÍAS (móvil): puntos indicadores
-======================================== */
+/* 9. Carrusel de categorías (puntos) */
 const gridCategorias = document.querySelector('.services-grid');
 const puntosEl = document.getElementById('cat-dots');
 

@@ -1,4 +1,4 @@
-/* 1. VARIABLES Y CONFIG */
+/* 1. Variables */
 :root {
     --bg-color: #ffffff;
     --section-bg: #f3f5f9;
@@ -12,7 +12,6 @@
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     --focus: #0056b3;
 
-    /* Responsivo */
     --pad-x: 8%;
     --pad-y: 100px;
     --nav-h: 78px;
@@ -30,7 +29,7 @@
     --focus: #FFD700;
 }
 
-/* 2. ESTILOS BASE Y ANIMACIONES */
+/* 2. Base y animaciones */
 * {
     margin: 0;
     padding: 0;
@@ -41,13 +40,13 @@ html {
     overflow-x: hidden;
     max-width: 100%;
     scroll-behavior: smooth;
-    scroll-padding-top: var(--nav-h);   /* el menú fijo ya no tapa los títulos al navegar */
+    scroll-padding-top: var(--nav-h);   /* menú fijo no tapa títulos */
     -webkit-text-size-adjust: 100%;
 }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
 
-/* Accesibilidad: foco visible solo al navegar con teclado */
+/* Foco visible (teclado) */
 :focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 3px;
@@ -95,11 +94,11 @@ body {
 
 section {
     padding: var(--pad-y) var(--pad-x);
-    overflow-x: clip;   /* las animaciones laterales nunca ensanchan la página */
+    overflow-x: clip;   /* evita desbordes laterales */
 }
 footer { overflow-x: clip; }
 
-/* 3. NAV BAR */
+/* 3. Navbar */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -171,7 +170,7 @@ footer { overflow-x: clip; }
 .nav-links a.is-current:not(.btn-login) { color: var(--naranja); }
 .nav-links a.is-current:not(.btn-login)::after { width: 100%; }
 
-/* Controles Menú Móvil */
+/* Controles móviles */
 .nav-controls-mobile {
     display: none;
     align-items: center;
@@ -193,7 +192,7 @@ footer { overflow-x: clip; }
     font-size: 1.3rem; color: var(--naranja);
 }
 
-/* Áreas táctiles cómodas (mín. ~44px) en el menú móvil */
+/* Áreas táctiles (~44px) */
 #theme-toggle, .menu-toggle {
     min-width: 44px;
     min-height: 44px;
@@ -202,7 +201,7 @@ footer { overflow-x: clip; }
     justify-content: center;
 }
 
-/* Transiciones suaves en botones y enlaces interactivos */
+/* Transiciones suaves */
 .btn-main, .btn-inscribete, .btn-login, .btn-secundario, .red-item,
 .footer-redes .social-icon, .calendar-header button, .close-modal, .sede-link {
     transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.35s ease,
@@ -211,7 +210,7 @@ footer { overflow-x: clip; }
 .nav-links a { transition: color 0.3s ease; }
 .footer-col a { transition: color 0.3s ease; }
 
-/* 4. INICIO (HERO) */
+/* 4. Hero */
 .hero {
     min-height: 100vh;
     min-height: 100svh;
@@ -287,7 +286,7 @@ footer { overflow-x: clip; }
 .btn-main { background: var(--azul); }
 .btn-inscribete { background: var(--naranja); }
 
-/* 4b. FRANJA DE CIFRAS (sutil) */
+/* 4b. Cifras */
 .stats-strip {
     padding: 26px var(--pad-x);
     background: var(--card-bg);
@@ -305,7 +304,7 @@ footer { overflow-x: clip; }
 .stat-num { display: block; font-weight: 600; font-size: 1.05rem; line-height: 1.15; }
 .stat-label { display: block; font-size: 0.78rem; color: var(--text-muted); }
 
-/* 5. SOBRE NOSOTROS */
+/* 5. Nosotros */
 .nosotros-container { display: flex; gap: 60px; align-items: center; flex-wrap: wrap; }
 .nosotros-texto { flex: 1 1 320px; min-width: 0; }
 .nosotros-texto h2 { font-size: clamp(1.8rem, 5vw, 2.8rem); color: var(--naranja); margin-bottom: 20px; line-height: 1.2; }
@@ -319,7 +318,7 @@ footer { overflow-x: clip; }
     gap: 15px;
     position: relative;
     height: clamp(280px, 45vw, 450px);
-    margin-bottom: 30px;               /* espacio para la foto secundaria que sobresale */
+    margin-bottom: 30px;               /* espacio para foto secundaria */
 }
 .foto-main { width: 80%; height: 100%; border-radius: 30px; object-fit: cover; box-shadow: var(--shadow); }
 .foto-sec {
@@ -336,7 +335,7 @@ footer { overflow-x: clip; }
 
 .btn-secundario { padding: 12px 30px; background: transparent; border: 2px solid var(--naranja); color: var(--naranja); border-radius: 50px; cursor: pointer; font-weight: 600; }
 
-/* 6. CATEGORÍAS */
+/* 6. Categorías */
 .cat-dots { display: none; }
 .section-title { text-align: center; margin-bottom: 50px; }
 .section-title h2 { font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--naranja); line-height: 1.2; }
@@ -366,7 +365,7 @@ footer { overflow-x: clip; }
 .category-card.active { transition: transform 0.5s ease, box-shadow 0.5s ease, opacity 0.8s ease-out; }
 .category-card h3 { color: white; font-size: 1.4rem; z-index: 3; position: relative; transition: transform 0.4s ease; }
 
-/* 7. MODAL CATEGORÍAS */
+/* 7. Modal */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0;
@@ -426,7 +425,7 @@ footer { overflow-x: clip; }
 .modal-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .modal-gallery img { width: 100%; height: 180px; object-fit: cover; border-radius: 15px; box-shadow: var(--shadow); }
 
-/* 8. CALENDARIO UI */
+/* 8. Calendario */
 .calendar-section { background-color: var(--bg-color); }
 .proximo-evento {
     display: flex;
@@ -563,7 +562,7 @@ footer { overflow-x: clip; }
     padding-left: 0;
 }
 
-/* 9. MAPA Y REDES */
+/* 9. Mapa y redes */
 .map-section { background-color: var(--section-bg); }
 .contacto-wrapper { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
 .map-container { position: relative; flex: 1.5 1 320px; min-width: 0; min-height: 440px; border-radius: 35px; overflow: hidden; border: 10px solid var(--card-bg); box-shadow: var(--shadow); }
@@ -573,7 +572,7 @@ footer { overflow-x: clip; }
 .siguenos-container h3 { font-size: 1.6rem; color: var(--naranja); margin-bottom: 10px; line-height: 1.2; }
 .siguenos-container p { color: var(--text-muted); margin-bottom: 30px; line-height: 1.6; }
 
-/* Bloques de la tarjeta (sede / redes) */
+/* Tarjeta sede / redes */
 .sede-bloque + .sede-bloque { margin-top: 28px; padding-top: 28px; border-top: 1px solid rgba(128, 128, 128, 0.2); }
 .sede-bloque p { margin-bottom: 20px !important; }
 .sede-dir { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; font-style: normal; font-weight: 500; line-height: 1.5; }
@@ -592,7 +591,7 @@ footer { overflow-x: clip; }
 .instagram { background: #E1306C; }
 .tiktok { background: #000; border: 1px solid rgba(255, 255, 255, 0.1); }
 
-/* 10. FOOTER */
+/* 10. Footer */
 footer { padding: 70px var(--pad-x) 30px; background-color: var(--section-bg); border-top: 1px solid rgba(0, 0, 0, 0.03); display: flex; flex-direction: column; align-items: center; text-align: center; }
 .footer-grid { display: grid; grid-template-columns: 1.3fr 0.8fr 1.3fr; gap: 40px; width: 100%; max-width: 1100px; margin-bottom: 40px; text-align: left; }
 .footer-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -614,7 +613,7 @@ footer { padding: 70px var(--pad-x) 30px; background-color: var(--section-bg); b
 .footer-redes .social-icon { display: flex; align-items: center; justify-content: center; width: 45px; height: 45px; border-radius: 50%; background: var(--card-bg); color: var(--naranja); font-size: 1.3rem; box-shadow: var(--shadow); text-decoration: none; }
 .footer-bottom { width: 100%; padding-top: 30px; border-top: 1px solid rgba(128, 128, 128, 0.2); text-align: center; color: var(--text-muted); font-size: 0.9rem; }
 
-/* 10b. VOLVER ARRIBA */
+/* 10b. Volver arriba */
 .back-to-top {
     position: fixed;
     right: max(16px, env(safe-area-inset-right));
@@ -636,7 +635,7 @@ footer { padding: 70px var(--pad-x) 30px; background-color: var(--section-bg); b
 }
 .back-to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
 
-/* 11. MENÚ MÓVIL + BLOQUEO DE SCROLL */
+/* 11. Menú móvil y bloqueo de scroll */
 .nav-backdrop {
     display: none;
     position: fixed;
@@ -648,10 +647,7 @@ footer { padding: 70px var(--pad-x) 30px; background-color: var(--section-bg); b
 body.nav-open,
 body.modal-open { overflow: hidden; }
 
-/* =========================================================
-   12. EFECTOS HOVER — solo en dispositivos con puntero real
-   (en móviles/tablets evita que el "hover" se quede pegado)
-============================================================ */
+/* 12. Hover (solo con puntero real) */
 @media (hover: hover) and (pointer: fine) {
     .nav-links a:not(.btn-login):hover::after { width: 100%; }
     .btn-login:hover {
@@ -681,18 +677,16 @@ body.modal-open { overflow: hidden; }
     .footer-redes .social-icon.tiktok:hover { background-color: #000000; border: 1px solid rgba(255, 255, 255, 0.2); }
 }
 
-/* Feedback al tocar en pantallas táctiles */
+/* Feedback táctil */
 @media (hover: none) {
     .btn-main:active, .btn-inscribete:active, .btn-login:active { transform: scale(0.97); }
     .category-card:active { transform: scale(0.98); }
     .red-item:active { filter: brightness(1.1); }
 }
 
-/* =========================================================
-   13. RESPONSIVO (de escritorio hacia móvil)
-============================================================ */
+/* 13. Responsivo */
 
-/* Laptops pequeñas / tablets horizontales: ya se usa menú hamburguesa */
+/* ≤1024px: menú hamburguesa */
 @media (max-width: 1024px) {
     :root { --pad-x: 5%; --pad-y: 80px; --nav-h: 72px; --logo-h: 46px; }
 
@@ -744,7 +738,7 @@ body.modal-open { overflow: hidden; }
     .footer-brand .footer-logo, .footer-brand .footer-redes { justify-content: center; }
 }
 
-/* Tablets verticales */
+/* ≤768px: tablet */
 @media (max-width: 768px) {
     :root { --pad-x: 4.5%; --pad-y: 60px; }
 
@@ -755,7 +749,7 @@ body.modal-open { overflow: hidden; }
     .nosotros-container { gap: 40px; }
     .nosotros-texto p { text-align: left; }
 
-    /* Categorías: carrusel horizontal con "snap" */
+    /* Categorías: carrusel */
     .services-grid {
         display: flex;
         gap: 14px;
@@ -803,12 +797,12 @@ body.modal-open { overflow: hidden; }
     .bandera-footer { height: 52px; }
     .footer-logo .logo-text { font-size: 1.8rem; }
 
-    /* Animación solo vertical: sin desplazamiento lateral (evita desbordes) */
+    /* Reveal solo vertical */
     .reveal-left, .reveal-right { transform: translateY(30px); }
     .reveal-left.active, .reveal-right.active { transform: translate(0); }
 }
 
-/* Móviles */
+/* ≤480px: móvil */
 @media (max-width: 480px) {
     :root { --pad-x: 5%; --pad-y: 52px; --nav-h: 66px; --logo-h: 40px; }
 
@@ -860,7 +854,7 @@ body.modal-open { overflow: hidden; }
     .footer-col ul { align-items: center; }
 }
 
-/* Móviles muy pequeños (≈320px) */
+/* ≤360px */
 @media (max-width: 360px) {
     :root { --logo-h: 34px; }
     .hero-content h1 { font-size: 1.75rem; }
@@ -869,7 +863,7 @@ body.modal-open { overflow: hidden; }
     .footer-redes { gap: 14px; }
 }
 
-/* Móvil en horizontal (poca altura): el hero no debe forzar 100% de alto */
+/* Móvil horizontal: hero sin alto forzado */
 @media (max-height: 560px) {
     .scroll-down { display: none; }
 }
@@ -879,7 +873,7 @@ body.modal-open { overflow: hidden; }
     .btn-main, .btn-inscribete { width: auto; }
 }
 
-/* Pantallas con notch / barras del sistema (iOS, Android) */
+/* Notch / barras del sistema */
 @supports (padding: max(0px)) {
     .navbar {
         padding-left: max(var(--pad-x), env(safe-area-inset-left));
@@ -888,10 +882,7 @@ body.modal-open { overflow: hidden; }
     footer { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
 }
 
-/* =========================================================
-   14. MODAL DE CATEGORÍA EN MÓVIL — hoja inferior compacta
-   (ya no cubre toda la pantalla; se cierra tocando fuera)
-============================================================ */
+/* 14. Modal en móvil: hoja inferior */
 @media (max-width: 768px) {
     .modal-overlay {
         align-items: flex-end;
@@ -913,7 +904,7 @@ body.modal-open { overflow: hidden; }
     }
     .modal-overlay.active .modal-content { transform: translateY(0); }
 
-    /* "asa" visual de hoja deslizable */
+    /* Asa de la hoja */
     .modal-content::before {
         content: '';
         display: block;
@@ -941,7 +932,7 @@ body.modal-open { overflow: hidden; }
     .info-item { font-size: 0.92rem; gap: 10px; align-items: flex-start; }
     .info-item i { font-size: 1.1rem; width: 24px; margin-top: 2px; }
 
-    /* Las dos fotos lado a lado y más bajas */
+    /* Fotos lado a lado */
     .modal-gallery { grid-template-columns: 1fr 1fr; gap: 10px; }
     .modal-gallery img { height: 110px; border-radius: 12px; }
 }
@@ -950,7 +941,7 @@ body.modal-open { overflow: hidden; }
     .modal-gallery img { height: 90px; }
 }
 
-/* Móvil horizontal: la hoja usa casi toda la altura útil */
+/* Móvil horizontal: hoja más alta */
 @media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
     .modal-content { max-height: 92vh; max-height: 92dvh; }
     .modal-gallery img { height: 80px; }

@@ -4,23 +4,23 @@
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-      <!-- ===== SEO BÁSICO ===== -->
+      <!-- SEO -->
       <title>Club de Voleibol Jaguares | Escuela de Voleibol en Socopó, Barinas</title>
       <meta name="description" content="Escuela de voleibol en Socopó, Barinas. 165 atletas, 5 entrenadores titulados y categorías U-7 a U-15. Conoce el calendario de torneos e inscríbete en el Club de Voleibol Jaguares.">
       <meta name="keywords" content="club de voleibol, voleibol Barinas, voleibol Socopó, escuela de voleibol, Jaguares, voleibol infantil, categorías voleibol, Venezuela">
       <meta name="author" content="Club de Voleibol Jaguares">
       <meta name="robots" content="index, follow, max-image-preview:large">
-      <!-- IMPORTANTE: si más adelante usas un dominio propio, cambia esta URL (y las de og:url, og:image, sitemap.xml y robots.txt) -->
+      <!-- cambiar si se compra dominio (también en sitemap.xml y robots.txt) -->
       <link rel="canonical" href="https://jaguares-eta.vercel.app/">
       <meta name="theme-color" content="#FF4500">
 
-      <!-- Localización (SEO local) -->
+      <!-- SEO local -->
       <meta name="geo.region" content="VE-E">
       <meta name="geo.placename" content="Socopó, Barinas">
       <meta name="geo.position" content="8.2333;-70.8313">
       <meta name="ICBM" content="8.2333, -70.8313">
 
-      <!-- ===== REDES SOCIALES (Open Graph / Twitter) ===== -->
+      <!-- Open Graph / Twitter -->
       <meta property="og:type" content="website">
       <meta property="og:locale" content="es_VE">
       <meta property="og:site_name" content="Club de Voleibol Jaguares">
@@ -34,7 +34,7 @@
       <meta name="twitter:description" content="Escuela de voleibol con categorías U-7 a U-15, torneos e inscripciones en Socopó, Barinas.">
       <meta name="twitter:image" content="https://jaguares-eta.vercel.app/img/cat-2.jpg">
 
-      <!-- ===== RECURSOS ===== -->
+      <!-- Recursos -->
       <link rel="icon" href="img/logo-favicon.ico" type="image/x-icon">
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,10 +42,9 @@
       <link rel="preload" as="image" href="img/cat-2.jpg" fetchpriority="high">
       <link rel="stylesheet" href="style.css">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-      <!-- Solo los pesos que realmente se usan (400, 500, 600, 700) -->
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-      <!-- ===== DATOS ESTRUCTURADOS (Google) ===== -->
+      <!-- Datos estructurados -->
       <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -145,7 +144,7 @@
             </a>
          </section>
 
-         <!-- FRANJA DE CIFRAS (sutil) -->
+         <!-- Cifras -->
          <section class="stats-strip" aria-label="El club en cifras">
             <div class="stats-grid reveal">
                <div class="stat">
@@ -223,7 +222,7 @@
                   </div>
                </div>
             </div>
-            <!-- Puntos del carrusel (solo se ven en móvil; los genera script.js) -->
+            <!-- Puntos del carrusel (script.js) -->
             <div class="cat-dots" id="cat-dots" aria-hidden="false"></div>
          </section>
 
@@ -233,7 +232,7 @@
                <p>Próximos torneos, juegos y eventos del club.</p>
             </div>
             <div class="calendar-container reveal">
-                <!-- Próximo evento destacado (lo rellena script.js) -->
+                <!-- Próximo evento (script.js) -->
                 <button type="button" id="proximo-evento" class="proximo-evento" hidden></button>
 
                 <div class="calendar-header">
@@ -245,7 +244,7 @@
                     <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
                 </div>
                 <div class="calendar-days" id="calendar-days">
-                    <!-- Los días se generan con JS -->
+                    <!-- Días (script.js) -->
                 </div>
                 <div class="calendar-footer">
                     <div class="cal-legend" aria-hidden="true">
@@ -339,7 +338,7 @@
                   <span>Calle 6 entre Carreras 12 y 13, Barrio Las Américas.<br>Cancha de la Escuela Básica Estadal Orlando García, Socopó, Barinas.</span>
                </address>
                <h4>Entrenamientos</h4>
-               <!-- EDITA AQUÍ los horarios reales de entrenamiento cuando los tengas -->
+               <!-- horarios de entrenamiento ajustables -->
                <p class="footer-horarios">
                   <i class="fas fa-clock" aria-hidden="true"></i>
                   <span>Consulta por WhatsApp los horarios de tu categoría.</span>
@@ -351,12 +350,12 @@
          </div>
       </footer>
 
-      <!-- Botón volver arriba -->
+      <!-- volver arriba -->
       <button type="button" id="back-to-top" class="back-to-top" aria-label="Volver arriba">
          <i class="fas fa-chevron-up" aria-hidden="true"></i>
       </button>
 
-      <!-- VENTANA EMERGENTE (MODAL) DE CATEGORÍAS -->
+      <!-- modal de categorías -->
       <div id="modal-categoria" class="modal-overlay">
           <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
               <button type="button" class="close-modal" aria-label="Cerrar ventana"><i class="fas fa-times" aria-hidden="true"></i></button>

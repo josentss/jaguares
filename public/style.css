@@ -250,7 +250,7 @@ section {
 /* 8. CALENDARIO UI */
 .calendar-section { background-color: var(--bg-color); }
 .calendar-container {
-    max-width: 520px;
+    max-width: 640px;
     margin: 0 auto;
     background: var(--card-bg);
     border-radius: 20px;
@@ -363,7 +363,6 @@ section {
     padding-left: 0;
 }
 
-
 /* 9. MAPA Y REDES */
 .map-section { background-color: var(--section-bg); }
 .contacto-wrapper { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
@@ -453,4 +452,17 @@ footer { padding: 80px 8% 30px; background-color: var(--section-bg); border-top:
     .foto-main { width: 100%; }
 
     .map-container { height: 300px; }
+}
+
+@media (min-width: 900px) {
+    .calendar-container {
+        max-width: 680px;
+        padding: 24px 28px 20px;
+    }
+    .calendar-header h3 {
+        font-size: 1.3rem;
+    }
+    .cal-day {
+        font-size: 0.9rem;
+    }
 }

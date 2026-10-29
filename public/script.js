@@ -85,6 +85,11 @@ document.querySelectorAll('.nav-links a').forEach(link => {
     link.addEventListener('click', cerrarMenuMovil);
 });
 
+// Si se agranda la ventana (rotar el móvil, redimensionar en PC), se cierra el menú móvil
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 1024) cerrarMenuMovil();
+});
+
 /* =====================================
    3. ANIMACIONES DE SCROLL (REVEAL)
 ======================================== */

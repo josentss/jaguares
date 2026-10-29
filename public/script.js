@@ -168,16 +168,23 @@ const mTorneos = document.getElementById('modal-torneos');
 const mImg1 = document.getElementById('modal-img-1');
 const mImg2 = document.getElementById('modal-img-2');
 
-// Abrir Modal
+// Abrir Modal (guarda el foco para devolverlo al cerrar)
+let ultimoFoco = null;
 function abrirModalCategoria() {
     if (!modal) return;
+    ultimoFoco = document.activeElement;
     modal.classList.add('active');
     document.body.classList.add('modal-open');
+    if (closeModalBtn) closeModalBtn.focus({ preventScroll: true });
 }
 function cerrarModalCategoria() {
     if (!modal) return;
     modal.classList.remove('active');
     document.body.classList.remove('modal-open');
+    if (ultimoFoco && typeof ultimoFoco.focus === 'function') {
+        ultimoFoco.focus({ preventScroll: true });
+    }
+    ultimoFoco = null;
 }
 
 cards.forEach(card => {
@@ -192,6 +199,16 @@ cards.forEach(card => {
         mImg1.src = info.img1;
         mImg2.src = info.img2;
         abrirModalCategoria();
+    });
+});
+
+// Abrir con Enter o Espacio cuando la tarjeta tiene el foco
+cards.forEach(card => {
+    card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            card.click();
+        }
     });
 });
 
@@ -228,6 +245,16 @@ const prevBtn = document.getElementById('prev-month');
 const nextBtn = document.getElementById('next-month');
 const listaEventosEl = document.getElementById('lista-eventos-publicos');
 const calendarHint = document.getElementById('calendar-hint');
+
+// Evita que texto del CMS se interprete como HTML (seguridad)
+function escapeHTML(texto) {
+    return String(texto == null ? '' : texto)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 function fechaLocalISO(d) {
     const y = d.getFullYear();
@@ -280,8 +307,8 @@ function renderListaEventos(filtroKey /* YYYY-MM-DD o null = todos del mes */) {
               })
             : '';
         return `<li>
-            <strong>${ev.titulo || 'Evento'}</strong>
-            <span>${fechaTxt}${ev.lugar ? ' · ' + ev.lugar : ''}</span>
+            <strong>${escapeHTML(ev.titulo || 'Evento')}</strong>
+            <span>${fechaTxt}${ev.lugar ? ' · ' + escapeHTML(ev.lugar) : ''}</span>
         </li>`;
     }).join('');
 }
@@ -322,6 +349,15 @@ function renderCalendar() {
         if (keysConEvento.has(key)) {
             dayDiv.classList.add('has-event');
             dayDiv.title = 'Hay evento(s)';
+            dayDiv.tabIndex = 0;
+            dayDiv.setAttribute('role', 'button');
+            dayDiv.setAttribute('aria-label', `${i} de ${monthNames[currentMonth]}: ver eventos`);
+            dayDiv.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    dayDiv.click();
+                }
+            });
             dayDiv.addEventListener('click', () => {
                 renderListaEventos(key);
                 if (calendarHint) {
@@ -339,6 +375,58 @@ function renderCalendar() {
     }
 }
 
+/* ---- Próximo evento destacado ---- */
+const proximoEl = document.getElementById('proximo-evento');
+
+function diasHasta(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    const hoy = new Date();
+    const a = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const b = Date.UTC(y, m - 1, d);
+    return Math.round((b - a) / 86400000);
+}
+
+function renderProximoEvento() {
+    if (!proximoEl) return;
+
+    const futuros = eventosPublicos
+        .map(ev => ({ ev, p: parseFechaEvento(ev.fecha_evento) }))
+        .filter(x => x.p && diasHasta(x.p.key) >= 0)
+        .sort((a, b) => (a.p.key < b.p.key ? -1 : a.p.key > b.p.key ? 1 : 0));
+
+    if (futuros.length === 0) {
+        proximoEl.hidden = true;
+        proximoEl.innerHTML = '';
+        return;
+    }
+
+    const { ev, p } = futuros[0];
+    const n = diasHasta(p.key);
+    const cuando = n === 0 ? 'Hoy' : n === 1 ? 'Mañana' : `En ${n} días`;
+    const fechaTxt = new Date(p.y, p.m, p.d).toLocaleDateString('es-VE', {
+        weekday: 'long', day: 'numeric', month: 'long'
+    });
+
+    proximoEl.innerHTML = `
+        <span class="pe-badge">Próximo evento · ${cuando}</span>
+        <strong class="pe-titulo">${escapeHTML(ev.titulo || 'Evento')}</strong>
+        <span class="pe-meta"><i class="fas fa-calendar-day" aria-hidden="true"></i>${fechaTxt}${
+            ev.lugar ? ' &nbsp;·&nbsp; <i class="fas fa-location-dot" aria-hidden="true"></i>' + escapeHTML(ev.lugar) : ''
+        }</span>`;
+    proximoEl.hidden = false;
+
+    // Al tocarlo, el calendario salta a ese mes y muestra el evento
+    proximoEl.onclick = () => {
+        currentMonth = p.m;
+        currentYear = p.y;
+        renderCalendar();
+        renderListaEventos(p.key);
+        if (calendarHint) {
+            calendarHint.innerHTML = `<i class="fas fa-calendar-day"></i> Eventos del ${p.d} de ${monthNames[p.m]}.`;
+        }
+    };
+}
+
 async function cargarEventosPublicos() {
     try {
         const res = await fetch('/api/cms/public/eventos');
@@ -353,6 +441,7 @@ async function cargarEventosPublicos() {
         eventosPublicos = [];
     }
     renderCalendar();
+    renderProximoEvento();
 }
 
 if (prevBtn) {
@@ -378,3 +467,120 @@ if (nextBtn) {
 }
 
 cargarEventosPublicos();
+
+
+/* =====================================
+   6. BARRA SUPERIOR COMPACTA + VOLVER ARRIBA
+======================================== */
+const navbarEl = document.querySelector('.navbar');
+const backTopBtn = document.getElementById('back-to-top');
+
+function actualizarUIScroll() {
+    const y = window.scrollY || document.documentElement.scrollTop;
+    if (navbarEl) navbarEl.classList.toggle('scrolled', y > 40);
+    if (backTopBtn) backTopBtn.classList.toggle('show', y > 700);
+}
+window.addEventListener('scroll', actualizarUIScroll, { passive: true });
+actualizarUIScroll();
+
+if (backTopBtn) {
+    backTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+/* =====================================
+   7. SECCIÓN ACTIVA EN EL MENÚ
+======================================== */
+const enlacesSeccion = Array.from(document.querySelectorAll('.nav-links a[href^="#"]'));
+const mapaSecciones = new Map(enlacesSeccion.map(a => [a.getAttribute('href').slice(1), a]));
+
+if ('IntersectionObserver' in window && mapaSecciones.size) {
+    const observadorSecciones = new IntersectionObserver((entradas) => {
+        entradas.forEach(entrada => {
+            if (!entrada.isIntersecting) return;
+            enlacesSeccion.forEach(a => {
+                a.classList.remove('is-current');
+                a.removeAttribute('aria-current');
+            });
+            const activo = mapaSecciones.get(entrada.target.id);
+            if (activo) {
+                activo.classList.add('is-current');
+                activo.setAttribute('aria-current', 'true');
+            }
+        });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+
+    mapaSecciones.forEach((_, id) => {
+        const seccion = document.getElementById(id);
+        if (seccion) observadorSecciones.observe(seccion);
+    });
+}
+
+/* =====================================
+   8. CONTADORES SUTILES (franja de cifras)
+======================================== */
+const prefiereMenosMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function animarContador(el) {
+    const fin = Number(el.dataset.count);
+    if (!fin || prefiereMenosMovimiento) { el.textContent = fin || el.textContent; return; }
+    const duracion = 1100;
+    const inicio = performance.now();
+    function paso(ahora) {
+        const k = Math.min((ahora - inicio) / duracion, 1);
+        const suave = 1 - Math.pow(1 - k, 3);
+        el.textContent = Math.round(fin * suave);
+        if (k < 1) requestAnimationFrame(paso);
+    }
+    requestAnimationFrame(paso);
+}
+
+const contadores = document.querySelectorAll('[data-count]');
+if ('IntersectionObserver' in window && contadores.length) {
+    const observadorContadores = new IntersectionObserver((entradas, obs) => {
+        entradas.forEach(entrada => {
+            if (!entrada.isIntersecting) return;
+            animarContador(entrada.target);
+            obs.unobserve(entrada.target);
+        });
+    }, { threshold: 0.6 });
+    contadores.forEach(c => observadorContadores.observe(c));
+}
+
+/* =====================================
+   9. CARRUSEL DE CATEGORÍAS (móvil): puntos indicadores
+======================================== */
+const gridCategorias = document.querySelector('.services-grid');
+const puntosEl = document.getElementById('cat-dots');
+
+if (gridCategorias && puntosEl) {
+    const tarjetas = Array.from(gridCategorias.querySelectorAll('.category-card'));
+    puntosEl.innerHTML = tarjetas
+        .map((_, i) => `<button type="button" aria-label="Ir a la categoría ${i + 1} de ${tarjetas.length}"></button>`)
+        .join('');
+    const puntos = Array.from(puntosEl.children);
+
+    function actualizarPuntos() {
+        const centro = gridCategorias.scrollLeft + gridCategorias.clientWidth / 2;
+        let mejor = 0, distMin = Infinity;
+        tarjetas.forEach((t, i) => {
+            const d = Math.abs(t.offsetLeft + t.offsetWidth / 2 - centro);
+            if (d < distMin) { distMin = d; mejor = i; }
+        });
+        puntos.forEach((p, i) => p.classList.toggle('on', i === mejor));
+    }
+
+    gridCategorias.addEventListener('scroll', actualizarPuntos, { passive: true });
+    window.addEventListener('resize', actualizarPuntos);
+    puntos.forEach((punto, i) => {
+        punto.addEventListener('click', () => {
+            const t = tarjetas[i];
+            gridCategorias.scrollTo({
+                left: t.offsetLeft - (gridCategorias.clientWidth - t.offsetWidth) / 2,
+                behavior: 'smooth'
+            });
+        });
+    });
+    actualizarPuntos();
+}

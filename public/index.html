@@ -3,22 +3,106 @@
    <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-      <title>Club de Voleibol Jaguares | Socopó</title>
-      <link rel="stylesheet" href="style.css">
+
+      <!-- ===== SEO BÁSICO ===== -->
+      <title>Club de Voleibol Jaguares | Escuela de Voleibol en Socopó, Barinas</title>
+      <meta name="description" content="Escuela de voleibol en Socopó, Barinas. 165 atletas, 5 entrenadores titulados y categorías U-7 a U-15. Conoce el calendario de torneos e inscríbete en el Club de Voleibol Jaguares.">
+      <meta name="keywords" content="club de voleibol, voleibol Barinas, voleibol Socopó, escuela de voleibol, Jaguares, voleibol infantil, categorías voleibol, Venezuela">
+      <meta name="author" content="Club de Voleibol Jaguares">
+      <meta name="robots" content="index, follow, max-image-preview:large">
+      <link rel="canonical" href="https://jaguares-eta.vercel.app/">
+      <meta name="theme-color" content="#FF4500">
+
+      <!-- Localización (SEO local) -->
+      <meta name="geo.region" content="VE-E">
+      <meta name="geo.placename" content="Socopó, Barinas">
+      <meta name="geo.position" content="8.2333;-70.8313">
+      <meta name="ICBM" content="8.2333, -70.8313">
+
+      <!-- ===== REDES SOCIALES (Open Graph / Twitter) ===== -->
+      <meta property="og:type" content="website">
+      <meta property="og:locale" content="es_VE">
+      <meta property="og:site_name" content="Club de Voleibol Jaguares">
+      <meta property="og:title" content="Club de Voleibol Jaguares | Socopó, Barinas">
+      <meta property="og:description" content="Disciplina, pasión y victoria. Escuela de voleibol con categorías U-7 a U-15, torneos e inscripciones en Socopó, Barinas.">
+      <meta property="og:url" content="https://jaguares-eta.vercel.app/">
+      <meta property="og:image" content="https://jaguares-eta.vercel.app/img/cat-2.jpg">
+      <meta property="og:image:alt" content="Equipo del Club de Voleibol Jaguares">
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:title" content="Club de Voleibol Jaguares | Socopó, Barinas">
+      <meta name="twitter:description" content="Escuela de voleibol con categorías U-7 a U-15, torneos e inscripciones en Socopó, Barinas.">
+      <meta name="twitter:image" content="https://jaguares-eta.vercel.app/img/cat-2.jpg">
+
+      <!-- ===== RECURSOS ===== -->
       <link rel="icon" href="img/logo-favicon.ico" type="image/x-icon">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+      <link rel="preload" as="image" href="img/cat-2.jpg" fetchpriority="high">
+      <link rel="stylesheet" href="style.css">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+      <!-- ===== DATOS ESTRUCTURADOS (Google) ===== -->
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "SportsClub",
+            "@id": "https://jaguares-eta.vercel.app/#club",
+            "name": "Club de Voleibol Jaguares",
+            "alternateName": "Academia de Voleibol Jaguares",
+            "url": "https://jaguares-eta.vercel.app/",
+            "logo": "https://jaguares-eta.vercel.app/img/logo-sinfondo.png",
+            "image": "https://jaguares-eta.vercel.app/img/cat-2.jpg",
+            "description": "Club y escuela de voleibol formativo en Socopó, estado Barinas, Venezuela, con categorías desde U-7 hasta U-15.",
+            "sport": "Voleibol",
+            "foundingDate": "2024-03-03",
+            "founder": [
+              { "@type": "Person", "name": "Joe Guarecuco" },
+              { "@type": "Person", "name": "Nubia Acero" }
+            ],
+            "telephone": "+58-412-0614314",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Calle 6 entre Carreras 12 y 13, Barrio Las Américas (Cancha de la Escuela Básica Estadal Orlando García)",
+              "addressLocality": "Socopó",
+              "addressRegion": "Barinas",
+              "addressCountry": "VE"
+            },
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": 8.2333,
+              "longitude": -70.8313
+            },
+            "areaServed": { "@type": "AdministrativeArea", "name": "Barinas, Venezuela" },
+            "sameAs": [ "https://instagram.com/jaguares_clubdevoleibol" ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://jaguares-eta.vercel.app/#website",
+            "url": "https://jaguares-eta.vercel.app/",
+            "name": "Club de Voleibol Jaguares",
+            "inLanguage": "es-VE",
+            "publisher": { "@id": "https://jaguares-eta.vercel.app/#club" }
+          }
+        ]
+      }
+      </script>
    </head>
    <body>
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
       <header>
-         <nav class="navbar">
+         <nav class="navbar" aria-label="Navegación principal">
             <div class="logo-container">
-               <img src="img/logo-fvv-nobg.png" alt="Logo FVV" class="logo-img">
-               <img src="img/logo-deporte-nobg.png" alt="Logo Deporte" class="logo-img">
+               <img src="img/logo-fvv-nobg.png" alt="Logo de la Federación Venezolana de Voleibol" class="logo-img">
+               <img src="img/logo-deporte-nobg.png" alt="Logo Deporte Venezuela" class="logo-img">
             </div>
 
             <div class="nav-controls-mobile">
-                <button type="button" id="theme-toggle" title="Cambiar modo" aria-label="Cambiar tema">
+                <button type="button" id="theme-toggle" title="Cambiar modo" aria-label="Cambiar tema claro u oscuro">
                     <i class="fas fa-moon"></i>
                 </button>
                 <button type="button" class="menu-toggle" id="mobile-menu"
@@ -33,9 +117,9 @@
                <li><a href="#categorias">Categorías</a></li>
                <li><a href="#calendario">Calendario</a></li>
                <li><a href="#contacto">Contacto</a></li>
-               <li><a href="admin/login.html" class="btn-login">Ingresar</a></li>
+               <li><a href="admin/login.html" class="btn-login" rel="nofollow">Ingresar</a></li>
                <li class="theme-item desktop-theme">
-                  <button id="theme-toggle-desktop" title="Cambiar modo">
+                  <button type="button" id="theme-toggle-desktop" title="Cambiar modo" aria-label="Cambiar tema claro u oscuro">
                   <i class="fas fa-moon"></i>
                   </button>
                </li>
@@ -43,14 +127,41 @@
          </nav>
          <div class="nav-backdrop" id="nav-backdrop" hidden></div>
       </header>
-      <main>
+
+      <main id="contenido">
          <section id="inicio" class="hero">
             <div class="hero-content reveal">
+               <span class="hero-eyebrow"><i class="fas fa-location-dot" aria-hidden="true"></i> Socopó · Barinas · Venezuela</span>
                <h1>Club de Voleibol Jaguares</h1>
                <p>Disciplina, pasión y victoria.</p>
                <div class="hero-btns">
-                  <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" class="btn-inscribete">Inscríbete ahora</a>
+                  <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" rel="noopener noreferrer" class="btn-inscribete">Inscríbete ahora</a>
                   <a href="#categorias" class="btn-main">Ver categorías</a>
+               </div>
+            </div>
+            <a href="#nosotros" class="scroll-down" aria-label="Desplazarse a la siguiente sección">
+               <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </a>
+         </section>
+
+         <!-- FRANJA DE CIFRAS (sutil) -->
+         <section class="stats-strip" aria-label="El club en cifras">
+            <div class="stats-grid reveal">
+               <div class="stat">
+                  <i class="fas fa-users" aria-hidden="true"></i>
+                  <div><span class="stat-num"><span data-count="165">165</span></span><span class="stat-label">Atletas</span></div>
+               </div>
+               <div class="stat">
+                  <i class="fas fa-user-graduate" aria-hidden="true"></i>
+                  <div><span class="stat-num"><span data-count="5">5</span></span><span class="stat-label">Entrenadores titulados</span></div>
+               </div>
+               <div class="stat">
+                  <i class="fas fa-trophy" aria-hidden="true"></i>
+                  <div><span class="stat-num">Zona Andina</span><span class="stat-label">Campeones regionales</span></div>
+               </div>
+               <div class="stat">
+                  <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                  <div><span class="stat-num">Desde 2024</span><span class="stat-label">Socopó, Barinas</span></div>
                </div>
             </div>
          </section>
@@ -65,11 +176,11 @@
                   <p>
                      Nuestra trayectoria nos ha consolidado rápidamente como referentes regionales, logrando el campeonato de la Zona Andina y participando con éxito en torneos en <strong>Valencia, Barquisimeto y la Liga de Barinas</strong>. Más que un club, somos un semillero de talento que representa con orgullo nuestros colores en cada competencia, trabajando diariamente para formar las próximas generaciones de selecciones estadales y nacionales.
                   </p>
-                  <button class="btn-secundario">Ver galería completa</button>
+                  <button type="button" class="btn-secundario">Ver galería completa</button>
                </div>
                <div class="nosotros-fotos reveal-right">
-                  <img src="img/foto-entrenadores.jpg" alt="Entrenadores Jaguares" class="foto-main">
-                  <img src="img/cat-1.jpg" alt="Equipo Jaguares" class="foto-sec">
+                  <img src="img/foto-entrenadores.jpg" alt="Entrenadores del Club de Voleibol Jaguares en la cancha de Socopó" class="foto-main" loading="lazy" decoding="async">
+                  <img src="img/cat-1.jpg" alt="Atletas del Club de Voleibol Jaguares con su equipo" class="foto-sec" loading="lazy" decoding="async">
                </div>
             </div>
          </section>
@@ -80,45 +191,54 @@
                <p>Haz clic en cada una para conocer más detalles.</p>
             </div>
             <div class="services-grid">
-               <div class="category-card reveal cat-trigger" data-cat="u7" style="background-image: url('img/u7-card.jpeg'); transition-delay: 0.1s;">
+               <div class="category-card reveal cat-trigger" data-cat="u7" role="button" tabindex="0" aria-label="Ver detalles de la categoría U-7 Semillitas" style="background-image: url('img/u7-card.jpeg'); transition-delay: 0.1s;">
                   <div class="card-overlay">
+                     <span class="card-age">5–7 años</span>
                      <h3>U-7 Semillitas</h3>
                   </div>
                </div>
-               <div class="category-card reveal cat-trigger" data-cat="u9" style="background-image: url('img/u9-card.jpeg'); transition-delay: 0.2s;">
+               <div class="category-card reveal cat-trigger" data-cat="u9" role="button" tabindex="0" aria-label="Ver detalles de la categoría U-9 Iniciación" style="background-image: url('img/u9-card.jpeg'); transition-delay: 0.2s;">
                   <div class="card-overlay">
+                     <span class="card-age">8–9 años</span>
                      <h3>U-9 Iniciación</h3>
                   </div>
                </div>
-               <div class="category-card reveal cat-trigger" data-cat="u11" style="background-image: url('img/u11-card.jpeg'); transition-delay: 0.3s;">
+               <div class="category-card reveal cat-trigger" data-cat="u11" role="button" tabindex="0" aria-label="Ver detalles de la categoría U-11 Formación" style="background-image: url('img/u11-card.jpeg'); transition-delay: 0.3s;">
                   <div class="card-overlay">
+                     <span class="card-age">10–11 años</span>
                      <h3>U-11 Formación</h3>
                   </div>
                </div>
-               <div class="category-card reveal cat-trigger" data-cat="u13" style="background-image: url('img/u13-card.jpeg'); transition-delay: 0.4s;">
+               <div class="category-card reveal cat-trigger" data-cat="u13" role="button" tabindex="0" aria-label="Ver detalles de la categoría U-13 Mini Voleibol" style="background-image: url('img/u13-card.jpeg'); transition-delay: 0.4s;">
                   <div class="card-overlay">
+                     <span class="card-age">12–13 años</span>
                      <h3>U-13 Mini Voleibol</h3>
                   </div>
                </div>
-               <div class="category-card reveal cat-trigger" data-cat="u15" style="background-image: url('img/u15-card.jpeg'); transition-delay: 0.5s;">
+               <div class="category-card reveal cat-trigger" data-cat="u15" role="button" tabindex="0" aria-label="Ver detalles de la categoría U-15 Infantil masculino" style="background-image: url('img/u15-card.jpeg'); transition-delay: 0.5s;">
                   <div class="card-overlay">
+                     <span class="card-age">14–15 años · Masculino</span>
                      <h3>U-15 Infantil (M)</h3>
                   </div>
                </div>
             </div>
+            <!-- Puntos del carrusel (solo se ven en móvil) -->
+            <div class="cat-dots" id="cat-dots" aria-hidden="false"></div>
          </section>
 
-         <!-- NUEVA SECCIÓN: CALENDARIO -->
          <section id="calendario" class="calendar-section">
             <div class="section-title reveal">
                <h2>Calendario de Actividades</h2>
                <p>Próximos torneos, juegos y eventos del club.</p>
             </div>
             <div class="calendar-container reveal">
+                <!-- Próximo evento destacado (rellena script.js) -->
+                <button type="button" id="proximo-evento" class="proximo-evento" hidden></button>
+
                 <div class="calendar-header">
-                    <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
-                    <h3 id="month-year">Cargando...</h3>
-                    <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+                    <button type="button" id="prev-month" aria-label="Mes anterior"><i class="fas fa-chevron-left"></i></button>
+                    <h3 id="month-year" aria-live="polite">Cargando...</h3>
+                    <button type="button" id="next-month" aria-label="Mes siguiente"><i class="fas fa-chevron-right"></i></button>
                 </div>
                 <div class="calendar-weekdays">
                     <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
@@ -127,9 +247,26 @@
                     <!-- Los días se generan con JS -->
                 </div>
                 <div class="calendar-footer">
+                    <div class="cal-legend" aria-hidden="true">
+                        <span class="lg-hoy">Hoy</span>
+                        <span class="lg-evento">Con evento</span>
+                    </div>
                     <p id="calendar-hint"><i class="fas fa-info-circle"></i> Toca un día marcado para ver el evento.</p>
                     <ul id="lista-eventos-publicos" class="eventos-lista"></ul>
                 </div>
+            </div>
+         </section>
+
+         <!-- LLAMADO A CONTACTO -->
+         <section class="cta-section" aria-labelledby="cta-titulo">
+            <div class="cta-card reveal">
+               <div class="cta-texto">
+                  <h2 id="cta-titulo">¿Quieres formar parte de los Jaguares?</h2>
+                  <p>Escríbenos y te contamos sobre categorías, horarios y cómo inscribirte.</p>
+               </div>
+               <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" rel="noopener noreferrer" class="btn-inscribete cta-btn">
+                  <i class="fab fa-whatsapp" aria-hidden="true"></i> Escríbenos
+               </a>
             </div>
          </section>
 
@@ -142,8 +279,10 @@
             <div class="contacto-wrapper">
                <div class="map-container reveal-left">
                   <iframe
+                     title="Mapa de la sede del Club de Voleibol Jaguares en Socopó, Barinas"
                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3948.69613592308!2d-70.83131532633556!3d8.233279900939502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e64e90017b2546b%3A0x4e2be2373116db01!2sAcademia%20de%20Voleibol%20JAGUARES!5e0!3m2!1ses!2sve!4v1776648751572!5m2!1ses!2sve"
                      allowfullscreen=""
+                     referrerpolicy="no-referrer-when-downgrade"
                      loading="lazy">
                   </iframe>
                </div>
@@ -151,34 +290,62 @@
                   <h3>Síguenos</h3>
                   <p>Mantente al día con nuestros torneos y actividades.</p>
                   <div class="redes-lista">
-                     <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" class="red-item whatsapp">
-                     <i class="fab fa-whatsapp"></i> <span>WhatsApp</span>
+                     <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" rel="noopener noreferrer" class="red-item whatsapp">
+                     <i class="fab fa-whatsapp" aria-hidden="true"></i> <span>WhatsApp</span>
                      </a>
-                     <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" class="red-item instagram">
-                     <i class="fab fa-instagram"></i> <span>Instagram</span>
+                     <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" rel="noopener noreferrer" class="red-item instagram">
+                     <i class="fab fa-instagram" aria-hidden="true"></i> <span>Instagram</span>
                      </a>
                      <a href="#" class="red-item tiktok">
-                     <i class="fab fa-tiktok"></i> <span>TikTok</span>
+                     <i class="fab fa-tiktok" aria-hidden="true"></i> <span>TikTok</span>
                      </a>
                   </div>
                </div>
             </div>
          </section>
       </main>
+
       <footer>
-         <div class="footer-content">
-            <div class="footer-logo">
-               <img src="img/logo-sinfondo.png" alt="Logo Jaguares" class="logo-footer">
-               <img src="img/bandera-barinas.jpg" alt="Bandera de Barinas" class="bandera-footer">
+         <div class="footer-grid">
+            <div class="footer-brand">
+               <div class="footer-logo">
+                  <img src="img/logo-sinfondo.png" alt="Logo del Club de Voleibol Jaguares" class="logo-footer" loading="lazy" decoding="async">
+                  <img src="img/bandera-barinas.jpg" alt="Bandera del estado Barinas" class="bandera-footer" loading="lazy" decoding="async">
+               </div>
+               <div class="footer-info">
+                  <span class="logo-text">Jaguares</span>
+                  <p>Formando atletas con disciplina y pasión.</p>
+               </div>
+               <div class="footer-redes">
+                  <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" rel="noopener noreferrer" class="social-icon whatsapp" aria-label="WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
+                  <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" rel="noopener noreferrer" class="social-icon instagram" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+                  <a href="#" class="social-icon tiktok" aria-label="TikTok"><i class="fab fa-tiktok" aria-hidden="true"></i></a>
+               </div>
             </div>
-            <div class="footer-info">
-               <span class="logo-text">Jaguares</span>
-               <p>Formando atletas con disciplina y pasión.</p>
-            </div>
-            <div class="footer-redes">
-               <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" class="social-icon whatsapp"><i class="fab fa-whatsapp"></i></a>
-               <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" class="social-icon instagram"><i class="fab fa-instagram"></i></a>
-               <a href="#" class="social-icon tiktok"><i class="fab fa-tiktok"></i></a>
+
+            <nav class="footer-col" aria-label="Enlaces rápidos">
+               <h4>Enlaces rápidos</h4>
+               <ul>
+                  <li><a href="#inicio">Inicio</a></li>
+                  <li><a href="#nosotros">Nosotros</a></li>
+                  <li><a href="#categorias">Categorías</a></li>
+                  <li><a href="#calendario">Calendario</a></li>
+                  <li><a href="#contacto">Contacto</a></li>
+               </ul>
+            </nav>
+
+            <div class="footer-col">
+               <h4>Visítanos</h4>
+               <address>
+                  <i class="fas fa-location-dot" aria-hidden="true"></i>
+                  <span>Calle 6 entre Carreras 12 y 13, Barrio Las Américas.<br>Cancha de la Escuela Básica Estadal Orlando García, Socopó, Barinas.</span>
+               </address>
+               <h4>Entrenamientos</h4>
+               <!-- editar horarios de entrenamiento -->
+               <p class="footer-horarios">
+                  <i class="fas fa-clock" aria-hidden="true"></i>
+                  <span>Consulta por WhatsApp los horarios de tu categoría.</span>
+               </p>
             </div>
          </div>
          <div class="footer-bottom">
@@ -186,29 +353,34 @@
          </div>
       </footer>
 
+      <!-- Botón volver arriba -->
+      <button type="button" id="back-to-top" class="back-to-top" aria-label="Volver arriba">
+         <i class="fas fa-chevron-up" aria-hidden="true"></i>
+      </button>
+
       <!-- VENTANA EMERGENTE (MODAL) DE CATEGORÍAS -->
       <div id="modal-categoria" class="modal-overlay">
-          <div class="modal-content">
-              <button class="close-modal"><i class="fas fa-times"></i></button>
+          <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+              <button type="button" class="close-modal" aria-label="Cerrar ventana"><i class="fas fa-times" aria-hidden="true"></i></button>
               <h2 id="modal-titulo">Nombre Categoría</h2>
 
               <div class="modal-info">
                   <div class="info-item">
-                      <i class="fas fa-birthday-cake"></i>
+                      <i class="fas fa-birthday-cake" aria-hidden="true"></i>
                       <div>
                           <strong>Edades:</strong>
                           <span id="modal-edades">...</span>
                       </div>
                   </div>
                   <div class="info-item">
-                      <i class="fas fa-users"></i>
+                      <i class="fas fa-users" aria-hidden="true"></i>
                       <div>
                           <strong>Atletas:</strong>
                           <span id="modal-atletas">...</span>
                       </div>
                   </div>
                   <div class="info-item">
-                      <i class="fas fa-trophy"></i>
+                      <i class="fas fa-trophy" aria-hidden="true"></i>
                       <div>
                           <strong>Participaciones:</strong>
                           <span id="modal-torneos">...</span>
@@ -217,8 +389,8 @@
               </div>
 
               <div class="modal-gallery">
-                  <img id="modal-img-1" src="" alt="Foto 1">
-                  <img id="modal-img-2" src="" alt="Foto 2">
+                  <img id="modal-img-1" src="" alt="Foto de la categoría 1">
+                  <img id="modal-img-2" src="" alt="Foto de la categoría 2">
               </div>
           </div>
       </div>

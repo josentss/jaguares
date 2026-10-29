@@ -10,6 +10,7 @@
       <meta name="keywords" content="club de voleibol, voleibol Barinas, voleibol Socopó, escuela de voleibol, Jaguares, voleibol infantil, categorías voleibol, Venezuela">
       <meta name="author" content="Club de Voleibol Jaguares">
       <meta name="robots" content="index, follow, max-image-preview:large">
+      <!-- IMPORTANTE: si más adelante usas un dominio propio, cambia esta URL (y las de og:url, og:image, sitemap.xml y robots.txt) -->
       <link rel="canonical" href="https://jaguares-eta.vercel.app/">
       <meta name="theme-color" content="#FF4500">
 
@@ -41,6 +42,7 @@
       <link rel="preload" as="image" href="img/cat-2.jpg" fetchpriority="high">
       <link rel="stylesheet" href="style.css">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+      <!-- Solo los pesos que realmente se usan (400, 500, 600, 700) -->
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
       <!-- ===== DATOS ESTRUCTURADOS (Google) ===== -->
@@ -131,7 +133,6 @@
       <main id="contenido">
          <section id="inicio" class="hero">
             <div class="hero-content reveal">
-               <span class="hero-eyebrow"><i class="fas fa-location-dot" aria-hidden="true"></i> Socopó · Barinas · Venezuela</span>
                <h1>Club de Voleibol Jaguares</h1>
                <p>Disciplina, pasión y victoria.</p>
                <div class="hero-btns">
@@ -222,7 +223,7 @@
                   </div>
                </div>
             </div>
-            <!-- Puntos del carrusel (solo se ven en móvil) -->
+            <!-- Puntos del carrusel (solo se ven en móvil; los genera script.js) -->
             <div class="cat-dots" id="cat-dots" aria-hidden="false"></div>
          </section>
 
@@ -232,7 +233,7 @@
                <p>Próximos torneos, juegos y eventos del club.</p>
             </div>
             <div class="calendar-container reveal">
-                <!-- Próximo evento destacado (rellena script.js) -->
+                <!-- Próximo evento destacado (lo rellena script.js) -->
                 <button type="button" id="proximo-evento" class="proximo-evento" hidden></button>
 
                 <div class="calendar-header">
@@ -257,24 +258,10 @@
             </div>
          </section>
 
-         <!-- LLAMADO A CONTACTO -->
-         <section class="cta-section" aria-labelledby="cta-titulo">
-            <div class="cta-card reveal">
-               <div class="cta-texto">
-                  <h2 id="cta-titulo">¿Quieres formar parte de los Jaguares?</h2>
-                  <p>Escríbenos y te contamos sobre categorías, horarios y cómo inscribirte.</p>
-               </div>
-               <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" rel="noopener noreferrer" class="btn-inscribete cta-btn">
-                  <i class="fab fa-whatsapp" aria-hidden="true"></i> Escríbenos
-               </a>
-            </div>
-         </section>
-
          <section id="contacto" class="map-section">
             <div class="section-title reveal">
                <h2>Ubícanos</h2>
                <p>Visita nuestra sede principal en Socopó.</p>
-               <p>Calle 6 entre Carreras 12 y 13 del Barrio las Americas<br>Cancha de la Escuela Básica Estadal Orlando García</p>
             </div>
             <div class="contacto-wrapper">
                <div class="map-container reveal-left">
@@ -287,18 +274,30 @@
                   </iframe>
                </div>
                <div class="siguenos-container reveal-right">
-                  <h3>Síguenos</h3>
-                  <p>Mantente al día con nuestros torneos y actividades.</p>
-                  <div class="redes-lista">
-                     <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" rel="noopener noreferrer" class="red-item whatsapp">
-                     <i class="fab fa-whatsapp" aria-hidden="true"></i> <span>WhatsApp</span>
+                  <div class="sede-bloque">
+                     <h3>Nuestra sede</h3>
+                     <address class="sede-dir">
+                        <i class="fas fa-location-dot" aria-hidden="true"></i>
+                        <span>Calle 6 entre Carreras 12 y 13, Barrio Las Américas<span class="sede-sub">Cancha de la Escuela Básica Estadal Orlando García</span></span>
+                     </address>
+                     <a class="sede-link" href="https://www.google.com/maps/search/?api=1&amp;query=8.2332799,-70.8313153" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-route" aria-hidden="true"></i> Cómo llegar
                      </a>
-                     <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" rel="noopener noreferrer" class="red-item instagram">
-                     <i class="fab fa-instagram" aria-hidden="true"></i> <span>Instagram</span>
-                     </a>
-                     <a href="#" class="red-item tiktok">
-                     <i class="fab fa-tiktok" aria-hidden="true"></i> <span>TikTok</span>
-                     </a>
+                  </div>
+                  <div class="sede-bloque">
+                     <h3>Síguenos</h3>
+                     <p>Mantente al día con nuestros torneos y actividades.</p>
+                     <div class="redes-lista">
+                        <a href="https://wa.me/584120614314?text=Hola!%20Estoy%20interesad@%20en%20realizar%20una%20inscripción." target="_blank" rel="noopener noreferrer" class="red-item whatsapp">
+                           <i class="fab fa-whatsapp" aria-hidden="true"></i> <span class="red-nombre">WhatsApp</span>
+                        </a>
+                        <a href="https://instagram.com/jaguares_clubdevoleibol" target="_blank" rel="noopener noreferrer" class="red-item instagram">
+                           <i class="fab fa-instagram" aria-hidden="true"></i> <span class="red-nombre">Instagram</span>
+                        </a>
+                        <a href="#" class="red-item tiktok">
+                           <i class="fab fa-tiktok" aria-hidden="true"></i> <span class="red-nombre">TikTok</span>
+                        </a>
+                     </div>
                   </div>
                </div>
             </div>
@@ -341,7 +340,7 @@
                   <span>Calle 6 entre Carreras 12 y 13, Barrio Las Américas.<br>Cancha de la Escuela Básica Estadal Orlando García, Socopó, Barinas.</span>
                </address>
                <h4>Entrenamientos</h4>
-               <!-- editar horarios de entrenamiento -->
+               <!-- EDITA AQUÍ los horarios reales de entrenamiento cuando los tengas -->
                <p class="footer-horarios">
                   <i class="fas fa-clock" aria-hidden="true"></i>
                   <span>Consulta por WhatsApp los horarios de tu categoría.</span>

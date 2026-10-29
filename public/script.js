@@ -100,8 +100,13 @@ function reveal() {
         const elementTop = reveals[i].getBoundingClientRect().top;
         const elementVisible = 120;
 
-        if (elementTop < windowHeight - elementVisible) {
-            reveals[i].classList.add("active");
+        if (elementTop < windowHeight - elementVisible && !reveals[i].classList.contains("active")) {
+            const el = reveals[i];
+            el.classList.add("active");
+            // Al terminar la entrada se quita el retraso escalonado en línea, para que el hover responda con suavidad
+            if (el.style.transitionDelay) {
+                setTimeout(() => { el.style.transitionDelay = ''; }, 1600);
+            }
         }
     }
 }
@@ -407,12 +412,10 @@ function renderProximoEvento() {
         weekday: 'long', day: 'numeric', month: 'long'
     });
 
-    proximoEl.innerHTML = `
-        <span class="pe-badge">Próximo evento · ${cuando}</span>
-        <strong class="pe-titulo">${escapeHTML(ev.titulo || 'Evento')}</strong>
-        <span class="pe-meta"><i class="fas fa-calendar-day" aria-hidden="true"></i>${fechaTxt}${
-            ev.lugar ? ' &nbsp;·&nbsp; <i class="fas fa-location-dot" aria-hidden="true"></i>' + escapeHTML(ev.lugar) : ''
-        }</span>`;
+    const detalle = fechaTxt + (ev.lugar ? ' · ' + ev.lugar : '');
+    proximoEl.innerHTML = `<span class="pe-dot" aria-hidden="true"></span><span class="pe-txt"><strong>Próximo:</strong> ${escapeHTML(ev.titulo || 'Evento')}</span><span class="pe-cuando">· ${cuando}</span>`;
+    proximoEl.title = detalle;
+    proximoEl.setAttribute('aria-label', `Próximo evento: ${ev.titulo || 'Evento'}, ${cuando}. ${detalle}. Ver en el calendario`);
     proximoEl.hidden = false;
 
     // Al tocarlo, el calendario salta a ese mes y muestra el evento

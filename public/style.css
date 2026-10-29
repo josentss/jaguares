@@ -35,6 +35,8 @@
     font-family: 'Poppins', sans-serif;
 }
 html {
+    overflow-x: hidden;
+    max-width: 100%;
     scroll-behavior: smooth;
     scroll-padding-top: var(--nav-h);   /* el menú fijo ya no tapa los títulos al navegar */
     -webkit-text-size-adjust: 100%;
@@ -62,12 +64,16 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow-x: hidden;
+    max-width: 100%;
+    position: relative;
     line-height: 1.6;
 }
 
 section {
     padding: var(--pad-y) var(--pad-x);
+    overflow-x: clip;   /* las animaciones laterales nunca ensanchan la página */
 }
+footer { overflow-x: clip; }
 
 /* 3. NAV BAR */
 .navbar {
@@ -599,9 +605,9 @@ body.modal-open { overflow: hidden; }
     .bandera-footer { height: 52px; }
     .footer-logo .logo-text { font-size: 1.8rem; }
 
-    /* Menos desplazamiento lateral en la animación (evita desbordes) */
-    .reveal-left { transform: translateX(-24px); }
-    .reveal-right { transform: translateX(24px); }
+    /* Animación solo vertical: sin desplazamiento lateral (evita desbordes) */
+    .reveal-left, .reveal-right { transform: translateY(30px); }
+    .reveal-left.active, .reveal-right.active { transform: translate(0); }
 }
 
 /* Móviles */
@@ -666,4 +672,72 @@ body.modal-open { overflow: hidden; }
         padding-right: max(var(--pad-x), env(safe-area-inset-right));
     }
     footer { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+}
+
+/* =========================================================
+   14. MODAL DE CATEGORÍA EN MÓVIL — hoja inferior compacta
+   (ya no cubre toda la pantalla; se cierra tocando fuera)
+============================================================ */
+@media (max-width: 768px) {
+    .modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+        overflow: hidden;
+    }
+    .modal-content {
+        margin: 0;
+        max-width: 100%;
+        max-height: 78vh;
+        max-height: 78dvh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border-radius: 24px 24px 0 0;
+        padding: 14px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+        transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(.2, .8, .2, 1);
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35);
+    }
+    .modal-overlay.active .modal-content { transform: translateY(0); }
+
+    /* "asa" visual de hoja deslizable */
+    .modal-content::before {
+        content: '';
+        display: block;
+        width: 44px;
+        height: 5px;
+        margin: 0 auto 10px;
+        border-radius: 5px;
+        background: rgba(128, 128, 128, 0.4);
+    }
+
+    .close-modal {
+        top: 0;
+        width: 38px;
+        height: 38px;
+        font-size: 1.1rem;
+        margin-left: 10px;
+    }
+    #modal-titulo {
+        font-size: 1.25rem;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        padding-top: 2px;
+    }
+    .modal-info { gap: 10px; margin-bottom: 18px; }
+    .info-item { font-size: 0.92rem; gap: 10px; align-items: flex-start; }
+    .info-item i { font-size: 1.1rem; width: 24px; margin-top: 2px; }
+
+    /* Las dos fotos lado a lado y más bajas */
+    .modal-gallery { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-gallery img { height: 110px; border-radius: 12px; }
+}
+
+@media (max-width: 360px) {
+    .modal-gallery img { height: 90px; }
+}
+
+/* Móvil horizontal: la hoja usa casi toda la altura útil */
+@media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+    .modal-content { max-height: 92vh; max-height: 92dvh; }
+    .modal-gallery img { height: 80px; }
 }

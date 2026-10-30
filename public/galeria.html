@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+   <title>Galería | Club de Voleibol Jaguares</title>
+   <meta name="description" content="Fotos del Club de Voleibol Jaguares en Socopó: entrenamientos, categorías y equipo.">
+   <meta name="robots" content="index, follow">
+   <link rel="canonical" href="https://jaguares-eta.vercel.app/galeria.html">
+   <meta name="theme-color" content="#FF4500">
+   <link rel="icon" href="img/logo-favicon.ico" type="image/x-icon">
+   <link rel="stylesheet" href="style.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+   <a class="skip-link" href="#galeria-main">Saltar al contenido</a>
+
+   <header>
+      <nav class="navbar" aria-label="Navegación principal">
+         <div class="logo-container">
+            <a href="index.html" aria-label="Ir al inicio">
+               <img src="img/logo-fvv-nobg.png" alt="Logo FVV" class="logo-img">
+               <img src="img/logo-deporte-nobg.png" alt="Logo Deporte" class="logo-img">
+            </a>
+         </div>
+         <div class="nav-controls-mobile">
+            <button type="button" id="theme-toggle" title="Cambiar modo" aria-label="Cambiar tema">
+               <i class="fas fa-moon"></i>
+            </button>
+            <button type="button" class="menu-toggle" id="mobile-menu"
+                    aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
+               <i class="fas fa-bars"></i>
+            </button>
+         </div>
+         <ul class="nav-links" id="nav-links">
+            <li><a href="index.html#inicio">Inicio</a></li>
+            <li><a href="index.html#nosotros">Nosotros</a></li>
+            <li><a href="index.html#categorias">Categorías</a></li>
+            <li><a href="index.html#calendario">Calendario</a></li>
+            <li><a href="galeria.html" aria-current="page">Galería</a></li>
+            <li><a href="index.html#contacto">Contacto</a></li>
+            <li><a href="admin/login.html" class="btn-login" rel="nofollow">Ingresar</a></li>
+            <li class="theme-item desktop-theme">
+               <button type="button" id="theme-toggle-desktop" title="Cambiar modo" aria-label="Cambiar tema">
+                  <i class="fas fa-moon"></i>
+               </button>
+            </li>
+         </ul>
+      </nav>
+      <div class="nav-backdrop" id="nav-backdrop" hidden></div>
+   </header>
+
+   <main id="galeria-main" class="galeria-page">
+      <div class="section-title reveal">
+         <h1>Galería</h1>
+         <p>Entrenamientos, categorías y momentos del club.</p>
+      </div>
+
+      <div class="galeria-grid" id="galeria-grid">
+         <!-- src = imagen completa; las mismas rutas sirven de miniatura -->
+         <button type="button" class="galeria-item" data-full="img/foto-entrenadores.jpg" data-alt="Entrenadores del club">
+            <img src="img/foto-entrenadores.jpg" alt="Entrenadores del club" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/cat-1.jpg" data-alt="Equipo en cancha">
+            <img src="img/cat-1.jpg" alt="Equipo en cancha" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/cat-2.jpg" data-alt="Atletas Jaguares">
+            <img src="img/cat-2.jpg" alt="Atletas Jaguares" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/cat-3.jpg" data-alt="Categoría en entrenamiento">
+            <img src="img/cat-3.jpg" alt="Categoría en entrenamiento" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/entrenamiento-img.jpg" data-alt="Sesión de entrenamiento">
+            <img src="img/entrenamiento-img.jpg" alt="Sesión de entrenamiento" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/equipo-img.jpg" data-alt="Equipo del club">
+            <img src="img/equipo-img.jpg" alt="Equipo del club" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/u7-card.jpeg" data-alt="Categoría U-7">
+            <img src="img/u7-card.jpeg" alt="Categoría U-7" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/u9-card.jpeg" data-alt="Categoría U-9">
+            <img src="img/u9-card.jpeg" alt="Categoría U-9" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/u11-card.jpeg" data-alt="Categoría U-11">
+            <img src="img/u11-card.jpeg" alt="Categoría U-11" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/u13-card.jpeg" data-alt="Categoría U-13">
+            <img src="img/u13-card.jpeg" alt="Categoría U-13" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+         <button type="button" class="galeria-item" data-full="img/u15-card.jpeg" data-alt="Categoría U-15">
+            <img src="img/u15-card.jpeg" alt="Categoría U-15" loading="lazy" decoding="async" width="400" height="300">
+         </button>
+      </div>
+   </main>
+
+   <!-- Lightbox -->
+   <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Vista de foto">
+      <button type="button" class="lightbox-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+      <button type="button" class="lightbox-prev" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
+      <img id="lightbox-img" src="" alt="">
+      <button type="button" class="lightbox-next" aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
+   </div>
+
+   <footer>
+      <div class="footer-bottom" style="border-top:none;padding-top:24px;">
+         <p><a href="index.html" style="color:var(--naranja);text-decoration:none;font-weight:600;">← Volver al inicio</a></p>
+         <p>© 2026 Club de Voleibol Jaguares</p>
+      </div>
+   </footer>
+
+   <script src="script.js"></script>
+   <script>
+   (function () {
+       const items = Array.from(document.querySelectorAll('.galeria-item'));
+       const lb = document.getElementById('lightbox');
+       const lbImg = document.getElementById('lightbox-img');
+       const btnClose = document.querySelector('.lightbox-close');
+       const btnPrev = document.querySelector('.lightbox-prev');
+       const btnNext = document.querySelector('.lightbox-next');
+       if (!items.length || !lb || !lbImg) return;
+
+       let idx = 0;
+
+       function openAt(i) {
+           idx = (i + items.length) % items.length;
+           const el = items[idx];
+           lbImg.src = el.dataset.full || el.querySelector('img').src;
+           lbImg.alt = el.dataset.alt || '';
+           lb.hidden = false;
+           document.body.classList.add('modal-open');
+           if (btnClose) btnClose.focus({ preventScroll: true });
+       }
+
+       function closeLb() {
+           lb.hidden = true;
+           lbImg.src = '';
+           document.body.classList.remove('modal-open');
+       }
+
+       items.forEach((el, i) => {
+           el.addEventListener('click', () => openAt(i));
+       });
+
+       if (btnClose) btnClose.addEventListener('click', closeLb);
+       if (btnPrev) btnPrev.addEventListener('click', () => openAt(idx - 1));
+       if (btnNext) btnNext.addEventListener('click', () => openAt(idx + 1));
+
+       lb.addEventListener('click', (e) => {
+           if (e.target === lb) closeLb();
+       });
+
+       document.addEventListener('keydown', (e) => {
+           if (lb.hidden) return;
+           if (e.key === 'Escape') closeLb();
+           if (e.key === 'ArrowLeft') openAt(idx - 1);
+           if (e.key === 'ArrowRight') openAt(idx + 1);
+       });
+   })();
+
+   document.querySelectorAll('.galeria-page .reveal').forEach(el => el.classList.add('active'));
+   </script>
+</body>
+</html>

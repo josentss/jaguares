@@ -307,6 +307,38 @@ body.panel-body {
     gap: 8px;
 }
 
+.user-badge .user-role {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: #fff;
+    padding: 2px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+/* Formularios: apoyos de texto */
+.form-hint {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin: -8px 0 18px;
+    padding: 10px 14px;
+    background: #fff7f0;
+    border-left: 3px solid var(--naranja);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    line-height: 1.45;
+}
+.form-hint i { color: var(--naranja); margin-top: 3px; }
+.field-note { color: var(--text-muted); font-size: 0.8rem; min-height: 1em; }
+.label-toggle { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.toggle-own { font-size: 0.8rem; font-weight: 500; color: var(--naranja); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.form-group-panel label small { color: var(--text-muted); font-weight: 400; }
+.form-docs { margin: 18px 0 4px; border-top: 1px dashed #dbe2ea; padding-top: 18px; }
+.form-docs .form-group-panel { grid-column: auto; }
+#form-dir-atleta .btn-panel-submit { margin-top: 20px; }
 .panel-section { display: none; }
 .panel-section.active { display: block; }
 
@@ -575,6 +607,8 @@ tr:hover td { background-color: #f8fafc; }
         top: env(safe-area-inset-top);
         left: calc(max(12px, env(safe-area-inset-left)) + 56px);
         height: var(--topbar-h);
+        padding-left: 40px;
+        background: url('../img/logo-sinfondo.png') no-repeat left center / 32px auto;
         display: flex;
         align-items: center;
         font-weight: 700;

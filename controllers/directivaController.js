@@ -249,3 +249,20 @@ exports.gestionarAprobacion = (req, res) => {
         }
     );
 };
+
+// Representantes aprobados, para el selector de "Registrar Atleta".
+exports.obtenerRepresentantes = (req, res) => {
+    const sql = `
+        SELECT id_usuario, nombres, apellidos, cedula, telefono1
+        FROM usuarios
+        WHERE rol = 'representante' AND estado = 'aprobado'
+        ORDER BY apellidos, nombres
+    `;
+    db.query(sql, [], (err, rows) => {
+        if (err) {
+            console.error('Error al obtener representantes:', err.message);
+            return res.status(500).json({ success: false, message: 'Error al obtener representantes' });
+        }
+        res.json({ success: true, datos: rows });
+    });
+};

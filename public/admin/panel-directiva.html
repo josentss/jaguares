@@ -265,14 +265,15 @@
 
     <div class="sidebar" id="sidebar">
         <div class="sidebar-logo">
-            <img src="../img/logo-sinfondo.png" alt="Logo" style="width: 40px; border-radius: 50%; display: none;"> <!-- Opcional: Agregar ruta de logo -->
-            <h3><i class="fas fa-shield-cat"></i> Jaguares</h3>
+            <img src="../img/logo-sinfondo.png" alt="Logo Jaguares">
+            <h3>Jaguares</h3>
         </div>
         <ul class="sidebar-menu">
             <li class="active" data-target="sec-dashboard"><i class="fas fa-chart-pie"></i> Dashboard</li>
-            <li data-target="sec-solicitudes"><i class="fas fa-user-plus"></i> Solicitudes Registro</li>
+            <li data-target="sec-solicitudes" data-title="Solicitudes de Registro"><i class="fas fa-user-plus"></i> Solicitudes</li>
+            <li data-target="sec-registrar"><i class="fas fa-id-card"></i> Registrar Atleta</li>
             <li data-target="sec-atletas"><i class="fas fa-running"></i> Gestión Atletas</li>
-            <li data-target="sec-pagos"><i class="fas fa-file-invoice-dollar"></i> Auditoría Pagos</li>
+            <li data-target="sec-pagos"><i class="fas fa-file-invoice-dollar"></i> Auditoría de Pagos</li>
             <li data-target="sec-cms"><i class="fas fa-globe"></i> Gestión Web</li>
             <li id="btn-logout" style="margin-top: 40px; color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
         </ul>
@@ -280,7 +281,7 @@
 
     <div class="main-content">
         <header class="panel-header">
-            <h2>Panel Directiva</h2>
+            <h2 id="panel-title">Dashboard</h2>
             <div class="user-badge" id="user-info"><i class="fas fa-user-shield"></i> Cargando...</div>
         </header>
 
@@ -338,6 +339,102 @@
                         <tbody id="body-solicitudes"></tbody>
                     </table>
                 </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN REGISTRAR ATLETA (directiva) -->
+        <section id="sec-registrar" class="panel-section">
+            <div class="form-container-panel">
+                <h3><i class="fas fa-id-card" style="color: var(--naranja);"></i> Planilla de Inscripción</h3>
+                <p class="form-hint"><i class="fas fa-circle-info"></i><span>El atleta queda <strong>activo</strong> de inmediato, sin pasar por aprobación, y el representante recibe una notificación.</span></p>
+                <form id="form-dir-atleta" enctype="multipart/form-data">
+                    <div class="form-grid">
+                        <div class="form-group-panel full-width">
+                            <label for="dir-rep">Representante</label>
+                            <input type="search" id="dir-rep-buscar" placeholder="Buscar por nombre o cédula..." autocomplete="off">
+                            <select id="dir-rep" required>
+                                <option value="">Cargando representantes...</option>
+                            </select>
+                            <small class="field-note" id="dir-rep-nota"></small>
+                        </div>
+
+                        <div class="form-group-panel">
+                            <label for="dir-nombres">Nombres</label>
+                            <input type="text" id="dir-nombres" required maxlength="80">
+                        </div>
+                        <div class="form-group-panel">
+                            <label for="dir-apellidos">Apellidos</label>
+                            <input type="text" id="dir-apellidos" required maxlength="80">
+                        </div>
+
+                        <div class="form-group-panel">
+                            <label class="label-toggle">
+                                Cédula de Identidad
+                                <span class="toggle-own">
+                                    <input type="checkbox" id="dir-has-cedula" checked>
+                                    ¿Tiene propia?
+                                </span>
+                            </label>
+                            <div class="cedula-group" id="dir-group-cedula">
+                                <select id="dir-nac" aria-label="Nacionalidad">
+                                    <option value="V-">V-</option>
+                                    <option value="E-">E-</option>
+                                </select>
+                                <input type="text" id="dir-cedula" placeholder="Número" inputmode="numeric" required>
+                            </div>
+                            <input type="text" id="dir-cedula-off" class="disabled-input" style="display:none;" disabled
+                                   placeholder="Heredará la cédula del representante (prefijo H-)">
+                        </div>
+
+                        <div class="form-group-panel">
+                            <label for="dir-fecha-nac">Fecha de Nacimiento</label>
+                            <input type="date" id="dir-fecha-nac" required>
+                        </div>
+
+                        <div class="form-group-panel full-width">
+                            <label for="dir-direccion">Dirección</label>
+                            <input type="text" id="dir-direccion" required maxlength="255">
+                        </div>
+
+                        <div class="form-group-panel full-width">
+                            <label class="label-toggle">
+                                Teléfono de Contacto
+                                <span class="toggle-own">
+                                    <input type="checkbox" id="dir-has-telefono" checked>
+                                    ¿Tiene propio?
+                                </span>
+                            </label>
+                            <input type="text" id="dir-telefono" inputmode="tel" required>
+                            <input type="text" id="dir-telefono-off" class="disabled-input" style="display:none;" disabled
+                                   placeholder="Usará el teléfono del representante">
+                        </div>
+
+                        <div class="form-group-panel full-width">
+                            <label for="dir-alergias">Alergias o Condiciones Médicas</label>
+                            <textarea id="dir-alergias" rows="2" placeholder="Opcional" maxlength="500"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-grid form-docs">
+                        <div class="form-group-panel">
+                            <label for="dir-foto">Foto del atleta <small>(JPG, PNG o WebP)</small></label>
+                            <input type="file" id="dir-foto" accept="image/jpeg,image/png,image/webp">
+                            <div id="dir-preview-box" style="display:none; margin-top:8px; text-align:center;">
+                                <img id="dir-preview" alt="Vista previa" style="max-height:120px; border-radius:8px; object-fit:cover;">
+                            </div>
+                        </div>
+                        <div class="form-group-panel">
+                            <label for="dir-cedula-archivo">Cédula escaneada <small>(imagen o PDF)</small></label>
+                            <input type="file" id="dir-cedula-archivo" accept="image/jpeg,image/png,image/webp,application/pdf">
+                        </div>
+                        <div class="form-group-panel">
+                            <label for="dir-partida">Partida de nacimiento <small>(imagen o PDF)</small></label>
+                            <input type="file" id="dir-partida" accept="image/jpeg,image/png,image/webp,application/pdf">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-panel-submit"><i class="fas fa-save"></i> Registrar Atleta</button>
+                </form>
             </div>
         </section>
 
@@ -416,15 +513,15 @@
                 <form id="form-evento">
                     <div class="form-grid-panel">
                         <div class="form-group-panel full-width">
-                            <label>Título del Encuentro:</label>
+                            <label>Título del Encuentro</label>
                             <input type="text" id="evento-titulo" placeholder="Ej: Final Sub-15 vs Equipo B" required>
                         </div>
                         <div class="form-group-panel">
-                            <label>Fecha:</label>
+                            <label>Fecha</label>
                             <input type="date" id="evento-fecha" required>
                         </div>
                         <div class="form-group-panel">
-                            <label>Lugar:</label>
+                            <label>Lugar</label>
                             <input type="text" id="evento-lugar" placeholder="Ej: Cancha Principal" required>
                         </div>
                     </div>
@@ -1108,12 +1205,160 @@
             } catch(e) { showToast('Error al auditar el pago', 'error'); }
         }
 
+
+        // ==========================================
+        // REGISTRO DE ATLETAS POR LA DIRECTIVA
+        // ==========================================
+        let listaRepresentantes = [];
+
+        function repSeleccionado() {
+            const id = document.getElementById('dir-rep').value;
+            return listaRepresentantes.find(r => String(r.id_usuario) === id) || null;
+        }
+
+        function pintarRepresentantes() {
+            const sel = document.getElementById('dir-rep');
+            const q = document.getElementById('dir-rep-buscar').value.trim().toLowerCase();
+            const previo = sel.value;
+            const lista = listaRepresentantes.filter(r =>
+                !q || `${r.nombres} ${r.apellidos} ${r.cedula || ''}`.toLowerCase().includes(q) ||
+                String(r.id_usuario) === previo);
+            sel.innerHTML = '';
+            const base = document.createElement('option');
+            base.value = '';
+            base.textContent = listaRepresentantes.length
+                ? (lista.length ? 'Selecciona un representante' : 'Sin coincidencias')
+                : 'No hay representantes aprobados';
+            sel.appendChild(base);
+            lista.forEach(r => {
+                const o = document.createElement('option');
+                o.value = r.id_usuario;
+                o.textContent = `${r.apellidos}, ${r.nombres}` + (r.cedula ? ` · ${r.cedula}` : '');
+                sel.appendChild(o);
+            });
+            sel.value = previo;
+            actualizarNotaRep();
+        }
+
+        function actualizarNotaRep() {
+            const r = repSeleccionado();
+            const nota = document.getElementById('dir-rep-nota');
+            nota.textContent = r ? `Teléfono: ${r.telefono1 || 'no registrado'}` : '';
+        }
+
+        async function cargarRepresentantes() {
+            try {
+                const res = await apiFetch('/api/directiva/representantes');
+                const data = await res.json();
+                if (!data.success) throw new Error();
+                listaRepresentantes = data.datos || [];
+                pintarRepresentantes();
+            } catch (e) {
+                document.getElementById('dir-rep').innerHTML = '<option value="">No se pudo cargar la lista</option>';
+                showToast('Error al cargar los representantes', 'error');
+            }
+        }
+
+        function alternarCedulaDir() {
+            const propia = document.getElementById('dir-has-cedula').checked;
+            document.getElementById('dir-group-cedula').style.display = propia ? 'flex' : 'none';
+            document.getElementById('dir-cedula-off').style.display = propia ? 'none' : 'block';
+            document.getElementById('dir-cedula').required = propia;
+        }
+
+        function alternarTelefonoDir() {
+            const propio = document.getElementById('dir-has-telefono').checked;
+            document.getElementById('dir-telefono').style.display = propio ? 'block' : 'none';
+            document.getElementById('dir-telefono-off').style.display = propio ? 'none' : 'block';
+            document.getElementById('dir-telefono').required = propio;
+        }
+
+        document.getElementById('dir-rep-buscar').addEventListener('input', pintarRepresentantes);
+        document.getElementById('dir-rep').addEventListener('change', actualizarNotaRep);
+        document.getElementById('dir-has-cedula').addEventListener('change', alternarCedulaDir);
+        document.getElementById('dir-has-telefono').addEventListener('change', alternarTelefonoDir);
+        document.getElementById('dir-fecha-nac').max = new Date().toISOString().split('T')[0];
+
+        document.getElementById('dir-foto').addEventListener('change', (e) => {
+            const f = e.target.files[0];
+            const box = document.getElementById('dir-preview-box');
+            if (!f || !f.type.startsWith('image/')) { box.style.display = 'none'; return; }
+            const url = URL.createObjectURL(f);
+            const img = document.getElementById('dir-preview');
+            img.onload = () => URL.revokeObjectURL(url);
+            img.src = url;
+            box.style.display = 'block';
+        });
+
+        document.getElementById('form-dir-atleta').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const rep = repSeleccionado();
+            if (!rep) { showToast('Selecciona un representante', 'error'); return; }
+
+            const btn = form.querySelector('button[type="submit"]');
+            const btnHTML = btn.innerHTML;
+            btn.innerHTML = 'Registrando... <i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            const propiaCedula = document.getElementById('dir-has-cedula').checked;
+            const propioTel = document.getElementById('dir-has-telefono').checked;
+
+            const fd = new FormData();
+            fd.append('id_representante', rep.id_usuario);
+            fd.append('nombres', document.getElementById('dir-nombres').value.trim());
+            fd.append('apellidos', document.getElementById('dir-apellidos').value.trim());
+            fd.append('fecha_nac', document.getElementById('dir-fecha-nac').value);
+            fd.append('direccion', document.getElementById('dir-direccion').value.trim());
+            fd.append('telefono', propioTel ? document.getElementById('dir-telefono').value.trim() : (rep.telefono1 || ''));
+            fd.append('allergies_medicas', document.getElementById('dir-alergias').value.trim());
+            fd.append('hereda_cedula', propiaCedula ? '0' : '1');
+            if (propiaCedula) {
+                fd.append('cedula', document.getElementById('dir-nac').value + document.getElementById('dir-cedula').value.trim().replace(/\s+/g, ''));
+            }
+            const foto = document.getElementById('dir-foto').files[0];
+            const ced = document.getElementById('dir-cedula-archivo').files[0];
+            const partida = document.getElementById('dir-partida').files[0];
+            if (foto) fd.append('foto', foto);
+            if (ced) fd.append('cedula_archivo', ced);
+            if (partida) fd.append('partida_nacimiento', partida);
+
+            try {
+                const res = await apiFetch('/api/directiva/registrar-atleta', { method: 'POST', body: fd });
+                const data = await res.json().catch(() => ({}));
+                if (data.success) {
+                    showToast('Atleta registrado y activado', 'success');
+                    // Conserva el representante: es común inscribir a varios hermanos seguidos.
+                    const repId = document.getElementById('dir-rep').value;
+                    form.reset();
+                    document.getElementById('dir-rep-buscar').value = '';
+                    pintarRepresentantes();
+                    document.getElementById('dir-rep').value = repId;
+                    actualizarNotaRep();
+                    document.getElementById('dir-preview-box').style.display = 'none';
+                    alternarCedulaDir();
+                    alternarTelefonoDir();
+                    cargarAuditoria();
+                } else {
+                    showToast(data.message || `Error al registrar (${res.status})`, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Error de conexión con el servidor', 'error');
+            } finally {
+                btn.innerHTML = btnHTML;
+                btn.disabled = false;
+            }
+        });
+
         document.querySelectorAll('.sidebar-menu li[data-target]').forEach(item => {
             item.addEventListener('click', () => {
                 document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
                 item.classList.add('active');
                 document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
                 document.getElementById(item.getAttribute('data-target')).classList.add('active');
+                document.getElementById('panel-title').textContent = item.dataset.title || item.textContent.trim();
+                if (item.getAttribute('data-target') === 'sec-registrar') cargarRepresentantes();
 
                 if (window.innerWidth <= 992) cerrarSidebarMovil();
             });
@@ -1165,7 +1410,8 @@
                     return;
                 }
                 currentUser = user;
-                document.getElementById('user-info').innerHTML = `<strong>${user.nombres} ${user.apellidos}</strong> <span style="color:var(--text-muted); font-size:0.85rem;">(${user.rol})</span>`;
+                const rolEtiqueta = { directiva: 'Directiva', staff: 'Staff', admin: 'Administrador' }[user.rol] || user.rol;
+                document.getElementById('user-info').innerHTML = `<i class="fas fa-user-shield"></i><strong>${esc(user.nombres)} ${esc(user.apellidos)}</strong><span class="user-role">${esc(rolEtiqueta)}</span>`;
 
                 cargarAuditoria();
                 const filtroPagos = document.getElementById('filter-estado-pagos');

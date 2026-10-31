@@ -1,5 +1,6 @@
 const db = require('../config/db');
-const { normalizarTexto } = require('../utils/validators');
+const { normalizarTexto, esEnteroPositivo } = require('../utils/validators');
+const { crearNotificacion } = require('./notificacionesController');
 
 function urlDeArchivo(file) {
     if (!file) return null;
@@ -42,9 +43,9 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
     });
 };
 
-exports.registrarAtleta = (req, res) => {
-    const id_representante = req.usuarioId;
-
+// Lógica común de registro. El representante la usa con estado 'espera'
+// (pasa por aprobación); la directiva con 'activo' (queda aprobado al crearse).
+function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRegistrar }) {
     const nombres   = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
     const fecha_nac = String(req.body.fecha_nac || '').trim();
@@ -80,7 +81,7 @@ exports.registrarAtleta = (req, res) => {
                 id_representante, nombres, apellidos, cedula, cedula_heredada,
                 fecha_nacimiento, direccion, telefono, alergias_medicas,
                 foto_url, cedula_archivo_url, partida_nacimiento_url, estado
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'espera')
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const valores = [
@@ -95,7 +96,8 @@ exports.registrarAtleta = (req, res) => {
             alergias || null,
             fotoUrl,
             cedulaUrl,
-            partidaUrl
+            partidaUrl,
+            estado
         ];
 
         db.query(query, valores, (err, result) => {
@@ -113,9 +115,13 @@ exports.registrarAtleta = (req, res) => {
                 });
             }
 
+            if (alRegistrar) {
+                try { alRegistrar(result.insertId, nombres, apellidos); } catch (e) { console.error('alRegistrar error', e.message); }
+            }
+
             res.json({
                 success: true,
-                message: 'Atleta registrado con éxito, en espera de aprobación.',
+                message: mensaje,
                 id_atleta: result.insertId,
                 cedula: cedulaFinal,
                 cedula_heredada: !!cedulaHeredadaFlag,
@@ -163,6 +169,52 @@ exports.registrarAtleta = (req, res) => {
         cedulaRaw = cedulaRaw.replace(/\s+/g, '');
         continuarConCedula(cedulaRaw, false);
     }
+}
+
+
+exports.registrarAtleta = (req, res) => {
+    registrarAtletaBase(req, res, {
+        id_representante: req.usuarioId,
+        estado: 'espera',
+        mensaje: 'Atleta registrado con éxito, en espera de aprobación.'
+    });
+};
+
+// Directiva registra a un atleta en nombre de un representante aprobado.
+// Entra como 'activo': no necesita pasar por Gestión Atletas.
+exports.registrarAtletaDirectiva = (req, res) => {
+    const idRep = Number(req.body.id_representante);
+    if (!esEnteroPositivo(idRep)) {
+        return res.status(400).json({ success: false, message: 'Selecciona un representante' });
+    }
+
+    db.query(
+        "SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND rol = 'representante' AND estado = 'aprobado' LIMIT 1",
+        [idRep],
+        (err, rows) => {
+            if (err) {
+                console.error('Error al validar representante:', err.message);
+                return res.status(500).json({ success: false, message: 'Error al validar al representante' });
+            }
+            if (!rows || rows.length === 0) {
+                return res.status(404).json({ success: false, message: 'Representante no encontrado o no aprobado' });
+            }
+
+            registrarAtletaBase(req, res, {
+                id_representante: idRep,
+                estado: 'activo',
+                mensaje: 'Atleta registrado y activado con éxito.',
+                alRegistrar: (idAtleta, nombres, apellidos) => {
+                    crearNotificacion(
+                        idRep,
+                        `La directiva registró a ${nombres} ${apellidos} y ya está activo en el club.`,
+                        'success'
+                    );
+                    try { if (req.logAdmin) req.logAdmin({ action: 'registrarAtletaDirectiva', id_atleta: idAtleta, id_representante: idRep }); } catch (e) {}
+                }
+            });
+        }
+    );
 };
 
 // ── Ficha completa (planilla) ──────────────────────────────────────────────

@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Panel Representante | Club Jaguares</title>
     <link rel="stylesheet" href="admin-style.css">
@@ -430,6 +429,7 @@
             if (backdrop) {
                 backdrop.addEventListener('click', cerrarSidebarMovil);
             }
+            window.addEventListener('resize', () => { if (window.innerWidth > 992) cerrarSidebarMovil(); });
 
             const menuItems = document.querySelectorAll('.sidebar-menu li[data-target]');
             const sections = document.querySelectorAll('.panel-section');
@@ -440,7 +440,7 @@
                     item.classList.add('active');
                     const targetSec = document.getElementById(item.getAttribute('data-target'));
                     if (targetSec) targetSec.classList.add('active');
-                    if (window.innerWidth <= 768) cerrarSidebarMovil();
+                    if (window.innerWidth <= 992) cerrarSidebarMovil();
                 });
             });
 

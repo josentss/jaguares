@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Panel Directiva | Club Jaguares</title>
     <link rel="stylesheet" href="admin-style.css">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ESTILOS ESPECÍFICOS PARA TABLAS, BADGES Y MODALES */
         .badge { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; display: inline-block; }
@@ -1115,7 +1115,7 @@
                 document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
                 document.getElementById(item.getAttribute('data-target')).classList.add('active');
 
-                if (window.innerWidth <= 768) cerrarSidebarMovil();
+                if (window.innerWidth <= 992) cerrarSidebarMovil();
             });
         });
 
@@ -1150,6 +1150,7 @@
         if (backdrop) {
             backdrop.addEventListener('click', cerrarSidebarMovil);
         }
+        window.addEventListener('resize', () => { if (window.innerWidth > 992) cerrarSidebarMovil(); });
 
         document.addEventListener('DOMContentLoaded', async () => {
             try {

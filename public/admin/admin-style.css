@@ -772,3 +772,84 @@ tr:hover td {
         font-size: 0.85rem;
     }
 }
+
+/* ===== Sistema responsive — refuerzo (no reemplaza reglas previas) ===== */
+
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        top: max(12px, env(safe-area-inset-top));
+        left: max(12px, env(safe-area-inset-left));
+    }
+
+    .sidebar {
+        height: 100vh;
+        height: 100dvh;
+        padding-bottom: env(safe-area-inset-bottom);
+        width: min(280px, 85vw);
+        z-index: 999;
+    }
+
+    .main-content {
+        padding: calc(64px + env(safe-area-inset-top)) 14px 24px !important;
+    }
+
+    .panel-header h2 {
+        font-size: 1.25rem;
+        line-height: 1.25;
+        padding-left: 52px;
+    }
+
+    .form-container-panel,
+    .table-container {
+        padding: 16px 12px;
+        border-radius: 12px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table-container table {
+        min-width: 560px;
+        width: 100%;
+    }
+
+    .dashboard-cards { gap: 12px; }
+    .card-status { padding: 18px; }
+    .card-status p { font-size: 1.35rem; }
+
+    .user-badge {
+        font-size: 0.8rem;
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+
+    td .btn-action {
+        margin: 2px 4px 2px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .table-container table {
+        min-width: 520px;
+        font-size: 0.8rem;
+    }
+    th, td { padding: 8px 10px; }
+    .btn-action {
+        padding: 6px 10px;
+        font-size: 0.78rem;
+    }
+}
+
+/* Modal de imagen: cierre siempre visible */
+.modal-overlay .btn-close-modal {
+    top: 8px;
+    right: 8px;
+    z-index: 5;
+}

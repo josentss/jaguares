@@ -275,46 +275,40 @@
             <li data-target="sec-atletas"><i class="fas fa-running"></i> Gestión Atletas</li>
             <li data-target="sec-pagos"><i class="fas fa-file-invoice-dollar"></i> Auditoría de Pagos</li>
             <li data-target="sec-cms"><i class="fas fa-globe"></i> Gestión Web</li>
-            <li id="btn-logout" style="margin-top: 40px; color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
+            <li id="btn-logout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
         </ul>
     </div>
 
     <div class="main-content">
         <header class="panel-header">
             <h2 id="panel-title">Dashboard</h2>
-            <div class="user-badge" id="user-info"><i class="fas fa-user-shield"></i> Cargando...</div>
+            <div class="user-badge" id="user-info">Cargando...</div>
         </header>
 
         <!-- SECCIÓN DASHBOARD -->
         <section id="sec-dashboard" class="panel-section active">
             <div class="dashboard-cards">
                 <div class="card-status">
-                    <i class="fas fa-user-check" style="color: #2ecc71;"></i>
                     <h3>Atletas Activos</h3>
                     <p id="stat-activos">0</p>
                 </div>
                 <div class="card-status">
-                    <i class="fas fa-user-clock" style="color: #f1c40f;"></i>
                     <h3>Atletas en Espera</h3>
                     <p id="stat-espera">0</p>
                 </div>
                 <div class="card-status">
-                    <i class="fas fa-bell" style="color: #e74c3c;"></i>
                     <h3>Pagos a Revisar</h3>
                     <p id="stat-pendientes">0</p>
                 </div>
                 <div class="card-status">
-                    <i class="fas fa-wallet" style="color: #3498db;"></i>
                     <h3>Caja Global ($)</h3>
                     <p id="stat-total-usd">0.00 $</p>
                 </div>
                 <div class="card-status">
-                    <i class="fas fa-coins" style="color: #9b59b6;"></i>
                     <h3>Caja Global (Bs)</h3>
                     <p id="stat-total-bs">0.00 Bs</p>
                 </div>
                 <div class="card-status">
-                    <i class="fas fa-money-bill-trend-up" style="color: #1abc9c;"></i>
                     <h3>Tasa BCV Oficial</h3>
                     <p id="stat-tasa-bcv">0.00</p>
                     <small id="stat-tasa-fecha" style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; display: block; margin-top: 5px;">Fecha: N/A</small>
@@ -325,7 +319,7 @@
         <!-- SECCIÓN DE SOLICITUDES DE REGISTRO -->
         <section id="sec-solicitudes" class="panel-section">
             <div class="table-container">
-                <h3><i class="fas fa-user-plus" style="color: var(--naranja);"></i> Solicitudes de Registro Pendientes</h3>
+                <h3>Solicitudes de Registro Pendientes</h3>
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
@@ -345,14 +339,14 @@
         <!-- SECCIÓN REGISTRAR ATLETA (directiva) -->
         <section id="sec-registrar" class="panel-section">
             <div class="form-container-panel">
-                <h3><i class="fas fa-id-card" style="color: var(--naranja);"></i> Planilla de Inscripción</h3>
-                <p class="form-hint"><i class="fas fa-circle-info"></i><span>El atleta queda <strong>activo</strong> de inmediato, sin pasar por aprobación. Si el representante aún no tiene cuenta, elige "Nuevo" y se la creamos aquí.</span></p>
+                <h3>Planilla de Inscripción</h3>
+                <p class="form-hint"><span>El atleta queda <strong>activo</strong> de inmediato, sin pasar por aprobación. Si el representante aún no tiene cuenta, elige "Nuevo" y se la creamos aquí.</span></p>
                 <div class="credenciales" id="dir-credenciales" style="display:none;" role="status">
-                    <div class="cred-head"><i class="fas fa-circle-check"></i> Cuenta creada. Entrega estos datos al representante:</div>
+                    <div class="cred-head">Cuenta creada. Entrega estos datos al representante:</div>
                     <div class="cred-row"><span>Usuario</span><code id="dir-cred-correo"></code></div>
                     <div class="cred-row"><span>Contraseña</span><code id="dir-cred-pass"></code></div>
                     <div class="cred-actions">
-                        <button type="button" class="btn-ghost" id="dir-cred-copiar"><i class="fas fa-copy"></i> Copiar</button>
+                        <button type="button" class="btn-ghost" id="dir-cred-copiar">Copiar</button>
                         <button type="button" class="btn-ghost" id="dir-cred-cerrar">Entendido</button>
                     </div>
                     <small>La contraseña no se vuelve a mostrar.</small>
@@ -362,8 +356,8 @@
                         <div class="form-group-panel full-width">
                             <label>Representante</label>
                             <div class="seg" role="radiogroup" aria-label="Tipo de representante">
-                                <label class="seg-op"><input type="radio" name="dir-modo-rep" value="existente" checked><span><i class="fas fa-user-check"></i> Ya registrado</span></label>
-                                <label class="seg-op"><input type="radio" name="dir-modo-rep" value="nuevo"><span><i class="fas fa-user-plus"></i> Nuevo</span></label>
+                                <label class="seg-op"><input type="radio" name="dir-modo-rep" value="existente" checked><span>Ya registrado</span></label>
+                                <label class="seg-op"><input type="radio" name="dir-modo-rep" value="nuevo"><span>Nuevo</span></label>
                             </div>
                         </div>
 
@@ -376,8 +370,8 @@
                         </div>
 
                         <fieldset class="full-width fieldset-rep" id="dir-rep-nuevo" style="display:none;" disabled>
-                            <legend><i class="fas fa-user-lock"></i> Cuenta del representante</legend>
-                            <p class="form-hint"><i class="fas fa-circle-info"></i><span>Se crea con acceso inmediato. Entrégale el correo y la contraseña para que reporte pagos o inscriba a otros atletas.</span></p>
+                            <legend>Cuenta del representante</legend>
+                            <p class="form-hint"><span>Se crea con acceso inmediato. Entrégale el correo y la contraseña para que reporte pagos o inscriba a otros atletas.</span></p>
                             <div class="form-grid">
                                 <div class="form-group-panel">
                                     <label for="dir-rep-nombres">Nombres</label>
@@ -409,7 +403,7 @@
                                     <label for="dir-rep-pass">Contraseña <small>(mínimo 8)</small></label>
                                     <div class="pass-row">
                                         <input type="text" id="dir-rep-pass" minlength="8" autocomplete="new-password" required>
-                                        <button type="button" class="btn-ghost" id="dir-gen-pass"><i class="fas fa-wand-magic-sparkles"></i> Generar</button>
+                                        <button type="button" class="btn-ghost" id="dir-gen-pass">Generar</button>
                                     </div>
                                 </div>
                             </div>
@@ -490,7 +484,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-panel-submit"><i class="fas fa-save"></i> Registrar Atleta</button>
+                    <button type="submit" class="btn-panel-submit">Registrar Atleta</button>
                 </form>
             </div>
         </section>
@@ -499,7 +493,7 @@
         <section id="sec-atletas" class="panel-section">
             <div class="table-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; gap: 15px;">
-                    <h3 style="margin: 0; border: none; padding: 0;"><i class="fas fa-users-cog" style="color: var(--naranja);"></i> Control de Atletas</h3>
+                    <h3 style="margin: 0; border: none; padding: 0;">Control de Atletas</h3>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <input type="text" id="search-atletas" class="search-box" placeholder="Buscar atleta o representante...">
                         <select id="filter-estado-atletas" class="search-box" style="width: auto;">
@@ -531,7 +525,7 @@
         <section id="sec-pagos" class="panel-section">
             <div class="table-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; gap: 15px;">
-                    <h3 style="margin: 0; border: none; padding: 0;"><i class="fas fa-search-dollar" style="color: var(--naranja);"></i> Auditoría de Pagos Recibidos</h3>
+                    <h3 style="margin: 0; border: none; padding: 0;">Auditoría de Pagos Recibidos</h3>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <input type="text" id="search-pagos" class="search-box" placeholder="Buscar mes o atleta...">
                         <select id="filter-estado-pagos" class="search-box" style="width: auto;">
@@ -566,7 +560,7 @@
         <!-- SECCIÓN DE GESTIÓN WEB (CMS) -->
         <section id="sec-cms" class="panel-section">
             <div class="form-container-panel">
-                <h3><i class="fas fa-calendar-alt" style="color: var(--naranja);"></i> Agendar Nuevo Evento</h3>
+                <h3>Agendar Nuevo Evento</h3>
                 <form id="form-evento">
                     <div class="form-grid-panel">
                         <div class="form-group-panel full-width">
@@ -582,11 +576,11 @@
                             <input type="text" id="evento-lugar" placeholder="Ej: Cancha Principal" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-panel-submit"><i class="fas fa-calendar-plus"></i> Guardar en Calendario</button>
+                    <button type="submit" class="btn-panel-submit">Guardar en Calendario</button>
                 </form>
             </div>
             <div class="table-container" style="margin-top: 10px;">
-                <h3><i class="fas fa-calendar-check" style="color: var(--naranja);"></i> Eventos del calendario</h3>
+                <h3>Eventos del calendario</h3>
                 <p style="font-size:0.85rem;color:#666;margin:-10px 0 16px;">
                     Estos eventos pueden mostrarse en la web pública del club.
                 </p>
@@ -838,10 +832,10 @@
                 box.innerHTML = renderPlanillaHTML(a) + `
                             <div class="planilla-toolbar">
                                 <button type="button" class="btn-action btn-view" onclick="imprimirPlanilla()">
-                                    <i class="fas fa-print"></i> Imprimir
+                                    Imprimir
                                 </button>
                                 <button type="button" class="btn-action btn-aprob" onclick="descargarPlanillaPDF()">
-                                    <i class="fas fa-download"></i> Descargar PDF
+                                    Descargar PDF
                                 </button>
                                 <button type="button" class="btn-action" style="background:#7f8c8d;color:#fff;" onclick="cerrarPlanilla()">
                                     Cerrar
@@ -1051,7 +1045,7 @@
                 if (data.datos.length === 0) {
                   bodySolicitudes.innerHTML = `<tr><td colspan="4">
                       <div class="empty-state">
-                          <i class="fas fa-user-check"></i>
+
                           <p>No hay solicitudes pendientes</p>
                           <span>Cuando un representante se registre, aparecerá aquí para que lo apruebes o rechaces.</span>
                       </div>
@@ -1067,8 +1061,8 @@
                             <td>${usr.correo}</td>
                             <td><span class="badge badge-espera">Pendiente</span></td>
                             <td>
-                                <button class="btn-action btn-aprob" onclick="procesarUsuario(${usr.id_usuario}, 'aprobar')"><i class="fas fa-check"></i> Aprobar</button>
-                                <button class="btn-action btn-rech" onclick="procesarUsuario(${usr.id_usuario}, 'rechazar')"><i class="fas fa-times"></i> Rechazar</button>
+                                <button class="btn-action btn-aprob" onclick="procesarUsuario(${usr.id_usuario}, 'aprobar')">Aprobar</button>
+                                <button class="btn-action btn-rech" onclick="procesarUsuario(${usr.id_usuario}, 'rechazar')">Rechazar</button>
                             </td>
                         </tr>
                     `;
@@ -1150,7 +1144,7 @@
                 bodyAtletas.innerHTML = data.atletas.length === 0
                     ? `<tr><td colspan="5">
                         <div class="empty-state">
-                            <i class="fas fa-running"></i>
+
                             <p>Aún no hay atletas en el sistema</p>
                             <span>Los representantes irán registrando atletas; aquí podrás revisarlos y aprobarlos.</span>
                         </div>
@@ -1174,16 +1168,16 @@
 
                     bodyAtletas.innerHTML += `<tr data-estado="${(a.estado || '').toLowerCase()}">
                         <td><strong>${nombreCompleto}</strong></td>
-                        <td><i class="fas fa-user-tie" style="color:var(--text-muted);"></i> ${a.rep_nombres || ''} ${a.rep_apellidos || ''}</td>
+                        <td>${a.rep_nombres || ''} ${a.rep_apellidos || ''}</td>
                         <td>${formatFecha(a.fecha_nac)}</td>
                         <td><span class="badge ${getBadgeClase(a.estado)}">${a.estado}</span></td>
                         <td>
                             <button class="btn-action btn-view" onclick="verPlanilla(${a.id_atleta})">
-                                <i class="fas fa-folder-open"></i> Planilla
+                                Planilla
                             </button>
                             ${btnWa}
-                            ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob" onclick="actualizarAtleta(${a.id_atleta}, 'activo', ${a.id_representante}, '${nombreSafe}')"><i class="fas fa-check"></i> Aprobar</button>` : ''}
-                            ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech" onclick="actualizarAtleta(${a.id_atleta}, 'inactivo', ${a.id_representante}, '${nombreSafe}')"><i class="fas fa-ban"></i> Inactivo</button>` : ''}
+                            ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob" onclick="actualizarAtleta(${a.id_atleta}, 'activo', ${a.id_representante}, '${nombreSafe}')">Aprobar</button>` : ''}
+                            ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech" onclick="actualizarAtleta(${a.id_atleta}, 'inactivo', ${a.id_representante}, '${nombreSafe}')">Inactivo</button>` : ''}
                         </td>
                     </tr>`;
                 });
@@ -1192,7 +1186,7 @@
                 bodyPagos.innerHTML = data.pagos.length === 0
                     ? `<tr><td colspan="9">
                         <div class="empty-state">
-                            <i class="fas fa-file-invoice-dollar"></i>
+
                             <p>Sin pagos reportados</p>
                             <span>Cuando un representante envíe un pago, podrás auditarlo desde esta tabla.</span>
                         </div>
@@ -1203,7 +1197,7 @@
                     const apellidoAtleta = p.atl_apellidos || '';
                     const mesSafe = String(p.mes_pagado || '').replace(/'/g, "\\'");
                     const btnVerCaptura = p.ruta_captura
-                        ? `<button class="btn-action btn-view" onclick="verComprobante(${p.id_pago})"><i class="fas fa-eye"></i> Ver</button>`
+                        ? `<button class="btn-action btn-view" onclick="verComprobante(${p.id_pago})">Ver</button>`
                         : '<span style="color:var(--text-muted); font-size:0.85rem;">—</span>';
 
                     const metodoCorto = (p.metodo_pago || '—').replace('Transferencia Bancaria', 'Transferencia');
@@ -1219,8 +1213,8 @@
                         <td>${btnVerCaptura}</td>
                         <td><span class="badge ${getBadgeClase(p.estado_pago || '')}">${esc(p.estado_pago || '')}</span></td>
                         <td>
-                            ${p.estado_pago !== 'aprobado' ? `<button class="btn-action btn-aprob" onclick="actualizarPago(${p.id_pago}, 'aprobado', ${p.id_representante}, '${mesSafe}')"><i class="fas fa-check-double"></i> Aprobar</button>` : ''}
-                            ${p.estado_pago !== 'rechazado' ? `<button class="btn-action btn-rech" onclick="actualizarPago(${p.id_pago}, 'rechazado', ${p.id_representante}, '${mesSafe}')"><i class="fas fa-times"></i> Rechazar</button>` : ''}
+                            ${p.estado_pago !== 'aprobado' ? `<button class="btn-action btn-aprob" onclick="actualizarPago(${p.id_pago}, 'aprobado', ${p.id_representante}, '${mesSafe}')">Aprobar</button>` : ''}
+                            ${p.estado_pago !== 'rechazado' ? `<button class="btn-action btn-rech" onclick="actualizarPago(${p.id_pago}, 'rechazado', ${p.id_representante}, '${mesSafe}')">Rechazar</button>` : ''}
                         </td>
                     </tr>`;
                 });
@@ -1520,7 +1514,7 @@
                 }
                 currentUser = user;
                 const rolEtiqueta = { directiva: 'Directiva', staff: 'Staff', admin: 'Administrador' }[user.rol] || user.rol;
-                document.getElementById('user-info').innerHTML = `<i class="fas fa-user-shield"></i><strong>${esc(user.nombres)} ${esc(user.apellidos)}</strong><span class="user-role">${esc(rolEtiqueta)}</span>`;
+                document.getElementById('user-info').innerHTML = `<strong>${esc(user.nombres)} ${esc(user.apellidos)}</strong><span class="user-role">${esc(rolEtiqueta)}</span>`;
 
                 cargarAuditoria();
                 const filtroPagos = document.getElementById('filter-estado-pagos');
@@ -1589,7 +1583,7 @@
                 if (eventos.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="5">
                         <div class="empty-state">
-                            <i class="fas fa-calendar-alt"></i>
+
                             <p>No hay eventos en el calendario</p>
                             <span>Agenda el primer encuentro con el formulario de arriba.</span>
                         </div>
@@ -1605,14 +1599,14 @@
 
                     if (est === 'proximo' || est === 'en_progreso') {
                         acciones += `<button type="button" class="btn-action btn-aprob" onclick="cambiarEstadoEvento(${id}, 'completado')">
-                            <i class="fas fa-check"></i> Completado
+                            Completado
                         </button>
                         <button type="button" class="btn-action btn-rech" onclick="cambiarEstadoEvento(${id}, 'cancelado')">
-                            <i class="fas fa-times"></i> Cancelar
+                            Cancelar
                         </button>`;
                     } else {
                         acciones = `<button type="button" class="btn-action btn-view" onclick="cambiarEstadoEvento(${id}, 'proximo')">
-                            <i class="fas fa-redo"></i> Reactivar
+                            Reactivar
                         </button>`;
                     }
 

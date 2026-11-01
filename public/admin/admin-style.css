@@ -241,7 +241,10 @@ body.panel-body {
 }
 .sidebar-menu li:active { background: rgba(255, 255, 255, 0.08); }
 
+/* Cerrar sesión: al final del menú, separado del resto */
+.sidebar-menu { flex: 1; }
 #btn-logout { margin-top: auto; color: #ff4d4d; }
+.sidebar-menu li#btn-logout { border-top: 1px solid rgba(255, 255, 255, 0.08); }
 
 /* Botón del menú móvil (oculto en escritorio) */
 .mobile-menu-toggle {
@@ -533,7 +536,15 @@ tr:hover td { background-color: #f8fafc; }
 .empty-state i { font-size: 2.4rem; color: #cbd5e1; margin-bottom: 12px; display: block; }
 .empty-state p { margin: 0 0 8px; font-size: 0.95rem; font-weight: 500; color: var(--text-main); }
 .empty-state span { font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 16px; line-height: 1.4; }
-.empty-state .btn-panel-submit { margin-top: 4px; }
+.empty-state .btn-panel-submit {
+    margin-top: 4px;
+    padding: 8px 18px;
+    font-size: 0.85rem;
+    background: transparent;
+    color: var(--naranja);
+    border: 1px solid var(--naranja);
+}
+@media (hover: hover) { .empty-state .btn-panel-submit:hover { background: var(--naranja); color: #fff; transform: none; } }
 
 /* 6. Notificaciones toast */
 #toast-container {
@@ -729,6 +740,7 @@ tr:hover td { background-color: #f8fafc; }
     .form-group-panel input[type="date"] { display: block; -webkit-appearance: none; appearance: none; }
     .form-group-panel label { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
     .btn-panel-submit { width: 100%; min-height: 48px; padding: 13px 20px; }
+    .empty-state .btn-panel-submit { width: auto; min-height: 42px; padding: 8px 20px; }
 
     /* Contenedores de tablas: las filas pasan a ser tarjetas */
     .table-container { background: transparent; box-shadow: none; padding: 0; border-radius: 0; margin-bottom: 22px; }

@@ -236,6 +236,85 @@
             .planilla-toolbar { justify-content: stretch; }
             .planilla-toolbar .btn-action { width: 100%; }
         }
+
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+        }
+
+        .card-status {
+            background: #fff;
+            border: 1px solid #e8ecf1;
+            border-radius: 12px;
+            padding: 18px 16px;
+            box-shadow: none;
+            gap: 6px;
+        }
+
+        .card-status h3 {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: none;
+            letter-spacing: 0;
+            margin: 0;
+        }
+
+        .card-status p {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .card-status small,
+        #stat-tasa-fecha {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: block;
+        }
+
+        /* Acento sutil solo en montos y tasa */
+        .card-money {
+            border-left: 3px solid #3498db;
+        }
+        .card-money + .card-money {
+            border-left-color: #9b59b6;
+        }
+        .card-rate {
+            border-left: 3px solid #1abc9c;
+        }
+
+        .dashboard-note {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+            margin: 12px 0 0;
+            max-width: 52rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-cards {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .card-status {
+                padding: 14px 12px;
+            }
+            .card-status p {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body class="panel-body">
@@ -300,20 +379,24 @@
                     <h3>Pagos a Revisar</h3>
                     <p id="stat-pendientes">0</p>
                 </div>
-                <div class="card-status">
-                    <h3>Caja Global ($)</h3>
+                <div class="card-status card-money">
+                    <h3>Pagos aprobados (USD)</h3>
                     <p id="stat-total-usd">0.00 $</p>
                 </div>
-                <div class="card-status">
-                    <h3>Caja Global (Bs)</h3>
+                <div class="card-status card-money">
+                    <h3>Pagos aprobados (Bs)</h3>
                     <p id="stat-total-bs">0.00 Bs</p>
                 </div>
-                <div class="card-status">
+                <div class="card-status card-rate">
                     <h3>Tasa BCV Oficial</h3>
                     <p id="stat-tasa-bcv">0.00</p>
-                    <small id="stat-tasa-fecha" style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600; display: block; margin-top: 5px;">Fecha: N/A</small>
+                    <small id="stat-tasa-fecha">Fecha: N/A</small>
                 </div>
             </div>
+            <p class="dashboard-note">
+                Los montos solo suman pagos <strong>aprobados</strong>.
+                La conversión USD ↔ Bs usa la tasa mostrada (actualizada al cargar el panel).
+            </p>
         </section>
 
         <!-- SECCIÓN DE SOLICITUDES DE REGISTRO -->
@@ -1118,14 +1201,18 @@
                 const granTotalGlobalUSD = acumuladoPuroUSD + (acumuladoPuroBs / tasaBCV);
                 const granTotalGlobalBs = acumuladoPuroBs + (acumuladoPuroUSD * tasaBCV);
 
-                document.getElementById('stat-total-usd').innerHTML = `
-                    ${granTotalGlobalUSD.toFixed(2)} $
-                    <br><span style="font-size:0.85rem; font-weight:500; color:var(--text-muted);">Neto: ${acumuladoPuroUSD.toFixed(2)} $</span>
-                `;
-                document.getElementById('stat-total-bs').innerHTML = `
-                    ${granTotalGlobalBs.toFixed(2)} Bs
-                    <br><span style="font-size:0.85rem; font-weight:500; color:var(--text-muted);">Neto: ${acumuladoPuroBs.toFixed(2)} Bs</span>
-                `;
+                document.getElementById('stat-total-usd').textContent =
+                    `${granTotalGlobalUSD.toFixed(2)} $`;
+
+                document.getElementById('stat-total-bs').textContent =
+                    `${granTotalGlobalBs.toFixed(2)} Bs`;
+
+                document.getElementById('stat-tasa-bcv').textContent =
+                    `${tasaBCV.toFixed(2)} Bs/$`;
+
+                document.getElementById('stat-tasa-fecha').textContent = data.tasa_fecha
+                    ? `Fecha: ${formatFecha(data.tasa_fecha)}`
+                    : 'Fecha: N/A (valor por defecto)';
 
                 const bodyAtletas = document.getElementById('body-atletas');
                 bodyAtletas.innerHTML = data.atletas.length === 0

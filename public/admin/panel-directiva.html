@@ -319,7 +319,6 @@
         <!-- SECCIÓN DE SOLICITUDES DE REGISTRO -->
         <section id="sec-solicitudes" class="panel-section">
             <div class="table-container">
-                <h3>Solicitudes de Registro Pendientes</h3>
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
@@ -339,7 +338,6 @@
         <!-- SECCIÓN REGISTRAR ATLETA (directiva) -->
         <section id="sec-registrar" class="panel-section">
             <div class="form-container-panel">
-                <h3>Planilla de Inscripción</h3>
                 <p class="form-hint"><span>El atleta queda <strong>activo</strong> de inmediato, sin pasar por aprobación. Si el representante aún no tiene cuenta, elige "Nuevo" y se la creamos aquí.</span></p>
                 <div class="credenciales" id="dir-credenciales" style="display:none;" role="status">
                     <div class="cred-head">Cuenta creada. Entrega estos datos al representante:</div>
@@ -434,7 +432,7 @@
                                 <input type="text" id="dir-cedula" placeholder="Número" inputmode="numeric" required>
                             </div>
                             <input type="text" id="dir-cedula-off" class="disabled-input" style="display:none;" disabled
-                                   placeholder="Heredará la cédula del representante (prefijo H-)">
+                                   placeholder="Se asignará con la cédula del representante (ej. V-12345678-1)">
                         </div>
 
                         <div class="form-group-panel">
@@ -492,11 +490,9 @@
         <!-- SECCIÓN GESTIÓN DE ATLETAS -->
         <section id="sec-atletas" class="panel-section">
             <div class="table-container">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; gap: 15px;">
-                    <h3 style="margin: 0; border: none; padding: 0;">Control de Atletas</h3>
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div class="table-toolbar"><div class="table-filters">
                         <input type="text" id="search-atletas" class="search-box" placeholder="Buscar atleta o representante...">
-                        <select id="filter-estado-atletas" class="search-box" style="width: auto;">
+                        <select id="filter-estado-atletas" class="search-box">
                             <option value="todos">Todos los estados</option>
                             <option value="activo">Solo Activos</option>
                             <option value="espera">En Espera</option>
@@ -524,11 +520,9 @@
         <!-- SECCIÓN AUDITORÍA DE PAGOS -->
         <section id="sec-pagos" class="panel-section">
             <div class="table-container">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; gap: 15px;">
-                    <h3 style="margin: 0; border: none; padding: 0;">Auditoría de Pagos Recibidos</h3>
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div class="table-toolbar"><div class="table-filters">
                         <input type="text" id="search-pagos" class="search-box" placeholder="Buscar mes o atleta...">
-                        <select id="filter-estado-pagos" class="search-box" style="width: auto;">
+                        <select id="filter-estado-pagos" class="search-box">
                             <option value="todos">Todos los pagos</option>
                             <option value="pendiente">Pendientes por revisar</option>
                             <option value="aprobado">Aprobados</option>
@@ -734,13 +728,6 @@
                         <th>Contacto</th>
                         <td>
                             ${esc(telMostrar)}
-                            <a href="${urlWhatsApp(wa, textoWa)}"
-                               target="_blank" rel="noopener noreferrer"
-                               style="display:inline-flex;align-items:center;gap:6px;margin-left:10px;
-                                      padding:5px 10px;border-radius:6px;background:#25D366;color:#fff;
-                                      text-decoration:none;font-size:0.8rem;font-weight:600;">
-                                <i class="fab fa-whatsapp"></i> WhatsApp
-                            </a>
                         </td>
                    </tr>`
                 : `<tr>
@@ -1161,7 +1148,8 @@
                     const btnWa = waRep
                         ? `<a class="btn-action" href="${urlWhatsApp(waRep, textoWaLista)}"
                               target="_blank" rel="noopener noreferrer"
-                              style="background:#25D366;color:#fff;text-decoration:none;">
+                              style="background:#25D366;color:#fff;text-decoration:none;"
+                              aria-label="Escribir por WhatsApp" title="WhatsApp">
                               <i class="fab fa-whatsapp"></i>
                            </a>`
                         : '';

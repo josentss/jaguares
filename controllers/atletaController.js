@@ -8,11 +8,27 @@ function urlDeArchivo(file) {
     return file.path || file.secure_url || null;
 }
 
-function construirCedulaHeredada(cedulaRep) {
-    const limpia = String(cedulaRep || '').trim();
-    if (!limpia) return null;
-    if (limpia.startsWith('H-')) return limpia;
-    return `H-${limpia}`;
+function siguienteCedulaHeredada(cedulaRep, cb) {
+    const base = String(cedulaRep || '').trim().replace(/^H-/, '');
+    if (!base) return cb(null, null);
+
+    db.query(
+        'SELECT cedula FROM atletas WHERE cedula LIKE ? OR cedula = ?',
+        [`${base}-%`, `H-${base}`],
+        (err, rows) => {
+            if (err) return cb(err);
+            const prefijo = `${base}-`;
+            let max = 0;
+            let antiguas = 0;
+            (rows || []).forEach(r => {
+                const c = String(r.cedula || '');
+                if (c === `H-${base}`) { antiguas++; return; }
+                const n = c.startsWith(prefijo) ? /^\d+$/.test(c.slice(prefijo.length)) ? Number(c.slice(prefijo.length)) : 0 : 0;
+                if (n > max) max = n;
+            });
+            cb(null, `${prefijo}${Math.max(max, antiguas) + 1}`);
+        }
+    );
 }
 
 exports.obtenerAtletasPorRepresentante = (req, res) => {
@@ -44,8 +60,6 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
     });
 };
 
-// Lógica común de registro. El representante la usa con estado 'espera'
-// (pasa por aprobación); la directiva con 'activo' (queda aprobado al crearse).
 function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRegistrar }) {
     const nombres   = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
@@ -156,7 +170,16 @@ function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRe
                     });
                 }
 
-                continuarConCedula(construirCedulaHeredada(cedulaRep), true);
+                siguienteCedulaHeredada(cedulaRep, (errCed, cedulaNueva) => {
+                    if (errCed || !cedulaNueva) {
+                        console.error('Error al calcular cédula heredada:', errCed?.message);
+                        return res.status(500).json({
+                            success: false,
+                            message: 'No se pudo asignar la cédula heredada'
+                        });
+                    }
+                    continuarConCedula(cedulaNueva, true);
+                });
             }
         );
     } else {
@@ -181,10 +204,6 @@ exports.registrarAtleta = (req, res) => {
     });
 };
 
-// Directiva registra a un atleta en nombre de un representante.
-// Entra como 'activo': no necesita pasar por Gestión Atletas.
-// Con representante_nuevo=1 también crea la cuenta del representante
-// (ya aprobada) para que pueda entrar a reportar pagos o inscribir más atletas.
 exports.registrarAtletaDirectiva = (req, res) => {
     const registrar = (idRep, resSalida) => registrarAtletaBase(req, resSalida, {
         id_representante: idRep,
@@ -273,7 +292,6 @@ exports.registrarAtletaDirectiva = (req, res) => {
                     }
                     const idRep = result.insertId;
 
-                    // Si el atleta falla, se deshace la cuenta recién creada para no dejarla huérfana.
                     const resProxy = {
                         status(c) { res.status(c); return resProxy; },
                         json(body) {

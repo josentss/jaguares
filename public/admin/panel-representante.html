@@ -94,7 +94,7 @@
             <li class="active" data-target="sec-inicio"><i class="fas fa-home"></i> Inicio</li>
             <li data-target="sec-atletas"><i class="fas fa-user-plus"></i> Registrar Atleta</li>
             <li data-target="sec-pagos"><i class="fas fa-money-bill-wave"></i> Reportar Pago</li>
-            <li data-target="sec-historial"><i class="fas fa-history"></i> Mi Historial</li>
+            <li data-target="sec-historial" data-title="Historial de Pagos"><i class="fas fa-history"></i> Mi Historial</li>
             <li data-target="sec-perfil"><i class="fas fa-user-gear"></i> Mi Perfil</li>
             <li id="btn-logout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
         </ul>
@@ -102,7 +102,7 @@
 
     <div class="main-content">
         <header class="panel-header">
-            <h2 id="welcome-text">Bienvenido, Representante</h2>
+            <h2 id="welcome-text">Inicio</h2>
 
             <div class="header-actions">
                 <div class="notification-wrapper" id="notif-bell">
@@ -120,21 +120,23 @@
                     </div>
                 </div>
 
-                <div class="user-badge">Representante</div>
+                <div class="user-badge" id="user-info">Representante</div>
             </div>
         </header>
 
         <section id="sec-inicio" class="panel-section active">
             <div class="dashboard-cards">
-                <div class="card-status">
-
-                    <h3>Mis Atletas</h3>
-                    <p id="count-atletas">0 Registrados</p>
-                </div>
+                <div class="card-status"><h3>Atletas registrados</h3><p id="stat-total">0</p></div>
+                <div class="card-status"><h3>Activos</h3><p id="stat-activos">0</p></div>
+                <div class="card-status"><h3>En revisión</h3><p id="stat-revision">0</p></div>
+                <div class="card-status"><h3>Pagos por confirmar</h3><p id="stat-pagos">0</p></div>
             </div>
 
             <div class="table-container">
-                <h3>Estatus de mis Atletas Inscritos</h3>
+                <div class="table-toolbar">
+                    <h3 class="toolbar-title">Mis atletas</h3>
+                    <button type="button" class="btn-outline-sm" onclick="document.querySelector('[data-target=sec-atletas]')?.click()">Registrar atleta</button>
+                </div>
                 <div style="overflow-x: auto;">
                     <table id="table-my-atletas">
                         <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Estado</th></tr></thead>
@@ -146,7 +148,6 @@
 
         <section id="sec-atletas" class="panel-section">
             <div class="form-container-panel">
-                <h3>Planilla de Inscripción</h3>
                 <form id="form-add-atleta" enctype="multipart/form-data">
                     <div class="form-grid">
                         <div class="form-group-panel">
@@ -175,7 +176,7 @@
                             </div>
                             <input type="text" id="atl-cedula-disabled" class="disabled-input"
                                    style="display:none;" disabled
-                                   placeholder="Heredará cédula del representante (prefijo H-)">
+                                   placeholder="Se asignará con tu cédula (ej. V-12345678-1)">
                         </div>
 
                         <div class="form-group-panel">
@@ -236,46 +237,51 @@
 
         <section id="sec-pagos" class="panel-section">
             <div class="form-container-panel">
-                <h3>Reportar Pago Mensual</h3>
+                <p class="form-lead">Informa la mensualidad de tu atleta para que la directiva la verifique. Recibirás una notificación cuando sea confirmada o si necesita correcciones.</p>
                 <form id="form-report-pago" enctype="multipart/form-data">
-                    <div class="form-grid">
-                        <div class="form-group-panel"><label>Atleta</label><select id="pay-atleta" required></select></div>
-                        <div class="form-group-panel"><label>Mes a Pagar</label><select id="pay-mes" required><option value="Enero">Enero</option><option value="Febrero">Febrero</option><option value="Marzo">Marzo</option><option value="Abril">Abril</option><option value="Mayo">Mayo</option><option value="Junio">Junio</option><option value="Julio">Julio</option><option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Diciembre">Diciembre</option></select></div>
-                        <div class="form-group-panel full-width"><label>Método de Pago</label><select id="pay-metodo" required onchange="toggleMetodoPago()"><option value="">-- Seleccione método --</option><option value="Transferencia Bancaria">Transferencia Bancaria / Pago Móvil</option><option value="Efectivo">Efectivo</option></select></div>
-                    </div>
+                    <fieldset class="form-block">
+                        <legend>Mensualidad</legend>
+                        <div class="form-grid">
+                            <div class="form-group-panel"><label for="pay-atleta">Atleta</label><select id="pay-atleta" required></select></div>
+                            <div class="form-group-panel"><label for="pay-mes">Mes que estás pagando</label><select id="pay-mes" required><option value="Enero">Enero</option><option value="Febrero">Febrero</option><option value="Marzo">Marzo</option><option value="Abril">Abril</option><option value="Mayo">Mayo</option><option value="Junio">Junio</option><option value="Julio">Julio</option><option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Diciembre">Diciembre</option></select></div>
+                            <div class="form-group-panel full-width"><label for="pay-metodo">¿Cómo realizaste el pago?</label><select id="pay-metodo" required onchange="toggleMetodoPago()"><option value="">Selecciona una opción</option><option value="Transferencia Bancaria">Transferencia bancaria o Pago Móvil (Bs)</option><option value="Efectivo">Efectivo (Bs, USD o COP)</option></select></div>
+                        </div>
+                    </fieldset>
 
-                    <div id="panel-transferencia" class="hidden-section">
-                        <div class="form-grid" style="margin-top: 15px;">
-                            <div class="form-group-panel"><label>Monto (Bs)</label><input type="number" step="0.01" id="pay-monto-trans"></div>
-                            <div class="form-group-panel"><label>Referencia (Últimos dígitos)</label><input type="text" id="pay-referencia"></div>
-                            <div class="form-group-panel"><label>Fecha</label><input type="date" id="pay-fecha-trans"></div>
+                    <fieldset id="panel-transferencia" class="form-block hidden-section">
+                        <legend>Datos de la operación</legend>
+                        <div class="form-grid">
+                            <div class="form-group-panel"><label for="pay-monto-trans">Monto en bolívares (Bs)</label><input type="number" step="0.01" id="pay-monto-trans" placeholder="0,00" inputmode="decimal"><small class="field-note">Tal como aparece en tu comprobante.</small></div>
+                            <div class="form-group-panel"><label for="pay-referencia">Número de referencia</label><input type="text" id="pay-referencia" placeholder="Ej: 123456" inputmode="numeric"><small class="field-note">Los últimos dígitos de la operación.</small></div>
+                            <div class="form-group-panel"><label for="pay-fecha-trans">Fecha de la operación</label><input type="date" id="pay-fecha-trans"></div>
                             <div class="form-group-panel">
-                                <label>Captura (Solo imágenes, Max: 5MB)</label>
+                                <label for="pay-captura">Comprobante</label>
                                 <input type="file" id="pay-captura" accept="image/*">
+                                <small class="field-note">Captura de pantalla legible del pago. Imagen, máximo 5 MB.</small>
                                 <div id="preview-container" style="display:none; margin-top:10px; text-align: center; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
                                     <p style="font-size:0.75rem; color:#666; margin-bottom:5px;">Vista previa del comprobante:</p>
                                     <img id="pay-preview-img" src="" alt="Vista previa" style="max-width:100%; max-height:150px; border-radius:5px; object-fit: contain;">
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </fieldset>
 
-                    <div id="panel-efectivo" class="hidden-section">
-                        <div class="form-grid" style="margin-top: 15px;">
-                            <div class="form-group-panel"><label>Monto</label><input type="number" step="0.01" id="pay-monto-efec"></div>
-                            <div class="form-group-panel"><label>Moneda</label><select id="pay-moneda-efec"><option value="USD">USD</option><option value="COP">COP</option><option value="Bs">Bs</option></select></div>
-                            <div class="form-group-panel"><label>Fecha</label><input type="date" id="pay-fecha-efec"></div>
+                    <fieldset id="panel-efectivo" class="form-block hidden-section">
+                        <legend>Pago en efectivo</legend>
+                        <div class="form-grid">
+                            <div class="form-group-panel"><label for="pay-monto-efec">Monto entregado</label><input type="number" step="0.01" id="pay-monto-efec" placeholder="0,00" inputmode="decimal"></div>
+                            <div class="form-group-panel"><label for="pay-moneda-efec">Moneda</label><select id="pay-moneda-efec"><option value="USD">Dólares (USD)</option><option value="COP">Pesos colombianos (COP)</option><option value="Bs">Bolívares (Bs)</option></select></div>
+                            <div class="form-group-panel"><label for="pay-fecha-efec">Fecha de entrega</label><input type="date" id="pay-fecha-efec"></div>
                         </div>
-                    </div>
-                    <button type="submit" class="btn-panel-submit" style="margin-top: 20px;">Enviar Reporte </button>
+                    </fieldset>
+
+                    <button type="submit" class="btn-panel-submit">Enviar reporte de pago</button>
                 </form>
             </div>
         </section>
 
         <section id="sec-historial" class="panel-section">
             <div class="table-container">
-                <h3>Mi Historial de Pagos</h3>
-                <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Aquí puedes llevar el control y demostrar el respaldo de todos los reportes enviados al club.</p>
 
                 <div class="search-box-container">
                     <div class="search-wrapper">
@@ -305,7 +311,6 @@
 
         <section id="sec-perfil" class="panel-section">
             <div class="form-container-panel">
-                <h3>Gestión de mi Perfil</h3>
                 <form id="form-mi-perfil">
                     <div class="form-grid">
                         <div class="form-group-panel"><label>Nombres</label><input type="text" id="perfil-nombres" required></div>
@@ -358,6 +363,12 @@
             const transPanel = document.getElementById('panel-transferencia');
             const efecPanel = document.getElementById('panel-efectivo');
 
+            const hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+            ['pay-fecha-trans', 'pay-fecha-efec'].forEach(id => {
+                const f = document.getElementById(id);
+                if (f) { f.max = hoy; if (!f.value) f.value = hoy; }
+            });
+
             if (metodo === 'Transferencia Bancaria') {
                 transPanel.style.display = 'block';
                 efecPanel.style.display = 'none';
@@ -403,12 +414,26 @@
                     }
                     if (!userData || userData.rol !== 'representante') { window.location.href = 'login.html'; return; }
 
-                    document.getElementById('welcome-text').textContent = `Bienvenido, ${userData.nombres}`;
-
-            const userBadge = document.querySelector('.header-actions .user-badge');
-            if (userBadge) {
-                userBadge.innerHTML = `Representante: ${userData.nombres} ${userData.apellidos}`;
+                    const userBadge = document.getElementById('user-info');
+            function actualizarTitulo() {
+                const item = document.querySelector('.sidebar-menu li.active[data-target]');
+                const t = document.getElementById('welcome-text');
+                if (!item || !t) return;
+                const nombreCorto = (userData.nombres || '').trim().split(/\s+/)[0];
+                t.textContent = item.getAttribute('data-target') === 'sec-inicio'
+                    ? `Hola, ${nombreCorto}`
+                    : (item.dataset.title || item.textContent.trim());
             }
+            if (userBadge) {
+                userBadge.innerHTML = '';
+                const nom = document.createElement('strong');
+                nom.textContent = `${userData.nombres} ${userData.apellidos}`;
+                const rol = document.createElement('span');
+                rol.className = 'user-role';
+                rol.textContent = 'Representante';
+                userBadge.append(nom, rol);
+            }
+            actualizarTitulo();
 
             document.getElementById('atl-cedula').required = true;
             document.getElementById('atl-telefono').required = true;
@@ -444,6 +469,7 @@
                     item.classList.add('active');
                     const targetSec = document.getElementById(item.getAttribute('data-target'));
                     if (targetSec) targetSec.classList.add('active');
+                    actualizarTitulo();
                     if (window.innerWidth <= 992) cerrarSidebarMovil();
                 });
             });
@@ -690,7 +716,9 @@
                         const tbody = document.querySelector('#table-my-atletas tbody');
                         const selectAtleta = document.getElementById('pay-atleta');
 
-                        document.getElementById('count-atletas').textContent = `${data.atletas.length} Registrados`;
+                        document.getElementById('stat-total').textContent = data.atletas.length;
+                        document.getElementById('stat-activos').textContent = data.atletas.filter(x => x.estado === 'activo').length;
+                        document.getElementById('stat-revision').textContent = data.atletas.filter(x => x.estado === 'espera').length;
                         selectAtleta.innerHTML = '<option value="">-- Seleccione --</option>';
 
                         if (data.atletas.length === 0) {
@@ -698,7 +726,6 @@
                               <div class="empty-state">
 
                                   <p>Aún no tienes atletas registrados</p>
-                                  <span>Cuando registres uno, aquí verás su estado (en revisión, activo o inactivo).</span>
                                   <button type="button" class="btn-panel-submit" onclick="document.querySelector('[data-target=sec-atletas]')?.click()">
                                       Registrar atleta
                                   </button>
@@ -744,13 +771,14 @@
                         tbody.innerHTML = '';
 
                         const pagosFiltrados = data.datos.filter(p => p.mes_pagado !== null);
+                        document.getElementById('stat-pagos').textContent = pagosFiltrados.filter(p => p.estado_pago === 'pendiente').length;
 
                         if(pagosFiltrados.length === 0) {
                           tbody.innerHTML = `<tr><td colspan="5">
                               <div class="empty-state">
 
-                                  <p>Sin reportes de pago todavía</p>
-                                  <span>Cada vez que reportes un pago, aparecerá aquí con su estado de revisión.</span>
+                                  <p>Aún no has reportado pagos</p>
+
                                   <button type="button" class="btn-panel-submit" onclick="document.querySelector('[data-target=sec-pagos]')?.click()">
                                       Reportar pago
                                   </button>
@@ -817,7 +845,7 @@
                         userData.nombres = updatedData.nombres;
                         userData.apellidos = updatedData.apellidos;
                         localStorage.setItem('usuario', JSON.stringify(userData));
-                        document.getElementById('welcome-text').textContent = `Bienvenido, ${userData.nombres}`;
+                        actualizarTitulo();
                         document.getElementById('perfil-password').value = "";
 
                         const pContainer = document.getElementById('password-field-container');

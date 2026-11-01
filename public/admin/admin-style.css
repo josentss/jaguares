@@ -369,6 +369,22 @@ body.panel-body {
     .cred-actions .btn-ghost { flex: 1; }
     .cred-row span { width: 100%; }
 }
+.table-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.table-toolbar .toolbar-title { margin: 0; border: none; padding: 0; }
+.table-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1 1 auto; }
+.table-filters input.search-box { flex: 1 1 260px; max-width: 420px; }
+.table-filters select.search-box { width: auto; flex: 0 0 auto; }
+.btn-outline-sm {
+    background: transparent; color: var(--naranja); border: 1px solid var(--naranja);
+    padding: 8px 16px; border-radius: 8px; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    transition: background .2s, color .2s;
+}
+@media (hover: hover) { .btn-outline-sm:hover { background: var(--naranja); color: #fff; } }
+.form-lead { margin: 0 0 22px; font-size: 0.92rem; color: var(--text-muted); line-height: 1.55; max-width: 62ch; }
+.form-block { border: 0; border-top: 1px solid #e8edf3; margin: 0 0 6px; padding: 16px 0 6px; min-width: 0; }
+.form-block legend { padding: 0 10px 0 0; font-size: 0.78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.form-block .form-grid { margin-top: 4px; }
+#form-report-pago .btn-panel-submit { margin-top: 20px; }
 .form-docs { margin: 18px 0 4px; border-top: 1px dashed #dbe2ea; padding-top: 18px; }
 .form-docs .form-group-panel { grid-column: auto; }
 #form-dir-atleta .btn-panel-submit { margin-top: 20px; }

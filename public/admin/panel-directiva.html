@@ -346,17 +346,74 @@
         <section id="sec-registrar" class="panel-section">
             <div class="form-container-panel">
                 <h3><i class="fas fa-id-card" style="color: var(--naranja);"></i> Planilla de Inscripción</h3>
-                <p class="form-hint"><i class="fas fa-circle-info"></i><span>El atleta queda <strong>activo</strong> de inmediato, sin pasar por aprobación, y el representante recibe una notificación.</span></p>
+                <p class="form-hint"><i class="fas fa-circle-info"></i><span>El atleta queda <strong>activo</strong> de inmediato, sin pasar por aprobación. Si el representante aún no tiene cuenta, elige "Nuevo" y se la creamos aquí.</span></p>
+                <div class="credenciales" id="dir-credenciales" style="display:none;" role="status">
+                    <div class="cred-head"><i class="fas fa-circle-check"></i> Cuenta creada. Entrega estos datos al representante:</div>
+                    <div class="cred-row"><span>Usuario</span><code id="dir-cred-correo"></code></div>
+                    <div class="cred-row"><span>Contraseña</span><code id="dir-cred-pass"></code></div>
+                    <div class="cred-actions">
+                        <button type="button" class="btn-ghost" id="dir-cred-copiar"><i class="fas fa-copy"></i> Copiar</button>
+                        <button type="button" class="btn-ghost" id="dir-cred-cerrar">Entendido</button>
+                    </div>
+                    <small>La contraseña no se vuelve a mostrar.</small>
+                </div>
                 <form id="form-dir-atleta" enctype="multipart/form-data">
                     <div class="form-grid">
                         <div class="form-group-panel full-width">
-                            <label for="dir-rep">Representante</label>
-                            <input type="search" id="dir-rep-buscar" placeholder="Buscar por nombre o cédula..." autocomplete="off">
-                            <select id="dir-rep" required>
+                            <label>Representante</label>
+                            <div class="seg" role="radiogroup" aria-label="Tipo de representante">
+                                <label class="seg-op"><input type="radio" name="dir-modo-rep" value="existente" checked><span><i class="fas fa-user-check"></i> Ya registrado</span></label>
+                                <label class="seg-op"><input type="radio" name="dir-modo-rep" value="nuevo"><span><i class="fas fa-user-plus"></i> Nuevo</span></label>
+                            </div>
+                        </div>
+
+                        <div class="form-group-panel full-width" id="dir-rep-existente">
+                            <input type="search" id="dir-rep-buscar" placeholder="Buscar por nombre o cédula..." autocomplete="off" aria-label="Buscar representante">
+                            <select id="dir-rep" required aria-label="Representante">
                                 <option value="">Cargando representantes...</option>
                             </select>
                             <small class="field-note" id="dir-rep-nota"></small>
                         </div>
+
+                        <fieldset class="full-width fieldset-rep" id="dir-rep-nuevo" style="display:none;" disabled>
+                            <legend><i class="fas fa-user-lock"></i> Cuenta del representante</legend>
+                            <p class="form-hint"><i class="fas fa-circle-info"></i><span>Se crea con acceso inmediato. Entrégale el correo y la contraseña para que reporte pagos o inscriba a otros atletas.</span></p>
+                            <div class="form-grid">
+                                <div class="form-group-panel">
+                                    <label for="dir-rep-nombres">Nombres</label>
+                                    <input type="text" id="dir-rep-nombres" maxlength="80" required>
+                                </div>
+                                <div class="form-group-panel">
+                                    <label for="dir-rep-apellidos">Apellidos</label>
+                                    <input type="text" id="dir-rep-apellidos" maxlength="80" required>
+                                </div>
+                                <div class="form-group-panel">
+                                    <label for="dir-rep-cedula">Cédula</label>
+                                    <div class="cedula-group">
+                                        <select id="dir-rep-nac" aria-label="Nacionalidad">
+                                            <option value="V-">V-</option>
+                                            <option value="E-">E-</option>
+                                        </select>
+                                        <input type="text" id="dir-rep-cedula" placeholder="Número" inputmode="numeric" required>
+                                    </div>
+                                </div>
+                                <div class="form-group-panel">
+                                    <label for="dir-rep-telefono">Teléfono</label>
+                                    <input type="text" id="dir-rep-telefono" inputmode="tel" required>
+                                </div>
+                                <div class="form-group-panel">
+                                    <label for="dir-rep-correo">Correo (será su usuario)</label>
+                                    <input type="email" id="dir-rep-correo" maxlength="120" autocomplete="off" required>
+                                </div>
+                                <div class="form-group-panel">
+                                    <label for="dir-rep-pass">Contraseña <small>(mínimo 8)</small></label>
+                                    <div class="pass-row">
+                                        <input type="text" id="dir-rep-pass" minlength="8" autocomplete="new-password" required>
+                                        <button type="button" class="btn-ghost" id="dir-gen-pass"><i class="fas fa-wand-magic-sparkles"></i> Generar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
 
                         <div class="form-group-panel">
                             <label for="dir-nombres">Nombres</label>
@@ -1211,6 +1268,24 @@
         // ==========================================
         let listaRepresentantes = [];
 
+        const modoRep = () => document.querySelector('input[name="dir-modo-rep"]:checked').value;
+
+        function aplicarModoRep() {
+            const nuevo = modoRep() === 'nuevo';
+            document.getElementById('dir-rep-existente').style.display = nuevo ? 'none' : '';
+            document.getElementById('dir-rep').required = !nuevo;
+            const fs = document.getElementById('dir-rep-nuevo');
+            fs.style.display = nuevo ? '' : 'none';
+            fs.disabled = !nuevo;
+        }
+
+        function generarClave() {
+            const abc = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+            const buf = new Uint32Array(10);
+            crypto.getRandomValues(buf);
+            return Array.from(buf, n => abc[n % abc.length]).join('');
+        }
+
         function repSeleccionado() {
             const id = document.getElementById('dir-rep').value;
             return listaRepresentantes.find(r => String(r.id_usuario) === id) || null;
@@ -1273,6 +1348,14 @@
             document.getElementById('dir-telefono').required = propio;
         }
 
+        document.querySelectorAll('input[name="dir-modo-rep"]').forEach(r => r.addEventListener('change', aplicarModoRep));
+        document.getElementById('dir-gen-pass').addEventListener('click', () => { document.getElementById('dir-rep-pass').value = generarClave(); });
+        document.getElementById('dir-cred-cerrar').addEventListener('click', () => { document.getElementById('dir-credenciales').style.display = 'none'; });
+        document.getElementById('dir-cred-copiar').addEventListener('click', async () => {
+            const txt = `Usuario: ${document.getElementById('dir-cred-correo').textContent}\nContraseña: ${document.getElementById('dir-cred-pass').textContent}`;
+            try { await navigator.clipboard.writeText(txt); showToast('Datos copiados', 'success'); }
+            catch (e) { showToast('No se pudo copiar; selecciónalos manualmente', 'error'); }
+        });
         document.getElementById('dir-rep-buscar').addEventListener('input', pintarRepresentantes);
         document.getElementById('dir-rep').addEventListener('change', actualizarNotaRep);
         document.getElementById('dir-has-cedula').addEventListener('change', alternarCedulaDir);
@@ -1293,7 +1376,10 @@
         document.getElementById('form-dir-atleta').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
-            const rep = repSeleccionado();
+            const nuevoRep = modoRep() === 'nuevo';
+            const rep = nuevoRep
+                ? { telefono1: document.getElementById('dir-rep-telefono').value.trim() }
+                : repSeleccionado();
             if (!rep) { showToast('Selecciona un representante', 'error'); return; }
 
             const btn = form.querySelector('button[type="submit"]');
@@ -1305,7 +1391,19 @@
             const propioTel = document.getElementById('dir-has-telefono').checked;
 
             const fd = new FormData();
-            fd.append('id_representante', rep.id_usuario);
+            const claveNueva = document.getElementById('dir-rep-pass').value;
+            const correoNuevo = document.getElementById('dir-rep-correo').value.trim();
+            if (nuevoRep) {
+                fd.append('representante_nuevo', '1');
+                fd.append('rep_nombres', document.getElementById('dir-rep-nombres').value.trim());
+                fd.append('rep_apellidos', document.getElementById('dir-rep-apellidos').value.trim());
+                fd.append('rep_cedula', document.getElementById('dir-rep-nac').value + document.getElementById('dir-rep-cedula').value.trim().replace(/\s+/g, ''));
+                fd.append('rep_telefono', rep.telefono1);
+                fd.append('rep_correo', correoNuevo);
+                fd.append('rep_password', claveNueva);
+            } else {
+                fd.append('id_representante', rep.id_usuario);
+            }
             fd.append('nombres', document.getElementById('dir-nombres').value.trim());
             fd.append('apellidos', document.getElementById('dir-apellidos').value.trim());
             fd.append('fecha_nac', document.getElementById('dir-fecha-nac').value);
@@ -1327,11 +1425,22 @@
                 const res = await apiFetch('/api/directiva/registrar-atleta', { method: 'POST', body: fd });
                 const data = await res.json().catch(() => ({}));
                 if (data.success) {
-                    showToast('Atleta registrado y activado', 'success');
+                    showToast(nuevoRep ? 'Atleta y representante registrados' : 'Atleta registrado y activado', 'success');
                     // Conserva el representante: es común inscribir a varios hermanos seguidos.
-                    const repId = document.getElementById('dir-rep').value;
+                    let repId = document.getElementById('dir-rep').value;
+                    if (nuevoRep && data.representante) {
+                        repId = String(data.representante.id_usuario);
+                        document.getElementById('dir-cred-correo').textContent = data.representante.correo;
+                        document.getElementById('dir-cred-pass').textContent = claveNueva;
+                        const card = document.getElementById('dir-credenciales');
+                        card.style.display = '';
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        await cargarRepresentantes();
+                    }
                     form.reset();
                     document.getElementById('dir-rep-buscar').value = '';
+                    document.querySelector('input[name="dir-modo-rep"][value="existente"]').checked = true;
+                    aplicarModoRep();
                     pintarRepresentantes();
                     document.getElementById('dir-rep').value = repId;
                     actualizarNotaRep();

@@ -1,5 +1,6 @@
 const db = require('../config/db');
-const { normalizarTexto, esEnteroPositivo } = require('../utils/validators');
+const bcrypt = require('bcrypt');
+const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
 
 function urlDeArchivo(file) {
@@ -180,39 +181,114 @@ exports.registrarAtleta = (req, res) => {
     });
 };
 
-// Directiva registra a un atleta en nombre de un representante aprobado.
+// Directiva registra a un atleta en nombre de un representante.
 // Entra como 'activo': no necesita pasar por Gestión Atletas.
+// Con representante_nuevo=1 también crea la cuenta del representante
+// (ya aprobada) para que pueda entrar a reportar pagos o inscribir más atletas.
 exports.registrarAtletaDirectiva = (req, res) => {
-    const idRep = Number(req.body.id_representante);
-    if (!esEnteroPositivo(idRep)) {
-        return res.status(400).json({ success: false, message: 'Selecciona un representante' });
+    const registrar = (idRep, resSalida) => registrarAtletaBase(req, resSalida, {
+        id_representante: idRep,
+        estado: 'activo',
+        mensaje: 'Atleta registrado y activado con éxito.',
+        alRegistrar: (idAtleta, nombres, apellidos) => {
+            crearNotificacion(
+                idRep,
+                `La directiva registró a ${nombres} ${apellidos} y ya está activo en el club.`,
+                'success'
+            );
+            try { if (req.logAdmin) req.logAdmin({ action: 'registrarAtletaDirectiva', id_atleta: idAtleta, id_representante: idRep }); } catch (e) {}
+        }
+    });
+
+    if (!['1', 'true', true, 'on'].includes(req.body.representante_nuevo)) {
+        const idRep = Number(req.body.id_representante);
+        if (!esEnteroPositivo(idRep)) {
+            return res.status(400).json({ success: false, message: 'Selecciona un representante' });
+        }
+        return db.query(
+            "SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND rol = 'representante' AND estado = 'aprobado' LIMIT 1",
+            [idRep],
+            (err, rows) => {
+                if (err) {
+                    console.error('Error al validar representante:', err.message);
+                    return res.status(500).json({ success: false, message: 'Error al validar al representante' });
+                }
+                if (!rows || rows.length === 0) {
+                    return res.status(404).json({ success: false, message: 'Representante no encontrado o no aprobado' });
+                }
+                registrar(idRep, res);
+            }
+        );
+    }
+
+    // ── Representante nuevo ──
+    const repNombres   = normalizarTexto(req.body.rep_nombres, 80);
+    const repApellidos = normalizarTexto(req.body.rep_apellidos, 80);
+    const repCedula    = normalizarTexto(req.body.rep_cedula, 30).replace(/\s+/g, '');
+    const repCorreo    = normalizarTexto(req.body.rep_correo, 120).toLowerCase();
+    const repTelefono  = normalizarTexto(req.body.rep_telefono, 30);
+    const repPassword  = req.body.rep_password;
+
+    if (!repNombres || !repApellidos || !repCedula || !repTelefono) {
+        return res.status(400).json({ success: false, message: 'Completa nombres, apellidos, cédula y teléfono del representante' });
+    }
+    if (!esEmailValido(repCorreo)) {
+        return res.status(400).json({ success: false, message: 'El correo del representante no es válido' });
+    }
+    if (!esPasswordValida(repPassword)) {
+        return res.status(400).json({ success: false, message: 'La contraseña debe tener al menos 8 caracteres' });
     }
 
     db.query(
-        "SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND rol = 'representante' AND estado = 'aprobado' LIMIT 1",
-        [idRep],
-        (err, rows) => {
+        'SELECT correo, cedula FROM usuarios WHERE correo = ? OR cedula = ? LIMIT 1',
+        [repCorreo, repCedula],
+        async (err, rows) => {
             if (err) {
-                console.error('Error al validar representante:', err.message);
+                console.error('Error al validar duplicados de representante:', err.message);
                 return res.status(500).json({ success: false, message: 'Error al validar al representante' });
             }
-            if (!rows || rows.length === 0) {
-                return res.status(404).json({ success: false, message: 'Representante no encontrado o no aprobado' });
+            if (rows && rows.length) {
+                const dupCorreo = rows[0].correo === repCorreo;
+                return res.status(409).json({
+                    success: false,
+                    message: dupCorreo ? 'Ese correo ya está registrado' : 'Ya existe un usuario con esa cédula'
+                });
             }
 
-            registrarAtletaBase(req, res, {
-                id_representante: idRep,
-                estado: 'activo',
-                mensaje: 'Atleta registrado y activado con éxito.',
-                alRegistrar: (idAtleta, nombres, apellidos) => {
-                    crearNotificacion(
-                        idRep,
-                        `La directiva registró a ${nombres} ${apellidos} y ya está activo en el club.`,
-                        'success'
-                    );
-                    try { if (req.logAdmin) req.logAdmin({ action: 'registrarAtletaDirectiva', id_atleta: idAtleta, id_representante: idRep }); } catch (e) {}
+            let hash;
+            try { hash = await bcrypt.hash(String(repPassword), 10); }
+            catch (e) { return res.status(500).json({ success: false, message: 'Error de servidor' }); }
+
+            db.query(
+                `INSERT INTO usuarios (nombres, apellidos, correo, cedula, telefono1, password_hash, rol, estado)
+                 VALUES (?, ?, ?, ?, ?, ?, 'representante', 'aprobado')`,
+                [repNombres, repApellidos, repCorreo, repCedula, repTelefono, hash],
+                (err2, result) => {
+                    if (err2) {
+                        console.error('Error al crear representante:', err2.code, err2.message);
+                        if (err2.code === 'ER_DUP_ENTRY') {
+                            return res.status(409).json({ success: false, message: 'Ese correo o cédula ya están registrados' });
+                        }
+                        return res.status(500).json({ success: false, message: 'Error al crear al representante' });
+                    }
+                    const idRep = result.insertId;
+
+                    // Si el atleta falla, se deshace la cuenta recién creada para no dejarla huérfana.
+                    const resProxy = {
+                        status(c) { res.status(c); return resProxy; },
+                        json(body) {
+                            if (body && body.success) {
+                                return res.json({ ...body, representante: { id_usuario: idRep, correo: repCorreo } });
+                            }
+                            db.query('DELETE FROM usuarios WHERE id_usuario = ?', [idRep], (e3) => {
+                                if (e3) console.error('No se pudo deshacer el representante', idRep, e3.message);
+                                res.json(body);
+                            });
+                        }
+                    };
+                    registrar(idRep, resProxy);
                 }
-            });
+            );
         }
     );
 };

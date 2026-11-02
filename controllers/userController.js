@@ -1,11 +1,14 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const { conIdentidades, comprobarUsuario, ErrorIntegridad, responderError } = require('../utils/integridad');
-const { esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esPasswordValida } = require('../utils/validators');
+const { esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esPasswordValida, esEnteroPositivo } = require('../utils/validators');
 
 // Obtener los datos del perfil de un usuario
 exports.obtenerPerfil = (req, res) => {
     const { id } = req.params;
+    if (!esEnteroPositivo(id)) {
+        return res.status(400).json({ success: false, message: 'Identificador de usuario no válido' });
+    }
 
     const esDirectiva = ['directiva', 'staff', 'admin'].includes(req.usuarioRol);
     const esDueño = String(req.usuarioId) === String(id);

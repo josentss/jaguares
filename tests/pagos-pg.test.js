@@ -1,6 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+const { configurarPostgresTemporal } = require('./helpers/postgres');
+const esquema = configurarPostgresTemporal();
+let esquemaCreado = false;
 const db = require('../config/db');
 const pagos = require('../controllers/pagosController');
 const directiva = require('../controllers/directivaController');
@@ -31,13 +34,15 @@ function reportar(id_atleta, usuarioId = 5) {
 }
 
 test.before(async () => {
+    await db.pool.query(`CREATE SCHEMA ${esquema}`);
+    esquemaCreado = true;
     await db.pool.query(`
         CREATE TABLE usuarios (
             id_usuario INTEGER PRIMARY KEY, rol TEXT NOT NULL, estado TEXT NOT NULL
         );
         CREATE TABLE atletas (
             id_atleta INTEGER PRIMARY KEY, id_representante INTEGER REFERENCES usuarios(id_usuario),
-            estado TEXT NOT NULL
+            estado TEXT NOT NULL, nombres TEXT
         );
         CREATE TABLE pagos (
             id_pago SERIAL PRIMARY KEY,
@@ -54,16 +59,18 @@ test.before(async () => {
             (6, 'representante', 'inactivo'),
             (7, 'representante', 'aprobado');
         INSERT INTO atletas VALUES
-            (11, 5, 'activo'),
-            (12, 5, 'inactivo'),
-            (13, 5, 'espera'),
-            (14, 6, 'activo'),
-            (15, 7, 'activo');
+            (11, 5, 'activo', 'Prueba Uno'),
+            (12, 5, 'inactivo', 'Prueba Dos'),
+            (13, 5, 'espera', 'Prueba Tres'),
+            (14, 6, 'activo', 'Prueba Cuatro'),
+            (15, 7, 'activo', 'Prueba Cinco');
     `);
 });
 
 test.after(async () => {
-    await db.pool.end();
+    try {
+        if (esquemaCreado) await db.pool.query(`DROP SCHEMA ${esquema} CASCADE`);
+    } finally { await db.pool.end(); }
 });
 
 test('PostgreSQL: alta autorizada persiste una sola fila', async () => {
@@ -192,3 +199,82 @@ test('PostgreSQL: el perfil impide cédulas duplicadas y conserva los datos prev
     assert.equal(despues.rows[0].nombres,'Ana María');
     assert.equal(despues.rows[0].telefono1,'04141234567');
 });
+
+// Observe a real lock wait rather than assume that a delay creates a race.
+async function conCambioConcurrente(sql, params, operacion, confirmar = true) {
+    const bloqueo = await db.pool.connect();
+    let pendiente;
+    try {
+        await bloqueo.query('BEGIN');
+        await bloqueo.query(sql, params);
+        let terminada = false;
+        pendiente = operacion().finally(() => { terminada = true; });
+        const limite = Date.now() + 3000;
+        let esperando = false;
+        while (!terminada && Date.now() < limite) {
+            const {rows} = await db.pool.query(`SELECT EXISTS (
+                SELECT 1 FROM pg_stat_activity
+                WHERE $1 = ANY(pg_blocking_pids(pid)) AND wait_event_type = 'Lock'
+            ) AS esperando`, [bloqueo.processID]);
+            if (rows[0].esperando) { esperando = true; break; }
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        assert.equal(esperando, true, 'La escritura debe esperar el cambio concurrente de estado o rol');
+    } finally {
+        await bloqueo.query(confirmar ? 'COMMIT' : 'ROLLBACK');
+        bloqueo.release();
+        if (pendiente) await pendiente;
+    }
+    return pendiente;
+}
+
+for (const [nombre, sql] of [
+    ['cuenta revocada', "UPDATE usuarios SET estado = 'inactivo' WHERE id_usuario = $1"],
+    ['rol revocado', "UPDATE usuarios SET rol = 'staff' WHERE id_usuario = $1"],
+    ['atleta inactivo', "UPDATE atletas SET estado = 'inactivo' WHERE id_atleta = $1"]
+]) {
+    test('PostgreSQL concurrente: no reportar pago tras ' + nombre, async () => {
+        await db.pool.query("UPDATE usuarios SET estado = 'aprobado', rol = 'representante' WHERE id_usuario = 5; UPDATE atletas SET estado = 'activo' WHERE id_atleta = 11");
+        const antes = await db.pool.query('SELECT count(*)::int AS total FROM pagos');
+        const r = await conCambioConcurrente(sql, [nombre === 'atleta inactivo' ? 11 : 5], () => reportar(11));
+        assert.equal(r.codigo,409);
+        const despues = await db.pool.query('SELECT count(*)::int AS total FROM pagos');
+        assert.equal(despues.rows[0].total,antes.rows[0].total);
+    });
+}
+
+test('PostgreSQL concurrente: revocación revertida permite el pago sin perder el vínculo', async () => {
+    await db.pool.query("UPDATE usuarios SET estado = 'aprobado', rol = 'representante' WHERE id_usuario = 5; UPDATE atletas SET estado = 'activo' WHERE id_atleta = 11");
+    const r = await conCambioConcurrente("UPDATE usuarios SET estado = 'inactivo' WHERE id_usuario = $1", [5], () => reportar(11), false);
+    assert.equal(r.codigo,200);
+    const {rows} = await db.pool.query('SELECT id_atleta FROM pagos ORDER BY id_pago DESC LIMIT 1');
+    assert.equal(rows[0].id_atleta,11);
+});
+
+for (const [nombre, cambio, confirmar] of [
+    ['cuenta revocada', "estado = 'inactivo'", true],
+    ['rol revocado', "rol = 'staff'", true],
+    ['revocación revertida', "estado = 'inactivo'", false]
+]) {
+    test('PostgreSQL concurrente: activación con ' + nombre, async () => {
+        await db.pool.query("UPDATE usuarios SET estado = 'aprobado', rol = 'representante' WHERE id_usuario = 5; UPDATE atletas SET estado = 'inactivo' WHERE id_atleta = 12");
+        const mensaje = 'El atleta Prueba Dos fue aprobado.';
+        const contarNotificaciones = async () => (await db.pool.query(
+            'SELECT count(*)::int AS total FROM notificaciones WHERE id_usuario = 5 AND mensaje = $1', [mensaje])).rows[0].total;
+        const notificacionesAntes = await contarNotificaciones();
+        const r = await conCambioConcurrente(`UPDATE usuarios SET ${cambio} WHERE id_usuario = $1`, [5],
+            () => ejecutarControlador(directiva.actualizarEstadoAtleta, {id_atleta:12,estado:'activo'}), confirmar);
+        assert.equal(r.codigo, confirmar ? 409 : 200);
+        const {rows} = await db.pool.query('SELECT estado FROM atletas WHERE id_atleta = 12');
+        assert.equal(rows[0].estado,confirmar ? 'inactivo' : 'activo');
+        if (!confirmar) {
+            // The response precedes the best-effort notification. Await its
+            // persistence before dropping the schema in test.after.
+            const limite = Date.now() + 3000;
+            while (await contarNotificaciones() === notificacionesAntes && Date.now() < limite) {
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+            assert.equal(await contarNotificaciones(), notificacionesAntes + 1);
+        }
+    });
+}

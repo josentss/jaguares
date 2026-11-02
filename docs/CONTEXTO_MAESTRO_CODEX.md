@@ -3,9 +3,9 @@
 > **Propósito:** documento persistente para continuar el desarrollo del sistema Club de Voleibol Jaguares. Codex debe leerlo al iniciar tareas de este repositorio y proponer actualizaciones cuando cambien el código, las reglas, las pruebas o el estado de los PR.
 >
 > **Última actualización documental:** 2026-11-02  
-> **Base comprobada:** `main` — commit `8a36279e150954136cdb02e05e22cce5401ceaff`
+> **Base comprobada:** `main` local/remoto — commit `46ce6bfe92ee0f2aba03d5d25165e7234ad6d78b`
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** P1 en rama `integridad/altas-atomicas-identidades`, pendiente de PR/revisión; no fusionado ni desplegado. Main comprobado por Git. API de PR/despliegues bloqueada por política de red: no confundir estado documental con verificación remota.
+> **Estado:** PR #1–#6 fusionados, verificados por Git y conector GitHub. Seguimiento P1 en rama local `integridad/auditoria-relaciones-permisos`, pendiente de revisión/PR y CI remoto. Vercel informa éxito para el commit actual de main; no se verificaron funcionalmente sus flujos ni datos en producción. Esta sesión no fusionó ni desplegó cambios.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -77,13 +77,14 @@ Las rutas de directiva admiten los roles administrativos autorizados. Validar el
 | [#2](https://github.com/josentss/jaguares/pull/2) | Fusionado | Revocar sesiones al cambiar cuenta/rol, coherencia de estados, errores y escapado en directiva | 30/30 |
 | [#3](https://github.com/josentss/jaguares/pull/3) | Fusionado | Formularios, perfiles, nombres Unicode, teléfonos, cédulas, contraseñas, errores y validación compartida | 42/42 |
 | [#4](https://github.com/josentss/jaguares/pull/4) | Fusionado | Cédula 7–9 dígitos, edad 0–18 cumplidos, dirección descriptiva, condiciones médicas razonables | **46/46** |
+| [#5](https://github.com/josentss/jaguares/pull/5) | Fusionado | Contexto maestro y AGENTS.md | Solo documentación |
+| [#6](https://github.com/josentss/jaguares/pull/6) | Fusionado | Altas atómicas, duplicados normalizados, cédulas heredadas y concurrencia | CI satisfactorio; 53 backend + 10 navegador documentadas en la entrega |
 
-Última ejecución verificada: https://github.com/josentss/jaguares/actions/runs/41410222708
+Última ejecución remota verificada: [CI del PR #6](https://github.com/josentss/jaguares/actions/runs/41489653686), satisfactoria. El conector GitHub permitió verificar los PR y CI que antes estaban bloqueados por la red de la primera entrega.
 
-- 36 pruebas de backend y PostgreSQL temporal.
-- 10 pruebas Chromium.
-- Comprobación sintáctica de JavaScript.
-- No equivale a prueba exhaustiva con la base Supabase o archivos Cloudinary de producción.
+La ejecución anterior [del PR #4](https://github.com/josentss/jaguares/actions/runs/41410222708) comprendía 36 pruebas backend/PostgreSQL y 10 Chromium, además de sintaxis JavaScript. Los CI no equivalen a pruebas con la base Supabase o archivos Cloudinary de producción.
+
+[Vercel informa éxito para main](https://vercel.com/josents-projects/jaguares/DKBpuWomrdMMLyJMwkaVCn9AKtiL). No se inspeccionó su configuración ni se comprobó si corresponde al entorno productivo; no se hicieron pruebas funcionales de ese despliegue.
 
 El propietario probó manualmente en Vercel la restricción de pagos, cambios de estado y sesiones para escenarios disponibles y comunicó resultados correctos. No se pudo probar manualmente todo escenario de cuentas pendientes/inactivas por falta de cuentas de prueba; se añadieron pruebas automatizadas.
 
@@ -140,7 +141,7 @@ Las siguientes son **áreas pendientes de verificación o mejora**, no afirmacio
 
 Informe detallado: **[AUDITORIA_INTEGRIDAD.md](AUDITORIA_INTEGRIDAD.md)**, con relaciones, hallazgos confirmados, límites y comprobaciones para un futuro despliegue autorizado.
 
-Entrega subida: [rama de integridad](https://github.com/josentss/jaguares/tree/integridad/altas-atomicas-identidades), implementación `4cd951c`. La creación de PR mediante `gh pr create` devolvió Forbidden para `api.github.com/graphql`; [enlace para abrirlo en GitHub](https://github.com/josentss/jaguares/pull/new/integridad/altas-atomicas-identidades). PR y CI remoto permanecen pendientes; no hay fusión ni despliegue autorizado.
+Entrega original: [rama de integridad](https://github.com/josentss/jaguares/tree/integridad/altas-atomicas-identidades), implementación `4cd951c`. La primera creación de PR mediante `gh pr create` devolvió Forbidden para `api.github.com/graphql`. **Estado actualizado:** [PR #6](https://github.com/josentss/jaguares/pull/6) fusionado en `46ce6bf`, CI remoto satisfactorio. El bloqueo y la ausencia de PR descritos anteriormente corresponden a la entrega inicial, no al estado actual.
 
 En la rama `integridad/altas-atomicas-identidades` se implementaron altas atómicas de representante/atleta, comprobaciones normalizadas de duplicados coordinadas con los cambios de perfil, secuencias heredadas protegidas frente a concurrencia y validación de datos incompletos de representante. Se conserva la arquitectura y la interfaz, sin migraciones ni alteración de datos de producción.
 
@@ -149,6 +150,20 @@ Los escritores de identidad comparten un advisory lock transaccional PostgreSQL,
 **Validación local:** comprobación sintáctica; 53/53 pruebas backend (17 nuevas en PostgreSQL temporal/API) y 10/10 Playwright escritorio/móvil. Chromium del sistema 154 con Playwright 1.56.1, distinto del Chromium 141 del CI. Sin pruebas de producción ni acceso a archivos reales. CI actualizado para ejecutar la nueva suite; estado remoto pendiente de consulta.
 
 **Pendientes confirmados:** `validarMagicBytes` aún devuelve true; no hay atomicidad entre carga Cloudinary y commit SQL ni limpieza garantizada de archivos huérfanos. La autorización del endpoint no garantiza privacidad del enlace externo. Registro público no captura cédula; no se identifica a una misma persona con diferentes correos por su nombre. Constraints reales, duplicados históricos y escrituras externas siguen pendientes de auditoría autorizada.
+
+### Seguimiento P1 sobre PR #6 (2026-11-02)
+
+Diagnóstico priorizado, mapa de entidades, causas/reproducciones, límites históricos y pasos de revisión: **[AUDITORIA_INTEGRIDAD_SEGUIMIENTO.md](AUDITORIA_INTEGRIDAD_SEGUIMIENTO.md)**.
+
+Rama local `integridad/auditoria-relaciones-permisos`. Se corrigieron carreras adicionales de pagos/activaciones frente a estados o roles concurrentes mediante bloqueos SQL de filas. Se comprobó el fallo anterior con dos conexiones: la operación devolvía 200 sin esperar la revocación; las pruebas nuevas observan la espera real y verifican 409 sin escritura tras commit, o éxito tras rollback. Las carreras de revocación del representante se ejercitaron con SQL sintético, no con un supuesto endpoint público de cambio de rol.
+
+Las inscripciones ahora validan y guardan la misma observación médica, conservando ambos nombres de campo compatibles y rechazando valores contradictorios. Se rechazan fechas con tipo incorrecto, teléfonos falsy incorrectos e indicadores desconocidos. Perfil/lista de atletas/historial/notificaciones rechazan IDs malformados antes de SQL. Los permisos existentes se conservan.
+
+Ambas suites PostgreSQL exigen destino explícito local `jaguares_test`, sin parámetros de conexión que puedan sustituir host/base/options, y usan esquemas aleatorios separados. Se espera la notificación posterior a la última activación de prueba antes de eliminar su esquema. No hay migraciones ni cambios de datos históricos/productivos, arquitectura, interfaz, versiones del proyecto ni reglas institucionales.
+
+**Pruebas finales ejecutadas:** 64/64 backend en Node 24.15.0 y 64/64 en Node 22.23.4 (las mismas pruebas repetidas para compatibilidad; 11 nuevas respecto a main), con PostgreSQL 18 temporal local. Sintaxis de 37 archivos JavaScript correcta en ambas versiones y `git diff --check` correcto. Playwright 1.56.1 con Chromium 141.0.7390.37: 10/10 aprobadas en escritorio/móvil sobre Node 24, APIs simuladas. Total de escenarios: 74. CI conserva PostgreSQL 16/Node 22; no se ejecutó PostgreSQL 16 localmente. `npm ci` restauró las dependencias del lockfile y Playwright se instaló como herramienta local aislada, sin editar manifiestos.
+
+**Riesgo residual:** restricciones/duplicados reales sin consultar; almacenamiento/privacidad de archivos pendiente P0; bloqueos cooperativos y espera de modificaciones largas; idempotencia y notificaciones de mejor esfuerzo. `npm audit --package-lock-only --json` volvió a confirmar 12 alertas (1 crítica, 7 altas, 2 moderadas, 2 bajas); no se aplicaron actualizaciones automáticas. CI remoto de esta nueva rama y prueba funcional en entorno de desarrollo quedan pendientes del PR/revisión.
 
 
 ## 4. Backlog funcional completo — por decidir e implementar
@@ -185,7 +200,7 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 | Prioridad | Bloque | Criterio de finalización |
 | --- | --- | --- |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
-| P1 — **siguiente bloque funcional** | Integridad de identidades, cédulas, atletas y perfiles | Sin duplicados inadvertidos, relaciones verificadas, permisos de edición correctos, carrera cubierta y pruebas |
+| P1 — seguimiento local; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | PR #6 fusionado; revisar seguimiento de concurrencia/entradas, luego auditar duplicados/constraints históricos con acceso de lectura |
 | P2 | Migraciones, auditoría y ciclo de vida | Esquema reproducible, eventos trazables, archivado y política de borrado definida |
 | P3 | Modelo de temporadas y categorías | Reglas oficiales acordadas, elegibilidad comprobada y traspasos históricos |
 | P4 | Finanzas centralizadas | Tarifas y reglas oficiales acordadas, servidor calcula, trazabilidad y conciliación |
@@ -244,6 +259,8 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | Validación compartida frontend/backend de formularios | PR #3 | Implementado |
 | 2026-11-02 | Cédula V-/E- con 7–9 dígitos para captura operativa | PR #4 | Implementado; revisar excepciones legítimas |
 | 2026-11-02 | Inscripción: 0–18 años cumplidos a fecha de registro | PR #4 | Implementado; fecha de corte competitiva pendiente |
+| 2026-11-02 | Altas compuestas atómicas, identidades coordinadas y sufijos heredados preservados | PR #6 | Fusionado; constraints reales pendientes |
+| 2026-11-02 | Revalidar estados concurrentes de pagos/activaciones y unificar valores médicos validados/persistidos | Rama `integridad/auditoria-relaciones-permisos` | Implementado localmente, pendiente de revisión/PR |
 | 2026-11-02 | Montos fijos, categorías y sanciones | Pendiente de política oficial del club | No definido |
 | 2026-11-02 | Eliminación definitiva y WhatsApp | Pendiente de políticas y consentimiento | No definido |
 
@@ -252,7 +269,8 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | Fecha | PR / commit | Resultado y pruebas | Pendientes |
 | --- | --- | --- | --- |
 | 2026-11-02 | #1 a #4; `main` `29174dd3` | Correcciones de estados/pagos/formularios/coherencia; último CI 46/46 | Integridad de registros, seguridad restante y backlog |
-| 2026-11-02 | Rama `integridad/altas-atomicas-identidades`, PR pendiente | P1: transacciones, duplicados y concurrencia; 53 backend + 10 interfaz aprobadas localmente | API GitHub bloqueada; revisión/CI remoto y auditoría de constraints/Cloudinary pendientes; no desplegado |
+| 2026-11-02 | PR #6, main `46ce6bf` | P1: transacciones, duplicados y concurrencia; 53 backend + 10 interfaz locales; CI remoto satisfactorio | Estado inicial «PR pendiente/API bloqueada» reemplazado por verificación actual; constraints/Cloudinary pendientes |
+| 2026-11-02 | Rama local `integridad/auditoria-relaciones-permisos` | Seguimiento: carreras de estados, consistencia de entradas e aislamiento SQL; 64/64 backend en Node 22 y Node 24, 10/10 Playwright; sintaxis correcta | PR/CI nuevo y validación funcional en desarrollo pendientes; sin fusión/despliegue de esta rama |
 
 ### Plantilla breve de actualización futura
 

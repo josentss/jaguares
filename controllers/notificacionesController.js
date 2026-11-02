@@ -1,10 +1,14 @@
 const db = require('../config/db');
+const { esEnteroPositivo } = require('../utils/validators');
 
 // Lista las notificaciones del usuario. El :id de la URL es solo
 // descriptivo del recurso; el control real es req.usuarioId/req.usuarioRol
 // (verificados por el JWT), igual que en perfil y atletas.
 exports.obtenerNotificaciones = (req, res) => {
     const { id } = req.params;
+    if (!esEnteroPositivo(id)) {
+        return res.status(400).json({ success: false, message: 'Identificador de usuario no válido' });
+    }
     const esDirectiva = ['directiva', 'staff', 'admin'].includes(req.usuarioRol);
     const esDueño = String(req.usuarioId) === String(id);
 
@@ -25,6 +29,9 @@ exports.obtenerNotificaciones = (req, res) => {
 
 exports.borrarNotificaciones = (req, res) => {
     const { id } = req.params;
+    if (!esEnteroPositivo(id)) {
+        return res.status(400).json({ success: false, message: 'Identificador de usuario no válido' });
+    }
     const esDirectiva = ['directiva', 'staff', 'admin'].includes(req.usuarioRol);
     const esDueño = String(req.usuarioId) === String(id);
 

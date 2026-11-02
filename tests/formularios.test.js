@@ -23,6 +23,22 @@ function respuesta() {
     };
 }
 
+test('consultas por representante: IDs malformados devuelven 400 sin acceder a SQL, incluso con rol administrativo', () => {
+    let consultas = 0;
+    const mocks = {'../config/db': {query() {consultas++;}}};
+    const notificaciones = cargar('../controllers/notificacionesController', mocks);
+    const handlers = [cargar('../controllers/userController', mocks).obtenerPerfil,
+        cargar('../controllers/atletaController', mocks).obtenerAtletasPorRepresentante,
+        cargar('../controllers/pagosController', mocks).obtenerHistorial,
+        notificaciones.obtenerNotificaciones, notificaciones.borrarNotificaciones];
+    for (const fn of handlers) for (const id of ['abc', '0', '-1', '1.2', '1e3', '9007199254740993']) {
+        const res = respuesta();
+        fn({params:{id,id_rep:id},usuarioId:1,usuarioRol:'admin'},res);
+        assert.equal(res.statusCode,400);
+    }
+    assert.equal(consultas,0);
+});
+
 test('nombres: letras Unicode, ñ, tildes y apóstrofes sin números ni HTML', () => {
     for (const x of ['Ana María', 'José-Luis', "O'Connor", 'Ñúñez', 'D’Angelo', 'María Elena']) {
         assert.equal(v.esNombreValido(x), true, x);
@@ -145,6 +161,48 @@ test('inscripción: no admite datos inválidos, sin ejecutar INSERT', () => {
         assert.equal(res.statusCode,400,JSON.stringify(cambio).slice(0,90));
     }
     assert.equal(consultas,0);
+});
+
+test('inscripción: rechaza tipos y selectores ambiguos antes de intentar persistir', async () => {
+    let altas = 0;
+    const atleta = cargar('../controllers/atletaController', {
+        '../config/db': {},
+        '../utils/inscripcion': { async inscribir() { altas++; return {}; } },
+        './notificacionesController': { crearNotificacion() {} }
+    });
+    const base = { nombres:'Atleta Prueba', apellidos:'Sintético', cedula:'V-81000001',
+        hereda_cedula:'0', fecha_nac:'2014-05-10', direccion:'Calle de pruebas 12' };
+    for (const cambio of [
+        {fecha_nac:['2014-05-10']}, {telefono:0}, {telefono:false},
+        {hereda_cedula:{}}, {hereda_cedula:'quizas'},
+        {representante_nuevo:'quizas', id_representante:1},
+        {allergies_medicas:'', alergias_medicas:'<script>'},
+        {allergies_medicas:'Asma', alergias_medicas:'Ninguna'}
+    ]) {
+        const res = respuesta();
+        const fn = 'representante_nuevo' in cambio ? atleta.registrarAtletaDirectiva : atleta.registrarAtleta;
+        await fn({body:{...base,...cambio},usuarioId:1,files:{}},res);
+        assert.equal(res.statusCode,400,JSON.stringify(cambio));
+    }
+    assert.equal(altas,0);
+});
+
+test('inscripción: valida y guarda la misma observación médica con cualquiera de sus nombres compatibles', async () => {
+    const altas = [];
+    const atleta = cargar('../controllers/atletaController', {
+        '../config/db': {},
+        '../utils/inscripcion': { async inscribir(datos) { altas.push(datos.atleta); return {}; } },
+        './notificacionesController': { crearNotificacion() {} }
+    });
+    const base = {nombres:'Atleta Prueba',apellidos:'Sintético',cedula:'V-81000001',
+        fecha_nac:'2014-05-10',direccion:'Calle de pruebas 12'};
+    for (const datos of [ {}, {allergies_medicas:' Asma '}, {alergias_medicas:' Asma '},
+        {allergies_medicas:'Asma',alergias_medicas:'Asma'}, {telefono:null} ]) {
+        const res = respuesta();
+        await atleta.registrarAtleta({body:{...base,...datos},usuarioId:1,files:{}},res);
+        assert.equal(res.statusCode,200);
+        assert.equal(altas.at(-1).alergias, Object.keys(datos).some(x=>x.includes('medicas')) ? 'Asma' : '');
+    }
 });
 
 

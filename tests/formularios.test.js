@@ -33,9 +33,9 @@ test('nombres: letras Unicode, ñ, tildes y apóstrofes sin números ni HTML', (
     }
 });
 
-test('cédulas: V/E y 5 a 9 dígitos sin sufijos', () => {
+test('cédulas: V/E y 7 a 9 dígitos sin sufijos', () => {
     for (const x of ['V-12345678', 'E-1234567', 'v-12345678']) assert.equal(v.esCedulaValida(x), true);
-    for (const x of ['V-1234', 'V-1234567890', 'X-12345678', 'V-123abc', 'V-12345678-1', '12345678', null]) {
+    for (const x of ['V-1234', 'V-578546', 'V-1234567890', 'X-12345678', 'V-123abc', 'V-12345678-1', '12345678', null]) {
         assert.equal(v.esCedulaValida(x), false, String(x));
     }
 });
@@ -122,7 +122,10 @@ test('inscripción: no admite datos inválidos, sin ejecutar INSERT', () => {
         allergies_medicas:'Ninguna'};
     const cambios=[
         {nombres:'Ana123'}, {apellidos:'<b>Hola</b>'},
-        {cedula:'V-123abc'}, {direccion:' '.repeat(256)},
+        {cedula:'V-123abc'}, {cedula:'V-578546'}, {direccion:' '.repeat(256)},
+        {direccion:'2356'}, {direccion:'Calle ' + '3'.repeat(30)},
+        {allergies_medicas:'s43678ikjhgf'}, {allergies_medicas:'435534'},
+        {fecha_nac:'1908-06-16'},
         {telefono:'abc12'}, {allergies_medicas:'X'.repeat(501)},
         {fecha_nac:'2026-02-30'}
     ];
@@ -132,4 +135,30 @@ test('inscripción: no admite datos inválidos, sin ejecutar INSERT', () => {
         assert.equal(res.statusCode,400,JSON.stringify(cambio).slice(0,90));
     }
     assert.equal(consultas,0);
+});
+
+
+test('edad real: hasta 18 años cumplidos, sin permitir 19 ni fechas futuras', () => {
+    const hoy = '2026-11-02';
+    for (const fecha of ['2007-11-03', '2008-11-02', '2010-01-01', '2026-11-02']) {
+        assert.equal(v.esEdadAtletaValida(fecha, hoy), true, fecha);
+    }
+    for (const fecha of ['2007-11-02', '1908-06-16', '2026-11-03', '2026-02-30']) {
+        assert.equal(v.esEdadAtletaValida(fecha, hoy), false, fecha);
+    }
+});
+
+test('textos de inscripción: direcciones descriptivas y datos médicos auténticos', () => {
+    for (const direccion of ['Barrio 1', 'Calle 5, casa #22, Barinas', 'Av. 23 de Enero, piso 2']) {
+        assert.equal(v.esDireccionValida(direccion), true, direccion);
+    }
+    for (const direccion of ['2356', '123456789', 'Calle ' + '3'.repeat(30), 'A', '<script>alert(1)</script>']) {
+        assert.equal(v.esDireccionValida(direccion), false, direccion);
+    }
+    for (const nota of ['', 'Ninguna', 'Asma', 'Diabetes tipo 1', 'Vitamina B12', 'Alérgico a 500 mg de medicamento']) {
+        assert.equal(v.esCondicionMedicaValida(nota), true, nota);
+    }
+    for (const nota of ['s43678ikjhgf', '23334', '<img onerror=alert(1)>']) {
+        assert.equal(v.esCondicionMedicaValida(nota), false, nota);
+    }
 });

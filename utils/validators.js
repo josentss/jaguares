@@ -3,7 +3,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 exports.esEmailValido = (email) => typeof email === 'string' && EMAIL_RE.test(email.trim());
 
 exports.esPasswordValida = (password, minLength = 8) =>
-    typeof password === 'string' && password.length >= minLength;
+    typeof password === 'string' && password.length >= minLength &&
+    password.length <= 128 && password.trim().length > 0;
 
 exports.esEnteroPositivo = (value) => {
     if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0;
@@ -44,7 +45,7 @@ exports.esEstadoPagoValido = (estado) =>
  * Validaciones compartidas con el formulario web.
  * No truncar silenciosamente: los valores largos deben recibir un error explícito.
  */
-const SIN_CONTROL = /^[^\u0000-\u001f\u007f-\u009f]*$/u;
+const SIN_CONTROL = /^[^\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]*$/u;
 const NOMBRE = /^[\p{L}\p{M}]+(?:[ '\u2019.\-][\p{L}\p{M}]+)*$/u;
 const CEDULA = /^[VE]-[0-9]{5,9}$/;
 const NUMERO_TELEFONO = /^(?:0[0-9]{10}|(?:\+?58)[1-9][0-9]{9}|\+[1-9][0-9]{7,14})$/;

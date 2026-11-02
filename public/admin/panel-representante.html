@@ -701,6 +701,12 @@
                 } catch (err) { console.error("Error al cargar perfil", err); }
             }
 
+            function esc(valor) {
+                return String(valor ?? '').replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
             async function cargarAtletasPanel() {
                 try {
                     const response = await apiFetch(`/api/atletas/representante/${userData.id_usuario}`, {
@@ -720,6 +726,8 @@
                         document.getElementById('stat-activos').textContent = data.atletas.filter(x => x.estado === 'activo').length;
                         document.getElementById('stat-revision').textContent = data.atletas.filter(x => x.estado === 'espera').length;
                         selectAtleta.innerHTML = '<option value="">-- Seleccione --</option>';
+                        const botonReportar = document.querySelector('#form-report-pago button[type="submit"]');
+                        if (botonReportar) botonReportar.disabled = !data.atletas.some(a => a.estado === 'activo');
 
                         if (data.atletas.length === 0) {
                           tbody.innerHTML = `<tr><td colspan="3">
@@ -740,12 +748,16 @@
                             let estadoTexto = atleta.estado === 'activo' ? 'Activo' : (atleta.estado === 'inactivo' ? 'Inactivo' : 'En Revisión');
 
                             htmlContenido += `<tr>
-                                <td><strong>${atleta.nombres} ${atleta.apellidos}</strong></td>
-                                <td>${atleta.cedula || 'N/A'}</td>
+                                <td><strong>${esc(atleta.nombres)} ${esc(atleta.apellidos)}</strong></td>
+                                <td>${esc(atleta.cedula || 'N/A')}</td>
                                 <td><span class="status-badge ${badgeClass}">${estadoTexto}</span></td>
                             </tr>`;
 
-                            selectAtleta.innerHTML += `<option value="${atleta.id_atleta}">${atleta.nombres} ${atleta.apellidos}</option>`;
+                            if (atleta.estado === 'activo') {
+                                selectAtleta.add(new Option(
+                                    `${atleta.nombres} ${atleta.apellidos}`, String(atleta.id_atleta)
+                                ));
+                            }
                         });
 
                         tbody.innerHTML = htmlContenido;
@@ -793,10 +805,10 @@
 
                             tbody.innerHTML += `<tr>
                                 <td>${fechaStr}</td>
-                                <td>${pago.atl_nombres} ${pago.atl_apellidos}</td>
-                                <td>${pago.mes_pagado}</td>
-                                <td>${pago.monto} ${pago.moneda || 'Bs'}</td>
-                                <td><span class="status-badge ${badgeClass}" style="text-transform: capitalize;">${pago.estado_pago}</span></td>
+                                <td>${esc(pago.atl_nombres)} ${esc(pago.atl_apellidos)}</td>
+                                <td>${esc(pago.mes_pagado)}</td>
+                                <td>${esc(pago.monto)} ${esc(pago.moneda || 'Bs')}</td>
+                                <td><span class="status-badge ${badgeClass}" style="text-transform: capitalize;">${esc(pago.estado_pago)}</span></td>
                             </tr>`;
                         });
                     }
@@ -993,6 +1005,10 @@
                 e.preventDefault();
                 const form = e.target;
                 const metodo = document.getElementById('pay-metodo').value;
+                 if (!document.getElementById('pay-atleta').value) {
+                     showToast('Selecciona un atleta activo para reportar el pago', 'error');
+                     return;
+                 }
 
                 // Obtenemos los datos de sesión actuales
                 const userData = JSON.parse(localStorage.getItem('usuario'));

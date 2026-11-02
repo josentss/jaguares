@@ -89,7 +89,9 @@ for (const dispositivo of [
             assert.equal(opciones.some(x => x.includes('Inactivo')), false);
             assert.equal(opciones.some(x => x.includes('Pendiente')), false);
             assert.equal(await page.locator('#table-my-atletas tbody img').count(), 0);
-            await page.waitForSelector('#table-my-pagos tbody tr');
+            await page.waitForFunction(() =>
+                document.querySelector('#table-my-pagos tbody')?.textContent.includes('Noviembre')
+            );
             assert.equal(await page.locator('#table-my-pagos tbody img').count(), 0);
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), false);
             await fs.mkdir('test-artifacts', {recursive: true});

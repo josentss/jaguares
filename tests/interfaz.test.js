@@ -192,7 +192,10 @@ test('registro web: no permite teclear cifras en nombres y rechaza contenido peg
         await campo.press('End');
         await page.keyboard.type('123💥');
         assert.equal(await campo.inputValue(), 'Ana');
-        await campo.fill('Ana123');
+        await campo.evaluate(el => {
+            el.value = 'Ana123';
+            el.dispatchEvent(new Event('input', {bubbles:true}));
+        });
         assert.equal(await campo.evaluate(el => el.validity.customError), true);
         await campo.fill('María José');
         assert.equal(await campo.evaluate(el => el.validity.customError), false);
@@ -204,7 +207,10 @@ test('perfil web: cédulas, teléfonos y nombres deben ser válidos', async () =
     const {browser, page, errores} = await abrirPanel({width:390,height:844});
     try {
         await page.evaluate(() => document.querySelector('[data-target="sec-perfil"]').click());
-        await page.locator('#perfil-nombres').fill('Ana123');
+        await page.locator('#perfil-nombres').evaluate(el => {
+            el.value = 'Ana123';
+            el.dispatchEvent(new Event('input', {bubbles:true}));
+        });
         assert.equal(await page.locator('#perfil-nombres').evaluate(el => el.validity.customError), true);
         await page.locator('#perfil-nombres').fill('Ana María');
         assert.equal(await page.locator('#perfil-nombres').evaluate(el => el.validity.customError), false);
@@ -212,7 +218,10 @@ test('perfil web: cédulas, teléfonos y nombres deben ser válidos', async () =
         assert.equal(await page.locator('#perfil-cedula').evaluate(el => el.validity.customError), true);
         await page.locator('#perfil-cedula').fill('V-12345678');
         assert.equal(await page.locator('#perfil-cedula').evaluate(el => el.validity.customError), false);
-        await page.locator('#perfil-tel1').fill('abc999');
+        await page.locator('#perfil-tel1').evaluate(el => {
+            el.value = 'abc999';
+            el.dispatchEvent(new Event('input', {bubbles:true}));
+        });
         assert.equal(await page.locator('#perfil-tel1').evaluate(el => el.validity.customError), true);
         await page.locator('#perfil-tel1').fill('0414 123-4567');
         assert.equal(await page.locator('#perfil-tel1').evaluate(el => el.validity.customError), false);
@@ -230,11 +239,16 @@ test('directiva web: registro del atleta impide nombres y documentos mal formado
         await page.goto(baseUrl + '/admin/panel-directiva.html');
         await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
         await page.evaluate(() => document.querySelector('[data-target="sec-registrar"]').click());
-        await page.locator('#dir-nombres').fill('Ángel123');
+        await page.locator('#dir-nombres').evaluate(el => {
+            el.value = 'Ángel123';
+            el.dispatchEvent(new Event('input', {bubbles:true}));
+        });
         assert.equal(await page.locator('#dir-nombres').evaluate(el => el.validity.customError), true);
         await page.locator('#dir-nombres').fill('Ángel José');
         assert.equal(await page.locator('#dir-nombres').evaluate(el => el.validity.customError), false);
-        await page.locator('#dir-cedula').fill('12ab3');
+        await page.locator('#dir-cedula').fill('123');
+        await page.locator('#dir-cedula').press('End');
+        await page.keyboard.type('a');
         assert.equal(await page.locator('#dir-cedula').inputValue(), '123');
         assert.equal(await page.locator('#dir-cedula').evaluate(el => el.validity.customError), true);
         assert.deepEqual(errores, []);

@@ -164,3 +164,31 @@ test('PostgreSQL: revocar cuenta invalida JWT previamente emitido', async () => 
     assert.equal(revocado.codigo, 403);
     await db.pool.query("UPDATE usuarios SET estado = 'aprobado' WHERE id_usuario = 5");
 });
+
+test('PostgreSQL: el perfil impide cédulas duplicadas y conserva los datos previos', async () => {
+    const usuarios = require('../controllers/userController');
+    await db.pool.query(`
+        ALTER TABLE usuarios
+        ADD COLUMN nombres TEXT, ADD COLUMN apellidos TEXT,
+        ADD COLUMN cedula TEXT, ADD COLUMN telefono1 TEXT,
+        ADD COLUMN telefono2 TEXT, ADD COLUMN password_hash TEXT;
+        UPDATE usuarios SET cedula = 'V-12345678' WHERE id_usuario = 5;
+        UPDATE usuarios SET cedula = 'V-99999999' WHERE id_usuario = 7;
+    `);
+    const datos = {nombres:'Ana María', apellidos:'Pérez-López',
+        cedula:'V-99999999',telefono1:'04141234567',telefono2:'',password:''};
+    let salida = responder();
+    await usuarios.actualizarPerfil({usuarioId:5,body:datos},salida.res);
+    const duplicado = await salida.fin;
+    assert.equal(duplicado.codigo,409);
+    const antes=await db.pool.query('SELECT cedula FROM usuarios WHERE id_usuario = 5');
+    assert.equal(antes.rows[0].cedula,'V-12345678');
+
+    salida = responder();
+    await usuarios.actualizarPerfil({usuarioId:5,body:{...datos,cedula:'V-12345678'}},salida.res);
+    const correcto=await salida.fin;
+    assert.equal(correcto.codigo,200);
+    const despues=await db.pool.query('SELECT nombres, telefono1 FROM usuarios WHERE id_usuario = 5');
+    assert.equal(despues.rows[0].nombres,'Ana María');
+    assert.equal(despues.rows[0].telefono1,'04141234567');
+});

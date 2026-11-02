@@ -94,17 +94,27 @@ test('perfil: cédula, teléfono y nombres incorrectos se rechazan sin actualiza
 
 test('perfil válido: normaliza teléfono y devuelve éxito; duplicado devuelve 409', async () => {
     const consultas = [];
-    const db={query(sql,params,cb){consultas.push({sql,params});cb(null,{affectedRows:1});}};
-    const user=cargar('../controllers/userController', {'../config/db':db});
+    let duplicada = false;
+    const client = { async query(sql, params) {
+        consultas.push({sql, params});
+        return { rows: sql.includes('SELECT') ? [{id_usuario: 5}] : [], rowCount: 1 };
+    }};
+    const user=cargar('../controllers/userController', {'../utils/integridad': {
+        async conIdentidades(fn) { return fn(client); },
+        async comprobarUsuario() {
+            if (duplicada) throw Object.assign(new Error('Duplicada'), {code:'23505'});
+        },
+        responderError(res) { return res.status(409).json({success:false}); }
+    }});
     const body={nombres:'Ana María',apellidos:'Pérez-López',cedula:'v-12345678',
         telefono1:'0414 123-4567',telefono2:'',password:''};
     const res=respuesta();
     await user.actualizarPerfil({usuarioId:5,body},res);
     assert.equal(res.statusCode,200);
-    assert.equal(consultas.length,1);
-    assert.ok(consultas[0].params.includes('V-12345678'));
-    assert.ok(consultas[0].params.includes('04141234567'));
-    db.query=(sql,params,cb)=>cb(Object.assign(new Error('Duplicada'),{code:'ER_DUP_ENTRY'}));
+    const actualizacion = consultas.find(x => x.sql.includes('UPDATE usuarios'));
+    assert.ok(actualizacion.params.includes('V-12345678'));
+    assert.ok(actualizacion.params.includes('04141234567'));
+    duplicada = true;
     const duplicate=respuesta();
     await user.actualizarPerfil({usuarioId:5,body},duplicate);
     assert.equal(duplicate.statusCode,409);

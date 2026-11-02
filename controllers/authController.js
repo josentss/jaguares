@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
+const { conIdentidades, comprobarUsuario, responderError } = require('../utils/integridad');
 const jwt = require('jsonwebtoken');
 const { esEmailValido, esPasswordValida, normalizarTexto, esNombreValido } = require('../utils/validators');
 const { logAdminRequest } = require('../utils/requestLogger');
@@ -111,27 +112,17 @@ exports.register = async (req, res) => {
     try {
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const query = `
-            INSERT INTO usuarios (nombres, apellidos, correo, password_hash, rol, estado)
-            VALUES (?, ?, ?, ?, 'representante', 'pendiente')
-        `;
-
-        db.query(query, [nombres, apellidos, email, passwordHash], (err, result) => {
-            if (err) {
-                if (err.code === 'ER_DUP_ENTRY') {
-                    return res.status(409).json({ success: false, message: 'Ese correo ya está registrado' });
-                }
-                console.error('Error al insertar usuario:', err);
-                return res.status(500).json({ success: false, message: 'Error al registrar en BD' });
-            }
-            res.json({
-                success: true,
-                message: 'Usuario registrado correctamente y en espera de aprobación',
-                id_usuario: result.insertId
-            });
+        const id = await conIdentidades(async client => {
+            await comprobarUsuario(client, { correo: email });
+            const { rows } = await client.query(`
+                INSERT INTO usuarios (nombres, apellidos, correo, password_hash, rol, estado)
+                VALUES ($1, $2, $3, $4, 'representante', 'pendiente') RETURNING id_usuario`,
+            [nombres, apellidos, email, passwordHash]);
+            return rows[0].id_usuario;
         });
+        return res.json({ success: true,
+            message: 'Usuario registrado correctamente y en espera de aprobación', id_usuario: id });
     } catch (error) {
-        console.error('Error en hash de contraseña:', error);
-        res.status(500).json({ success: false, message: 'Error de servidor' });
+        return responderError(res, error);
     }
 };

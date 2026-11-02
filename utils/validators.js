@@ -41,6 +41,10 @@ exports.esEstadoPagoValido = (estado) =>
     typeof estado === 'string' &&
     ['pendiente', 'aprobado', 'rechazado'].includes(estado);
 
+// Valores emitidos por los formularios multipart y clientes JSON. Ausente = no.
+exports.esIndicadorFormularioValido = value =>
+    value === undefined || [true, false, '1', '0', 'true', 'false', 'on', 'off'].includes(value);
+
 /**
  * Validaciones compartidas con el formulario web.
  * No truncar silenciosamente: los valores largos deben recibir un error explícito.

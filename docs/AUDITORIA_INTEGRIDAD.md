@@ -3,6 +3,8 @@
 Fecha: 2026-11-02. Base: `main` `8a36279e150954136cdb02e05e22cce5401ceaff`.
 Rama: `integridad/altas-atomicas-identidades`. Sin migraciones ni acceso a datos de producción.
 
+**Actualización:** esta entrega se fusionó mediante [PR #6](https://github.com/josentss/jaguares/pull/6). El [seguimiento sobre main actualizado](AUDITORIA_INTEGRIDAD_SEGUIMIENTO.md) registra la verificación remota y las nuevas correcciones. Los límites de acceso remoto que se describen abajo corresponden a la primera entrega.
+
 ## Relaciones revisadas
 
 - `usuarios.id_usuario` identifica la cuenta; el representante es un usuario con rol `representante`, no una entidad separada.

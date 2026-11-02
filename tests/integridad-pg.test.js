@@ -2,14 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 
-// Separate schema from pagos-pg.test.js, even when both files run in parallel.
-// This suite must only run against the disposable CI/local PostgreSQL database.
-const destino = new URL(process.env.DATABASE_URL || 'postgres://invalid/');
-if (!['127.0.0.1', 'localhost', '[::1]'].includes(destino.hostname) ||
-    destino.pathname !== '/jaguares_test') {
-    throw new Error('Integridad requiere PostgreSQL local desechable: base jaguares_test');
-}
-process.env.PGOPTIONS = '-c search_path=jaguares_integridad_test';
+const { configurarPostgresTemporal } = require('./helpers/postgres');
+const esquema = configurarPostgresTemporal();
 process.env.JWT_SECRET = 'clave-sintetica-solo-pruebas-integridad';
 const db = require('../config/db');
 const atletas = require('../controllers/atletaController');
@@ -42,7 +36,7 @@ async function ejecutar(fn, body, extras = {}) {
 }
 
 test.before(async () => {
-    await db.pool.query('CREATE SCHEMA jaguares_integridad_test');
+    await db.pool.query(`CREATE SCHEMA ${esquema}`);
     esquemaCreado = true;
     await db.pool.query(`CREATE TABLE usuarios (
             id_usuario SERIAL PRIMARY KEY, nombres TEXT, apellidos TEXT, correo TEXT,
@@ -74,7 +68,7 @@ test.before(async () => {
 
 test.after(async () => {
     try {
-        if (esquemaCreado) await db.pool.query('DROP SCHEMA jaguares_integridad_test CASCADE');
+        if (esquemaCreado) await db.pool.query(`DROP SCHEMA ${esquema} CASCADE`);
     } finally { await db.pool.end(); }
 });
 

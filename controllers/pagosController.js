@@ -11,6 +11,8 @@ const MONEDAS_EFECTIVO = ['Bs', 'USD', 'COP'];
 function insertarPago(res, datos) {
     const { id_atleta, id_representante, mes, metodo, monto, moneda, referencia, fecha_pago, ruta_captura } = datos;
 
+    // FOR SHARE espera cambios concurrentes y conserva la elegibilidad hasta
+    // terminar la inserción; un SELECT sin bloqueo puede leer el estado anterior.
     const query = `
         INSERT INTO pagos
         (id_atleta, mes_pagado, metodo_pago, fecha_pago, monto, moneda, referencia, ruta_captura, estado_pago)
@@ -20,6 +22,7 @@ function insertarPago(res, datos) {
         WHERE a.id_atleta = ? AND a.id_representante = ?
           AND a.estado = 'activo'
           AND u.rol = 'representante' AND u.estado = 'aprobado'
+        FOR SHARE OF a, u
         RETURNING id_pago
     `;
 
@@ -28,7 +31,7 @@ function insertarPago(res, datos) {
 
     db.query(query, valores, (err, resultado) => {
         if (err) {
-            console.error('Error SQL:', err);
+            console.error('Error al reportar pago:', err.code || 'INTERNAL');
             return res.status(500).json({ success: false, message: 'Error en la base de datos' });
         }
         if (!resultado || resultado.affectedRows !== 1) {
@@ -105,6 +108,9 @@ exports.reportarPago = (req, res) => {
 // 2. OBTENER HISTORIAL DE PAGOS DE UN REPRESENTANTE
 exports.obtenerHistorial = (req, res) => {
     const id_rep = req.params.id_rep;
+    if (!esEnteroPositivo(id_rep)) {
+        return res.status(400).json({ success: false, message: 'Identificador de representante no válido' });
+    }
 
     const esDirectiva = ['directiva', 'staff', 'admin'].includes(req.usuarioRol);
     const esDueño = String(req.usuarioId) === String(id_rep);

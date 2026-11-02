@@ -126,6 +126,7 @@ exports.actualizarEstadoAtleta = (req, res) => {
         return res.status(400).json({ success: false, message: 'Datos de atleta o estado no válidos' });
     }
 
+    // Al activar, esperar también una revocación concurrente del representante.
     const query = `
         UPDATE atletas a SET estado = ?
         WHERE a.id_atleta = ? AND a.estado IS DISTINCT FROM ?
@@ -133,6 +134,7 @@ exports.actualizarEstadoAtleta = (req, res) => {
               SELECT 1 FROM usuarios u
               WHERE u.id_usuario = a.id_representante
                 AND u.rol = 'representante' AND u.estado = 'aprobado'
+              FOR SHARE OF u
           ))
     `;
 

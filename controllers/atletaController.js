@@ -2,7 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const { inscribir } = require('../utils/inscripcion');
 const { responderError } = require('../utils/integridad');
-const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esEdadAtletaValida, esDireccionValida, esCondicionMedicaValida } = require('../utils/validators');
+const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esEdadAtletaValida, esDireccionValida, esCondicionMedicaValida, esIndicadorFormularioValido } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
 
 function urlDeArchivo(file) {
@@ -12,6 +12,9 @@ function urlDeArchivo(file) {
 
 exports.obtenerAtletasPorRepresentante = (req, res) => {
     const { id } = req.params;
+    if (!esEnteroPositivo(id)) {
+        return res.status(400).json({ success: false, message: 'Identificador de representante no válido' });
+    }
     const esDirectiva = ['directiva', 'staff', 'admin'].includes(req.usuarioRol);
     const esDueño = String(req.usuarioId) === String(id);
 
@@ -42,13 +45,21 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
 async function registrarAtletaBase(req, res, { id_representante, estado, mensaje, representanteNuevo }) {
     const nombres   = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
-    const fecha_nac = String(req.body.fecha_nac || '').trim();
+    const fecha_nac = typeof req.body.fecha_nac === 'string' ? req.body.fecha_nac.trim() : '';
     const direccion = normalizarTexto(req.body.direccion, 255);
     const telefono  = req.body.telefono ? normalizarTelefono(req.body.telefono) : '';
-    const alergias  = normalizarTexto(
-        req.body.allergies_medicas || req.body.alergias_medicas || '',
-        500
-    );
+    const notaMedica = req.body.allergies_medicas ?? req.body.alergias_medicas ?? '';
+    const alergias = normalizarTexto(notaMedica, 500);
+
+    if (!esIndicadorFormularioValido(req.body.hereda_cedula)) {
+        return res.status(400).json({ success: false, message: 'Selecciona si el atleta tiene cédula propia o heredada' });
+    }
+    // Ambos nombres son compatibles; nunca validar uno y persistir el otro.
+    if (req.body.allergies_medicas != null && req.body.alergias_medicas != null &&
+        (typeof req.body.allergies_medicas !== 'string' || typeof req.body.alergias_medicas !== 'string' ||
+         req.body.allergies_medicas.trim() !== req.body.alergias_medicas.trim())) {
+        return res.status(400).json({ success: false, message: 'Envía una sola observación médica, sin valores contradictorios' });
+    }
 
     const heredaCedula = ['1', 'true', true, 'on'].includes(req.body.hereda_cedula);
 
@@ -58,10 +69,10 @@ async function registrarAtletaBase(req, res, { id_representante, estado, mensaje
     if (!esDireccionValida(req.body.direccion)) {
         return res.status(400).json({ success: false, message: 'Dirección incompleta: incluye calle, sector o referencia; no se admite solo números' });
     }
-    if (!esCondicionMedicaValida(req.body.allergies_medicas ?? req.body.alergias_medicas ?? '')) {
+    if (!esCondicionMedicaValida(notaMedica)) {
         return res.status(400).json({ success: false, message: 'Condiciones médicas inválidas: describe la condición con palabras; puedes incluir números clínicos' });
     }
-    if (req.body.telefono && !esTelefonoValido(req.body.telefono)) {
+    if (req.body.telefono != null && req.body.telefono !== '' && !esTelefonoValido(req.body.telefono)) {
         return res.status(400).json({ success: false, message: 'Teléfono de contacto inválido' });
     }
     if (!heredaCedula && !esCedulaValida(req.body.cedula)) {
@@ -123,6 +134,9 @@ exports.registrarAtleta = (req, res) => registrarAtletaBase(req, res, {
 
 exports.registrarAtletaDirectiva = async (req, res) => {
     let representanteNuevo;
+    if (!esIndicadorFormularioValido(req.body.representante_nuevo)) {
+        return res.status(400).json({ success: false, message: 'Selecciona un representante existente o nuevo' });
+    }
     if (['1', 'true', true, 'on'].includes(req.body.representante_nuevo)) {
         if (!esNombreValido(req.body.rep_nombres) || !esNombreValido(req.body.rep_apellidos) ||
             !esCedulaValida(req.body.rep_cedula) || !esTelefonoValido(req.body.rep_telefono) ||

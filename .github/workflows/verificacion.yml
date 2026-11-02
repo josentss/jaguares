@@ -29,4 +29,17 @@ jobs:
         run: |
           find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -r -n 1 node --check
       - name: Ejecutar pruebas con mocks
-        run: node --test tests/*.test.js
+        run: node --test tests/seguridad.test.js
+      - name: Preparar Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Probar interfaz en escritorio y movil
+        run: node --test tests/interfaz.test.js
+      - name: Guardar capturas de pantalla
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-interfaz
+          path: test-artifacts/
+          if-no-files-found: ignore

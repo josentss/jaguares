@@ -1,0 +1,164 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const Module = require('node:module');
+const { esMontoValido, esEnteroPositivo, esFechaISOValida } = require('../utils/validators');
+
+function cargarConMocks(modulo, mocks) {
+    const ruta = require.resolve(modulo);
+    delete require.cache[ruta];
+    const original = Module._load;
+    Module._load = function (solicitud, padre, principal) {
+        if (Object.prototype.hasOwnProperty.call(mocks, solicitud)) return mocks[solicitud];
+        return original.call(this, solicitud, padre, principal);
+    };
+    try { return require(modulo); }
+    finally { Module._load = original; }
+}
+
+function respuesta() {
+    return {
+        statusCode: 200,
+        body: null,
+        status(codigo) { this.statusCode = codigo; return this; },
+        json(datos) { this.body = datos; return this; },
+        cookie() { return this; }
+    };
+}
+
+function datosPago(cambios = {}) {
+    return {
+        id_atleta: '12', mes: 'Noviembre', metodo: 'Efectivo',
+        monto: '25.50', moneda: 'USD', fecha_pago: '2026-11-02', ...cambios
+    };
+}
+
+test('identificadores: solo enteros positivos seguros', () => {
+    for (const valido of [1, '1', 999]) assert.equal(esEnteroPositivo(valido), true);
+    for (const invalido of [0, -1, '1.2', '12abc', '1e3', '0x10', '01', null, [], {}, '9007199254740993']) {
+        assert.equal(esEnteroPositivo(invalido), false, String(invalido));
+    }
+});
+
+test('montos: decimales con hasta dos posiciones sin sufijos', () => {
+    for (const valido of ['0.01', '25', '25.50', 125.7, '999999999']) {
+        assert.equal(esMontoValido(valido), true, String(valido));
+    }
+    for (const invalido of ['0', '0.00', '-1', '2abc', '1e3', '10.001', 'NaN', 'Infinity', '1,20', [], {}, '']) {
+        assert.equal(esMontoValido(invalido), false, String(invalido));
+    }
+});
+
+test('fechas: calendario gregoriano válido, sin rollover ni formato ambiguo', () => {
+    for (const valido of ['2024-02-29', '2026-11-02', '2000-02-29']) {
+        assert.equal(esFechaISOValida(valido), true, valido);
+    }
+    for (const invalido of ['2026-02-29', '2026-04-31', '2026-13-01', '02/11/2026', '2026-1-2', '0000-01-01', '', null]) {
+        assert.equal(esFechaISOValida(invalido), false, String(invalido));
+    }
+});
+
+test('pago válido: consulta restringida por propietario y ambos estados', () => {
+    const consultas = [];
+    const db = { query(sql, params, cb) {
+        consultas.push({sql, params});
+        cb(null, { affectedRows: 1, insertId: 77 });
+    }};
+    const pagos = cargarConMocks('../controllers/pagosController', {
+        '../config/db': db,
+        '../utils/auditLogger': { logUploadEvent() {} }
+    });
+    const res = respuesta();
+    pagos.reportarPago({ body: datosPago(), usuarioId: 5, ip: '127.0.0.1' }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(consultas.length, 1);
+    const {sql, params} = consultas[0];
+    assert.match(sql, /INSERT INTO pagos[\s\S]+SELECT a\.id_atleta/);
+    assert.match(sql, /a\.estado = 'activo'/);
+    assert.match(sql, /u\.estado = 'aprobado'/);
+    assert.match(sql, /u\.rol = 'representante'/);
+    assert.match(sql, /a\.id_representante = \?/);
+    assert.match(sql, /RETURNING id_pago/);
+    assert.equal(params.at(-2), '12');
+    assert.equal(params.at(-1), 5);
+});
+
+test('pago no elegible: ninguna fila insertada devuelve 409', () => {
+    const db = { query(sql, params, cb) { cb(null, { affectedRows: 0 }); } };
+    const pagos = cargarConMocks('../controllers/pagosController', {
+        '../config/db': db, '../utils/auditLogger': { logUploadEvent() {} }
+    });
+    const res = respuesta();
+    pagos.reportarPago({ body: datosPago(), usuarioId: 5 }, res);
+    assert.equal(res.statusCode, 409);
+    assert.equal(res.body.success, false);
+});
+
+test('reporte: entradas inválidas devuelven 400 sin consulta SQL', () => {
+    let consultas = 0;
+    const db = { query() { consultas++; } };
+    const pagos = cargarConMocks('../controllers/pagosController', {
+        '../config/db': db, '../utils/auditLogger': { logUploadEvent() {} }
+    });
+    const casos = [
+        { id_atleta: '12x' }, { monto: '25xyz' }, { monto: '0' },
+        { monto: '10.222' }, { mes: 'Inexistente' },
+        { fecha_pago: '2026-02-30' }, { fecha_pago: 'hoy' },
+        { moneda: 'EUR' }, { metodo: 'Tarjeta' }
+    ];
+    for (const cambio of casos) {
+        const res = respuesta();
+        pagos.reportarPago({ body: datosPago(cambio), usuarioId: 5 }, res);
+        assert.equal(res.statusCode, 400, JSON.stringify(cambio));
+    }
+    assert.equal(consultas, 0);
+});
+
+test('transferencia exige comprobante; el método controla la moneda', () => {
+    const pagos = cargarConMocks('../controllers/pagosController', {
+        '../config/db': { query() { throw new Error('No debe consultar'); } },
+        '../utils/auditLogger': { logUploadEvent() {} }
+    });
+    for (const cambio of [
+        { metodo: 'Transferencia Bancaria', moneda: 'Bs' },
+        { metodo: 'Transferencia Bancaria', moneda: 'USD' },
+        { metodo: 'Efectivo', moneda: 'EUR' }
+    ]) {
+        const res = respuesta();
+        pagos.reportarPago({ body: datosPago(cambio), usuarioId: 5 }, res);
+        assert.equal(res.statusCode, 400);
+    }
+});
+
+test('fallo SQL de inserción devuelve 500 sin éxito falso', () => {
+    const db = { query(sql, params, cb) { cb(new Error('simulado')); } };
+    const pagos = cargarConMocks('../controllers/pagosController', {
+        '../config/db': db, '../utils/auditLogger': { logUploadEvent() {} }
+    });
+    const res = respuesta();
+    const oldError = console.error; console.error = () => {};
+    try { pagos.reportarPago({ body: datosPago(), usuarioId: 5 }, res); }
+    finally { console.error = oldError; }
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.success, false);
+});
+
+test('login: cuenta inactiva o representante no aprobado no obtiene cookie', () => {
+    const db = { query(sql, params, cb) {
+        cb(null, [{ id_usuario: 5, rol: 'representante', estado: db.estado,
+            password_hash: 'hash' }]);
+    }};
+    const auth = cargarConMocks('../controllers/authController', {
+        '../config/db': db,
+        bcrypt: { compare: async () => true, hash: async () => 'hash' },
+        jsonwebtoken: { sign: () => 'token' },
+        '../utils/requestLogger': { logAdminRequest() {} }
+    });
+    for (const estado of ['inactivo', 'pendiente', 'rechazado', 'otro']) {
+        db.estado = estado;
+        const res = respuesta();
+        auth.login({ body: { email: 'rep@example.org', password: 'abc12345' } }, res);
+        assert.equal(res.statusCode, 403, estado);
+        assert.equal(res.body.success, false);
+    }
+});

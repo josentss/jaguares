@@ -33,7 +33,9 @@ exports.normalizarTexto = (value, maxLength = 255) => {
 };
 
 exports.esEstadoAtletaValido = (estado) =>
-    ['activo', 'inactivo', 'espera'].includes(String(estado).toLowerCase());
+    typeof estado === 'string' &&
+    ['activo', 'inactivo', 'espera'].includes(estado);
 
 exports.esEstadoPagoValido = (estado) =>
-    ['pendiente', 'aprobado', 'rechazado'].includes(String(estado).toLowerCase());
+    typeof estado === 'string' &&
+    ['pendiente', 'aprobado', 'rechazado'].includes(estado);

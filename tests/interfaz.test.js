@@ -177,3 +177,66 @@ for (const dispositivo of [
         } finally { await browser.close(); }
     });
 }
+
+test('registro web: no permite teclear cifras en nombres y rechaza contenido pegado', async () => {
+    const browser = await chromium.launch({headless: true});
+    const page = await browser.newPage({viewport:{width:1360,height:900}});
+    await page.route('https://**/*', route => route.abort());
+    const errores = [];
+    page.on('pageerror', err => errores.push(err.message));
+    try {
+        await page.goto(baseUrl + '/admin/login.html');
+        await page.locator('#tab-register').click();
+        const campo = page.locator('#reg-names');
+        await campo.fill('Ana');
+        await campo.press('End');
+        await page.keyboard.type('123💥');
+        assert.equal(await campo.inputValue(), 'Ana');
+        await campo.fill('Ana123');
+        assert.equal(await campo.evaluate(el => el.validity.customError), true);
+        await campo.fill('María José');
+        assert.equal(await campo.evaluate(el => el.validity.customError), false);
+        assert.deepEqual(errores, []);
+    } finally { await browser.close(); }
+});
+
+test('perfil web: cédulas, teléfonos y nombres deben ser válidos', async () => {
+    const {browser, page, errores} = await abrirPanel({width:390,height:844});
+    try {
+        await page.evaluate(() => document.querySelector('[data-target="sec-perfil"]').click());
+        await page.locator('#perfil-nombres').fill('Ana123');
+        assert.equal(await page.locator('#perfil-nombres').evaluate(el => el.validity.customError), true);
+        await page.locator('#perfil-nombres').fill('Ana María');
+        assert.equal(await page.locator('#perfil-nombres').evaluate(el => el.validity.customError), false);
+        await page.locator('#perfil-cedula').fill('V-12');
+        assert.equal(await page.locator('#perfil-cedula').evaluate(el => el.validity.customError), true);
+        await page.locator('#perfil-cedula').fill('V-12345678');
+        assert.equal(await page.locator('#perfil-cedula').evaluate(el => el.validity.customError), false);
+        await page.locator('#perfil-tel1').fill('abc999');
+        assert.equal(await page.locator('#perfil-tel1').evaluate(el => el.validity.customError), true);
+        await page.locator('#perfil-tel1').fill('0414 123-4567');
+        assert.equal(await page.locator('#perfil-tel1').evaluate(el => el.validity.customError), false);
+        assert.deepEqual(errores, []);
+    } finally { await browser.close(); }
+});
+
+test('directiva web: registro del atleta impide nombres y documentos mal formados', async () => {
+    const browser = await chromium.launch({headless:true});
+    const page = await browser.newPage({viewport:{width:1440,height:900}});
+    await page.route('https://**/*', route => route.abort());
+    const errores = [];
+    page.on('pageerror', err => errores.push(err.message));
+    try {
+        await page.goto(baseUrl + '/admin/panel-directiva.html');
+        await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
+        await page.evaluate(() => document.querySelector('[data-target="sec-registrar"]').click());
+        await page.locator('#dir-nombres').fill('Ángel123');
+        assert.equal(await page.locator('#dir-nombres').evaluate(el => el.validity.customError), true);
+        await page.locator('#dir-nombres').fill('Ángel José');
+        assert.equal(await page.locator('#dir-nombres').evaluate(el => el.validity.customError), false);
+        await page.locator('#dir-cedula').fill('12ab3');
+        assert.equal(await page.locator('#dir-cedula').inputValue(), '123');
+        assert.equal(await page.locator('#dir-cedula').evaluate(el => el.validity.customError), true);
+        assert.deepEqual(errores, []);
+    } finally { await browser.close(); }
+});

@@ -5,7 +5,7 @@
 > **Última actualización documental:** 2026-11-02  
 > **Base comprobada:** `main` local/remoto — commit `8d5855f5196b5575b0caed44bd49df38ec14c946`
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#7 fusionados. El propietario reportó un bloqueador de inscripción en ambos paneles, con cédula propia/heredada. Corrección funcional en `fix/inscripcion-flujo-completo`, validada localmente con 89 escenarios en Node 22 y Node 24; PR/CI remoto pendientes al preparar esta entrega. No se fusionó ni desplegó esta corrección. Prioridad: recuperar y confirmar los flujos existentes antes de añadir módulos.
+> **Estado:** PR #1–#7 fusionados. El propietario reportó un bloqueador de inscripción en ambos paneles, con cédula propia/heredada. Corrección funcional en [PR #8](https://github.com/josentss/jaguares/pull/8), rama `fix/inscripcion-flujo-completo`, validada localmente con 89 escenarios en Node 22 y Node 24; ejecución remota en [Checks del PR](https://github.com/josentss/jaguares/pull/8/checks). Pendientes revisión y confirmación manual tras despliegue autorizado; esta corrección no se fusionó ni desplegó a producción. Prioridad: recuperar y confirmar los flujos existentes antes de añadir módulos.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -188,7 +188,7 @@ Cambios locales: recalcular validación antes del envío nativo; deshabilitar ca
 
 Recorridos comprobados: aprobación de cuenta pendiente, onboarding, inscripciones sucesivas propias/heredadas desde ambos paneles, nuevo representante, rollback SQL y reintento, carga/error/reintento de documentos, activación, efectivo, transferencia, auditoría e historial, rechazo de pago tras inactivación, permisos entre familias, notificaciones y creación/cancelación de evento. No equivale a probar datos históricos/constraints reales de Supabase, Cloudinary real ni todos los estados del proyecto.
 
-Siguiente aceptación: revisar PR/CI y, tras despliegue autorizado, repetir primero las inscripciones en ambos paneles y el recorrido activar → pagar. Mantener nuevos módulos en espera hasta confirmar la funcionalidad con el propietario.
+Entrega publicada en [PR #8](https://github.com/josentss/jaguares/pull/8), implementación `4dfbb8d`. Siguiente aceptación: revisar sus [Checks](https://github.com/josentss/jaguares/pull/8/checks) y, tras despliegue autorizado, repetir primero las inscripciones en ambos paneles y el recorrido activar → pagar. Mantener nuevos módulos en espera hasta confirmar la funcionalidad con el propietario.
 
 
 ## 4. Backlog funcional completo — por decidir e implementar
@@ -224,7 +224,7 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 
 | Prioridad | Bloque | Criterio de finalización |
 | --- | --- | --- |
-| P0 — bloqueador funcional actual | Recuperar la inscripción y comprobar los recorridos principales | Hotfix en `fix/inscripcion-flujo-completo`; 89 escenarios locales aprobados, pendientes revisión/CI remoto y confirmación manual tras despliegue autorizado |
+| P0 — bloqueador funcional actual | Recuperar la inscripción y comprobar los recorridos principales | PR #8; 89 escenarios locales aprobados, revisar Checks remotos y confirmar manualmente tras despliegue autorizado |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
 | P2 | Migraciones, auditoría y ciclo de vida | Esquema reproducible, eventos trazables, archivado y política de borrado definida |
@@ -287,7 +287,7 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | Inscripción: 0–18 años cumplidos a fecha de registro | PR #4 | Implementado; fecha de corte competitiva pendiente |
 | 2026-11-02 | Altas compuestas atómicas, identidades coordinadas y sufijos heredados preservados | PR #6 | Fusionado; constraints reales pendientes |
 | 2026-11-02 | Revalidar estados concurrentes de pagos/activaciones y unificar valores médicos validados/persistidos | PR #7 | Fusionado; despliegue Production completado según registro, prueba manual autenticada pendiente |
-| 2026-11-02 | Priorizar inscripciones funcionales y pruebas completas de navegador/API/BD | Reporte del propietario; rama `fix/inscripcion-flujo-completo` | Corrección local y 89 escenarios aprobados; revisión/CI y confirmación manual pendientes |
+| 2026-11-02 | Priorizar inscripciones funcionales y pruebas completas de navegador/API/BD | Reporte del propietario; PR #8 | Corrección local y 89 escenarios aprobados; revisar Checks y confirmar manualmente tras despliegue autorizado |
 | 2026-11-02 | Montos fijos, categorías y sanciones | Pendiente de política oficial del club | No definido |
 | 2026-11-02 | Eliminación definitiva y WhatsApp | Pendiente de políticas y consentimiento | No definido |
 
@@ -299,7 +299,7 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | PR #6, main `46ce6bf` | P1: transacciones, duplicados y concurrencia; 53 backend + 10 interfaz locales; CI remoto satisfactorio | Estado inicial «PR pendiente/API bloqueada» reemplazado por verificación actual; constraints/Cloudinary pendientes |
 | 2026-11-02 | PR #7, main `8d5855f` | Seguimiento: 64/64 backend local en Node 22/24; CI Node 22/PostgreSQL 16 con 64 backend + 10 Playwright. Production completado; navegación anónima web real escritorio/móvil satisfactoria | Pruebas autenticadas manuales, archivos/privacidad y constraints reales pendientes; no equivale a validación integral de producción |
 | 2026-11-02 | Rama documental `docs/verificacion-pr7-web` | Evidencia de fusión/CI/Production y guía de 75 casos manuales, sin cambios de código | Documentación local para revisión; resultados manuales del propietario por registrar |
-| 2026-11-02 | Rama `fix/inscripcion-flujo-completo` | Bloqueos de validación/envío corregidos; 64 backend + 25 navegador en Node 22 y 24; PG temporal, sin migraciones ni dependencias nuevas | PR/CI remoto y prueba del propietario tras despliegue autorizado; proveedores/constraints productivos sin validar |
+| 2026-11-02 | PR #8 / `4dfbb8d` | Bloqueos de validación/envío corregidos; 64 backend + 25 navegador en Node 22 y 24; PG temporal, sin migraciones ni dependencias nuevas | Estado remoto en Checks; revisión y prueba del propietario tras despliegue autorizado; proveedores/constraints productivos sin validar |
 
 ### Plantilla breve de actualización futura
 

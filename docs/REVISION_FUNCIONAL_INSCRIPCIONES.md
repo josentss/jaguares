@@ -2,6 +2,8 @@
 
 Fecha: 2026-11-02. Base de código: main `8d5855f`. Rama: `fix/inscripcion-flujo-completo`.
 
+Entrega: [PR #8](https://github.com/josentss/jaguares/pull/8), implementación `4dfbb8d`; resultados remotos en sus [Checks](https://github.com/josentss/jaguares/pull/8/checks). Revisión y confirmación del propietario pendientes, sin fusión ni despliegue productivo de esta corrección.
+
 ## Incidencia y diagnóstico
 
 El propietario comunicó que el botón de inscripción no respondía en ambos paneles, tanto con cédula propia como heredada, mientras los pagos de atletas activos sí funcionaban. La prioridad de este bloque es recuperar y probar los flujos existentes; no se añadieron módulos deportivos o administrativos.
@@ -37,7 +39,7 @@ Las pruebas usan datos y documentos sintéticos. No se prueba mediante clics cad
 
 - Node 24.15.0 y Node 22.23.4: **64/64 backend + 25/25 navegador** en cada versión, sin fallos. Son **89 escenarios**, no 178 escenarios diferentes.
 - Navegador: 14 pruebas de interfaz con APIs simuladas y 11 flujos con aplicación/PG reales. Escritorio 1440×900 y móvil 390×844; Chromium 141.0.7390.37 / Playwright 1.56.1.
-- PostgreSQL 18 temporal local con esquemas aleatorios, PK/UNIQUE/FK y destino protegido por el guard de pruebas. CI conserva PostgreSQL 16 y Node 22; CI remoto del cambio pendiente al preparar la entrega.
+- PostgreSQL 18 temporal local con esquemas aleatorios, PK/UNIQUE/FK y destino protegido por el guard de pruebas. CI conserva PostgreSQL 16 y Node 22; consultar la ejecución remota en los Checks del PR #8.
 - Sintaxis de 38 archivos JavaScript comprobada en Node 22/24; `git diff --check` correcto. No se modificaron `package.json` ni el lockfile. CI instalará Playwright fuera de las dependencias de la aplicación para conservar las versiones del lockfile durante los flujos de navegador.
 - La tasa externa y Cloudinary son fronteras simuladas. No se probaron cargas reales en Cloudinary, credenciales/variables de Vercel ni constraints/datos reales de Supabase. Se conservan los pendientes de privacidad, contenido real de archivos, archivos huérfanos, dependencias y seguridad señalados en el contexto maestro.
 - Capturas sintéticas de altas persistidas: `test-artifacts/inscripcion-real-escritorio.png` y `test-artifacts/inscripcion-real-movil.png`. El log de depuración generado por Chromium se excluye del control de versiones.

@@ -3,6 +3,9 @@ const assert = require('node:assert/strict');
 
 const db = require('../config/db');
 const pagos = require('../controllers/pagosController');
+const directiva = require('../controllers/directivaController');
+const auth = require('../middlewares/authMiddleware');
+const jwt = require('jsonwebtoken');
 
 function responder() {
     let resolver;
@@ -41,6 +44,10 @@ test.before(async () => {
             id_atleta INTEGER NOT NULL REFERENCES atletas(id_atleta),
             mes_pagado TEXT, metodo_pago TEXT, fecha_pago DATE, monto NUMERIC(12,2),
             moneda TEXT, referencia TEXT, ruta_captura TEXT, estado_pago TEXT
+        );
+        CREATE TABLE notificaciones (
+            id_notificacion SERIAL PRIMARY KEY,
+            id_usuario INTEGER, mensaje TEXT, tipo TEXT
         );
         INSERT INTO usuarios VALUES
             (5, 'representante', 'aprobado'),
@@ -86,4 +93,74 @@ test('PostgreSQL: cambio de estado de la cuenta revoca posibilidad de pagar', as
     assert.equal(r.codigo, 409);
     const {rows} = await db.pool.query("SELECT COUNT(*)::int AS total FROM pagos");
     assert.equal(rows[0].total, 1);
+});
+
+function ejecutarControlador(fn, body) {
+    const {res, fin} = responder();
+    fn({body}, res);
+    return fin;
+}
+
+test('PostgreSQL: no activar atleta de representante inactivo, sí tras habilitarlo', async () => {
+    const bloqueado = await ejecutarControlador(directiva.actualizarEstadoAtleta,
+        {id_atleta: 12, estado: 'activo'});
+    assert.equal(bloqueado.codigo, 409);
+    const antes = await db.pool.query('SELECT estado FROM atletas WHERE id_atleta = 12');
+    assert.equal(antes.rows[0].estado, 'inactivo');
+
+    await db.pool.query("UPDATE usuarios SET estado = 'aprobado' WHERE id_usuario = 5");
+    const aprobado = await ejecutarControlador(directiva.actualizarEstadoAtleta,
+        {id_atleta: 12, estado: 'activo'});
+    assert.equal(aprobado.codigo, 200);
+    const despues = await db.pool.query('SELECT estado FROM atletas WHERE id_atleta = 12');
+    assert.equal(despues.rows[0].estado, 'activo');
+    const repetido = await ejecutarControlador(directiva.actualizarEstadoAtleta,
+        {id_atleta: 12, estado: 'activo'});
+    assert.equal(repetido.codigo, 409);
+});
+
+test('PostgreSQL: el pago inexistente o repetido no reporta éxito', async () => {
+    const primera = await ejecutarControlador(directiva.actualizarEstadoPago,
+        {id_pago: 1, estado_pago: 'aprobado'});
+    assert.equal(primera.codigo, 200);
+    const duplicada = await ejecutarControlador(directiva.actualizarEstadoPago,
+        {id_pago: 1, estado_pago: 'aprobado'});
+    assert.equal(duplicada.codigo, 409);
+    const inexistente = await ejecutarControlador(directiva.actualizarEstadoPago,
+        {id_pago: 999, estado_pago: 'aprobado'});
+    assert.equal(inexistente.codigo, 404);
+    const {rows} = await db.pool.query('SELECT estado_pago FROM pagos WHERE id_pago = 1');
+    assert.equal(rows[0].estado_pago, 'aprobado');
+});
+
+test('PostgreSQL: solicitudes ajenas al rol representante no pueden aprobarse', async () => {
+    await db.pool.query("INSERT INTO usuarios VALUES (21, 'staff', 'pendiente'), (22, 'representante', 'pendiente')");
+    const indebido = await ejecutarControlador(directiva.gestionarAprobacion,
+        {id_usuario: 21, accion: 'aprobar'});
+    assert.equal(indebido.codigo, 404);
+    const correcto = await ejecutarControlador(directiva.gestionarAprobacion,
+        {id_usuario: 22, accion: 'aprobar'});
+    assert.equal(correcto.codigo, 200);
+    const {rows} = await db.pool.query('SELECT id_usuario, estado FROM usuarios WHERE id_usuario IN (21, 22) ORDER BY id_usuario');
+    assert.deepEqual(rows.map(x => x.estado), ['pendiente', 'aprobado']);
+});
+
+function probarSesion(token) {
+    return new Promise(resolve => {
+        const req = {cookies:{token}};
+        const {res, fin} = responder();
+        auth.verificarSesion(req, res, () => resolve({codigo:200, usuarioId:req.usuarioId}));
+        fin.then(resolve);
+    });
+}
+
+test('PostgreSQL: revocar cuenta invalida JWT previamente emitido', async () => {
+    process.env.JWT_SECRET = 'clave-temporal-ci-pruebas-internas';
+    const token = jwt.sign({id_usuario: 5, rol: 'representante'}, process.env.JWT_SECRET);
+    const vigente = await probarSesion(token);
+    assert.equal(vigente.codigo, 200);
+    await db.pool.query("UPDATE usuarios SET estado = 'inactivo' WHERE id_usuario = 5");
+    const revocado = await probarSesion(token);
+    assert.equal(revocado.codigo, 403);
+    await db.pool.query("UPDATE usuarios SET estado = 'aprobado' WHERE id_usuario = 5");
 });

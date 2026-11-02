@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const atletaController = require('../controllers/atletaController');
-const { verificarSesion } = require('../middlewares/authMiddleware');
+const { verificarSesion, verificarSesionRole } = require('../middlewares/authMiddleware');
 const { uploadAtletaFields, handleUploadError } = require('../middlewares/uploadMiddleware');
 
 router.get(
@@ -19,7 +19,7 @@ router.get(
 
 router.post(
     '/registrar-atleta',
-    verificarSesion,
+    verificarSesionRole(['representante']),
     (req, res, next) => {
         uploadAtletaFields(req, res, (err) => {
             if (err) {

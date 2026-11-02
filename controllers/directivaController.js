@@ -118,73 +118,96 @@ exports.obtenerAuditoria = async (req, res) => {
     });
 };
 
-// 2. Cambiar el estado de un atleta
+// 2. Cambiar estado de atleta sin activar registros de representantes no aprobados.
 exports.actualizarEstadoAtleta = (req, res) => {
     const { id_atleta, estado } = req.body;
-
-    try { if (req.logAdmin) req.logAdmin({ action: 'actualizarEstadoAtleta_start', id_atleta, estado }); } catch(e){}
 
     if (!esEnteroPositivo(id_atleta) || !esEstadoAtletaValido(estado)) {
         return res.status(400).json({ success: false, message: 'Datos de atleta o estado no válidos' });
     }
 
-    const query = 'UPDATE atletas SET estado = ? WHERE id_atleta = ?';
+    const query = `
+        UPDATE atletas a SET estado = ?
+        WHERE a.id_atleta = ? AND a.estado IS DISTINCT FROM ?
+          AND (? <> 'activo' OR EXISTS (
+              SELECT 1 FROM usuarios u
+              WHERE u.id_usuario = a.id_representante
+                AND u.rol = 'representante' AND u.estado = 'aprobado'
+          ))
+    `;
 
-    db.query(query, [estado, id_atleta], (err, result) => {
+    db.query(query, [estado, id_atleta, estado, estado], (err, result) => {
         if (err) {
-            console.error("Error al actualizar atleta:", err);
-            try { if (req.logAdmin) req.logAdmin({ action: 'actualizarEstadoAtleta_db_error', err: err.message }); } catch(e){}
+            console.error('Error al actualizar atleta:', err.message);
             return res.status(500).json({ success: false, message: 'Error en la base de datos' });
         }
 
+        if (!result || result.affectedRows === 0) {
+            return db.query('SELECT estado FROM atletas WHERE id_atleta = ?', [id_atleta], (errBusca, rows) => {
+                if (errBusca) return res.status(500).json({ success: false, message: 'Error al verificar atleta' });
+                if (!rows?.length) return res.status(404).json({ success: false, message: 'Atleta no encontrado' });
+                return res.status(409).json({
+                    success: false,
+                    message: rows[0].estado === estado
+                        ? 'El atleta ya tiene ese estado'
+                        : 'No se puede activar un atleta sin representante aprobado'
+                });
+            });
+        }
+
         db.query('SELECT id_representante, nombres FROM atletas WHERE id_atleta = ?', [id_atleta], (errRep, rows) => {
-            if (errRep || rows.length === 0) return;
+            if (errRep || !rows?.length) return;
             const mensaje = estado === 'activo'
                 ? `El atleta ${rows[0].nombres} fue aprobado.`
                 : `El atleta ${rows[0].nombres} cambió a estado "${estado}".`;
             crearNotificacion(rows[0].id_representante, mensaje, estado === 'activo' ? 'success' : 'info');
         });
 
-        try { if (req.logAdmin) req.logAdmin({ action: 'actualizarEstadoAtleta_success', id_atleta, estado }); } catch(e){}
         res.json({ success: true, message: 'Estado del atleta actualizado con éxito' });
     });
 };
 
-// 3. Cambiar el estado de un pago
+// 3. Evitar cambios ficticios y notificaciones repetidas en pagos.
 exports.actualizarEstadoPago = (req, res) => {
     const { id_pago, estado_pago } = req.body;
-
-    try { if (req.logAdmin) req.logAdmin({ action: 'actualizarEstadoPago_start', id_pago, estado_pago }); } catch(e){}
 
     if (!esEnteroPositivo(id_pago) || !esEstadoPagoValido(estado_pago)) {
         return res.status(400).json({ success: false, message: 'Datos de pago o estado no válidos' });
     }
 
-    const query = 'UPDATE pagos SET estado_pago = ? WHERE id_pago = ?';
-
-    db.query(query, [estado_pago, id_pago], (err, result) => {
-        if (err) {
-            console.error("Error al auditar el pago:", err);
-            try { if (req.logAdmin) req.logAdmin({ action: 'actualizarEstadoPago_db_error', err: err.message }); } catch(e){}
-            return res.status(500).json({ success: false, message: 'Error en la base de datos' });
-        }
-
-        db.query(
-            `SELECT a.id_representante, p.mes_pagado
-             FROM pagos p INNER JOIN atletas a ON p.id_atleta = a.id_atleta
-             WHERE p.id_pago = ?`,
-            [id_pago],
-            (errRep, rows) => {
-                if (errRep || rows.length === 0) return;
-                const tipo = estado_pago === 'aprobado' ? 'success' : (estado_pago === 'rechazado' ? 'error' : 'info');
-                const mensaje = `Tu pago de ${rows[0].mes_pagado} fue marcado como "${estado_pago}".`;
-                crearNotificacion(rows[0].id_representante, mensaje, tipo);
+    db.query(
+        'UPDATE pagos SET estado_pago = ? WHERE id_pago = ? AND estado_pago IS DISTINCT FROM ?',
+        [estado_pago, id_pago, estado_pago],
+        (err, result) => {
+            if (err) {
+                console.error('Error al auditar el pago:', err.message);
+                return res.status(500).json({ success: false, message: 'Error en la base de datos' });
             }
-        );
 
-        try { if (req.logAdmin) req.logAdmin({ action: 'actualizarEstadoPago_success', id_pago, estado_pago }); } catch(e){}
-        res.json({ success: true, message: 'Pago auditado con éxito' });
-    });
+            if (!result || result.affectedRows === 0) {
+                return db.query('SELECT estado_pago FROM pagos WHERE id_pago = ?', [id_pago], (errBusca, rows) => {
+                    if (errBusca) return res.status(500).json({ success: false, message: 'Error al verificar pago' });
+                    if (!rows?.length) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+                    return res.status(409).json({ success: false, message: 'El pago ya tiene ese estado' });
+                });
+            }
+
+            db.query(
+                `SELECT a.id_representante, p.mes_pagado
+                 FROM pagos p INNER JOIN atletas a ON p.id_atleta = a.id_atleta
+                 WHERE p.id_pago = ?`,
+                [id_pago],
+                (errRep, rows) => {
+                    if (errRep || !rows?.length) return;
+                    const tipo = estado_pago === 'aprobado' ? 'success' : (estado_pago === 'rechazado' ? 'error' : 'info');
+                    const mensaje = `Tu pago de ${rows[0].mes_pagado} fue marcado como "${estado_pago}".`;
+                    crearNotificacion(rows[0].id_representante, mensaje, tipo);
+                }
+            );
+
+            res.json({ success: true, message: 'Pago auditado con éxito' });
+        }
+    );
 };
 
 // 4. Obtener lista de usuarios pendientes por aprobar
@@ -220,7 +243,7 @@ exports.gestionarAprobacion = (req, res) => {
     const nuevoEstado = accion === 'aprobar' ? 'aprobado' : 'rechazado';
 
     db.query(
-        'UPDATE usuarios SET estado = ? WHERE id_usuario = ? AND estado = ?',
+        'UPDATE usuarios SET estado = ? WHERE id_usuario = ? AND estado = ? AND rol = \'representante\'',
         [nuevoEstado, id_usuario, 'pendiente'],
         (err, result) => {
             if (err) {

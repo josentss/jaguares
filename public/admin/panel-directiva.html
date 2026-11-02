@@ -691,7 +691,8 @@
             const toast = document.createElement('div');
             const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
             toast.className = `toast ${type}`;
-            toast.innerHTML = `<span class="toast-icon">${icon}</span> <span class="toast-message">${msg}</span> <div class="toast-progress"></div>`;
+            toast.innerHTML = `<span class="toast-icon">${icon}</span> <span class="toast-message"></span> <div class="toast-progress"></div>`;
+            toast.querySelector('.toast-message').textContent = String(msg ?? '');
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 5000);
         }
@@ -731,7 +732,8 @@
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function soloDigitos(tel) {
@@ -1127,8 +1129,8 @@
                 data.datos.forEach(usr => {
                     bodySolicitudes.innerHTML += `
                         <tr>
-                            <td><strong>${usr.nombres} ${usr.apellidos}</strong></td>
-                            <td>${usr.correo}</td>
+                            <td><strong>${esc(usr.nombres)} ${esc(usr.apellidos)}</strong></td>
+                            <td>${esc(usr.correo)}</td>
                             <td><span class="badge badge-espera">Pendiente</span></td>
                             <td>
                                 <button class="btn-action btn-aprob" onclick="procesarUsuario(${usr.id_usuario}, 'aprobar')">Aprobar</button>
@@ -1227,7 +1229,6 @@
 
                 data.atletas.forEach(a => {
                     const nombreCompleto = `${a.nombres} ${a.apellidos}`;
-                    const nombreSafe = nombreCompleto.replace(/'/g, "\\'");
                     const waRep = primerTelefonoUtil(a.rep_telefono1, a.rep_telefono2);
                     const nombreRep = ((a.rep_nombres || '') + ' ' + (a.rep_apellidos || '')).trim();
                     const textoWaLista = 'Hola ' + nombreRep +
@@ -1242,17 +1243,17 @@
                         : '';
 
                     bodyAtletas.innerHTML += `<tr data-estado="${(a.estado || '').toLowerCase()}">
-                        <td><strong>${nombreCompleto}</strong></td>
-                        <td>${a.rep_nombres || ''} ${a.rep_apellidos || ''}</td>
+                        <td><strong>${esc(nombreCompleto)}</strong></td>
+                        <td>${esc(a.rep_nombres || '')} ${esc(a.rep_apellidos || '')}</td>
                         <td>${formatFecha(a.fecha_nac)}</td>
-                        <td><span class="badge ${getBadgeClase(a.estado)}">${a.estado}</span></td>
+                        <td><span class="badge ${getBadgeClase(a.estado)}">${esc(a.estado)}</span></td>
                         <td>
                             <button class="btn-action btn-view" onclick="verPlanilla(${a.id_atleta})">
                                 Planilla
                             </button>
                             ${btnWa}
-                            ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob" onclick="actualizarAtleta(${a.id_atleta}, 'activo', ${a.id_representante}, '${nombreSafe}')">Aprobar</button>` : ''}
-                            ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech" onclick="actualizarAtleta(${a.id_atleta}, 'inactivo', ${a.id_representante}, '${nombreSafe}')">Inactivo</button>` : ''}
+                            ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob js-atleta-estado" data-id="${Number(a.id_atleta)}" data-estado="activo" data-rep="${Number(a.id_representante)}" data-nombre="${esc(nombreCompleto)}">Aprobar</button>` : ''}
+                            ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech js-atleta-estado" data-id="${Number(a.id_atleta)}" data-estado="inactivo" data-rep="${Number(a.id_representante)}" data-nombre="${esc(nombreCompleto)}">Inactivo</button>` : ''}
                         </td>
                     </tr>`;
                 });
@@ -1270,7 +1271,6 @@
 
                 data.pagos.forEach(p => {
                     const apellidoAtleta = p.atl_apellidos || '';
-                    const mesSafe = String(p.mes_pagado || '').replace(/'/g, "\\'");
                     const btnVerCaptura = p.ruta_captura
                         ? `<button class="btn-action btn-view" onclick="verComprobante(${p.id_pago})">Ver</button>`
                         : '<span style="color:var(--text-muted); font-size:0.85rem;">—</span>';
@@ -1288,8 +1288,8 @@
                         <td>${btnVerCaptura}</td>
                         <td><span class="badge ${getBadgeClase(p.estado_pago || '')}">${esc(p.estado_pago || '')}</span></td>
                         <td>
-                            ${p.estado_pago !== 'aprobado' ? `<button class="btn-action btn-aprob" onclick="actualizarPago(${p.id_pago}, 'aprobado', ${p.id_representante}, '${mesSafe}')">Aprobar</button>` : ''}
-                            ${p.estado_pago !== 'rechazado' ? `<button class="btn-action btn-rech" onclick="actualizarPago(${p.id_pago}, 'rechazado', ${p.id_representante}, '${mesSafe}')">Rechazar</button>` : ''}
+                            ${p.estado_pago !== 'aprobado' ? `<button class="btn-action btn-aprob js-pago-estado" data-id="${Number(p.id_pago)}" data-estado="aprobado" data-rep="${Number(p.id_representante)}" data-mes="${esc(p.mes_pagado || '')}">Aprobar</button>` : ''}
+                            ${p.estado_pago !== 'rechazado' ? `<button class="btn-action btn-rech js-pago-estado" data-id="${Number(p.id_pago)}" data-estado="rechazado" data-rep="${Number(p.id_representante)}" data-mes="${esc(p.mes_pagado || '')}">Rechazar</button>` : ''}
                         </td>
                     </tr>`;
                 });
@@ -1298,6 +1298,20 @@
                 console.error(err);
             }
         }
+
+        document.getElementById('body-atletas').addEventListener('click', e => {
+            const boton = e.target.closest('.js-atleta-estado');
+            if (!boton) return;
+            actualizarAtleta(Number(boton.dataset.id), boton.dataset.estado,
+                Number(boton.dataset.rep), boton.dataset.nombre);
+        });
+
+        document.getElementById('body-pagos').addEventListener('click', e => {
+            const boton = e.target.closest('.js-pago-estado');
+            if (!boton) return;
+            actualizarPago(Number(boton.dataset.id), boton.dataset.estado,
+                Number(boton.dataset.rep), boton.dataset.mes);
+        });
 
         async function actualizarAtleta(id, estado, id_rep, nombre_atleta) {
             const accionAtl = estado === 'activo' ? 'aprobar (activo)' : 'marcar como inactivo';
@@ -1308,11 +1322,14 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({id_atleta: id, estado, id_representante: id_rep, nombre_atleta})
                 });
-                if(res.ok) {
-                    showToast(`Notificación enviada al representante`, 'success');
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Atleta actualizado', 'success');
                     cargarAuditoria();
-                } else throw new Error();
-            } catch(e) { showToast('Error al actualizar atleta', 'error'); }
+                } else {
+                    showToast(data.message || 'No se pudo actualizar el atleta', 'error');
+                }
+            } catch(e) { showToast('Error de conexión al actualizar atleta', 'error'); }
         }
 
         async function actualizarPago(id, estado, id_rep, mes) {
@@ -1324,11 +1341,14 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({id_pago: id, estado_pago: estado, id_representante: id_rep, mes})
                 });
-                if(res.ok) {
-                    showToast(`Pago auditado y representante notificado`, 'success');
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Pago actualizado', 'success');
                     cargarAuditoria();
-                } else throw new Error();
-            } catch(e) { showToast('Error al auditar el pago', 'error'); }
+                } else {
+                    showToast(data.message || 'No se pudo actualizar el pago', 'error');
+                }
+            } catch(e) { showToast('Error de conexión al auditar el pago', 'error'); }
         }
 
 

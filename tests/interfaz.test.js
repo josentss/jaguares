@@ -24,10 +24,45 @@ test.before(async () => {
         const pathname = new URL(req.url, 'http://localhost').pathname;
         if (pathname.startsWith('/api/')) {
             const soloInactivos = (req.headers.referer || '').includes('inactivos=1');
-            if (pathname === '/api/auth/me') return json(res, {
-                success: true, usuario: { id_usuario: 5, rol: 'representante',
-                    nombres: 'Prueba', apellidos: 'Representante' }
+            if (pathname === '/api/auth/me') {
+                const esDirectiva = (req.headers.referer || '').includes('panel-directiva.html');
+                return json(res, {
+                    success: true,
+                    usuario: { id_usuario: esDirectiva ? 9 : 5,
+                        rol: esDirectiva ? 'directiva' : 'representante',
+                        nombres: 'Prueba', apellidos: esDirectiva ? 'Directiva' : 'Representante' }
+                });
+            }
+            if (pathname === '/api/directiva/auditoria') return json(res, {
+                metricas: {activos: 1, espera: 0, pagos_pendientes: 1},
+                tasa_bcv: 36.5, tasa_fecha: null,
+                atletas: [{
+                    id_atleta: 11, id_representante: 5,
+                    nombres: atletaXss, apellidos: 'Activo', estado: 'espera',
+                    fecha_nac: '2011-02-01', rep_nombres: atletaXss,
+                    rep_apellidos: 'Representante', rep_telefono1: null
+                }],
+                pagos: [{
+                    id_pago: 1, id_representante: 5, atl_nombres: atletaXss,
+                    atl_apellidos: 'Activo', mes_pagado: 'Noviembre',
+                    metodo_pago: 'Efectivo', fecha_pago: '2026-11-02',
+                    monto: '25.50', moneda: 'USD', estado_pago: 'pendiente'
+                }]
             });
+            if (pathname === '/api/directiva/pendientes') return json(res, {
+                success: true, datos: [{id_usuario: 21, nombres: atletaXss,
+                    apellidos: 'Pendiente', correo: 'rep@example.org'}]
+            });
+            if (pathname === '/api/cms/admin/eventos') return json(res, {
+                success: true, eventos: []
+            });
+            if (pathname === '/api/directiva/atleta/estado') {
+                res.writeHead(409, {'Content-Type': 'application/json'});
+                return res.end(JSON.stringify({
+                    success: false,
+                    message: 'No se puede activar <img src=x onerror=alert(1)>'
+                }));
+            }
             if (pathname === '/api/usuarios/perfil/5') return json(res, {
                 success: true, perfil: { nombres: 'Prueba', apellidos: 'Representante',
                     cedula: 'V-12345678', telefono1: '04141234567', correo: 'rep@example.org' }
@@ -109,3 +144,36 @@ test('sin atletas activos: deshabilitar reporte en pantalla', async () => {
         assert.deepEqual(errores, []);
     } finally { await browser.close(); }
 });
+
+for (const dispositivo of [
+    {nombre: 'escritorio', viewport: {width: 1440, height: 900}},
+    {nombre: 'movil', viewport: {width: 390, height: 844}}
+]) {
+    test('directiva ' + dispositivo.nombre + ': datos seguros y mensaje de rechazo', async () => {
+        const browser = await chromium.launch({headless: true});
+        const page = await browser.newPage({viewport: dispositivo.viewport});
+        await page.route('https://**/*', route => route.abort());
+        const errores = [];
+        page.on('pageerror', err => errores.push(err.message));
+        page.on('dialog', dialog => dialog.accept());
+        try {
+            await page.goto(baseUrl + '/admin/panel-directiva.html');
+            await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
+            assert.equal(await page.locator('#body-atletas img').count(), 0);
+            assert.equal(await page.locator('#body-solicitudes img').count(), 0);
+            assert.equal(await page.locator('#body-pagos img').count(), 0);
+            assert.equal(await page.locator('.js-atleta-estado').first().getAttribute('onclick'), null);
+            await page.evaluate(() => document.querySelector('.js-atleta-estado').click());
+            await page.waitForFunction(() =>
+                document.querySelector('.toast-message')?.textContent.includes('No se puede activar')
+            );
+            assert.equal(await page.locator('#toast-container img').count(), 0);
+            await fs.mkdir('test-artifacts', {recursive: true});
+            await page.screenshot({
+                path: 'test-artifacts/directiva-' + dispositivo.nombre + '.png',
+                fullPage: true
+            });
+            assert.deepEqual(errores, []);
+        } finally { await browser.close(); }
+    });
+}

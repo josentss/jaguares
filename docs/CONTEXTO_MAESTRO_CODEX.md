@@ -140,6 +140,8 @@ Las siguientes son **áreas pendientes de verificación o mejora**, no afirmacio
 
 Informe detallado: **[AUDITORIA_INTEGRIDAD.md](AUDITORIA_INTEGRIDAD.md)**, con relaciones, hallazgos confirmados, límites y comprobaciones para un futuro despliegue autorizado.
 
+Entrega subida: [rama de integridad](https://github.com/josentss/jaguares/tree/integridad/altas-atomicas-identidades), implementación `4cd951c`. La creación de PR mediante `gh pr create` devolvió Forbidden para `api.github.com/graphql`; [enlace para abrirlo en GitHub](https://github.com/josentss/jaguares/pull/new/integridad/altas-atomicas-identidades). PR y CI remoto permanecen pendientes; no hay fusión ni despliegue autorizado.
+
 En la rama `integridad/altas-atomicas-identidades` se implementaron altas atómicas de representante/atleta, comprobaciones normalizadas de duplicados coordinadas con los cambios de perfil, secuencias heredadas protegidas frente a concurrencia y validación de datos incompletos de representante. Se conserva la arquitectura y la interfaz, sin migraciones ni alteración de datos de producción.
 
 Los escritores de identidad comparten un advisory lock transaccional PostgreSQL, con espera máxima de 5 segundos (503 recuperable). Se evita repetir un atleta de la misma familia con los mismos nombres, apellidos y nacimiento. No se renumeran cédulas históricas. Las notificaciones se emiten después del commit. El bloqueo es cooperativo y global: requiere revisar rendimiento y complementarlo con constraints después de auditar los datos reales.

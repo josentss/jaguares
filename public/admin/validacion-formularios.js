@@ -61,7 +61,13 @@
     function tipoCampo(campo) { return CAMPOS[campo.id]?.[0]; }
 
     function esCampoOculto(campo) {
-        return campo.disabled || campo.offsetParent === null;
+        if (campo.disabled) return true;
+        // offsetParent también es null para elementos fijos/otros layouts visibles.
+        for (let elemento = campo; elemento && elemento.nodeType === 1; elemento = elemento.parentElement) {
+            const estilo = getComputedStyle(elemento);
+            if (estilo.display === 'none' || estilo.visibility === 'hidden') return true;
+        }
+        return false;
     }
 
     function validarCampo(campo) {

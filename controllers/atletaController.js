@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
-const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esFechaISOValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esTextoLibreValido } = require('../utils/validators');
+const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esFechaISOValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esTextoLibreValido, esEdadAtletaValida, esDireccionValida, esCondicionMedicaValida } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
 
 function urlDeArchivo(file) {
@@ -76,15 +76,17 @@ function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRe
     if (!esNombreValido(req.body.nombres) || !esNombreValido(req.body.apellidos)) {
         return res.status(400).json({ success: false, message: 'Nombres y apellidos inválidos: usa letras y separadores habituales (2–80 caracteres)' });
     }
-    if (!esTextoLibreValido(req.body.direccion, 255) ||
-        !esTextoLibreValido(req.body.allergies_medicas ?? req.body.alergias_medicas ?? '', 500, false)) {
-        return res.status(400).json({ success: false, message: 'Dirección u observaciones médicas inválidas o demasiado largas' });
+    if (!esDireccionValida(req.body.direccion)) {
+        return res.status(400).json({ success: false, message: 'Dirección incompleta: incluye calle, sector o referencia; no se admite solo números' });
+    }
+    if (!esCondicionMedicaValida(req.body.allergies_medicas ?? req.body.alergias_medicas ?? '')) {
+        return res.status(400).json({ success: false, message: 'Condiciones médicas inválidas: describe la condición con palabras; puedes incluir números clínicos' });
     }
     if (req.body.telefono && !esTelefonoValido(req.body.telefono)) {
         return res.status(400).json({ success: false, message: 'Teléfono de contacto inválido' });
     }
     if (!heredaCedula && !esCedulaValida(req.body.cedula)) {
-        return res.status(400).json({ success: false, message: 'Cédula inválida: utiliza V- o E- y de 5 a 9 dígitos' });
+        return res.status(400).json({ success: false, message: 'Cédula incompleta o incorrecta: utiliza V- o E- seguido de 7 a 9 dígitos' });
     }
 
     if (!id_representante || !nombres || !apellidos || !fecha_nac || !direccion) {
@@ -94,9 +96,11 @@ function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRe
         });
     }
 
-    const fecha = new Date(fecha_nac + 'T12:00:00');
-    if (!esFechaISOValida(fecha_nac) || fecha > new Date()) {
-        return res.status(400).json({ success: false, message: 'Fecha de nacimiento inválida' });
+    if (!esEdadAtletaValida(fecha_nac)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Fecha de nacimiento fuera del rango: el atleta debe tener entre 0 y 18 años cumplidos y no puede nacer en el futuro'
+        });
     }
 
     const files = req.files || {};

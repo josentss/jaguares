@@ -47,7 +47,8 @@ exports.esEstadoPagoValido = (estado) =>
  */
 const SIN_CONTROL = /^[^\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]*$/u;
 const NOMBRE = /^[\p{L}\p{M}]+(?:[ '\u2019.\-][\p{L}\p{M}]+)*$/u;
-const CEDULA = /^[VE]-[0-9]{5,9}$/;
+// Política de captura para el club: 7 a 9 dígitos; no acredita la emisión oficial.
+const CEDULA = /^[VE]-[0-9]{7,9}$/;
 const NUMERO_TELEFONO = /^(?:0[0-9]{10}|(?:\+?58)[1-9][0-9]{9}|\+[1-9][0-9]{7,14})$/;
 
 exports.esNombreValido = value =>
@@ -72,3 +73,42 @@ exports.esTextoLibreValido = (value, maxLength = 255, obligatorio = true) =>
     (!obligatorio || value.trim().length > 0) &&
     SIN_CONTROL.test(value) &&
     !/[<>]/.test(value);
+
+
+/** Edad cumplida en la fecha del registro (hora local de Venezuela).
+ * La elegibilidad por temporada/categoría se configurará por separado.
+ */
+exports.esEdadAtletaValida = (fechaNacimiento, hoyISO) => {
+    if (!exports.esFechaISOValida(fechaNacimiento)) return false;
+    let hoy = hoyISO;
+    if (hoy === undefined) {
+        const partes = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(new Date());
+        const dato = tipo => partes.find(x => x.type === tipo)?.value;
+        hoy = [dato('year'), dato('month'), dato('day')].join('-');
+    }
+    if (!exports.esFechaISOValida(hoy)) return false;
+    const [an, mn, dn] = fechaNacimiento.split('-').map(Number);
+    const [ah, mh, dh] = hoy.split('-').map(Number);
+    const edad = ah - an - (mh < mn || (mh === mn && dh < dn) ? 1 : 0);
+    return fechaNacimiento <= hoy && edad >= 0 && edad <= 18;
+};
+
+/** No validar la existencia de una dirección con expresiones regulares.
+ * Se rechazan solo entradas insuficientes o claramente artificiales.
+ */
+exports.esDireccionValida = value => {
+    if (!exports.esTextoLibreValido(value, 255)) return false;
+    const texto = value.trim();
+    const letras = texto.match(/\p{L}/gu) || [];
+    return texto.length >= 7 && letras.length >= 3 && !/\d{15,}/.test(texto);
+};
+
+/** El campo médico admite cifras y códigos: diabetes tipo 1, B12, 500 mg, etc. */
+exports.esCondicionMedicaValida = value => {
+    if (!exports.esTextoLibreValido(value, 500, false)) return false;
+    const texto = value.trim();
+    if (!texto) return true;
+    return /\p{L}/u.test(texto) && !/\p{L}\d{3,}\p{L}/u.test(texto);
+};

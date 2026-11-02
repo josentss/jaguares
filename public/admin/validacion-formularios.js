@@ -3,7 +3,7 @@
     'use strict';
 
     const NOMBRE = /^[\p{L}\p{M}]+(?:[ '\u2019.\-][\p{L}\p{M}]+)*$/u;
-    const CEDULA = /^[VE]-[0-9]{5,9}$/;
+    const CEDULA = /^[VE]-[0-9]{7,9}$/;
     const TELEFONO = /^(?:0[0-9]{10}|(?:\+?58)[1-9][0-9]{9}|\+[1-9][0-9]{7,14})$/;
     const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/u;
 
@@ -12,6 +12,7 @@
         'reg-email': ['correo', 120], 'reg-password': ['clave', 128],
         'atl-nombres': ['nombre', 80], 'atl-apellidos': ['nombre', 80],
         'atl-cedula': ['cedula-numero', 9], 'atl-direccion': ['texto', 255],
+        'atl-fecha-nac': ['fecha-atleta', 10],
         'atl-telefono': ['telefono', 30], 'atl-alergias': ['medico', 500],
         'perfil-nombres': ['nombre', 80], 'perfil-apellidos': ['nombre', 80],
         'perfil-cedula': ['cedula', 11], 'perfil-tel1': ['telefono', 30],
@@ -24,8 +25,27 @@
         'dir-rep-correo': ['correo', 120], 'dir-rep-pass': ['clave', 128],
         'dir-nombres': ['nombre', 80], 'dir-apellidos': ['nombre', 80],
         'dir-cedula': ['cedula-numero', 9], 'dir-direccion': ['texto', 255],
+        'dir-fecha-nac': ['fecha-atleta', 10],
         'dir-telefono': ['telefono', 30], 'dir-alergias': ['medico', 500]
     };
+
+    function fechaVenezuela() {
+        const partes = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(new Date());
+        const parte = tipo => partes.find(p => p.type === tipo)?.value;
+        return [parte('year'), parte('month'), parte('day')].join('-');
+    }
+
+    function esEdadValida(fecha, hoy = fechaVenezuela()) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false;
+        const fechaReal = new Date(fecha + 'T12:00:00Z');
+        if (Number.isNaN(fechaReal.getTime()) || fechaReal.toISOString().slice(0,10) !== fecha) return false;
+        const [an,mn,dn] = fecha.split('-').map(Number);
+        const [ah,mh,dh] = hoy.split('-').map(Number);
+        const edad = ah - an - (mh < mn || (mh === mn && dh < dn) ? 1 : 0);
+        return fecha <= hoy && edad >= 0 && edad <= 18;
+    }
 
     function errorCampo(tipo, valor, requerido) {
         const v = valor.trim();
@@ -36,18 +56,29 @@
                     ? 'Escribe un nombre de 2 a 80 caracteres: letras, espacios, apóstrofes o guiones.'
                     : '';
             case 'cedula-numero':
-                return /^[0-9]{5,9}$/.test(v) ? '' : 'La cédula requiere de 5 a 9 dígitos.';
+                return /^[0-9]{7,9}$/.test(v) ? '' : 'Cédula incompleta: ingresa entre 7 y 9 dígitos.';
             case 'cedula':
-                return CEDULA.test(v.toUpperCase()) ? '' : 'Formato: V-12345678 o E-12345678.';
+                return CEDULA.test(v.toUpperCase()) ? '' : 'Cédula incompleta o incorrecta: V-/E- y de 7 a 9 dígitos.';
             case 'telefono': {
                 const limpio = v.replace(/[() .-]/g, '');
                 return /^[+0-9() .-]{8,30}$/.test(v) && TELEFONO.test(limpio)
                     ? '' : 'Usa 11 dígitos nacionales o teléfono internacional con + y código de país.';
             }
-            case 'texto':
+            case 'texto': {
+                if (CONTROL.test(valor) || /[<>]/.test(valor)) return 'La dirección contiene caracteres no permitidos.';
+                const letras = v.match(/\p{L}/gu) || [];
+                return v.length >= 7 && v.length <= 255 && letras.length >= 3 && !/\d{15,}/.test(v)
+                    ? '' : 'Indica una dirección real: calle, barrio o referencia. No basta con números.';
+            }
             case 'medico':
-                return CONTROL.test(valor) || /[<>]/.test(valor)
-                    ? 'El texto contiene caracteres no admitidos.' : '';
+                if (CONTROL.test(valor) || /[<>]/.test(valor) || v.length > 500)
+                    return 'Las condiciones médicas contienen caracteres no permitidos.';
+                return (!/\p{L}/u.test(v) || /\p{L}\d{3,}\p{L}/u.test(v))
+                    ? 'Describe la condición con palabras; se admiten números médicos, como tipo 1 o 500 mg.'
+                    : '';
+            case 'fecha-atleta':
+                return esEdadValida(v) ? ''
+                    : 'El atleta debe tener entre 0 y 18 años cumplidos. Revisa la fecha de nacimiento.';
             case 'correo':
                 return v.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
                     ? '' : 'Introduce un correo válido (máximo 120 caracteres).';
@@ -102,6 +133,14 @@
             if (tipo === 'cedula-numero') campo.inputMode = 'numeric';
             if (tipo === 'telefono') campo.inputMode = 'tel';
             if (tipo === 'cedula') campo.placeholder = 'V-12345678';
+            if (tipo === 'fecha-atleta') {
+                const hoy = fechaVenezuela();
+                const [y,m,d] = hoy.split('-').map(Number);
+                const primeraFecha = new Date(Date.UTC(y - 19, m - 1, d + 1))
+                    .toISOString().slice(0, 10);
+                campo.min = primeraFecha;
+                campo.max = hoy;
+            }
             campo.addEventListener('beforeinput', (evento) => {
                 if (!evento.data || evento.isComposing) return;
                 const permitido = {
@@ -128,5 +167,5 @@
             }, true);
         }
     });
-    window.ValidacionJaguares = { validarFormulario, validarCampo, errorCampo };
+    window.ValidacionJaguares = { validarFormulario, validarCampo, errorCampo, esEdadValida };
 })();

@@ -39,7 +39,7 @@ exports.actualizarPerfil = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Nombres y apellidos: solo letras, espacios, tildes, guiones o apóstrofes (2–80 caracteres)' });
     }
     if (!esCedulaValida(cedula)) {
-        return res.status(400).json({ success: false, message: 'Cédula inválida. Utiliza V- o E- y de 5 a 9 dígitos' });
+        return res.status(400).json({ success: false, message: 'Cédula inválida. Utiliza V- o E- y de 7 a 9 dígitos' });
     }
     if (!esTelefonoValido(telefono1) ||
         (telefono2 != null && telefono2 !== '' && !esTelefonoValido(telefono2))) {

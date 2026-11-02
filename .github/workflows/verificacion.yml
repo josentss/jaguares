@@ -1,0 +1,32 @@
+name: Verificacion fase 00-01
+
+on:
+  push:
+    branches:
+      - seguridad/fase-00-01-validaciones
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Sintaxis y pruebas backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+      - name: Configurar Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Comprobar sintaxis de JavaScript
+        run: |
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -r -n 1 node --check
+      - name: Ejecutar pruebas con mocks
+        run: node --test tests/*.test.js

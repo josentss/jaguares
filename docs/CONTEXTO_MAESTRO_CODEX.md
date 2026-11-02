@@ -3,9 +3,9 @@
 > **Propósito:** documento persistente para continuar el desarrollo del sistema Club de Voleibol Jaguares. Codex debe leerlo al iniciar tareas de este repositorio y proponer actualizaciones cuando cambien el código, las reglas, las pruebas o el estado de los PR.
 >
 > **Última actualización documental:** 2026-11-02  
-> **Base comprobada:** `main` local/remoto — commit `46ce6bfe92ee0f2aba03d5d25165e7234ad6d78b`
+> **Base comprobada:** `main` local/remoto — commit `8d5855f5196b5575b0caed44bd49df38ec14c946`
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#6 fusionados, verificados por Git y conector GitHub. Seguimiento P1 en rama local `integridad/auditoria-relaciones-permisos`, pendiente de revisión/PR y CI remoto. Vercel informa éxito para el commit actual de main; no se verificaron funcionalmente sus flujos ni datos en producción. Esta sesión no fusionó ni desplegó cambios.
+> **Estado:** PR #1–#7 fusionados. El propietario reportó un bloqueador de inscripción en ambos paneles, con cédula propia/heredada. Corrección funcional en [PR #8](https://github.com/josentss/jaguares/pull/8), rama `fix/inscripcion-flujo-completo`, validada localmente con 89 escenarios en Node 22 y Node 24; ejecución remota en [Checks del PR](https://github.com/josentss/jaguares/pull/8/checks). Pendientes revisión y confirmación manual tras despliegue autorizado; esta corrección no se fusionó ni desplegó a producción. Prioridad: recuperar y confirmar los flujos existentes antes de añadir módulos.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -79,12 +79,15 @@ Las rutas de directiva admiten los roles administrativos autorizados. Validar el
 | [#4](https://github.com/josentss/jaguares/pull/4) | Fusionado | Cédula 7–9 dígitos, edad 0–18 cumplidos, dirección descriptiva, condiciones médicas razonables | **46/46** |
 | [#5](https://github.com/josentss/jaguares/pull/5) | Fusionado | Contexto maestro y AGENTS.md | Solo documentación |
 | [#6](https://github.com/josentss/jaguares/pull/6) | Fusionado | Altas atómicas, duplicados normalizados, cédulas heredadas y concurrencia | CI satisfactorio; 53 backend + 10 navegador documentadas en la entrega |
+| [#7](https://github.com/josentss/jaguares/pull/7) | Fusionado | Carreras de estados en pagos/activaciones, consistencia de entradas e aislamiento SQL | **74/74**, logs revisados: 64 backend + 10 Playwright, Node 22/PostgreSQL 16 |
 
-Última ejecución remota verificada: [CI del PR #6](https://github.com/josentss/jaguares/actions/runs/41489653686), satisfactoria. El conector GitHub permitió verificar los PR y CI que antes estaban bloqueados por la red de la primera entrega.
+Última ejecución remota verificada: [CI del PR #7](https://github.com/josentss/jaguares/actions/runs/41540524642), satisfactoria, sin fallos ni omisiones; logs y pasos revisados sobre `31e71ac`. El árbol de archivos de la fusión `8d5855f` es idéntico al de ese commit. El [CI previo del PR #6](https://github.com/josentss/jaguares/actions/runs/41489653686) también terminó satisfactoriamente. El conector GitHub permitió verificar los PR y CI que antes estaban bloqueados por la red de la primera entrega.
 
 La ejecución anterior [del PR #4](https://github.com/josentss/jaguares/actions/runs/41410222708) comprendía 36 pruebas backend/PostgreSQL y 10 Chromium, además de sintaxis JavaScript. Los CI no equivalen a pruebas con la base Supabase o archivos Cloudinary de producción.
 
-[Vercel informa éxito para main](https://vercel.com/josents-projects/jaguares/DKBpuWomrdMMLyJMwkaVCn9AKtiL). No se inspeccionó su configuración ni se comprobó si corresponde al entorno productivo; no se hicieron pruebas funcionales de ese despliegue.
+[Despliegue Vercel del PR #7](https://vercel.com/josents-projects/jaguares/9Mjkuedn449MHrPjCPdFadEWirpX): registro GitHub `7505441054`, SHA `8d5855f`, entorno **Production**, estado **success / Deployment has completed**. El endpoint de despliegues no estaba disponible en el conector; se consultó con GitHub CLI en modo lectura. No se inspeccionaron variables de Vercel ni datos privados.
+
+La [URL pública configurada en el repositorio](https://jaguares-eta.vercel.app) respondió a lecturas anónimas de portada/login/recursos/calendario/noticias y denegó tres APIs sin sesión con 401. Playwright sobre la web real comprobó navegación anónima en escritorio/móvil, calendario, menú, login/registro y redirección de paneles; sin errores JS/5xx durante esas interacciones, sin formularios, cargas ni escrituras. La URL individual del despliegue exige autenticación Vercel. Esto no sustituye las pruebas autenticadas de inscripciones, perfiles, permisos entre cuentas, pagos o archivos.
 
 El propietario probó manualmente en Vercel la restricción de pagos, cambios de estado y sesiones para escenarios disponibles y comunicó resultados correctos. No se pudo probar manualmente todo escenario de cuentas pendientes/inactivas por falta de cuentas de prueba; se añadieron pruebas automatizadas.
 
@@ -155,7 +158,7 @@ Los escritores de identidad comparten un advisory lock transaccional PostgreSQL,
 
 Diagnóstico priorizado, mapa de entidades, causas/reproducciones, límites históricos y pasos de revisión: **[AUDITORIA_INTEGRIDAD_SEGUIMIENTO.md](AUDITORIA_INTEGRIDAD_SEGUIMIENTO.md)**.
 
-Rama local `integridad/auditoria-relaciones-permisos`. Se corrigieron carreras adicionales de pagos/activaciones frente a estados o roles concurrentes mediante bloqueos SQL de filas. Se comprobó el fallo anterior con dos conexiones: la operación devolvía 200 sin esperar la revocación; las pruebas nuevas observan la espera real y verifican 409 sin escritura tras commit, o éxito tras rollback. Las carreras de revocación del representante se ejercitaron con SQL sintético, no con un supuesto endpoint público de cambio de rol.
+Entrega de `integridad/auditoria-relaciones-permisos`, **fusionada mediante PR #7** en `8d5855f`. Se corrigieron carreras adicionales de pagos/activaciones frente a estados o roles concurrentes mediante bloqueos SQL de filas. Se comprobó el fallo anterior con dos conexiones: la operación devolvía 200 sin esperar la revocación; las pruebas nuevas observan la espera real y verifican 409 sin escritura tras commit, o éxito tras rollback. Las carreras de revocación del representante se ejercitaron con SQL sintético, no con un supuesto endpoint público de cambio de rol.
 
 Las inscripciones ahora validan y guardan la misma observación médica, conservando ambos nombres de campo compatibles y rechazando valores contradictorios. Se rechazan fechas con tipo incorrecto, teléfonos falsy incorrectos e indicadores desconocidos. Perfil/lista de atletas/historial/notificaciones rechazan IDs malformados antes de SQL. Los permisos existentes se conservan.
 
@@ -163,7 +166,29 @@ Ambas suites PostgreSQL exigen destino explícito local `jaguares_test`, sin par
 
 **Pruebas finales ejecutadas:** 64/64 backend en Node 24.15.0 y 64/64 en Node 22.23.4 (las mismas pruebas repetidas para compatibilidad; 11 nuevas respecto a main), con PostgreSQL 18 temporal local. Sintaxis de 37 archivos JavaScript correcta en ambas versiones y `git diff --check` correcto. Playwright 1.56.1 con Chromium 141.0.7390.37: 10/10 aprobadas en escritorio/móvil sobre Node 24, APIs simuladas. Total de escenarios: 74. CI conserva PostgreSQL 16/Node 22; no se ejecutó PostgreSQL 16 localmente. `npm ci` restauró las dependencias del lockfile y Playwright se instaló como herramienta local aislada, sin editar manifiestos.
 
-**Riesgo residual:** restricciones/duplicados reales sin consultar; almacenamiento/privacidad de archivos pendiente P0; bloqueos cooperativos y espera de modificaciones largas; idempotencia y notificaciones de mejor esfuerzo. `npm audit --package-lock-only --json` volvió a confirmar 12 alertas (1 crítica, 7 altas, 2 moderadas, 2 bajas); no se aplicaron actualizaciones automáticas. CI remoto de esta nueva rama y prueba funcional en entorno de desarrollo quedan pendientes del PR/revisión.
+**Validación remota posterior a la fusión:** CI del PR #7 aprobado con Node 22.23.4/PostgreSQL 16, 64 backend + 10 Playwright. Despliegue Production del SHA de main completado según registro GitHub/Vercel; consultas y navegación anónimas de la URL pública comprobadas. El estado «PR/CI pendiente» de la entrega inicial queda reemplazado por esta verificación.
+
+**Riesgo residual:** restricciones/duplicados reales sin consultar; almacenamiento/privacidad de archivos pendiente P0; bloqueos cooperativos y espera de modificaciones largas; idempotencia y notificaciones de mejor esfuerzo. `npm audit --package-lock-only --json` confirmó 12 alertas (1 crítica, 7 altas, 2 moderadas, 2 bajas); no se aplicaron actualizaciones automáticas. Pruebas autenticadas con recursos de desarrollo y comprobación manual por el propietario siguen pendientes.
+
+### Guía de pruebas web posterior al PR #7
+
+**[PRUEBAS_MANUALES_WEB.md](PRUEBAS_MANUALES_WEB.md)** contiene 75 casos con pasos y resultados esperados: sitio público, cuentas/sesiones, perfil, inscripción, representantes/hermanos, directiva/estados, documentos/PDF, pagos/historial, permisos entre familias, notificaciones, calendario y móvil. Incluye casos técnicos opcionales y funcionalidades todavía ausentes para no confundirlas con regresiones.
+
+Las casillas representan pruebas pendientes del propietario; no equivalen a pruebas ejecutadas. Las operaciones que guardan/cambian datos se reservan para un entorno con BD y archivos de pruebas. No se crean registros ficticios ni se fuerzan fallos contra producción para completar el listado.
+
+### Bloqueador funcional de inscripción — corrección prioritaria
+
+Reporte del propietario: botón sin respuesta en ambos paneles, tanto con cédula propia como heredada; pagos de atletas aprobados sí funcionan. La navegación anónima y las pruebas de campos aislados anteriores **no acreditaban una inscripción completa**. Se amplió la cobertura para comprobar clic → HTTP → sesión/roles → Multer → transacción SQL → persistencia/recarga.
+
+Diagnóstico, revisión por módulos, evidencia y límites: **[REVISION_FUNCIONAL_INSCRIPCIONES.md](REVISION_FUNCIONAL_INSCRIPCIONES.md)**. Se reprodujo un bloqueo por errores personalizados retenidos en controles ocultos y por valores corregidos sin evento de entrada. También se reprodujo, bloqueando el recurso de validación en la prueba, un `ReferenceError` anterior al manejo de errores que deja ambos botones sin POST. La consulta pública encontró los archivos presentes e iguales al main previo: no se afirma que faltasen en el navegador concreto del propietario.
+
+Cambios locales: recalcular validación antes del envío nativo; deshabilitar campos que no aplican; limpiar errores al resetear; mostrar error visible; respaldo de validación HTML si no carga el validador, manteniendo la validación backend obligatoria; versionar recursos cambiados. Se sincronizaron las restricciones ya existentes de pagos con el formulario, sin definir tarifas nuevas. Body ausente/incorrecto y JSON inválido reciben 400, exceso del límite existente 413; no provocan falsos errores internos.
+
+**Pruebas locales ejecutadas:** 64 backend + 25 navegador (14 con APIs simuladas y 11 con aplicación/PostgreSQL reales) en Node 24.15.0 y Node 22.23.4, todas aprobadas; 38 archivos JS con sintaxis correcta en ambas versiones. PostgreSQL 18 desechable, Chromium 141/Playwright 1.56.1, escritorio/móvil. Cloudinary y tasa externa simulados únicamente en su frontera; no se hicieron escrituras productivas. CI mantiene PostgreSQL 16/Node 22 e incorpora la nueva suite de flujos completos, con Playwright aislado para no actualizar las dependencias del lockfile.
+
+Recorridos comprobados: aprobación de cuenta pendiente, onboarding, inscripciones sucesivas propias/heredadas desde ambos paneles, nuevo representante, rollback SQL y reintento, carga/error/reintento de documentos, activación, efectivo, transferencia, auditoría e historial, rechazo de pago tras inactivación, permisos entre familias, notificaciones y creación/cancelación de evento. No equivale a probar datos históricos/constraints reales de Supabase, Cloudinary real ni todos los estados del proyecto.
+
+Entrega publicada en [PR #8](https://github.com/josentss/jaguares/pull/8), implementación `4dfbb8d`. Siguiente aceptación: revisar sus [Checks](https://github.com/josentss/jaguares/pull/8/checks) y, tras despliegue autorizado, repetir primero las inscripciones en ambos paneles y el recorrido activar → pagar. Mantener nuevos módulos en espera hasta confirmar la funcionalidad con el propietario.
 
 
 ## 4. Backlog funcional completo — por decidir e implementar
@@ -199,8 +224,9 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 
 | Prioridad | Bloque | Criterio de finalización |
 | --- | --- | --- |
+| P0 — bloqueador funcional actual | Recuperar la inscripción y comprobar los recorridos principales | PR #8; 89 escenarios locales aprobados, revisar Checks remotos y confirmar manualmente tras despliegue autorizado |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
-| P1 — seguimiento local; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | PR #6 fusionado; revisar seguimiento de concurrencia/entradas, luego auditar duplicados/constraints históricos con acceso de lectura |
+| P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
 | P2 | Migraciones, auditoría y ciclo de vida | Esquema reproducible, eventos trazables, archivado y política de borrado definida |
 | P3 | Modelo de temporadas y categorías | Reglas oficiales acordadas, elegibilidad comprobada y traspasos históricos |
 | P4 | Finanzas centralizadas | Tarifas y reglas oficiales acordadas, servidor calcula, trazabilidad y conciliación |
@@ -260,7 +286,8 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | Cédula V-/E- con 7–9 dígitos para captura operativa | PR #4 | Implementado; revisar excepciones legítimas |
 | 2026-11-02 | Inscripción: 0–18 años cumplidos a fecha de registro | PR #4 | Implementado; fecha de corte competitiva pendiente |
 | 2026-11-02 | Altas compuestas atómicas, identidades coordinadas y sufijos heredados preservados | PR #6 | Fusionado; constraints reales pendientes |
-| 2026-11-02 | Revalidar estados concurrentes de pagos/activaciones y unificar valores médicos validados/persistidos | Rama `integridad/auditoria-relaciones-permisos` | Implementado localmente, pendiente de revisión/PR |
+| 2026-11-02 | Revalidar estados concurrentes de pagos/activaciones y unificar valores médicos validados/persistidos | PR #7 | Fusionado; despliegue Production completado según registro, prueba manual autenticada pendiente |
+| 2026-11-02 | Priorizar inscripciones funcionales y pruebas completas de navegador/API/BD | Reporte del propietario; PR #8 | Corrección local y 89 escenarios aprobados; revisar Checks y confirmar manualmente tras despliegue autorizado |
 | 2026-11-02 | Montos fijos, categorías y sanciones | Pendiente de política oficial del club | No definido |
 | 2026-11-02 | Eliminación definitiva y WhatsApp | Pendiente de políticas y consentimiento | No definido |
 
@@ -270,7 +297,9 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | --- | --- | --- | --- |
 | 2026-11-02 | #1 a #4; `main` `29174dd3` | Correcciones de estados/pagos/formularios/coherencia; último CI 46/46 | Integridad de registros, seguridad restante y backlog |
 | 2026-11-02 | PR #6, main `46ce6bf` | P1: transacciones, duplicados y concurrencia; 53 backend + 10 interfaz locales; CI remoto satisfactorio | Estado inicial «PR pendiente/API bloqueada» reemplazado por verificación actual; constraints/Cloudinary pendientes |
-| 2026-11-02 | Rama local `integridad/auditoria-relaciones-permisos` | Seguimiento: carreras de estados, consistencia de entradas e aislamiento SQL; 64/64 backend en Node 22 y Node 24, 10/10 Playwright; sintaxis correcta | PR/CI nuevo y validación funcional en desarrollo pendientes; sin fusión/despliegue de esta rama |
+| 2026-11-02 | PR #7, main `8d5855f` | Seguimiento: 64/64 backend local en Node 22/24; CI Node 22/PostgreSQL 16 con 64 backend + 10 Playwright. Production completado; navegación anónima web real escritorio/móvil satisfactoria | Pruebas autenticadas manuales, archivos/privacidad y constraints reales pendientes; no equivale a validación integral de producción |
+| 2026-11-02 | Rama documental `docs/verificacion-pr7-web` | Evidencia de fusión/CI/Production y guía de 75 casos manuales, sin cambios de código | Documentación local para revisión; resultados manuales del propietario por registrar |
+| 2026-11-02 | PR #8 / `4dfbb8d` | Bloqueos de validación/envío corregidos; 64 backend + 25 navegador en Node 22 y 24; PG temporal, sin migraciones ni dependencias nuevas | Estado remoto en Checks; revisión y prueba del propietario tras despliegue autorizado; proveedores/constraints productivos sin validar |
 
 ### Plantilla breve de actualización futura
 

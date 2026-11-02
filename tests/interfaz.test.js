@@ -56,6 +56,9 @@ test.before(async () => {
             if (pathname === '/api/cms/admin/eventos') return json(res, {
                 success: true, eventos: []
             });
+            if (pathname === '/api/directiva/representantes') return json(res, {
+                success:true,datos:[{id_usuario:5,nombres:'Prueba',apellidos:'Representante',cedula:'V-12345678',telefono1:'04141234567'}]
+            });
             if (pathname === '/api/directiva/atleta/estado') {
                 res.writeHead(409, {'Content-Type': 'application/json'});
                 return res.end(JSON.stringify({
@@ -304,4 +307,79 @@ test('inscripción desde directiva: restricción de edad y cédula de 7 dígitos
         assert.equal(await page.locator('#dir-cedula').evaluate(el => el.validity.customError), true);
         assert.deepEqual(errores, []);
     } finally { await browser.close(); }
+});
+
+test('inscripción válida del representante: el clic envía el formulario', async () => {
+    const {browser,page,errores}=await abrirPanel({width:1440,height:900});
+    try {
+        await page.locator('[data-target="sec-atletas"]').click();
+        for(const [id,valor] of Object.entries({
+            'atl-nombres':'Atleta Prueba', 'atl-apellidos':'Sintético',
+            'atl-cedula':'81000001', 'atl-fecha-nac':'2014-05-10',
+            'atl-direccion':'Calle de pruebas 12', 'atl-telefono':'04141234567'
+        })) await page.locator('#'+id).fill(valor);
+        const enviada=page.waitForRequest(r=>r.url().endsWith('/api/atletas/registrar-atleta')&&r.method()==='POST',{timeout:3000});
+        await page.locator('#form-add-atleta button[type=submit]').click();
+        try { await enviada; }
+        catch(error) {
+            console.log('Diagnóstico de controles:',await page.locator('#form-add-atleta').evaluate(form=>
+                [...form.elements].filter(e=>e.willValidate&&!e.validity.valid).map(e=>({id:e.id,mensaje:e.validationMessage}))));
+            throw error;
+        }
+        assert.deepEqual(errores,[]);
+    } finally {await browser.close();}
+});
+
+test('inscripción del representante: corregir cédula y teléfono eligiendo herencia permite enviar', async () => {
+    const {browser,page,errores}=await abrirPanel({width:1440,height:900});
+    try {
+        await page.locator('[data-target="sec-atletas"]').click();
+        for(const [id,valor] of Object.entries({'atl-nombres':'Hermana Prueba','atl-apellidos':'Sintético',
+            'atl-fecha-nac':'2014-05-10','atl-direccion':'Calle de pruebas 12',
+            'atl-cedula':'123','atl-telefono':'123'})) await page.locator('#'+id).fill(valor);
+        await page.locator('#atl-has-cedula').uncheck();
+        await page.locator('#atl-has-telefono').uncheck();
+        const enviada=page.waitForRequest(r=>r.url().endsWith('/api/atletas/registrar-atleta')&&r.method()==='POST',{timeout:3000});
+        await page.locator('#form-add-atleta button[type=submit]').click();
+        try {await enviada;}
+        catch(error){console.log('Controles que bloquean:',await page.locator('#form-add-atleta').evaluate(form=>
+            [...form.elements].filter(e=>e.willValidate&&!e.validity.valid).map(e=>({id:e.id,mensaje:e.validationMessage}))));throw error;}
+        assert.deepEqual(errores,[]);
+    } finally {await browser.close();}
+});
+
+test('inscripción válida de directiva: el clic envía el formulario', async () => {
+    const browser=await chromium.launch({headless:true});const page=await browser.newPage();
+    await page.route('https://**/*',route=>route.abort());
+    try {
+        await page.goto(baseUrl+'/admin/panel-directiva.html');
+        await page.locator('[data-target="sec-registrar"]').click();
+        await page.selectOption('#dir-rep','5');
+        for(const [id,valor] of Object.entries({'dir-nombres':'Atleta Directiva','dir-apellidos':'Sintético',
+            'dir-fecha-nac':'2014-05-10','dir-direccion':'Calle de pruebas 12',
+            'dir-cedula':'81000003','dir-telefono':'04141234567'})) await page.locator('#'+id).fill(valor);
+        const enviada=page.waitForRequest(r=>r.url().endsWith('/api/directiva/registrar-atleta')&&r.method()==='POST',{timeout:3000});
+        await page.locator('#form-dir-atleta button[type=submit]').click();
+        try {await enviada;}
+        catch(error){console.log('Controles directiva:',await page.locator('#form-dir-atleta').evaluate(form=>
+            [...form.elements].filter(e=>e.willValidate&&!e.validity.valid).map(e=>({id:e.id,mensaje:e.validationMessage}))));throw error;}
+    } finally {await browser.close();}
+});
+
+test('inscripción: recalcula errores anteriores cuando el navegador completa valores sin evento input', async () => {
+    const {browser,page}=await abrirPanel({width:1440,height:900});
+    try {
+        await page.locator('[data-target="sec-atletas"]').click();
+        for(const [id,valor] of Object.entries({'atl-nombres':'Atleta Autocompletada','atl-apellidos':'Sintético',
+            'atl-fecha-nac':'2014-05-10','atl-direccion':'Calle de pruebas 12','atl-cedula':'123','atl-telefono':'123'})) {
+            await page.locator('#'+id).fill(valor);
+        }
+        await page.evaluate(()=>{
+            document.getElementById('atl-cedula').value='81000007';
+            document.getElementById('atl-telefono').value='04140000001';
+        });
+        const enviada=page.waitForRequest(r=>r.url().endsWith('/api/atletas/registrar-atleta')&&r.method()==='POST');
+        await page.locator('#form-add-atleta button[type=submit]').click();
+        await enviada;
+    } finally {await browser.close();}
 });

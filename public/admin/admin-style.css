@@ -533,6 +533,15 @@ tr:hover td { background-color: #f8fafc; }
 }
 .btn-panel-submit:disabled { cursor: not-allowed; }
 
+.form-validation-message {
+    color: #9f241b;
+    background: #fff3f1;
+    border-left: 3px solid #c0392b;
+    padding: 10px 12px;
+    margin: 12px 0;
+    font-size: 0.9rem;
+}
+
 /* Etiquetas de estado (panel del representante) */
 .status-badge {
     display: inline-block;

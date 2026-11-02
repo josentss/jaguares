@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Panel Representante | Club Jaguares</title>
-    <link rel="stylesheet" href="admin-style.css">
+    <link rel="stylesheet" href="admin-style.css?v=inscripcion-1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -212,7 +212,7 @@
                     <!-- Documentos -->
                     <div class="form-grid" style="margin-top:10px; border-top:1px dashed #ddd; padding-top:15px;">
                         <div class="form-group-panel">
-                            <label>Foto del atleta <small style="color:#888;">(JPG/PNG/WebP, máx. 8 MB)</small></label>
+                            <label>Foto del atleta <small style="color:#888;">(JPG/PNG/WebP, máx. 5 MB)</small></label>
                             <input type="file" id="atl-foto" name="foto" accept="image/jpeg,image/png,image/webp">
                             <div id="preview-foto" style="display:none; margin-top:8px; text-align:center;">
                                 <img id="atl-preview-foto" alt="Vista previa" style="max-height:120px; border-radius:8px; object-fit:cover;">
@@ -248,15 +248,15 @@
                         </div>
                     </fieldset>
 
-                    <fieldset id="panel-transferencia" class="form-block hidden-section">
+                    <fieldset id="panel-transferencia" class="form-block hidden-section" disabled>
                         <legend>Datos de la operación</legend>
                         <div class="form-grid">
-                            <div class="form-group-panel"><label for="pay-monto-trans">Monto en bolívares (Bs)</label><input type="number" step="0.01" id="pay-monto-trans" placeholder="0,00" inputmode="decimal"><small class="field-note">Tal como aparece en tu comprobante.</small></div>
+                            <div class="form-group-panel"><label for="pay-monto-trans">Monto en bolívares (Bs)</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-trans" placeholder="0,00" inputmode="decimal" required><small class="field-note">Tal como aparece en tu comprobante.</small></div>
                             <div class="form-group-panel"><label for="pay-referencia">Número de referencia</label><input type="text" id="pay-referencia" placeholder="Ej: 123456" inputmode="numeric"><small class="field-note">Los últimos dígitos de la operación.</small></div>
-                            <div class="form-group-panel"><label for="pay-fecha-trans">Fecha de la operación</label><input type="date" id="pay-fecha-trans"></div>
+                            <div class="form-group-panel"><label for="pay-fecha-trans">Fecha de la operación</label><input type="date" id="pay-fecha-trans" required></div>
                             <div class="form-group-panel">
                                 <label for="pay-captura">Comprobante</label>
-                                <input type="file" id="pay-captura" accept="image/*">
+                                <input type="file" id="pay-captura" accept="image/*" required>
                                 <small class="field-note">Captura de pantalla legible del pago. Imagen, máximo 5 MB.</small>
                                 <div id="preview-container" style="display:none; margin-top:10px; text-align: center; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
                                     <p style="font-size:0.75rem; color:#666; margin-bottom:5px;">Vista previa del comprobante:</p>
@@ -266,12 +266,12 @@
                         </div>
                     </fieldset>
 
-                    <fieldset id="panel-efectivo" class="form-block hidden-section">
+                    <fieldset id="panel-efectivo" class="form-block hidden-section" disabled>
                         <legend>Pago en efectivo</legend>
                         <div class="form-grid">
-                            <div class="form-group-panel"><label for="pay-monto-efec">Monto entregado</label><input type="number" step="0.01" id="pay-monto-efec" placeholder="0,00" inputmode="decimal"></div>
+                            <div class="form-group-panel"><label for="pay-monto-efec">Monto entregado</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-efec" placeholder="0,00" inputmode="decimal" required></div>
                             <div class="form-group-panel"><label for="pay-moneda-efec">Moneda</label><select id="pay-moneda-efec"><option value="USD">Dólares (USD)</option><option value="COP">Pesos colombianos (COP)</option><option value="Bs">Bolívares (Bs)</option></select></div>
-                            <div class="form-group-panel"><label for="pay-fecha-efec">Fecha de entrega</label><input type="date" id="pay-fecha-efec"></div>
+                            <div class="form-group-panel"><label for="pay-fecha-efec">Fecha de entrega</label><input type="date" id="pay-fecha-efec" required></div>
                         </div>
                     </fieldset>
 
@@ -337,8 +337,8 @@
         </section>
     </div>
 
-<script src="validacion-formularios.js"></script>
-<script src="api-client.js"></script>
+<script src="validacion-formularios.js?v=inscripcion-1"></script>
+<script src="api-client.js?v=inscripcion-1"></script>
 <script>
         let repCache = {};
 
@@ -381,6 +381,8 @@
                 transPanel.style.display = 'none';
                 efecPanel.style.display = 'none';
             }
+            transPanel.disabled = metodo !== 'Transferencia Bancaria';
+            efecPanel.disabled = metodo !== 'Efectivo';
             document.getElementById('preview-container').style.display = 'none';
             document.getElementById('pay-captura').value = '';
         }
@@ -390,6 +392,8 @@
             document.getElementById('group-cedula-input').style.display = hasCedula ? 'flex' : 'none';
             document.getElementById('atl-cedula-disabled').style.display = hasCedula ? 'none' : 'block';
             document.getElementById('atl-cedula').required = hasCedula;
+            document.getElementById('atl-cedula').disabled = !hasCedula;
+            if (!hasCedula) document.getElementById('atl-cedula').setCustomValidity('');
         }
 
         function toggleTelefonoAtleta() {
@@ -397,6 +401,8 @@
             document.getElementById('atl-telefono').style.display = hasTelefono ? 'block' : 'none';
             document.getElementById('atl-telefono-disabled').style.display = hasTelefono ? 'none' : 'block';
             document.getElementById('atl-telefono').required = hasTelefono;
+            document.getElementById('atl-telefono').disabled = !hasTelefono;
+            if (!hasTelefono) document.getElementById('atl-telefono').setCustomValidity('');
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -830,7 +836,7 @@
             // --- SUBMIT: GESTIÓN DE MI PERFIL ---
             document.getElementById('form-mi-perfil').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                if (!ValidacionJaguares.validarFormulario(e.target)) return;
+                if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
                 const btnText = btn.innerHTML;
                 btn.innerHTML = 'Guardando... <i class="fas fa-spinner fa-spin"></i>';
@@ -880,7 +886,7 @@
             // --- SUBMIT: ONBOARDING PERFIL ---
             document.getElementById('form-onboarding').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                if (!ValidacionJaguares.validarFormulario(e.target)) return;
+                if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
                 const btnText = btn.innerHTML;
                 btn.disabled = true;
@@ -941,7 +947,7 @@
 
             document.getElementById('form-add-atleta').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                if (!ValidacionJaguares.validarFormulario(e.target)) return;
+                if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
                 const btnText = btn.innerHTML;
 
@@ -1069,8 +1075,7 @@
                         showToast('Pago reportado con éxito', 'success');
                         form.reset();
                         document.getElementById('preview-container').style.display = 'none';
-                        document.getElementById('panel-transferencia').style.display = 'none';
-                        document.getElementById('panel-efectivo').style.display = 'none';
+                        toggleMetodoPago();
                         cargarHistorialPagos();
                     } else {
                         showToast(data.message || 'Error al enviar pago', 'error');

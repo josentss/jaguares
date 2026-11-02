@@ -3,6 +3,8 @@
 Fecha: 2026-11-02. Base verificada: `main` `46ce6bfe92ee0f2aba03d5d25165e7234ad6d78b`.
 Rama: `integridad/auditoria-relaciones-permisos`. Complementa [la auditoría inicial](AUDITORIA_INTEGRIDAD.md).
 
+**Actualización posterior a la entrega:** [PR #7](https://github.com/josentss/jaguares/pull/7) fusionado en `8d5855f`; [CI remoto](https://github.com/josentss/jaguares/actions/runs/41540524642) confirmado con 64 backend + 10 Playwright. Registro Vercel/GitHub del SHA en Production completado y navegación anónima de la web pública verificada en escritorio/móvil. Los estados «PR/CI pendiente» de este informe corresponden a la entrega inicial. La [guía de 75 casos manuales](PRUEBAS_MANUALES_WEB.md) distingue comprobaciones ya ejecutadas de flujos autenticados pendientes; no hubo escrituras de producción durante esta verificación.
+
 ## Estado contrastado
 
 - Git remoto y local coinciden. Los PR [#1](https://github.com/josentss/jaguares/pull/1), [#2](https://github.com/josentss/jaguares/pull/2), [#3](https://github.com/josentss/jaguares/pull/3), [#4](https://github.com/josentss/jaguares/pull/4), [#5](https://github.com/josentss/jaguares/pull/5) y [#6](https://github.com/josentss/jaguares/pull/6) están fusionados y sus commits de fusión forman parte de `main`.

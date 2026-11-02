@@ -71,6 +71,12 @@ app.use('/api/directiva',
 
 // ── Manejo de errores global ───────────────────────────────────────────────
 app.use((err, req, res, next) => {
+    if (err.type === 'entity.parse.failed' || err.type === 'entity.too.large') {
+        return res.status(err.type === 'entity.too.large' ? 413 : 400).json({
+            success: false, message: err.type === 'entity.too.large'
+                ? 'La solicitud supera el tamaño permitido' : 'El formato de la solicitud no es válido'
+        });
+    }
     console.error(`[ERROR] ${req.method} ${req.originalUrl}:`, err.message || err);
     if (!res.headersSent) {
         res.status(500).json({ success: false, message: 'Error interno del servidor' });

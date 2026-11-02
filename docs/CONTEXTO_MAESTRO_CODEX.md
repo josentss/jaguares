@@ -3,9 +3,9 @@
 > **Propósito:** documento persistente para continuar el desarrollo del sistema Club de Voleibol Jaguares. Codex debe leerlo al iniciar tareas de este repositorio y proponer actualizaciones cuando cambien el código, las reglas, las pruebas o el estado de los PR.
 >
 > **Última actualización documental:** 2026-11-02  
-> **Base comprobada:** `main` — commit `29174dd3f7f4eef039ee0137e236aa6a05d7bf0b`  
+> **Base comprobada:** `main` — commit `8a36279e150954136cdb02e05e22cce5401ceaff`
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** documento inicial de transferencia. **Revalidar GitHub y el despliegue al abrir una nueva sesión.**
+> **Estado:** P1 en rama `integridad/altas-atomicas-identidades`, pendiente de PR/revisión; no fusionado ni desplegado. Main comprobado por Git. API de PR/despliegues bloqueada por política de red: no confundir estado documental con verificación remota.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -136,6 +136,21 @@ Las siguientes son **áreas pendientes de verificación o mejora**, no afirmacio
 - Migraciones idempotentes: revisar si existen y cuál es el esquema vigente; la arquitectura deseada contemplaba `utils/migraciones.js` y espejo SQL, pero **no estaban en el `main` examinado**.
 - Documentación de despliegue desactualizada y accesibilidad/responsive.
 
+### Auditoría P1 y primera implementación (2026-11-02)
+
+Informe detallado: **[AUDITORIA_INTEGRIDAD.md](AUDITORIA_INTEGRIDAD.md)**, con relaciones, hallazgos confirmados, límites y comprobaciones para un futuro despliegue autorizado.
+
+Entrega subida: [rama de integridad](https://github.com/josentss/jaguares/tree/integridad/altas-atomicas-identidades), implementación `4cd951c`. La creación de PR mediante `gh pr create` devolvió Forbidden para `api.github.com/graphql`; [enlace para abrirlo en GitHub](https://github.com/josentss/jaguares/pull/new/integridad/altas-atomicas-identidades). PR y CI remoto permanecen pendientes; no hay fusión ni despliegue autorizado.
+
+En la rama `integridad/altas-atomicas-identidades` se implementaron altas atómicas de representante/atleta, comprobaciones normalizadas de duplicados coordinadas con los cambios de perfil, secuencias heredadas protegidas frente a concurrencia y validación de datos incompletos de representante. Se conserva la arquitectura y la interfaz, sin migraciones ni alteración de datos de producción.
+
+Los escritores de identidad comparten un advisory lock transaccional PostgreSQL, con espera máxima de 5 segundos (503 recuperable). Se evita repetir un atleta de la misma familia con los mismos nombres, apellidos y nacimiento. No se renumeran cédulas históricas. Las notificaciones se emiten después del commit. El bloqueo es cooperativo y global: requiere revisar rendimiento y complementarlo con constraints después de auditar los datos reales.
+
+**Validación local:** comprobación sintáctica; 53/53 pruebas backend (17 nuevas en PostgreSQL temporal/API) y 10/10 Playwright escritorio/móvil. Chromium del sistema 154 con Playwright 1.56.1, distinto del Chromium 141 del CI. Sin pruebas de producción ni acceso a archivos reales. CI actualizado para ejecutar la nueva suite; estado remoto pendiente de consulta.
+
+**Pendientes confirmados:** `validarMagicBytes` aún devuelve true; no hay atomicidad entre carga Cloudinary y commit SQL ni limpieza garantizada de archivos huérfanos. La autorización del endpoint no garantiza privacidad del enlace externo. Registro público no captura cédula; no se identifica a una misma persona con diferentes correos por su nombre. Constraints reales, duplicados históricos y escrituras externas siguen pendientes de auditoría autorizada.
+
+
 ## 4. Backlog funcional completo — por decidir e implementar
 
 Las siguientes necesidades fueron expresadas por el propietario. No omitirlas al planificar, ni inventar sus reglas oficiales.
@@ -237,7 +252,7 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | Fecha | PR / commit | Resultado y pruebas | Pendientes |
 | --- | --- | --- | --- |
 | 2026-11-02 | #1 a #4; `main` `29174dd3` | Correcciones de estados/pagos/formularios/coherencia; último CI 46/46 | Integridad de registros, seguridad restante y backlog |
-| _Próxima entrega_ | _Por actualizar_ | _Por actualizar_ | _Por actualizar_ |
+| 2026-11-02 | Rama `integridad/altas-atomicas-identidades`, PR pendiente | P1: transacciones, duplicados y concurrencia; 53 backend + 10 interfaz aprobadas localmente | API GitHub bloqueada; revisión/CI remoto y auditoría de constraints/Cloudinary pendientes; no desplegado |
 
 ### Plantilla breve de actualización futura
 

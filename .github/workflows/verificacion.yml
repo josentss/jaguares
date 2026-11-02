@@ -45,7 +45,7 @@ jobs:
         run: |
           find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -r -n 1 node --check
       - name: Ejecutar pruebas con mocks
-        run: node --test tests/seguridad.test.js tests/estados-y-sesiones.test.js tests/formularios.test.js tests/pagos-pg.test.js
+        run: node --test tests/seguridad.test.js tests/estados-y-sesiones.test.js tests/formularios.test.js tests/pagos-pg.test.js tests/integridad-pg.test.js
       - name: Preparar Playwright Chromium
         run: |
           npm install --no-save playwright@1.56.1

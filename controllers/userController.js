@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
+const { conIdentidades, comprobarUsuario, ErrorIntegridad, responderError } = require('../utils/integridad');
 const { esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esPasswordValida } = require('../utils/validators');
 
 // Obtener los datos del perfil de un usuario
@@ -56,84 +57,23 @@ exports.actualizarPerfil = async (req, res) => {
     const tel2Limpio = telefono2 ? normalizarTelefono(telefono2) : null;
 
     try {
-        // 1. Si el usuario desea cambiar la contraseña, la encriptamos
-        if (password) {
-            const saltRounds = 10;
-            const nuevoHash = await bcrypt.hash(password, saltRounds);
-
-            const queryConPass = `
-                UPDATE usuarios
-                SET nombres = ?, apellidos = ?, cedula = ?, telefono1 = ?, telefono2 = ?, password_hash = ?
-                WHERE id_usuario = ?
-                  AND NOT EXISTS (
-                      SELECT 1 FROM usuarios otro
-                      WHERE UPPER(TRIM(otro.cedula)) = ?
-                        AND otro.id_usuario <> ?
-                  )
-            `;
-
-            db.query(queryConPass, [
-                nombreLimpio,
-                apellidoLimpio,
-                cedulaLimpia,
-                tel1Limpio,
-                tel2Limpio,
-                nuevoHash,
-                id_usuario,
-                cedulaLimpia,
-                id_usuario
-            ], (err, resultado) => {
-                if (err) {
-                    if (err.code === 'ER_DUP_ENTRY') {
-                        return res.status(409).json({ success: false, message: 'La cédula ya está registrada' });
-                    }
-                    console.error(err);
-                    return res.status(500).json({ success: false, message: 'Error al actualizar el perfil con contraseña' });
-                }
-                if (!resultado || resultado.affectedRows !== 1) {
-                    return res.status(409).json({ success: false, message: 'La cédula ya pertenece a otro usuario o la cuenta ya no existe' });
-                }
-                return res.json({ success: true, message: 'Perfil y contraseña actualizados correctamente' });
-            });
-
-        } else {
-            // 2. Si no envía contraseña, solo actualizamos los datos básicos
-            const querySinPass = `
-                UPDATE usuarios
-                SET nombres = ?, apellidos = ?, cedula = ?, telefono1 = ?, telefono2 = ?
-                WHERE id_usuario = ?
-                  AND NOT EXISTS (
-                      SELECT 1 FROM usuarios otro
-                      WHERE UPPER(TRIM(otro.cedula)) = ?
-                        AND otro.id_usuario <> ?
-                  )
-            `;
-
-            db.query(querySinPass, [
-                nombreLimpio,
-                apellidoLimpio,
-                cedulaLimpia,
-                tel1Limpio,
-                tel2Limpio,
-                id_usuario,
-                cedulaLimpia,
-                id_usuario
-            ], (err, resultado) => {
-                if (err) {
-                    if (err.code === 'ER_DUP_ENTRY') {
-                        return res.status(409).json({ success: false, message: 'La cédula ya está registrada' });
-                    }
-                    console.error(err);
-                    return res.status(500).json({ success: false, message: 'Error al actualizar los datos del perfil' });
-                }
-                if (!resultado || resultado.affectedRows !== 1) {
-                    return res.status(409).json({ success: false, message: 'La cédula ya pertenece a otro usuario o la cuenta ya no existe' });
-                }
-                return res.json({ success: true, message: 'Perfil actualizado correctamente' });
-            });
-        }
+        const hash = password ? await bcrypt.hash(password, 10) : null;
+        await conIdentidades(async client => {
+            // Lock the current row too: role/state changes must finish before we
+            // read/write it. Never accept an ID or role from the request body.
+            const { rows } = await client.query(
+                'SELECT id_usuario FROM usuarios WHERE id_usuario = $1 FOR UPDATE', [id_usuario]);
+            if (!rows.length) throw new ErrorIntegridad(404, 'Usuario no encontrado');
+            await comprobarUsuario(client, { cedula: cedulaLimpia, excluirId: id_usuario });
+            await client.query(`UPDATE usuarios SET nombres = $1, apellidos = $2,
+                cedula = $3, telefono1 = $4, telefono2 = $5
+                ${hash ? ', password_hash = $7' : ''} WHERE id_usuario = $6`,
+            [nombreLimpio, apellidoLimpio, cedulaLimpia, tel1Limpio, tel2Limpio,
+                id_usuario, ...(hash ? [hash] : [])]);
+        });
+        return res.json({ success: true, message: password
+            ? 'Perfil y contraseña actualizados correctamente' : 'Perfil actualizado correctamente' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Error en el proceso de actualización' });
+        return responderError(res, error);
     }
 };

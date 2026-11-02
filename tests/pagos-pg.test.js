@@ -169,7 +169,7 @@ test('PostgreSQL: el perfil impide cédulas duplicadas y conserva los datos prev
     const usuarios = require('../controllers/userController');
     await db.pool.query(`
         ALTER TABLE usuarios
-        ADD COLUMN nombres TEXT, ADD COLUMN apellidos TEXT,
+        ADD COLUMN nombres TEXT, ADD COLUMN apellidos TEXT, ADD COLUMN correo TEXT,
         ADD COLUMN cedula TEXT, ADD COLUMN telefono1 TEXT,
         ADD COLUMN telefono2 TEXT, ADD COLUMN password_hash TEXT;
         UPDATE usuarios SET cedula = 'V-12345678' WHERE id_usuario = 5;

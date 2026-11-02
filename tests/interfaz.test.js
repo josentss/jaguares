@@ -254,3 +254,54 @@ test('directiva web: registro del atleta impide nombres y documentos mal formado
         assert.deepEqual(errores, []);
     } finally { await browser.close(); }
 });
+
+
+test('inscripción del representante: bloquea fecha 1908, cédula corta y datos incoherentes', async () => {
+    const {browser, page, errores} = await abrirPanel({width: 1440, height: 900});
+    try {
+        await page.evaluate(() => document.querySelector('[data-target="sec-atletas"]').click());
+        const comprobar = async (id, valor, resultado) => {
+            await page.locator(id).evaluate((el, v) => {
+                el.value = v;
+                el.dispatchEvent(new Event('input', {bubbles: true}));
+            }, valor);
+            assert.equal(await page.locator(id).evaluate(el => el.validity.customError), resultado, id + ': ' + valor);
+        };
+        await comprobar('#atl-cedula', '578546', true);
+        await comprobar('#atl-cedula', '12345678', false);
+        await comprobar('#atl-fecha-nac', '1908-06-16', true);
+        await comprobar('#atl-fecha-nac', '2012-06-16', false);
+        await comprobar('#atl-direccion', '2356', true);
+        await comprobar('#atl-direccion', 'Barrio 1', false);
+        await comprobar('#atl-alergias', 's43678ikjhgf', true);
+        await comprobar('#atl-alergias', 'Diabetes tipo 1, 500 mg', false);
+        assert.deepEqual(errores, []);
+    } finally { await browser.close(); }
+});
+
+test('inscripción desde directiva: restricción de edad y cédula de 7 dígitos', async () => {
+    const browser = await chromium.launch({headless: true});
+    const page = await browser.newPage({viewport: {width: 390, height: 844}});
+    await page.route('https://**/*', route => route.abort());
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    try {
+        await page.goto(baseUrl + '/admin/panel-directiva.html');
+        await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
+        await page.evaluate(() => document.querySelector('[data-target="sec-registrar"]').click());
+        const fecha = page.locator('#dir-fecha-nac');
+        await fecha.evaluate(el => {
+            el.value = '1908-06-16';
+            el.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+        assert.equal(await fecha.evaluate(el => el.validity.customError), true);
+        await fecha.evaluate(el => {
+            el.value = '2012-06-16';
+            el.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+        assert.equal(await fecha.evaluate(el => el.validity.customError), false);
+        await page.locator('#dir-cedula').fill('578546');
+        assert.equal(await page.locator('#dir-cedula').evaluate(el => el.validity.customError), true);
+        assert.deepEqual(errores, []);
+    } finally { await browser.close(); }
+});

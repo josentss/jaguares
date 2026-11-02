@@ -40,6 +40,13 @@ exports.login = (req, res) => {
                 message: 'Tu solicitud de registro ha sido rechazada por la directiva.'
             });
         }
+        if (usuario.estado === 'inactivo' ||
+            (usuario.rol === 'representante' && usuario.estado !== 'aprobado')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Tu cuenta no está habilitada. Contacta a la directiva.'
+            });
+        }
         // ------------------------------------------
 
         try {

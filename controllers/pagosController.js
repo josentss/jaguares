@@ -1,26 +1,41 @@
 const db = require('../config/db');
 const path = require('path');
-const { esEnteroPositivo, esMontoValido } = require('../utils/validators');
+const { esEnteroPositivo, esMontoValido, esFechaISOValida } = require('../utils/validators');
 const { logUploadEvent } = require('../utils/auditLogger');
 
 const METODOS_PAGO = ['Transferencia Bancaria', 'Efectivo'];
+const MESES_PAGO = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const MONEDAS_EFECTIVO = ['Bs', 'USD', 'COP'];
 
 function insertarPago(res, datos) {
-    const { id_atleta, mes, metodo, monto, moneda, referencia, fecha_pago, ruta_captura } = datos;
-    const estado_pago = 'pendiente';
+    const { id_atleta, id_representante, mes, metodo, monto, moneda, referencia, fecha_pago, ruta_captura } = datos;
 
     const query = `
         INSERT INTO pagos
         (id_atleta, mes_pagado, metodo_pago, fecha_pago, monto, moneda, referencia, ruta_captura, estado_pago)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        SELECT a.id_atleta, ?, ?, ?, ?, ?, ?, ?, 'pendiente'
+        FROM atletas a
+        JOIN usuarios u ON u.id_usuario = a.id_representante
+        WHERE a.id_atleta = ? AND a.id_representante = ?
+          AND a.estado = 'activo'
+          AND u.rol = 'representante' AND u.estado = 'aprobado'
+        RETURNING id_pago
     `;
 
-    const valores = [id_atleta, mes, metodo, fecha_pago, monto, moneda, referencia, ruta_captura, estado_pago];
+    const valores = [mes, metodo, fecha_pago, monto, moneda, referencia,
+        ruta_captura, id_atleta, id_representante];
 
-    db.query(query, valores, (err) => {
+    db.query(query, valores, (err, resultado) => {
         if (err) {
             console.error('Error SQL:', err);
             return res.status(500).json({ success: false, message: 'Error en la base de datos' });
+        }
+        if (!resultado || resultado.affectedRows !== 1) {
+            return res.status(409).json({
+                success: false,
+                message: 'Solo se admiten pagos de atletas activos con representante aprobado'
+            });
         }
         res.json({ success: true });
     });
@@ -46,6 +61,17 @@ exports.reportarPago = (req, res) => {
         return res.status(400).json({ success: false, message: 'Método de pago no válido' });
     }
 
+    if (!MESES_PAGO.includes(mes) || !esFechaISOValida(fecha_pago)) {
+        return res.status(400).json({ success: false, message: 'Mes o fecha de pago no válidos' });
+    }
+    if ((metodo === 'Transferencia Bancaria' && moneda !== 'Bs') ||
+        (metodo === 'Efectivo' && !MONEDAS_EFECTIVO.includes(moneda))) {
+        return res.status(400).json({ success: false, message: 'Moneda no válida para el método de pago' });
+    }
+    if (referencia != null && (typeof referencia !== 'string' || referencia.trim().length > 80)) {
+        return res.status(400).json({ success: false, message: 'Referencia no válida' });
+    }
+
     if (metodo === 'Transferencia Bancaria' && !req.file) {
         try {
             logUploadEvent({
@@ -63,35 +89,17 @@ exports.reportarPago = (req, res) => {
     // Guardar la URL completa de Cloudinary (req.file.path)
     const ruta_captura = req.file ? (req.file.path || req.file.filename) : null;
 
-    // Solo puede reportar pagos de atletas que pertenezcan al representante logueado.
-    db.query(
-        'SELECT id_atleta FROM atletas WHERE id_atleta = ? AND id_representante = ?',
-        [id_atleta, req.usuarioId],
-        (err, rows) => {
-            if (err) {
-                console.error('Error al verificar atleta:', err.message);
-                return res.status(500).json({ success: false, message: 'Error en la base de datos' });
-            }
-
-            if (rows.length === 0) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'No puedes reportar pagos para un atleta que no te pertenece'
-                });
-            }
-
-            insertarPago(res, {
-                id_atleta,
-                mes,
-                metodo,
-                monto,
-                moneda,
-                referencia,
-                fecha_pago,
-                ruta_captura
-            });
-        }
-    );
+    insertarPago(res, {
+        id_atleta,
+        id_representante: req.usuarioId,
+        mes,
+        metodo,
+        monto,
+        moneda,
+        referencia: referencia ? referencia.trim() : null,
+        fecha_pago,
+        ruta_captura
+    });
 };
 
 // 2. OBTENER HISTORIAL DE PAGOS DE UN REPRESENTANTE

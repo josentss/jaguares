@@ -65,6 +65,11 @@ exports.actualizarPerfil = async (req, res) => {
                 UPDATE usuarios
                 SET nombres = ?, apellidos = ?, cedula = ?, telefono1 = ?, telefono2 = ?, password_hash = ?
                 WHERE id_usuario = ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM usuarios otro
+                      WHERE UPPER(TRIM(otro.cedula)) = ?
+                        AND otro.id_usuario <> ?
+                  )
             `;
 
             db.query(queryConPass, [
@@ -74,14 +79,19 @@ exports.actualizarPerfil = async (req, res) => {
                 tel1Limpio,
                 tel2Limpio,
                 nuevoHash,
+                id_usuario,
+                cedulaLimpia,
                 id_usuario
-            ], (err) => {
+            ], (err, resultado) => {
                 if (err) {
                     if (err.code === 'ER_DUP_ENTRY') {
                         return res.status(409).json({ success: false, message: 'La cédula ya está registrada' });
                     }
                     console.error(err);
                     return res.status(500).json({ success: false, message: 'Error al actualizar el perfil con contraseña' });
+                }
+                if (!resultado || resultado.affectedRows !== 1) {
+                    return res.status(409).json({ success: false, message: 'La cédula ya pertenece a otro usuario o la cuenta ya no existe' });
                 }
                 return res.json({ success: true, message: 'Perfil y contraseña actualizados correctamente' });
             });
@@ -92,6 +102,11 @@ exports.actualizarPerfil = async (req, res) => {
                 UPDATE usuarios
                 SET nombres = ?, apellidos = ?, cedula = ?, telefono1 = ?, telefono2 = ?
                 WHERE id_usuario = ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM usuarios otro
+                      WHERE UPPER(TRIM(otro.cedula)) = ?
+                        AND otro.id_usuario <> ?
+                  )
             `;
 
             db.query(querySinPass, [
@@ -100,14 +115,19 @@ exports.actualizarPerfil = async (req, res) => {
                 cedulaLimpia,
                 tel1Limpio,
                 tel2Limpio,
+                id_usuario,
+                cedulaLimpia,
                 id_usuario
-            ], (err) => {
+            ], (err, resultado) => {
                 if (err) {
                     if (err.code === 'ER_DUP_ENTRY') {
                         return res.status(409).json({ success: false, message: 'La cédula ya está registrada' });
                     }
                     console.error(err);
                     return res.status(500).json({ success: false, message: 'Error al actualizar los datos del perfil' });
+                }
+                if (!resultado || resultado.affectedRows !== 1) {
+                    return res.status(409).json({ success: false, message: 'La cédula ya pertenece a otro usuario o la cuenta ya no existe' });
                 }
                 return res.json({ success: true, message: 'Perfil actualizado correctamente' });
             });

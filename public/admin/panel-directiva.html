@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Panel Directiva | Club Jaguares</title>
-    <link rel="stylesheet" href="admin-style.css">
+    <link rel="stylesheet" href="admin-style.css?v=inscripcion-1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -682,8 +682,8 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="validacion-formularios.js"></script>
-    <script src="api-client.js"></script>
+    <script src="validacion-formularios.js?v=inscripcion-1"></script>
+    <script src="api-client.js?v=inscripcion-1"></script>
     <script>
         let currentUser = null;
 
@@ -1429,6 +1429,8 @@
             document.getElementById('dir-group-cedula').style.display = propia ? 'flex' : 'none';
             document.getElementById('dir-cedula-off').style.display = propia ? 'none' : 'block';
             document.getElementById('dir-cedula').required = propia;
+            document.getElementById('dir-cedula').disabled = !propia;
+            if (!propia) document.getElementById('dir-cedula').setCustomValidity('');
         }
 
         function alternarTelefonoDir() {
@@ -1436,6 +1438,8 @@
             document.getElementById('dir-telefono').style.display = propio ? 'block' : 'none';
             document.getElementById('dir-telefono-off').style.display = propio ? 'none' : 'block';
             document.getElementById('dir-telefono').required = propio;
+            document.getElementById('dir-telefono').disabled = !propio;
+            if (!propio) document.getElementById('dir-telefono').setCustomValidity('');
         }
 
         document.querySelectorAll('input[name="dir-modo-rep"]').forEach(r => r.addEventListener('change', aplicarModoRep));
@@ -1465,7 +1469,7 @@
 
         document.getElementById('form-dir-atleta').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!ValidacionJaguares.validarFormulario(e.target)) return;
+            if (!validarFormularioJaguares(e.target)) return;
             const form = e.target;
             const nuevoRep = modoRep() === 'nuevo';
             const rep = nuevoRep

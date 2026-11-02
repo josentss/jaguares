@@ -10,6 +10,12 @@ function urlDeArchivo(file) {
     return file.path || file.secure_url || null;
 }
 
+function validarCuerpo(req, res) {
+    if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) return true;
+    res.status(400).json({ success: false, message: 'Envía los datos del formulario de inscripción' });
+    return false;
+}
+
 exports.obtenerAtletasPorRepresentante = (req, res) => {
     const { id } = req.params;
     if (!esEnteroPositivo(id)) {
@@ -43,6 +49,7 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
 };
 
 async function registrarAtletaBase(req, res, { id_representante, estado, mensaje, representanteNuevo }) {
+    if (!validarCuerpo(req, res)) return;
     const nombres   = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
     const fecha_nac = typeof req.body.fecha_nac === 'string' ? req.body.fecha_nac.trim() : '';
@@ -133,6 +140,7 @@ exports.registrarAtleta = (req, res) => registrarAtletaBase(req, res, {
 });
 
 exports.registrarAtletaDirectiva = async (req, res) => {
+    if (!validarCuerpo(req, res)) return;
     let representanteNuevo;
     if (!esIndicadorFormularioValido(req.body.representante_nuevo)) {
         return res.status(400).json({ success: false, message: 'Selecciona un representante existente o nuevo' });

@@ -3,6 +3,8 @@
 Fecha de preparación: 2026-11-02. Versión objetivo: `main` `8d5855f5196b5575b0caed44bd49df38ec14c946`.
 Esta es una guía para ejecutar; sus casillas no significan que las pruebas autenticadas se hayan realizado.
 
+**Incidencia posterior:** el propietario no pudo continuar por el bloqueo de inscripción en ambos paneles. La corrección y las pruebas completas de aplicación/BD están en [REVISION_FUNCIONAL_INSCRIPCIONES.md](REVISION_FUNCIONAL_INSCRIPCIONES.md), rama `fix/inscripcion-flujo-completo`. Tras revisión y despliegue autorizado, comenzar por ATL/DIR y el recorrido cuenta → inscripción → activación → pago. No dar por funcional el alta solo porque cargue el panel o pasen las pruebas de campos aislados.
+
 ## Evidencia verificada
 
 - [PR #7](https://github.com/josentss/jaguares/pull/7) fusionado; incluye `31e71ac`. Main local/remoto coinciden y el árbol de archivos de la fusión es idéntico al de ese commit.

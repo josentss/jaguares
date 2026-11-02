@@ -92,7 +92,7 @@
     function tipoCampo(campo) { return CAMPOS[campo.id]?.[0]; }
 
     function esCampoOculto(campo) {
-        if (campo.disabled) return true;
+        if (campo.matches(':disabled')) return true;
         // offsetParent también es null para elementos fijos/otros layouts visibles.
         for (let elemento = campo; elemento && elemento.nodeType === 1; elemento = elemento.parentElement) {
             const estilo = getComputedStyle(elemento);
@@ -106,6 +106,7 @@
         if (!tipo) return true;
         if (esCampoOculto(campo)) {
             campo.setCustomValidity('');
+            campo.removeAttribute('aria-invalid');
             return true;
         }
         if (tipo === 'cedula' && campo.value) {
@@ -113,13 +114,31 @@
         }
         const mensaje = errorCampo(tipo, campo.value, campo.required);
         campo.setCustomValidity(mensaje);
+        if (mensaje) campo.setAttribute('aria-invalid', 'true');
+        else campo.removeAttribute('aria-invalid');
         return !mensaje;
     }
 
+    function limpiarMensaje(formulario) {
+        formulario.querySelector('.form-validation-message')?.remove();
+    }
+
     function validarFormulario(formulario) {
-        const campos = formulario.querySelectorAll('input, textarea');
+        const campos = formulario.querySelectorAll('input, select, textarea');
         for (const campo of campos) validarCampo(campo);
-        if (formulario.checkValidity()) return true;
+        limpiarMensaje(formulario);
+        const invalido = [...campos].find(campo => campo.willValidate && !campo.validity.valid);
+        if (!invalido) return true;
+        const mensaje = document.createElement('p');
+        mensaje.className = 'form-validation-message';
+        mensaje.setAttribute('role', 'alert');
+        const etiqueta = invalido.labels?.[0]?.textContent.trim() ||
+            invalido.closest('.form-group-panel')?.querySelector('label')?.textContent.trim();
+        mensaje.textContent = `${etiqueta ? etiqueta + ': ' : ''}${invalido.validationMessage}`;
+        const boton = formulario.querySelector('button[type="submit"]');
+        if (boton?.parentElement === formulario) formulario.insertBefore(mensaje, boton);
+        else formulario.prepend(mensaje);
+        invalido.setAttribute('aria-invalid', 'true');
         formulario.reportValidity();
         return false;
     }
@@ -162,9 +181,24 @@
             campo.addEventListener('blur', () => validarCampo(campo));
         }
         for (const form of document.querySelectorAll('form')) {
+            // El navegador valida antes de emitir submit. Los errores custom
+            // antiguos deben recalcularse antes, también tras autofill/cambiar modo.
+            form.noValidate = true;
             form.addEventListener('submit', event => {
-                if (!validarFormulario(form)) event.preventDefault();
+                if (!validarFormulario(form)) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
             }, true);
+            form.addEventListener('input', () => limpiarMensaje(form));
+            form.addEventListener('change', () => limpiarMensaje(form));
+            form.addEventListener('reset', () => {
+                limpiarMensaje(form);
+                for (const campo of form.querySelectorAll('input, select, textarea')) {
+                    campo.setCustomValidity('');
+                    campo.removeAttribute('aria-invalid');
+                }
+            });
         }
     });
     window.ValidacionJaguares = { validarFormulario, validarCampo, errorCampo, esEdadValida };

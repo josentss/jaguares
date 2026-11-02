@@ -5,7 +5,7 @@
 > **Última actualización documental:** 2026-11-02  
 > **Base comprobada:** `main` local/remoto — commit `8d5855f5196b5575b0caed44bd49df38ec14c946`
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#7 fusionados. PR #7 y CI verificados; registro Vercel/GitHub del SHA actual en entorno Production completado. Lecturas y navegación anónima de la web pública verificadas; flujos autenticados y datos históricos reales pendientes de validación. Continuidad documental en rama `docs/verificacion-pr7-web`; esta sesión no fusionó ni desplegó cambios.
+> **Estado:** PR #1–#7 fusionados. El propietario reportó un bloqueador de inscripción en ambos paneles, con cédula propia/heredada. Corrección funcional en `fix/inscripcion-flujo-completo`, validada localmente con 89 escenarios en Node 22 y Node 24; PR/CI remoto pendientes al preparar esta entrega. No se fusionó ni desplegó esta corrección. Prioridad: recuperar y confirmar los flujos existentes antes de añadir módulos.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -176,6 +176,20 @@ Ambas suites PostgreSQL exigen destino explícito local `jaguares_test`, sin par
 
 Las casillas representan pruebas pendientes del propietario; no equivalen a pruebas ejecutadas. Las operaciones que guardan/cambian datos se reservan para un entorno con BD y archivos de pruebas. No se crean registros ficticios ni se fuerzan fallos contra producción para completar el listado.
 
+### Bloqueador funcional de inscripción — corrección prioritaria
+
+Reporte del propietario: botón sin respuesta en ambos paneles, tanto con cédula propia como heredada; pagos de atletas aprobados sí funcionan. La navegación anónima y las pruebas de campos aislados anteriores **no acreditaban una inscripción completa**. Se amplió la cobertura para comprobar clic → HTTP → sesión/roles → Multer → transacción SQL → persistencia/recarga.
+
+Diagnóstico, revisión por módulos, evidencia y límites: **[REVISION_FUNCIONAL_INSCRIPCIONES.md](REVISION_FUNCIONAL_INSCRIPCIONES.md)**. Se reprodujo un bloqueo por errores personalizados retenidos en controles ocultos y por valores corregidos sin evento de entrada. También se reprodujo, bloqueando el recurso de validación en la prueba, un `ReferenceError` anterior al manejo de errores que deja ambos botones sin POST. La consulta pública encontró los archivos presentes e iguales al main previo: no se afirma que faltasen en el navegador concreto del propietario.
+
+Cambios locales: recalcular validación antes del envío nativo; deshabilitar campos que no aplican; limpiar errores al resetear; mostrar error visible; respaldo de validación HTML si no carga el validador, manteniendo la validación backend obligatoria; versionar recursos cambiados. Se sincronizaron las restricciones ya existentes de pagos con el formulario, sin definir tarifas nuevas. Body ausente/incorrecto y JSON inválido reciben 400, exceso del límite existente 413; no provocan falsos errores internos.
+
+**Pruebas locales ejecutadas:** 64 backend + 25 navegador (14 con APIs simuladas y 11 con aplicación/PostgreSQL reales) en Node 24.15.0 y Node 22.23.4, todas aprobadas; 38 archivos JS con sintaxis correcta en ambas versiones. PostgreSQL 18 desechable, Chromium 141/Playwright 1.56.1, escritorio/móvil. Cloudinary y tasa externa simulados únicamente en su frontera; no se hicieron escrituras productivas. CI mantiene PostgreSQL 16/Node 22 e incorpora la nueva suite de flujos completos, con Playwright aislado para no actualizar las dependencias del lockfile.
+
+Recorridos comprobados: aprobación de cuenta pendiente, onboarding, inscripciones sucesivas propias/heredadas desde ambos paneles, nuevo representante, rollback SQL y reintento, carga/error/reintento de documentos, activación, efectivo, transferencia, auditoría e historial, rechazo de pago tras inactivación, permisos entre familias, notificaciones y creación/cancelación de evento. No equivale a probar datos históricos/constraints reales de Supabase, Cloudinary real ni todos los estados del proyecto.
+
+Siguiente aceptación: revisar PR/CI y, tras despliegue autorizado, repetir primero las inscripciones en ambos paneles y el recorrido activar → pagar. Mantener nuevos módulos en espera hasta confirmar la funcionalidad con el propietario.
+
 
 ## 4. Backlog funcional completo — por decidir e implementar
 
@@ -210,6 +224,7 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 
 | Prioridad | Bloque | Criterio de finalización |
 | --- | --- | --- |
+| P0 — bloqueador funcional actual | Recuperar la inscripción y comprobar los recorridos principales | Hotfix en `fix/inscripcion-flujo-completo`; 89 escenarios locales aprobados, pendientes revisión/CI remoto y confirmación manual tras despliegue autorizado |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
 | P2 | Migraciones, auditoría y ciclo de vida | Esquema reproducible, eventos trazables, archivado y política de borrado definida |
@@ -272,6 +287,7 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | Inscripción: 0–18 años cumplidos a fecha de registro | PR #4 | Implementado; fecha de corte competitiva pendiente |
 | 2026-11-02 | Altas compuestas atómicas, identidades coordinadas y sufijos heredados preservados | PR #6 | Fusionado; constraints reales pendientes |
 | 2026-11-02 | Revalidar estados concurrentes de pagos/activaciones y unificar valores médicos validados/persistidos | PR #7 | Fusionado; despliegue Production completado según registro, prueba manual autenticada pendiente |
+| 2026-11-02 | Priorizar inscripciones funcionales y pruebas completas de navegador/API/BD | Reporte del propietario; rama `fix/inscripcion-flujo-completo` | Corrección local y 89 escenarios aprobados; revisión/CI y confirmación manual pendientes |
 | 2026-11-02 | Montos fijos, categorías y sanciones | Pendiente de política oficial del club | No definido |
 | 2026-11-02 | Eliminación definitiva y WhatsApp | Pendiente de políticas y consentimiento | No definido |
 
@@ -283,6 +299,7 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | PR #6, main `46ce6bf` | P1: transacciones, duplicados y concurrencia; 53 backend + 10 interfaz locales; CI remoto satisfactorio | Estado inicial «PR pendiente/API bloqueada» reemplazado por verificación actual; constraints/Cloudinary pendientes |
 | 2026-11-02 | PR #7, main `8d5855f` | Seguimiento: 64/64 backend local en Node 22/24; CI Node 22/PostgreSQL 16 con 64 backend + 10 Playwright. Production completado; navegación anónima web real escritorio/móvil satisfactoria | Pruebas autenticadas manuales, archivos/privacidad y constraints reales pendientes; no equivale a validación integral de producción |
 | 2026-11-02 | Rama documental `docs/verificacion-pr7-web` | Evidencia de fusión/CI/Production y guía de 75 casos manuales, sin cambios de código | Documentación local para revisión; resultados manuales del propietario por registrar |
+| 2026-11-02 | Rama `fix/inscripcion-flujo-completo` | Bloqueos de validación/envío corregidos; 64 backend + 25 navegador en Node 22 y 24; PG temporal, sin migraciones ni dependencias nuevas | PR/CI remoto y prueba del propietario tras despliegue autorizado; proveedores/constraints productivos sin validar |
 
 ### Plantilla breve de actualización futura
 

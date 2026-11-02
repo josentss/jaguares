@@ -1,77 +1,73 @@
 const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 
-// Verifica la cookie httpOnly "token". Si la firma no es válida (o no
-// existe, o expiró), se rechaza. A diferencia de la versión anterior,
-// esto ya NO puede falsificarse con un curl mandando cabeceras a mano:
-// el token solo lo pudo emitir el servidor en /api/auth/login, con una
-// clave secreta que el cliente nunca ve.
-exports.verificarSesion = (req, res, next) => {
+function denegar(req, res, codigo, mensaje, redirigir) {
+    if (redirigir && codigo !== 503) return res.redirect('/admin/login.html');
+    return res.status(codigo).json({ success: false, message: mensaje });
+}
+
+function validarSesion(req, res, next, redirigir = false) {
+    if (req.sesionVerificada) return next();
+
     const token = req.cookies?.token;
+    if (!token) return denegar(req, res, 401, 'Acceso denegado. Inicia sesión.', redirigir);
 
-    if (!token) {
-        return res.status(401).json({
-            success: false,
-            message: 'Acceso denegado. No se ha iniciado sesión en el sistema.'
-        });
-    }
-
+    let payload;
     try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET);
-        req.usuarioId = payload.id_usuario;
-        req.usuarioRol = payload.rol;
-        next();
+        payload = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-        return res.status(401).json({
-            success: false,
-            message: 'Sesión inválida o expirada. Vuelve a iniciar sesión.'
-        });
+        return denegar(req, res, 401, 'Sesión inválida o expirada.', redirigir);
     }
-};
 
-// Variante para proteger recursos HTML: redirige a login si no hay sesión.
-exports.verificarSesionRedirect = (req, res, next) => {
-    const token = req.cookies?.token;
-    if (!token) return res.redirect('/admin/login.html');
-    try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET);
-        req.usuarioId = payload.id_usuario;
-        req.usuarioRol = payload.rol;
-        next();
-    } catch (err) {
-        return res.redirect('/admin/login.html');
+    if (!Number.isSafeInteger(payload?.id_usuario) || payload.id_usuario <= 0 ||
+        typeof payload.rol !== 'string') {
+        return denegar(req, res, 401, 'Sesión inválida.', redirigir);
     }
-};
 
-// Middleware factory que verifica sesión y además obliga a roles específicos
-exports.verificarSesionRole = function (roles = []) {
-    return (req, res, next) => {
-        const token = req.cookies?.token;
-        if (!token) return res.status(401).json({ success: false, message: 'Acceso denegado' });
-        try {
-            const payload = jwt.verify(token, process.env.JWT_SECRET);
-            req.usuarioId = payload.id_usuario;
-            req.usuarioRol = payload.rol;
-            if (roles.length && !roles.includes(req.usuarioRol)) {
-                return res.status(403).json({ success: false, message: 'No autorizado (rol)' });
-            }
-            next();
-        } catch (err) {
-            return res.status(401).json({ success: false, message: 'Sesión inválida o expirada' });
+    db.query('SELECT rol, estado FROM usuarios WHERE id_usuario = ?', [payload.id_usuario], (err, rows) => {
+        if (err) {
+            console.error('Error verificando sesión:', err.message);
+            return denegar(req, res, 503, 'No se pudo verificar la sesión.', redirigir);
         }
-    };
+
+        const usuario = rows?.[0];
+        if (!usuario || usuario.rol !== payload.rol) {
+            return denegar(req, res, 401, 'La sesión ya no es válida.', redirigir);
+        }
+
+        if (['pendiente', 'rechazado', 'inactivo'].includes(usuario.estado) ||
+            (usuario.rol === 'representante' && usuario.estado !== 'aprobado')) {
+            return denegar(req, res, 403, 'Cuenta no habilitada. Contacta a la directiva.', redirigir);
+        }
+
+        req.usuarioId = payload.id_usuario;
+        req.usuarioRol = usuario.rol;
+        req.usuarioEstado = usuario.estado;
+        req.sesionVerificada = true;
+        next();
+    });
+}
+
+exports.verificarSesion = (req, res, next) => validarSesion(req, res, next);
+
+exports.verificarSesionRedirect = (req, res, next) =>
+    validarSesion(req, res, next, true);
+
+exports.verificarSesionRole = (roles = []) => (req, res, next) => {
+    validarSesion(req, res, () => {
+        if (roles.length && !roles.includes(req.usuarioRol)) {
+            return res.status(403).json({ success: false, message: 'No autorizado (rol)' });
+        }
+        next();
+    });
 };
 
-// Este middleware es más estricto: solo deja pasar a la Directiva o Staff.
-// Debe usarse SIEMPRE después de verificarSesion en la cadena de la ruta.
 exports.esDirectiva = (req, res, next) => {
-    const rolesAutorizados = ['admin', 'staff', 'directiva'];
-
-    if (!rolesAutorizados.includes(req.usuarioRol)) {
+    if (!['admin', 'staff', 'directiva'].includes(req.usuarioRol)) {
         return res.status(403).json({
             success: false,
             message: 'Acceso prohibido. Requiere privilegios de administración.'
         });
     }
-
     next();
 };

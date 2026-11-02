@@ -48,6 +48,7 @@ tabRegister.addEventListener('click', () => {
 // --- Registro ---
 formRegister.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!ValidacionJaguares.validarFormulario(formRegister)) return;
     clearAuthFeedback();
     const btn = formRegister.querySelector('button[type="submit"]');
     const btnText = btn.innerHTML;

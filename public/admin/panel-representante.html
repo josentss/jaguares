@@ -63,7 +63,7 @@
             <form id="form-onboarding">
                 <div style="margin-bottom:12px;">
                     <label style="font-weight:600; font-size:0.85rem;">Cédula *</label>
-                    <input type="text" id="ob-cedula" required maxlength="30"
+                    <input type="text" id="ob-cedula" required maxlength="11" placeholder="V-12345678"
                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:4px; box-sizing:border-box;">
                 </div>
                 <div style="margin-bottom:12px;">
@@ -172,7 +172,7 @@
                                     <option value="V-">V-</option>
                                     <option value="E-">E-</option>
                                 </select>
-                                <input type="text" id="atl-cedula" placeholder="Número" inputmode="numeric">
+                                <input type="text" id="atl-cedula" placeholder="Número" inputmode="numeric" minlength="5" maxlength="9">
                             </div>
                             <input type="text" id="atl-cedula-disabled" class="disabled-input"
                                    style="display:none;" disabled
@@ -197,7 +197,7 @@
                                     ¿Tiene propio?
                                 </span>
                             </label>
-                            <input type="text" id="atl-telefono" name="telefono">
+                            <input type="text" id="atl-telefono" name="telefono" maxlength="30">
                             <input type="text" id="atl-telefono-disabled" class="disabled-input"
                                    style="display:none;" disabled
                                    placeholder="Heredará el teléfono del representante">
@@ -313,9 +313,9 @@
             <div class="form-container-panel">
                 <form id="form-mi-perfil">
                     <div class="form-grid">
-                        <div class="form-group-panel"><label>Nombres</label><input type="text" id="perfil-nombres" required></div>
-                        <div class="form-group-panel"><label>Apellidos</label><input type="text" id="perfil-apellidos" required></div>
-                        <div class="form-group-panel"><label>Cédula</label><input type="text" id="perfil-cedula" required></div>
+                        <div class="form-group-panel"><label>Nombres</label><input type="text" id="perfil-nombres" maxlength="80" required></div>
+                        <div class="form-group-panel"><label>Apellidos</label><input type="text" id="perfil-apellidos" maxlength="80" required></div>
+                        <div class="form-group-panel"><label>Cédula</label><input type="text" id="perfil-cedula" placeholder="V-12345678" maxlength="11" required></div>
                         <div class="form-group-panel"><label>Correo</label><input type="email" id="perfil-correo" disabled style="background:#f4f4f4;"></div>
                         <div class="form-group-panel"><label>Teléfono Principal</label><input type="text" id="perfil-tel1" required></div>
                         <div class="form-group-panel"><label>Teléfono Secundario</label><input type="text" id="perfil-tel2"></div>
@@ -326,7 +326,7 @@
                             </button>
                             <div id="password-field-container" style="display: none; margin-top: 15px;">
                                 <label>Nueva Contraseña</label>
-                                <input type="password" id="perfil-password" placeholder="Escriba nueva clave">
+                                <input type="password" id="perfil-password" placeholder="Escriba nueva clave" maxlength="128">
                                 <small style="color: #666;">Deje vacío si cambió de opinión.</small>
                             </div>
                         </div>
@@ -337,6 +337,7 @@
         </section>
     </div>
 
+<script src="validacion-formularios.js"></script>
 <script src="api-client.js"></script>
 <script>
         let repCache = {};
@@ -349,7 +350,8 @@
             toast.className = `toast ${type}`;
             let iconClass = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
 
-            toast.innerHTML = `<i class="fas ${iconClass} toast-icon"></i> <div class="toast-message">${message}</div>`;
+            toast.innerHTML = `<i class="fas ${iconClass} toast-icon"></i> <div class="toast-message"></div>`;
+            toast.querySelector(".toast-message").textContent = String(message ?? "");
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.animation = 'slideOutRight 0.4s ease forwards';
@@ -828,6 +830,7 @@
             // --- SUBMIT: GESTIÓN DE MI PERFIL ---
             document.getElementById('form-mi-perfil').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                if (!ValidacionJaguares.validarFormulario(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
                 const btnText = btn.innerHTML;
                 btn.innerHTML = 'Guardando... <i class="fas fa-spinner fa-spin"></i>';
@@ -877,6 +880,7 @@
             // --- SUBMIT: ONBOARDING PERFIL ---
             document.getElementById('form-onboarding').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                if (!ValidacionJaguares.validarFormulario(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
                 const btnText = btn.innerHTML;
                 btn.disabled = true;
@@ -937,6 +941,7 @@
 
             document.getElementById('form-add-atleta').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                if (!ValidacionJaguares.validarFormulario(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
                 const btnText = btn.innerHTML;
 

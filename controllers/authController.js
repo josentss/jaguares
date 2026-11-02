@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { esEmailValido, esPasswordValida, normalizarTexto } = require('../utils/validators');
+const { esEmailValido, esPasswordValida, normalizarTexto, esNombreValido } = require('../utils/validators');
 const { logAdminRequest } = require('../utils/requestLogger');
 
 const COOKIE_OPTS = {
@@ -99,10 +99,12 @@ exports.register = async (req, res) => {
     const email = normalizarTexto(req.body.email, 120).toLowerCase();
     const { password } = req.body;
 
-    if (!nombres || !apellidos || !esEmailValido(email) || !esPasswordValida(password)) {
+    if (!esNombreValido(req.body.nombres) || !esNombreValido(req.body.apellidos) ||
+        !esEmailValido(req.body.email) || req.body.email.length > 120 ||
+        !esPasswordValida(password)) {
         return res.status(400).json({
             success: false,
-            message: 'Datos inválidos. Revisa nombres, correo y contraseña (mínimo 8 caracteres).'
+            message: 'Datos inválidos. Nombres con letras (2–80), correo válido (máx. 120) y clave de 8–128 caracteres.'
         });
     }
 

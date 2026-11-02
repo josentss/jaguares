@@ -44,20 +44,20 @@
                 <div class="input-row">
                     <div class="input-group">
                         <i class="fas fa-user"></i>
-                        <input type="text" id="reg-names" placeholder="Nombres" required>
+                        <input type="text" id="reg-names" placeholder="Nombres" maxlength="80" autocomplete="given-name" required>
                     </div>
                     <div class="input-group">
                         <i class="fas fa-user"></i>
-                        <input type="text" id="reg-lastnames" placeholder="Apellidos" required>
+                        <input type="text" id="reg-lastnames" placeholder="Apellidos" maxlength="80" autocomplete="family-name" required>
                     </div>
                 </div>
                 <div class="input-group">
                     <i class="fas fa-envelope"></i>
-                    <input type="email" id="reg-email" placeholder="Correo Electrónico" required>
+                    <input type="email" id="reg-email" placeholder="Correo Electrónico" maxlength="120" autocomplete="email" required>
                 </div>
                 <div class="input-group">
                     <i class="fas fa-lock"></i>
-                    <input type="password" id="reg-password" placeholder="Contraseña (Mín. 8 caracteres)" required minlength="8">
+                    <input type="password" id="reg-password" placeholder="Contraseña (8 a 128 caracteres)" required minlength="8" maxlength="128" autocomplete="new-password">
                 </div>
 
                 <p class="info-note"><i class="fas fa-info-circle"></i> Todo nuevo registro debe esperar la aceptación de la Directiva.</p>
@@ -67,6 +67,7 @@
         </div>
     </div>
 
-    <script src="admin-script.js"></script>
+    <script src="validacion-formularios.js"></script>
+        <script src="admin-script.js"></script>
 </body>
 </html>

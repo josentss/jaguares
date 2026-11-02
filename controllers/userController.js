@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
+const { esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esPasswordValida } = require('../utils/validators');
 
 // Obtener los datos del perfil de un usuario
 exports.obtenerPerfil = (req, res) => {
@@ -34,22 +35,29 @@ exports.actualizarPerfil = async (req, res) => {
     const { nombres, apellidos, cedula, telefono1, telefono2, password } = req.body;
 
     const id_usuario = req.usuarioId;
-    const cedulaLimpia = String(cedula || '').trim();
-    const tel1Limpio = String(telefono1 || '').trim();
+    if (!esNombreValido(nombres) || !esNombreValido(apellidos)) {
+        return res.status(400).json({ success: false, message: 'Nombres y apellidos: solo letras, espacios, tildes, guiones o apóstrofes (2–80 caracteres)' });
+    }
+    if (!esCedulaValida(cedula)) {
+        return res.status(400).json({ success: false, message: 'Cédula inválida. Utiliza V- o E- y de 5 a 9 dígitos' });
+    }
+    if (!esTelefonoValido(telefono1) ||
+        (telefono2 != null && telefono2 !== '' && !esTelefonoValido(telefono2))) {
+        return res.status(400).json({ success: false, message: 'Teléfono inválido. Usa un número completo con código de área o país' });
+    }
+    if (password !== undefined && password !== null && password !== '' && !esPasswordValida(password)) {
+        return res.status(400).json({ success: false, message: 'La contraseña nueva debe contener entre 8 y 128 caracteres válidos' });
+    }
 
-    if (!String(nombres || '').trim() || !String(apellidos || '').trim()) {
-        return res.status(400).json({ success: false, message: 'Nombres y apellidos son obligatorios' });
-    }
-    if (!cedulaLimpia) {
-        return res.status(400).json({ success: false, message: 'La cédula es obligatoria' });
-    }
-    if (!tel1Limpio) {
-        return res.status(400).json({ success: false, message: 'El teléfono principal es obligatorio' });
-    }
+    const nombreLimpio = nombres.trim();
+    const apellidoLimpio = apellidos.trim();
+    const cedulaLimpia = cedula.trim().toUpperCase();
+    const tel1Limpio = normalizarTelefono(telefono1);
+    const tel2Limpio = telefono2 ? normalizarTelefono(telefono2) : null;
 
     try {
         // 1. Si el usuario desea cambiar la contraseña, la encriptamos
-        if (password && password.trim() !== "") {
+        if (password) {
             const saltRounds = 10;
             const nuevoHash = await bcrypt.hash(password, saltRounds);
 
@@ -57,20 +65,33 @@ exports.actualizarPerfil = async (req, res) => {
                 UPDATE usuarios
                 SET nombres = ?, apellidos = ?, cedula = ?, telefono1 = ?, telefono2 = ?, password_hash = ?
                 WHERE id_usuario = ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM usuarios otro
+                      WHERE UPPER(TRIM(otro.cedula)) = ?
+                        AND otro.id_usuario <> ?
+                  )
             `;
 
             db.query(queryConPass, [
-                String(nombres || '').trim(),
-                String(apellidos || '').trim(),
+                nombreLimpio,
+                apellidoLimpio,
                 cedulaLimpia,
                 tel1Limpio,
-                String(telefono2 || '').trim() || null,
+                tel2Limpio,
                 nuevoHash,
+                id_usuario,
+                cedulaLimpia,
                 id_usuario
-            ], (err) => {
+            ], (err, resultado) => {
                 if (err) {
+                    if (err.code === 'ER_DUP_ENTRY') {
+                        return res.status(409).json({ success: false, message: 'La cédula ya está registrada' });
+                    }
                     console.error(err);
                     return res.status(500).json({ success: false, message: 'Error al actualizar el perfil con contraseña' });
+                }
+                if (!resultado || resultado.affectedRows !== 1) {
+                    return res.status(409).json({ success: false, message: 'La cédula ya pertenece a otro usuario o la cuenta ya no existe' });
                 }
                 return res.json({ success: true, message: 'Perfil y contraseña actualizados correctamente' });
             });
@@ -81,19 +102,32 @@ exports.actualizarPerfil = async (req, res) => {
                 UPDATE usuarios
                 SET nombres = ?, apellidos = ?, cedula = ?, telefono1 = ?, telefono2 = ?
                 WHERE id_usuario = ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM usuarios otro
+                      WHERE UPPER(TRIM(otro.cedula)) = ?
+                        AND otro.id_usuario <> ?
+                  )
             `;
 
             db.query(querySinPass, [
-                String(nombres || '').trim(),
-                String(apellidos || '').trim(),
+                nombreLimpio,
+                apellidoLimpio,
                 cedulaLimpia,
                 tel1Limpio,
-                String(telefono2 || '').trim() || null,
+                tel2Limpio,
+                id_usuario,
+                cedulaLimpia,
                 id_usuario
-            ], (err) => {
+            ], (err, resultado) => {
                 if (err) {
+                    if (err.code === 'ER_DUP_ENTRY') {
+                        return res.status(409).json({ success: false, message: 'La cédula ya está registrada' });
+                    }
                     console.error(err);
                     return res.status(500).json({ success: false, message: 'Error al actualizar los datos del perfil' });
+                }
+                if (!resultado || resultado.affectedRows !== 1) {
+                    return res.status(409).json({ success: false, message: 'La cédula ya pertenece a otro usuario o la cuenta ya no existe' });
                 }
                 return res.json({ success: true, message: 'Perfil actualizado correctamente' });
             });

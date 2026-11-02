@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
-const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esFechaISOValida } = require('../utils/validators');
+const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esFechaISOValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esTextoLibreValido } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
 
 function urlDeArchivo(file) {
@@ -65,13 +65,27 @@ function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRe
     const apellidos = normalizarTexto(req.body.apellidos, 80);
     const fecha_nac = String(req.body.fecha_nac || '').trim();
     const direccion = normalizarTexto(req.body.direccion, 255);
-    const telefono  = normalizarTexto(req.body.telefono, 30);
+    const telefono  = req.body.telefono ? normalizarTelefono(req.body.telefono) : '';
     const alergias  = normalizarTexto(
         req.body.allergies_medicas || req.body.alergias_medicas || '',
         500
     );
 
     const heredaCedula = ['1', 'true', true, 'on'].includes(req.body.hereda_cedula);
+
+    if (!esNombreValido(req.body.nombres) || !esNombreValido(req.body.apellidos)) {
+        return res.status(400).json({ success: false, message: 'Nombres y apellidos inválidos: usa letras y separadores habituales (2–80 caracteres)' });
+    }
+    if (!esTextoLibreValido(req.body.direccion, 255) ||
+        !esTextoLibreValido(req.body.allergies_medicas ?? req.body.alergias_medicas ?? '', 500, false)) {
+        return res.status(400).json({ success: false, message: 'Dirección u observaciones médicas inválidas o demasiado largas' });
+    }
+    if (req.body.telefono && !esTelefonoValido(req.body.telefono)) {
+        return res.status(400).json({ success: false, message: 'Teléfono de contacto inválido' });
+    }
+    if (!heredaCedula && !esCedulaValida(req.body.cedula)) {
+        return res.status(400).json({ success: false, message: 'Cédula inválida: utiliza V- o E- y de 5 a 9 dígitos' });
+    }
 
     if (!id_representante || !nombres || !apellidos || !fecha_nac || !direccion) {
         return res.status(400).json({
@@ -163,7 +177,7 @@ function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRe
                 }
 
                 const cedulaRep = rows[0].cedula;
-                if (!cedulaRep) {
+                if (!esCedulaValida(cedulaRep)) {
                     return res.status(400).json({
                         success: false,
                         message: 'El representante no tiene cédula en su perfil. Actualízala primero.'
@@ -190,7 +204,7 @@ function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRe
                 message: 'Debes indicar la cédula del atleta o marcar que hereda la del representante'
             });
         }
-        cedulaRaw = cedulaRaw.replace(/\s+/g, '');
+        cedulaRaw = cedulaRaw.toUpperCase();
         continuarConCedula(cedulaRaw, false);
     }
 }
@@ -220,7 +234,7 @@ exports.registrarAtletaDirectiva = (req, res) => {
     });
 
     if (!['1', 'true', true, 'on'].includes(req.body.representante_nuevo)) {
-        const idRep = Number(req.body.id_representante);
+        const idRep = req.body.id_representante;
         if (!esEnteroPositivo(idRep)) {
             return res.status(400).json({ success: false, message: 'Selecciona un representante' });
         }
@@ -243,10 +257,16 @@ exports.registrarAtletaDirectiva = (req, res) => {
     // ── Representante nuevo ──
     const repNombres   = normalizarTexto(req.body.rep_nombres, 80);
     const repApellidos = normalizarTexto(req.body.rep_apellidos, 80);
-    const repCedula    = normalizarTexto(req.body.rep_cedula, 30).replace(/\s+/g, '');
+    const repCedula    = req.body.rep_cedula.trim().toUpperCase();
     const repCorreo    = normalizarTexto(req.body.rep_correo, 120).toLowerCase();
-    const repTelefono  = normalizarTexto(req.body.rep_telefono, 30);
+    const repTelefono  = normalizarTelefono(req.body.rep_telefono);
     const repPassword  = req.body.rep_password;
+
+    if (!esNombreValido(req.body.rep_nombres) || !esNombreValido(req.body.rep_apellidos) ||
+        !esCedulaValida(req.body.rep_cedula) || !esTelefonoValido(req.body.rep_telefono) ||
+        !esEmailValido(req.body.rep_correo) || req.body.rep_correo.length > 120) {
+        return res.status(400).json({ success: false, message: 'Datos del representante inválidos: verifica nombres, cédula, teléfono y correo' });
+    }
 
     if (!repNombres || !repApellidos || !repCedula || !repTelefono) {
         return res.status(400).json({ success: false, message: 'Completa nombres, apellidos, cédula y teléfono del representante' });
@@ -314,9 +334,7 @@ exports.registrarAtletaDirectiva = (req, res) => {
 // ── Ficha completa (planilla) ──────────────────────────────────────────────
 exports.obtenerAtletaPorId = (req, res) => {
     const { id } = req.params;
-    const idNum = parseInt(id, 10);
-
-    if (!idNum || idNum < 1) {
+    if (!esEnteroPositivo(id)) {
         return res.status(400).json({ success: false, message: 'ID de atleta no válido' });
     }
 
@@ -348,7 +366,7 @@ exports.obtenerAtletaPorId = (req, res) => {
         LIMIT 1
     `;
 
-    db.query(query, [idNum], (err, rows) => {
+    db.query(query, [Number(id)], (err, rows) => {
         if (err) {
             console.error('Error al obtener planilla:', err.code, err.message);
             return res.status(500).json({ success: false, message: 'Error al consultar el atleta' });

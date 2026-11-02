@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
-const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida } = require('../utils/validators');
+const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esFechaISOValida } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
 
 function urlDeArchivo(file) {
@@ -81,7 +81,7 @@ function registrarAtletaBase(req, res, { id_representante, estado, mensaje, alRe
     }
 
     const fecha = new Date(fecha_nac + 'T12:00:00');
-    if (Number.isNaN(fecha.getTime()) || fecha > new Date()) {
+    if (!esFechaISOValida(fecha_nac) || fecha > new Date()) {
         return res.status(400).json({ success: false, message: 'Fecha de nacimiento inválida' });
     }
 

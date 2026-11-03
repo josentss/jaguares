@@ -687,6 +687,8 @@
     <script src="api-client.js?v=inscripcion-1"></script>
     <script>
         let currentUser = null;
+        let planillaPdfEnCurso = false;
+        let planillaImpresionEnCurso = false;
 
         function showToast(msg, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -936,6 +938,8 @@
                 showToast('No hay planilla para imprimir', 'error');
                 return;
             }
+            if (planillaImpresionEnCurso) return;
+            planillaImpresionEnCurso = true;
 
             // Quitar iframe anterior si existe
             const old = document.getElementById('iframe-print-planilla');
@@ -944,7 +948,7 @@
             const iframe = document.createElement('iframe');
             iframe.id = 'iframe-print-planilla';
             iframe.setAttribute('aria-hidden', 'true');
-            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+            iframe.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;pointer-events:none;';
             document.body.appendChild(iframe);
 
             const doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -976,10 +980,6 @@
                         body { padding: 0; }
                         @page { size: A4; margin: 14mm; }
                     }
-                    @media (max-width: 600px) {
-                        .planilla-body { grid-template-columns: 1fr; justify-items: center; }
-                        .planilla-footer { grid-template-columns: 1fr; }
-                    }
                 </style>
             </head><body>${sheet.outerHTML}</body></html>`;
 
@@ -988,18 +988,30 @@
             doc.close();
 
             const win = iframe.contentWindow;
+            let impresionIniciada = false;
+            let limpiezaRealizada = false;
+            let timeoutLimpieza;
+            const limpiar = () => {
+                if (limpiezaRealizada) return;
+                limpiezaRealizada = true;
+                clearTimeout(timeoutLimpieza);
+                iframe.remove();
+                planillaImpresionEnCurso = false;
+            };
+            win.onafterprint = limpiar;
+            timeoutLimpieza = setTimeout(limpiar, 60000);
             const triggerPrint = () => {
+                if (impresionIniciada) return;
+                impresionIniciada = true;
                 try {
                     win.focus();
                     win.print();
                 } catch (e) {
-                    console.error(e);
+                    console.error('No se pudo abrir la impresión de la planilla');
+                    limpiar();
                     showToast('No se pudo abrir el diálogo de impresión', 'error');
                 }
                 // Limpiar después (no inmediato: el diálogo de print es async)
-                setTimeout(() => {
-                    try { iframe.remove(); } catch (_) {}
-                }, 2000);
             };
 
             // Esperar a que carguen imágenes (foto Cloudinary)
@@ -1039,26 +1051,214 @@
                 showToast('No se pudo cargar el generador de PDF', 'error');
                 return;
             }
+            if (planillaPdfEnCurso) return;
 
             const nombre = (sheet.querySelector('.planilla-table td strong')?.textContent || 'atleta')
                 .trim()
-                .replace(/\s+/g, '_');
+                .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
+                .replace(/\s+/g, '_')
+                .replace(/[._]+$/g, '')
+                .slice(0, 80) || 'atleta';
 
+            const boton = sheet.parentElement?.querySelector('.planilla-toolbar button[onclick="descargarPlanillaPDF()"]');
+            const botonEstabaDeshabilitado = boton?.disabled;
+            const imagenesOriginales = Array.from(sheet.querySelectorAll('img'));
+            const estilosExportacion = `
+                .planilla-export-document {
+                    box-sizing: border-box !important;
+                    width: 190mm !important;
+                    min-width: 190mm !important;
+                    max-width: 190mm !important;
+                    margin: 0 !important;
+                    padding: 16px !important;
+                    clear: none !important;
+                    float: none !important;
+                    position: relative !important;
+                    left: auto !important;
+                    right: auto !important;
+                    transform: none !important;
+                    overflow: visible !important;
+                    border-radius: 0 !important;
+                    box-shadow: none !important;
+                    background: #fff !important;
+                }
+                .planilla-export-document .planilla-header {
+                    flex-wrap: nowrap !important;
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .planilla-export-document .planilla-header-text { min-width: 0 !important; }
+                .planilla-export-document .planilla-title,
+                .planilla-export-document .planilla-section-title,
+                .planilla-export-document .planilla-footer,
+                .planilla-export-document .planilla-generated {
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .planilla-export-document .planilla-body {
+                    display: grid !important;
+                    grid-template-columns: 120px minmax(0, 1fr) !important;
+                    justify-items: stretch !important;
+                    gap: 14px !important;
+                    align-items: start !important;
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .planilla-export-document .planilla-foto-frame { width: 120px !important; }
+                .planilla-export-document .planilla-foto-box { flex: none !important; }
+                .planilla-export-document .planilla-table {
+                    width: 100% !important;
+                    table-layout: fixed !important;
+                    font-size: 10pt !important;
+                }
+                .planilla-export-document .planilla-table th { width: 36% !important; }
+                .planilla-export-document .planilla-table th,
+                .planilla-export-document .planilla-table td {
+                    overflow-wrap: anywhere !important;
+                    word-break: break-word !important;
+                }
+                .planilla-export-document .planilla-table tr {
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .planilla-export-document .planilla-footer {
+                    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                }
+                .planilla-export-document .no-foto {
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    color: #666 !important;
+                    background: #f5f5f5 !important;
+                    font: 12px sans-serif !important;
+                }
+            `;
             const opt = {
                 margin:       [10, 10, 12, 10],
                 filename:     `Planilla_Jaguares_${nombre}.pdf`,
                 image:        { type: 'jpeg', quality: 0.95 },
-                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                html2canvas:  {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    windowWidth: Math.max(Math.ceil(210 / 25.4 * 96), document.documentElement.clientWidth),
+                    imageTimeout: 10000,
+                    scrollX: 0,
+                    scrollY: 0,
+                    onrendered: (canvas) => {
+                        const contexto = canvas.getContext('2d');
+                        if (!contexto || canvas.height === 0) return;
+                        let ultimaFilaVisible = -1;
+                        for (let y = canvas.height - 1; y >= 0 && ultimaFilaVisible < 0; y -= 1) {
+                            const pixelesFila = contexto.getImageData(0, y, canvas.width, 1).data;
+                            for (let indice = 0; indice < pixelesFila.length; indice += 4) {
+                                if (pixelesFila[indice] < 250 || pixelesFila[indice + 1] < 250 || pixelesFila[indice + 2] < 250) {
+                                    ultimaFilaVisible = y;
+                                    break;
+                                }
+                            }
+                        }
+                        if (ultimaFilaVisible >= 0 && ultimaFilaVisible < canvas.height - 1) {
+                            const contenido = contexto.getImageData(0, 0, canvas.width, ultimaFilaVisible + 1);
+                            canvas.height = ultimaFilaVisible + 1;
+                            canvas.getContext('2d').putImageData(contenido, 0, 0);
+                        }
+                    },
+                    onclone: (clonedDocument) => {
+                        const bodyClonado = clonedDocument.body;
+                        bodyClonado.className = '';
+                        bodyClonado.style.setProperty('display', 'block', 'important');
+                        bodyClonado.style.setProperty('position', 'static', 'important');
+                        bodyClonado.style.setProperty('width', 'auto', 'important');
+                        bodyClonado.style.setProperty('min-width', '0', 'important');
+                        bodyClonado.style.setProperty('overflow', 'visible', 'important');
+                        bodyClonado.style.setProperty('padding', '0', 'important');
+                        bodyClonado.style.setProperty('margin', '0', 'important');
+                        bodyClonado.style.setProperty('background', '#fff', 'important');
+                        clonedDocument.documentElement.style.setProperty('overflow', 'visible', 'important');
+
+                        const planillaClonada = clonedDocument.querySelector('.html2pdf__container .planilla-sheet');
+                        if (!planillaClonada) return;
+                        planillaClonada.classList.add('planilla-export-document');
+                        planillaClonada.removeAttribute('id');
+                        planillaClonada.querySelectorAll('[id]').forEach((elemento) => elemento.removeAttribute('id'));
+                        const estilos = clonedDocument.createElement('style');
+                        estilos.textContent = estilosExportacion;
+                        planillaClonada.prepend(estilos);
+
+                        const imagenesClonadas = Array.from(planillaClonada.querySelectorAll('img'));
+                        imagenesOriginales.forEach((imagenOriginal, indice) => {
+                            if (imagenOriginal.naturalWidth > 0) return;
+                            const imagenClonada = imagenesClonadas[indice];
+                            if (!imagenClonada) return;
+                            if (imagenClonada.classList.contains('planilla-header-logo')) {
+                                imagenClonada.remove();
+                                return;
+                            }
+                            const caja = imagenClonada.closest('.planilla-foto-box');
+                            if (caja) caja.innerHTML = '<div class="no-foto">Sin foto</div>';
+                        });
+                    }
+                },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: ['avoid-all'] }
+                pagebreak:    {
+                    mode: ['css', 'legacy'],
+                    avoid: [
+                        '.planilla-header',
+                        '.planilla-title',
+                        '.planilla-body',
+                        '.planilla-section-title',
+                        '.planilla-table tr',
+                        '.planilla-footer',
+                        '.planilla-generated'
+                    ]
+                }
             };
 
             try {
+                planillaPdfEnCurso = true;
+                if (boton) {
+                    boton.disabled = true;
+                    boton.setAttribute('aria-busy', 'true');
+                }
+
                 showToast('Generando PDF...', 'success');
+                if (document.fonts?.ready) {
+                    await Promise.race([
+                        document.fonts.ready,
+                        new Promise((resolve) => setTimeout(resolve, 5000))
+                    ]);
+                }
+
+                await Promise.all(imagenesOriginales.map((imagen) => new Promise((resolve) => {
+                    let finalizada = false;
+                    const finalizar = () => {
+                        if (finalizada) return;
+                        finalizada = true;
+                        clearTimeout(limite);
+                        imagen.removeEventListener('load', finalizar);
+                        imagen.removeEventListener('error', finalizar);
+                        resolve();
+                    };
+                    const limite = setTimeout(finalizar, 10000);
+                    imagen.addEventListener('load', finalizar, { once: true });
+                    imagen.addEventListener('error', finalizar, { once: true });
+                    if (imagen.complete) finalizar();
+                })));
+
                 await html2pdf().set(opt).from(sheet).save();
             } catch (err) {
-                console.error(err);
+                console.error('No se pudo completar la exportación de la planilla PDF');
                 showToast('Error al generar el PDF', 'error');
+            } finally {
+                if (boton) {
+                    boton.disabled = Boolean(botonEstabaDeshabilitado);
+                    boton.removeAttribute('aria-busy');
+                }
+                planillaPdfEnCurso = false;
             }
         }
 

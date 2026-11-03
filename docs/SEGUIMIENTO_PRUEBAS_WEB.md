@@ -1,6 +1,6 @@
 # Seguimiento de las pruebas del propietario — bloque de fechas e identidades
 
-Fecha: 2026-11-02. Base remota verificada: `main` `d6d8c38` (PR #8 fusionado), Vercel Production completado. Entrega: [PR #9](https://github.com/josentss/jaguares/pull/9), rama `fix/fechas-duplicados-atletas`, implementación `5772beb`. Este bloque no está fusionado ni desplegado a producción.
+Fecha: 2026-11-03. Base remota verificada: `main` `52cd290` (PR #9 fusionado), árbol `38e8d145`; Vercel Production completado (deployment `7508559246`). El propietario reporta satisfactorio el bloque de fechas e identidades. Se trabaja en rama `fix/planillas-pdf-completas` sobre esa base.
 
 ## Resultados comunicados por el propietario
 
@@ -15,10 +15,10 @@ Esto es confirmación manual del propietario, no una auditoría completa de segu
 | 1 — actual | Nacimientos y pagos se muestran un día antes | **Reproducido.** `pg` convierte DATE a `Date`; el JSON y `new Date(...).toLocaleDateString` dependen de los husos de servidor/navegador. No hay código que reste un día para resolver duplicados. | DATE como texto civil en el pool; formato civil sin desplazamiento. Los instantes conservan su significado. |
 | 1 — actual | Alta de menores de cinco años | **Confirmado.** Regla anterior de PR #4 permitía 0–18 años. El propietario precisa mínimo cinco, máximo dieciocho. | Nuevas inscripciones: 5–18 años cumplidos hoy en Caracas. Misma regla en API y ambos formularios. No asignar categorías ni fijar años absolutos. |
 | 1 — actual | Atletas visualmente iguales dentro de una familia | La repetición exacta ya devolvía 409. **Reproducidos otros dos escapes:** Unicode equivalente y reparto del mismo nombre completo entre nombres/apellidos. La captura por sí sola no prueba que se enviara exactamente la misma fecha. | Comparar nombre completo NFC, espacios y mayúsculas normalizados, misma fecha y representante, dentro del bloqueo/transacción existente. |
-| 2 — siguiente | PDF incompleto/recortado | **Reportado por el propietario.** Exportación del DOM responsive del modal con html2pdf `avoid-all`, sin preparación explícita de ancho/fuentes/imágenes. La causa concreta del recorte requiere reproducción. | Bloque separado: documento de exportación estable, paginación y pruebas reales de PDF con contenido largo, escritorio/móvil y recursos fallidos. No marcar corregido en este bloque. |
+| 2 — bloque actual | PDF incompleto/recortado | **Reproducido en navegador:** la captura con ancho fijo `794px` recortaba horizontalmente en escritorio; paginación podía dividir el cierre y añadir una página vacía. El iframe de impresión usaba ancho cero y activaba la vista móvil. | Documento A4 de ancho estable, preparación de fuentes/imágenes con fallback, filas/títulos protegidos al paginar, recorte de cola blanca, impresión con iframe de 794px y una sola invocación. Playwright valida PDF real renderizado en escritorio/móvil. CI Node 22 + PostgreSQL 16 satisfactorio en [run 41582615224](https://github.com/josentss/jaguares/actions/runs/41582615224). |
 | 3 | Pantallazo del panel sin sesión | **Confirmado en código:** HTML estático visible antes de resolver `/api/auth/me`. Las APIs conservan permisos y los datos se solicitan tras autenticar; el pantallazo no demuestra fuga de datos. | Ocultar contenido hasta validar sesión/rol y comprobar retrasos, errores, navegación atrás y cierre de sesión. |
 | 4 | Eventos: límites y hora | **Confirmados:** fecha sin `min` y hora ausente. El backend compara una medianoche UTC con el instante actual; rechaza hoy y normaliza fechas imposibles. | Validación civil estricta en Caracas y límites nativos. Después, hora con contrato y migración aditiva revisados; no inventar hora para eventos históricos. |
-| 5 — requiere política oficial | Deudas, mensualidad fija y selector de períodos | Solicitud funcional válida, **pendiente de definición** de tarifa, moneda, vigencia, períodos y excepciones. No es una corrección aislada del calendario. | Modelo de cargos/deudas y cálculo del servidor, con historia; PR separado después de acordar reglas. |
+| 5 — requiere política oficial | Deudas y mensualidad fija | El propietario solicita para una fase posterior: importe mensual fijo, conversión automática a la moneda elegida y mostrar solo lo que el representante debe. **No implementarlo ahora.** | Acordar tarifa, vigencia, fuente/tasa y momento de conversión, períodos y excepciones antes de modelar cargos/deudas; conservar historial. |
 
 Los eventos cancelados/completados permanecen en administración y salen del calendario público: conservar ese historial es coherente. Los controles nativos de fecha pueden mostrar años deshabilitados aunque `min/max` impidan seleccionarlos; no hace falta crear otro calendario para aplicar límites.
 
@@ -56,4 +56,22 @@ Riesgos previos que permanecen: constraints reales/escritores externos sin audit
 - [ ] Efectivo y transferencia de prueba con fecha 02/11/2026: historial y directiva muestran 02/11/2026; comprobar aprobación/rechazo.
 - [ ] Repetir en móvil; comprobar que corregir datos inválidos y cambiar propia/heredada continúa enviando.
 
-Los problemas de PDF, entrada visual al panel, hora/validación de eventos y finanzas continúan pendientes de sus respectivos bloques.
+El PDF y la impresión ya están corregidos en la rama actual; esperan revisión y CI. La entrada visual al panel, hora/validación de eventos y finanzas continúan pendientes de sus respectivos bloques.
+
+## Estado del bloque y entrega — 2026-11-03
+
+- PR #9 está fusionado en `main` (`52cd290`); el registro de Vercel indica Production satisfactorio y el propietario confirma manualmente el resultado. No se ejecutaron formularios autenticados contra producción.
+- La causa del recorte del PDF se reprodujo con datos sintéticos: ancho fijo en la captura, diseño heredado del panel/modal y saltos de página inestables. El PDF ahora usa ancho A4 independiente del móvil, espera recursos, reemplaza imágenes fallidas, evita partir filas y recorta la banda blanca sobrante que producía una hoja vacía. La impresión dejó de usar iframe de ancho cero y el disparador ya es idempotente.
+- Verificación: 22/22 pruebas navegador en Node 24.15.0 y 22.23.4 (incluye PDF real multipágina parseado/renderizado por PDF.js y la impresión A4); 36/36 backend sin PostgreSQL en ambas versiones; sintaxis de 41 JavaScript y el script inline del panel en ambas versiones.
+- **Limitación local comprobada:** PostgreSQL 18 temporal no pudo iniciar porque el entorno negó enlazar `127.0.0.1` (`Permission denied`). No se ejecutaron localmente `pagos-pg`, `integridad-pg` ni `flujos-web-pg`; esas pruebas terminaron satisfactoriamente en el CI con PostgreSQL 16 ([run 41582615224](https://github.com/josentss/jaguares/actions/runs/41582615224)). No se accedió ni escribió en Supabase de producción.
+- La fase financiera sigue pendiente: monto fijo, conversión de moneda seleccionada y deuda individual son únicamente una solicitud futura, no reglas aprobadas.
+
+### Aceptación manual del PDF después del merge/deploy autorizado
+
+- [ ] Abrir la misma ficha en directiva en escritorio y móvil; Descargar PDF debe mantener nombre, nacimiento, contacto, dirección, observaciones y datos del representante completos, con columnas legibles y sin recortes.
+- [ ] Probar una ficha con fotografía disponible y otra sin foto o con recurso fallido: la ficha debe descargarse y conservar un espacio de foto legible.
+- [ ] Revisar que fichas de varias páginas continúen hasta el último dato y que no aparezca una página vacía al final.
+- [ ] Imprimir desde escritorio y móvil; la impresión debe conservar la distribución de dos columnas y el contenido completo.
+- [ ] Si un navegador no permite generar el PDF, repetir una vez después de recarga completa y registrar dispositivo, acción y mensaje sin compartir datos personales.
+
+El siguiente bloque recomendado después de este PR es ocultar el contenido del panel hasta verificar sesión/rol; eventos y hora irán después. Las reglas financieras continúan fuera de alcance.

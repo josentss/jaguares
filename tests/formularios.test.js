@@ -206,12 +206,12 @@ test('inscripción: valida y guarda la misma observación médica con cualquiera
 });
 
 
-test('edad real: hasta 18 años cumplidos, sin permitir 19 ni fechas futuras', () => {
+test('edad real: entre 5 y 18 años cumplidos, sin permitir menores de 5 ni fechas futuras', () => {
     const hoy = '2026-11-02';
-    for (const fecha of ['2007-11-03', '2008-11-02', '2010-01-01', '2026-11-02']) {
+    for (const fecha of ['2007-11-03', '2008-11-02', '2010-01-01', '2021-11-02']) {
         assert.equal(v.esEdadAtletaValida(fecha, hoy), true, fecha);
     }
-    for (const fecha of ['2007-11-02', '1908-06-16', '2026-11-03', '2026-02-30']) {
+    for (const fecha of ['2007-11-02', '1908-06-16', '2021-11-03', '2026-11-02', '2026-11-03', '2026-02-30']) {
         assert.equal(v.esEdadAtletaValida(fecha, hoy), false, fecha);
     }
 });

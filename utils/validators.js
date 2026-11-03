@@ -96,7 +96,7 @@ exports.esEdadAtletaValida = (fechaNacimiento, hoyISO) => {
     const [an, mn, dn] = fechaNacimiento.split('-').map(Number);
     const [ah, mh, dh] = hoy.split('-').map(Number);
     const edad = ah - an - (mh < mn || (mh === mn && dh < dn) ? 1 : 0);
-    return fechaNacimiento <= hoy && edad >= 0 && edad <= 18;
+    return fechaNacimiento <= hoy && edad >= 5 && edad <= 18;
 };
 
 /** No validar la existencia de una dirección con expresiones regulares.

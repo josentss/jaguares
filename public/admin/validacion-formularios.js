@@ -30,6 +30,7 @@
     };
 
     function fechaVenezuela() {
+        if (window.FechasJaguares) return window.FechasJaguares.hoyVenezuela();
         const partes = new Intl.DateTimeFormat('en-US', {
             timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit'
         }).formatToParts(new Date());
@@ -38,13 +39,30 @@
     }
 
     function esEdadValida(fecha, hoy = fechaVenezuela()) {
+        if (window.FechasJaguares) return window.FechasJaguares.esEdadValida(fecha, hoy);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false;
         const fechaReal = new Date(fecha + 'T12:00:00Z');
         if (Number.isNaN(fechaReal.getTime()) || fechaReal.toISOString().slice(0,10) !== fecha) return false;
         const [an,mn,dn] = fecha.split('-').map(Number);
         const [ah,mh,dh] = hoy.split('-').map(Number);
         const edad = ah - an - (mh < mn || (mh === mn && dh < dn) ? 1 : 0);
-        return fecha <= hoy && edad >= 0 && edad <= 18;
+        return fecha <= hoy && edad >= 5 && edad <= 18;
+    }
+
+    function actualizarLimitesNacimiento(campo) {
+        const hoy = fechaVenezuela();
+        let limites = window.FechasJaguares?.limitesNacimientoAtleta(hoy);
+        if (!limites) {
+            // Respaldo si no cargó el recurso de fechas: no bloquear el formulario.
+            const [year, mes, dia] = hoy.split('-').map(Number);
+            const aniversario = edad => new Date(Date.UTC(year - edad, mes - 1,
+                Math.min(dia, new Date(Date.UTC(year - edad, mes, 0)).getUTCDate())));
+            const minimo = aniversario(19);
+            minimo.setUTCDate(minimo.getUTCDate() + 1);
+            limites = { min: minimo.toISOString().slice(0, 10), max: aniversario(5).toISOString().slice(0, 10) };
+        }
+        campo.min = limites.min;
+        campo.max = limites.max;
     }
 
     function errorCampo(tipo, valor, requerido) {
@@ -78,7 +96,7 @@
                     : '';
             case 'fecha-atleta':
                 return esEdadValida(v) ? ''
-                    : 'El atleta debe tener entre 0 y 18 años cumplidos. Revisa la fecha de nacimiento.';
+                    : 'El atleta debe tener entre 5 y 18 años cumplidos. Revisa la fecha de nacimiento.';
             case 'correo':
                 return v.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
                     ? '' : 'Introduce un correo válido (máximo 120 caracteres).';
@@ -112,6 +130,7 @@
         if (tipo === 'cedula' && campo.value) {
             campo.value = campo.value.toUpperCase();
         }
+        if (tipo === 'fecha-atleta') actualizarLimitesNacimiento(campo);
         const mensaje = errorCampo(tipo, campo.value, campo.required);
         campo.setCustomValidity(mensaje);
         if (mensaje) campo.setAttribute('aria-invalid', 'true');
@@ -153,12 +172,8 @@
             if (tipo === 'telefono') campo.inputMode = 'tel';
             if (tipo === 'cedula') campo.placeholder = 'V-12345678';
             if (tipo === 'fecha-atleta') {
-                const hoy = fechaVenezuela();
-                const [y,m,d] = hoy.split('-').map(Number);
-                const primeraFecha = new Date(Date.UTC(y - 19, m - 1, d + 1))
-                    .toISOString().slice(0, 10);
-                campo.min = primeraFecha;
-                campo.max = hoy;
+                actualizarLimitesNacimiento(campo);
+                campo.addEventListener('focus', () => actualizarLimitesNacimiento(campo));
             }
             campo.addEventListener('beforeinput', (evento) => {
                 if (!evento.data || evento.isComposing) return;

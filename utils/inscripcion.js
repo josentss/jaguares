@@ -1,6 +1,10 @@
 const { conIdentidades, comprobarUsuario, ErrorIntegridad } = require('./integridad');
 const { esCedulaValida } = require('./validators');
 
+function nombreCompletoNormalizado({ nombres, apellidos }) {
+    return `${nombres ?? ''} ${apellidos ?? ''}`.normalize('NFC').trim().replace(/\s+/gu, ' ').toLowerCase();
+}
+
 async function inscribir({ idRepresentante, representanteNuevo, atleta, estado }) {
     return conIdentidades(async client => {
         let id = idRepresentante;
@@ -21,13 +25,15 @@ async function inscribir({ idRepresentante, representanteNuevo, atleta, estado }
             throw new ErrorIntegridad(409, 'Representante no encontrado o no aprobado');
         }
 
-        // Exact repeat within one family, not a global identity inference from
-        // names. Different representatives sharing names are not merged.
-        const { rows: repetidos } = await client.query(`SELECT id_atleta FROM atletas
-            WHERE id_representante = $1 AND LOWER(TRIM(nombres)) = LOWER($2)
-              AND LOWER(TRIM(apellidos)) = LOWER($3) AND fecha_nacimiento = $4::date LIMIT 1`,
-        [id, atleta.nombres, atleta.apellidos, atleta.fecha]);
-        if (repetidos.length) throw new ErrorIntegridad(409, 'Este atleta ya está registrado con el representante');
+        // Comparar el nombre completo evita eludir la regla repartiendo campos
+        // o usando Unicode equivalente. No quitar tildes ni inferir identidades
+        // entre familias. El bloqueo transaccional también cubre esta lectura.
+        const { rows: candidatos } = await client.query(`SELECT nombres, apellidos FROM atletas
+            WHERE id_representante = $1 AND fecha_nacimiento = $2::date`, [id, atleta.fecha]);
+        const nombre = nombreCompletoNormalizado(atleta);
+        if (candidatos.some(candidato => nombreCompletoNormalizado(candidato) === nombre)) {
+            throw new ErrorIntegridad(409, 'Este atleta ya está registrado con el representante');
+        }
 
         let cedula = atleta.cedula;
         if (atleta.heredada) {

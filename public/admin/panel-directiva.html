@@ -682,7 +682,8 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="validacion-formularios.js?v=inscripcion-1"></script>
+    <script src="fechas.js?v=fechas-1"></script>
+    <script src="validacion-formularios.js?v=fechas-1"></script>
     <script src="api-client.js?v=inscripcion-1"></script>
     <script>
         let currentUser = null;
@@ -699,8 +700,16 @@
         }
 
         function formatFecha(fechaISO) {
-            if (!fechaISO) return 'N/A';
-            return new Date(fechaISO).toLocaleDateString('es-VE');
+            if (window.FechasJaguares) return window.FechasJaguares.formatearFechaCivil(fechaISO);
+            const partes = /^(\d{4})-(\d{2})-(\d{2})(?:T|$)/.exec(String(fechaISO || ''));
+            return partes ? `${Number(partes[3])}/${Number(partes[2])}/${partes[1]}` : 'N/A';
+        }
+
+        function formatFechaInstante(valor) {
+            if (window.FechasJaguares) return window.FechasJaguares.formatearInstante(valor);
+            const fecha = valor ? new Date(valor) : new Date(NaN);
+            return Number.isNaN(fecha.getTime()) ? 'N/A'
+                : fecha.toLocaleDateString('es-VE', { timeZone: 'America/Caracas' });
         }
 
         function getBadgeClase(estado) {
@@ -877,7 +886,7 @@
                 </div>
 
                 <p class="planilla-generated">
-                    Generado digitalmente · Club Jaguares · ${esc(new Date().toLocaleDateString('es-VE'))}
+                    Generado digitalmente · Club Jaguares · ${esc(new Date().toLocaleDateString('es-VE', { timeZone: 'America/Caracas' }))}
                     · ID atleta: ${esc(a.id_atleta)}
                 </p>
             </div>`;
@@ -1183,7 +1192,7 @@
                 const tasaBCV = parseFloat(data.tasa_bcv || (data.metricas && data.metricas.tasa_bcv) || 36.50);
                 document.getElementById('stat-tasa-bcv').textContent = `${tasaBCV.toFixed(2)} Bs`;
                 document.getElementById('stat-tasa-fecha').textContent = data.tasa_fecha
-                    ? `Fecha: ${formatFecha(data.tasa_fecha)}`
+                    ? `Fecha: ${formatFechaInstante(data.tasa_fecha)}`
                     : 'Fecha: N/A (valor por defecto)';
 
                 if (data.pagos && data.pagos.length > 0) {
@@ -1214,7 +1223,7 @@
                     `${tasaBCV.toFixed(2)} Bs/$`;
 
                 document.getElementById('stat-tasa-fecha').textContent = data.tasa_fecha
-                    ? `Fecha: ${formatFecha(data.tasa_fecha)}`
+                    ? `Fecha: ${formatFechaInstante(data.tasa_fecha)}`
                     : 'Fecha: N/A (valor por defecto)';
 
                 const bodyAtletas = document.getElementById('body-atletas');
@@ -1454,7 +1463,6 @@
         document.getElementById('dir-rep').addEventListener('change', actualizarNotaRep);
         document.getElementById('dir-has-cedula').addEventListener('change', alternarCedulaDir);
         document.getElementById('dir-has-telefono').addEventListener('change', alternarTelefonoDir);
-        document.getElementById('dir-fecha-nac').max = new Date().toISOString().split('T')[0];
 
         document.getElementById('dir-foto').addEventListener('change', (e) => {
             const f = e.target.files[0];
@@ -1656,13 +1664,10 @@
 
         function formatFechaEvento(fecha) {
             if (!fecha) return '—';
-            try {
-                return new Date(fecha).toLocaleDateString('es-VE', {
+            return window.FechasJaguares
+                ? window.FechasJaguares.formatearFechaCivil(fecha, {
                     weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-                });
-            } catch (_) {
-                return String(fecha);
-            }
+                }) : formatFecha(fecha);
         }
 
         async function cargarEventosAdmin() {

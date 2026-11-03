@@ -2,7 +2,7 @@
 
 Fecha: 2026-11-02. Base de código: main `8d5855f`. Rama: `fix/inscripcion-flujo-completo`.
 
-Entrega: [PR #8](https://github.com/josentss/jaguares/pull/8), implementación `4dfbb8d`; resultados remotos en sus [Checks](https://github.com/josentss/jaguares/pull/8/checks). Revisión y confirmación del propietario pendientes, sin fusión ni despliegue productivo de esta corrección.
+Entrega: [PR #8](https://github.com/josentss/jaguares/pull/8), implementación `4dfbb8d`, fusionada en `d6d8c38`. [CI remoto](https://github.com/josentss/jaguares/actions/runs/41548450422) aprobado con 64 backend + 25 navegador. Registro GitHub/Vercel del commit en Production completado y siete archivos públicos idénticos al PR comprobados mediante GET. El propietario confirmó después la recuperación de las inscripciones y los recorridos habituales; los nuevos hallazgos y su orden están en [SEGUIMIENTO_PRUEBAS_WEB.md](SEGUIMIENTO_PRUEBAS_WEB.md). No se hicieron escrituras productivas en esta verificación. El estado anterior «sin fusión/despliegue» queda reemplazado por esta evidencia posterior.
 
 ## Incidencia y diagnóstico
 

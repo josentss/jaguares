@@ -1,11 +1,44 @@
-# Pruebas manuales web — Jaguares tras PR #7
+# Pruebas manuales web — Jaguares tras PR #8
 
-Fecha de preparación: 2026-11-02. Versión objetivo: `main` `8d5855f5196b5575b0caed44bd49df38ec14c946`.
+Fecha de actualización: 2026-11-02. Versión objetivo: `main` remoto `d6d8c38dc5435006d6628af99b35a1f1e788186a`.
 Esta es una guía para ejecutar; sus casillas no significan que las pruebas autenticadas se hayan realizado.
 
-**Incidencia posterior:** el propietario no pudo continuar por el bloqueo de inscripción en ambos paneles. La corrección y las pruebas completas de aplicación/BD están en [REVISION_FUNCIONAL_INSCRIPCIONES.md](REVISION_FUNCIONAL_INSCRIPCIONES.md), rama `fix/inscripcion-flujo-completo`. Tras revisión y despliegue autorizado, comenzar por ATL/DIR y el recorrido cuenta → inscripción → activación → pago. No dar por funcional el alta solo porque cargue el panel o pasen las pruebas de campos aislados.
+**Actualización tras PR #8:** la corrección del bloqueo está fusionada en `d6d8c38`, CI 89/89 aprobado y despliegue Production completado. Los recursos públicos corregidos ya se sirven. El propietario confirmó las inscripciones y recorridos habituales. El diagnóstico original y sus límites están en [REVISION_FUNCIONAL_INSCRIPCIONES.md](REVISION_FUNCIONAL_INSCRIPCIONES.md).
+
+**Resultados recibidos del propietario:** inscripciones y recorridos habituales funcionan; persisten hallazgos de fechas, duplicados, PDF, entrada visual y mejoras de eventos/finanzas. Ver [SEGUIMIENTO_PRUEBAS_WEB.md](SEGUIMIENTO_PRUEBAS_WEB.md) para diagnóstico, orden de bloques y el checklist de aceptación específico de fechas/identidades. El bloque nuevo todavía no está fusionado ni desplegado; las casillas de abajo siguen siendo una guía reutilizable, no un acta de todas las pruebas realizadas.
+
+## Recorrido corto después de la corrección
+
+Abrir la web con recarga completa (Ctrl+F5). Usar representante y directiva en perfiles de navegador separados, y recursos de pruebas para las operaciones que crean o modifican datos. Marcar cada casilla solo después de comprobar su resultado.
+
+- [ ] **1. Inscribir con cédula propia:** registrar desde representante → aparece una sola vez, en espera y sigue allí tras recargar.
+- [ ] **2. Mostrar y corregir errores:** escribir cédula/teléfono inválidos y dirección `2356` → mensaje visible; corregir → permite guardar.
+- [ ] **3. Cambiar a heredada:** después de datos inválidos, elegir heredar cédula/teléfono → permite registrar, sin quedar bloqueado.
+- [ ] **4. Registrar otro hijo:** repetir con otro nombre después del primer éxito → guarda otro atleta y su identificación heredada es distinta.
+- [ ] **5. Evitar duplicados:** reenviar el mismo atleta → conflicto, sin otra ficha.
+- [ ] **6. Directiva, ambas opciones:** probar cédula propia y heredada con representante existente → atleta activo, asociado a la familia correcta.
+- [ ] **7. Representante nuevo:** crear cuenta y atleta desde directiva → ambos existen relacionados y esa cuenta puede entrar.
+- [ ] **8. Cuenta pendiente y perfil:** registro público → login bloqueado hasta aprobación; aprobar, entrar, completar perfil → permite inscribir un atleta en espera.
+- [ ] **9. Datos y documentos:** abrir planilla, archivos y PDF → corresponden al atleta y conservan fechas/textos enviados.
+- [ ] **10. Activar y pagar:** aprobar atleta en espera → aparece en selector de pago; efectivo y transferencia con comprobante → pagos pendientes en historial.
+- [ ] **11. Validar y cambiar método:** monto cero/negativo o captura ausente → rechazo claro; corregir o cambiar de método → permite enviar sin errores ocultos.
+- [ ] **12. Auditar pago:** aprobar/rechazar desde directiva → el representante ve el mismo estado y la notificación correspondiente.
+- [ ] **13. Inactivar con pestaña antigua:** dejar abierto el pago, inactivar atleta y enviar desde la vista antigua → rechazo, sin pago nuevo.
+- [ ] **14. Perfil y permisos:** guardar/recargar perfil; otra familia no puede consultar sus fichas/pagos/documentos por API. Usar solo IDs de prueba conocidos.
+- [ ] **15. Calendario y sesión:** crear/cancelar evento de prueba → consulta pública se actualiza; cerrar sesión → los paneles exigen volver a entrar.
+- [ ] **16. Móvil:** repetir especialmente 1–3, 6 y 10; menú, teclado, botones y mensajes deben ser utilizables.
+
+Si falla un paso, registrar su número, panel/dispositivo, resultado observado y hora; compartir capturas anonimizadas, sin contraseñas, cookies o documentos personales. Los casos ampliados que siguen quedan como referencia.
 
 ## Evidencia verificada
+
+- [PR #8](https://github.com/josentss/jaguares/pull/8) fusionado en `d6d8c38`; el árbol de archivos coincide con el commit probado `512eccb`.
+- [CI del PR #8](https://github.com/josentss/jaguares/actions/runs/41548450422): satisfactorio, 64 pruebas backend y 25 de navegador, Node 22.23.4 y PostgreSQL 16 temporal.
+- [Despliegue del PR #8](https://vercel.com/josents-projects/jaguares/BLobrZ5NXcHMVrRTJsoJPi5k1ejM): registro GitHub `7506497104`, SHA `d6d8c38`, entorno Production y estado completado. Siete archivos públicos (ambos paneles, login y cuatro recursos CSS/JS) devolvieron 200 y coincidieron con el PR. No se enviaron formularios autenticados a producción.
+
+### Evidencia anterior, registrada tras PR #7
+
+Estos resultados corresponden a la revisión anterior; las comprobaciones actuales del PR #8 son las indicadas arriba.
 
 - [PR #7](https://github.com/josentss/jaguares/pull/7) fusionado; incluye `31e71ac`. Main local/remoto coinciden y el árbol de archivos de la fusión es idéntico al de ese commit.
 - [CI del PR #7](https://github.com/josentss/jaguares/actions/runs/41540524642): logs y pasos revisados. Node 22.23.4, PostgreSQL 16 temporal; 64/64 backend y 10/10 Playwright, sin fallos ni omisiones. Sintaxis e instalación de dependencias satisfactorias; las alertas de dependencias siguen pendientes.
@@ -65,11 +98,11 @@ Ejemplos de textos sintéticos: `José Luis`, `Muñoz`, `Calle de pruebas 12`, `
 - [ ] **ATL-01. Alta propia:** Alfa registra un atleta válido con cédula propia libre. Debe aparecer una sola vez, asociado a Alfa y en espera, visible también para directiva.
 - [ ] **ATL-02. Nombres:** aceptar tildes/ñ/nombres compuestos; impedir cifras o etiquetas HTML. El rechazo no debe crear una ficha parcial.
 - [ ] **ATL-03. Cédula:** aceptar V-/E- y 7–9 dígitos; rechazar formato incompleto. Repetir la cédula de un atleta existente debe producir conflicto, incluso desde otra familia de prueba.
-- [ ] **ATL-04. Edad:** probar fecha futura y nacimiento en 1908: rechazo. Probar exactamente 18 y exactamente 19 años cumplidos hoy: el primero se admite y el segundo se rechaza. El límite es de inscripción, no de categoría competitiva.
+- [ ] **ATL-04. Edad:** tras desplegar el bloque nuevo, probar cuatro y diecinueve años: rechazo; cinco y dieciocho: permitidos. Comparar `min/max` con el cumpleaños actual en Caracas, sin años fijos. Fechas futuras/imposibles: rechazo. La regla 5–18 sustituye la anterior 0–18 y no asigna categoría competitiva.
 - [ ] **ATL-05. Dirección:** `2356` debe rechazarse. `Calle de pruebas 12` debe aceptarse y conservarse.
 - [ ] **ATL-06. Observación médica:** vacío y texto sintético `Diabetes tipo 1` o `Vitamina B12` deben admitirse; solo cifras o etiquetas deben rechazarse. Abrir después la planilla y comprobar que el texto aceptado no cambió.
 - [ ] **ATL-07. Teléfono:** alternar teléfono propio/del representante. El número resultante debe corresponder a la selección, sin letras ni cifras incompletas.
-- [ ] **ATL-08. Repetición:** registrar de nuevo el mismo nombre, apellido y nacimiento con el mismo representante. Debe rechazarse sin otra ficha, también al seleccionar cédula heredada.
+- [ ] **ATL-08. Repetición:** registrar de nuevo el mismo nombre completo y nacimiento con el mismo representante. Debe rechazarse sin otra ficha, con otra cédula propia o heredada; tras el bloque nuevo, también con Unicode equivalente o repartiendo el nombre completo entre ambos campos. Otra familia puede tener una coincidencia legítima.
 - [ ] **ATL-09. Hermanos:** registrar dos hijos diferentes sin cédula propia. Deben quedar vinculados al mismo representante con identificadores heredados distintos y sin sobrescribir documentos.
 - [ ] **ATL-10. Recarga:** cerrar/reabrir sesión y consultar la lista. Los registros, propietario y estados deben persistir.
 

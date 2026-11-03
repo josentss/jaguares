@@ -1,6 +1,6 @@
 # Seguimiento de las pruebas del propietario — bloque de fechas e identidades
 
-Fecha: 2026-11-02. Base remota verificada: `main` `d6d8c38` (PR #8 fusionado), Vercel Production completado. Rama de trabajo: `fix/fechas-duplicados-atletas`. Este bloque no está fusionado ni desplegado.
+Fecha: 2026-11-02. Base remota verificada: `main` `d6d8c38` (PR #8 fusionado), Vercel Production completado. Entrega: [PR #9](https://github.com/josentss/jaguares/pull/9), rama `fix/fechas-duplicados-atletas`, implementación `5772beb`. Este bloque no está fusionado ni desplegado a producción.
 
 ## Resultados comunicados por el propietario
 
@@ -37,7 +37,9 @@ Ejemplo calculado para **02/11/2026 en Caracas**: nacimientos admitidos del **03
 
 Antes de cambiar backend, las regresiones PostgreSQL reprodujeron ambos escapes de duplicados (dos éxitos donde debía haber un conflicto), aceptación de cuatro años y DATE como objeto `Date`. La repetición exacta ya quedaba bloqueada, sin cambiar el nacimiento. Las pruebas unitarias nuevas también fallaron inicialmente por edad y contrato DATE.
 
-Verificación local final: **74/74 backend y 31/31 navegador** en Node **24.15.0** y **22.23.4**, 105 escenarios distintos repetidos para compatibilidad, sin fallos ni omisiones. Sintaxis de **40 JS** y scripts inline de ambos paneles/login correcta en ambas versiones; `git diff --check` correcto. PostgreSQL **18** temporal local y Chromium **141**/Playwright **1.56.1**; servidor UTC, cuatro husos del proceso y navegadores Caracas/UTC/Tokio. Incluye HTML/JS, API, cookies/roles y SQL reales desde inscripción hasta pagos/listados/planilla. Cloudinary y la tasa externa se simulan únicamente en sus fronteras. No son pruebas autenticadas en producción ni una comprobación de los proveedores reales. CI remoto pendiente de registrar.
+Verificación local final: **74/74 backend y 31/31 navegador** en Node **24.15.0** y **22.23.4**, 105 escenarios distintos repetidos para compatibilidad, sin fallos ni omisiones. Sintaxis de **40 JS** y scripts inline de ambos paneles/login correcta en ambas versiones; `git diff --check` correcto. PostgreSQL **18** temporal local y Chromium **141**/Playwright **1.56.1**; servidor UTC, cuatro husos del proceso y navegadores Caracas/UTC/Tokio. Incluye HTML/JS, API, cookies/roles y SQL reales desde inscripción hasta pagos/listados/planilla. Cloudinary y la tasa externa se simulan únicamente en sus fronteras. No son pruebas autenticadas en producción ni una comprobación de los proveedores reales. PostgreSQL temporal detenido.
+
+[CI remoto 41563276506](https://github.com/josentss/jaguares/actions/runs/41563276506), sobre `5772beb`: satisfactorio, logs revisados. Node **22.23.4**, PostgreSQL **16** temporal; sintaxis/instalación correctas, **74 backend + 31 navegador**, sin fallos ni omisiones.
 
 No se ejecutan migraciones, consultas privadas o escrituras sobre Supabase/Cloudinary de producción. El cambio del parser aplica a columnas de tipo **DATE**; si el esquema real usa TIMESTAMP para alguna de estas fechas, requiere diagnóstico aparte. No se cambia DATE[] ni el protocolo binario; no se encontró uso en las consultas actuales.
 

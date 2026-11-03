@@ -2,10 +2,10 @@
 
 > **Propósito:** documento persistente para continuar el desarrollo del sistema Club de Voleibol Jaguares. Codex debe leerlo al iniciar tareas de este repositorio y proponer actualizaciones cuando cambien el código, las reglas, las pruebas o el estado de los PR.
 >
-> **Última actualización documental:** 2026-11-02  
-> **Base comprobada:** `main` remoto — commit `d6d8c38dc5435006d6628af99b35a1f1e788186a`; main local permanece en `8d5855f`, sin modificarlo en esta verificación.
+> **Última actualización documental:** 2026-11-03
+> **Base comprobada:** `main` remoto `52cd290b03f3ac34df280d6d8f97b2c2d687249d`; árbol `38e8d14521717c9ac7dd7fd4f22835d820633688`. PR #9 fusionado; despliegue Vercel Production `7508559246` en estado satisfactorio. La referencia `main` local se conserva sin cambios.
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#8 fusionados; `main` remoto sigue en `d6d8c38`, Vercel Production completado. El propietario confirma inscripciones y recorridos habituales y comunica problemas de fechas, duplicados y PDF. Primer bloque en [PR #9](https://github.com/josentss/jaguares/pull/9), `fix/fechas-duplicados-atletas`: fechas civiles, duplicados familiares y mínimo cinco años; implementación `5772beb`, CI 105/105 aprobado. Sin fusionar, desplegar a producción ni escribir datos productivos. Se conservan las actualizaciones documentales locales de la verificación anterior.
+> **Estado:** PR #1–#9 fusionados. El propietario confirmó manualmente que los cambios del PR #9 funcionan. Rama actual `fix/planillas-pdf-completas`: corregir exportación PDF e impresión de fichas. Pruebas locales de interfaz aprobadas en Node 22/24; pruebas PostgreSQL locales pendientes porque el entorno denegó el socket TCP loopback. PR nuevo pendiente de abrir; no fusionar ni desplegar.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -102,7 +102,7 @@ El propietario probó manualmente en Vercel la restricción de pagos, cambios de
 - Evitar éxitos ficticios en cambios de estado repetidos/inexistentes.
 - Nombres y apellidos con letras Unicode, tildes, ñ y separadores habituales.
 - Cédula propia operativa: `V-` / `E-` seguida de **7 a 9 dígitos**. **No certifica identidad ante SAIME**, ni prueba que el documento exista; revisar excepciones legales por edad.
-- Nacimiento: PR #4/#8 admitían **0–18 años**. El propietario precisa ahora mínimo cinco y máximo dieciocho; el bloque actual aplica **5–18 años cumplidos** al inscribir, evaluados en Caracas y sin cambiar atletas históricos. **Esto NO define por sí solo elegibilidad de torneo Sub-18:** falta fecha de corte de temporada. La regla nueva aún requiere fusión/despliegue autorizado.
+- Nacimiento: PR #4/#8 admitían **0–18 años**. El propietario precisó mínimo cinco y máximo dieciocho; PR #9 aplica **5–18 años cumplidos** en Caracas a nuevas altas, sin cambiar datos históricos ni definir la elegibilidad competitiva Sub-18 (la fecha de corte por temporada sigue pendiente). PR #9 está fusionado y el propietario confirma el resultado manual.
 - Direcciones: no aceptar solo cifras o secuencias numéricas arbitrarias; permitir números de casa, calle, barrio y código postal.
 - Observaciones médicas opcionales: permitir números clínicos y texto legítimo (por ejemplo «Diabetes tipo 1» o «500 mg»). Las heurísticas **no verifican veracidad médica**.
 - Contraseñas nuevas con longitud mínima y máxima; datos con validación de navegador y servidor.
@@ -203,7 +203,7 @@ Diagnóstico priorizado, evidencia, límites y aceptación: **[SEGUIMIENTO_PRUEB
 
 **Pruebas locales ejecutadas:** 74/74 backend + 31/31 navegador tanto en Node 24.15.0 como en Node 22.23.4: **105 escenarios diferentes**, repetidos para compatibilidad, sin fallos ni omisiones. Sintaxis de 40 archivos JS y scripts inline de ambos paneles/login correcta en ambas versiones; `git diff --check` correcto. PostgreSQL 18 local temporal, Chromium 141/Playwright 1.56.1. **CI remoto verificado:** [41563276506](https://github.com/josentss/jaguares/actions/runs/41563276506) sobre implementación `5772beb`, satisfactorio, logs revisados: Node 22.23.4, PostgreSQL 16, sintaxis e instalación correctas, 74 backend + 31 navegador, sin fallos ni omisiones. Antes de corregir backend fallaron las regresiones nuevas de edad, DATE y ambos escapes de duplicados, y pasó el rechazo exacto. Se probaron cumpleaños/bisiestos, concurrencia, cuatro husos del proceso, navegador Caracas/UTC/Tokio, falta del helper y flujos con aplicación/SQL reales desde inscripción hasta pagos y planilla. Cloudinary/tasa externa simulados solo en sus fronteras. Sin proveedores productivos ni escrituras de producción. PostgreSQL temporal detenido.
 
-**Siguientes bloques separados:** PDF recortado (causa concreta pendiente de reproducción); ocultar panel hasta validar sesión (HTML estático visible antes del fetch, sin fuga de datos demostrada); eventos con validación estricta/día Caracas y `min`, después hora con migración aditiva revisada. El validador actual de eventos rechaza hoy y acepta fechas imposibles normalizadas: reproducido con reloj fijo/controlador real y SQL simulado. Cancelados/completados permanecen en administración para conservar historia. Finanzas por cargos/deuda y mensualidad fija requiere política oficial; no definir tarifas, moneda, vigencia o excepciones unilateralmente.
+**Siguientes bloques separados:** ocultar el panel hasta validar sesión (HTML estático visible antes del fetch, sin fuga de datos demostrada); eventos con validación estricta/día Caracas y `min`, después hora con migración aditiva revisada. El validador actual de eventos rechaza hoy y acepta fechas imposibles normalizadas: reproducido con reloj fijo/controlador real y SQL simulado. Cancelados/completados permanecen en administración para conservar historia. Finanzas requiere política oficial; se guarda la propuesta posterior de mensualidad fija convertida según moneda y mostrar al representante solo cargos adeudados, sin implementarla en este bloque.
 
 **Históricos y límites:** no se corrigen fechas ni duplicados existentes, ni se desactivan atletas fuera del nuevo rango. Parser aplicable a columnas DATE, no a TIMESTAMP/DATE[]/binario; esquema real pendiente de auditoría autorizada. Bloqueos cooperativos/constraints, privacidad de archivos, dependencias y consistencia Cloudinary/SQL siguen pendientes. No hay migraciones, dependencias o versiones del proyecto nuevas.
 
@@ -242,8 +242,8 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 | Prioridad | Bloque | Criterio de finalización |
 | --- | --- | --- |
 | P0 — recuperación confirmada por el propietario | Recuperar la inscripción y comprobar los recorridos principales | PR #8 fusionado/desplegado, CI 89/89; propietario confirma inscripciones y recorridos habituales. Nuevos hallazgos registrados por separado |
-| P1 — bloque actual | Fechas civiles, duplicados familiares y altas de 5–18 años | Pruebas de cumpleaños, fechas persistidas/mostradas, Unicode/concurrencia y flujos completos; PR separado sin fusionar |
-| P1 — siguiente | PDF completo y acceso visual al panel | Reproducir recorte y validar exportación completa; no mostrar contenido del panel antes de comprobar sesión |
+| P1 — completado | Fechas civiles, duplicados familiares y altas de 5–18 años | PR #9 fusionado en `52cd290`; CI 105/105 y Production completado. El propietario confirma el resultado manual.
+| P1 — bloque actual | PDF e impresión de planillas | Ancho de captura A4 estable y paginación validada en Playwright escritorio/móvil; CI PostgreSQL pendiente en el PR nuevo.
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
 | P2 | Migraciones, auditoría y ciclo de vida | Esquema reproducible, eventos trazables, archivado y política de borrado definida |
@@ -303,12 +303,12 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | Revalidar estado y rol por solicitud autenticada | PR #2 | Implementado |
 | 2026-11-02 | Validación compartida frontend/backend de formularios | PR #3 | Implementado |
 | 2026-11-02 | Cédula V-/E- con 7–9 dígitos para captura operativa | PR #4 | Implementado; revisar excepciones legítimas |
-| 2026-11-02 | Inscripción: 0–18 años cumplidos a fecha de registro | PR #4 | Regla histórica; sustituida en el bloque actual por la precisión del propietario, pendiente de fusión |
-| 2026-11-02 | Inscripción: 5–18 años cumplidos hoy en Caracas, sin cambiar históricos ni categorías | Reporte de pruebas del propietario: U-7 empieza a los cinco | Implementado en rama; pendiente de fusión/despliegue |
+| 2026-11-02 | Inscripción: 0–18 años cumplidos a fecha de registro | PR #4 | Regla histórica; sustituida por la regla 5–18 de PR #9, fusionado |
+| 2026-11-02 | Inscripción: 5–18 años cumplidos hoy en Caracas, sin cambiar históricos ni categorías | Reporte y decisión del propietario: U-7 empieza a los cinco | PR #9 fusionado; el propietario confirma el resultado manualmente |
 | 2026-11-02 | Altas compuestas atómicas, identidades coordinadas y sufijos heredados preservados | PR #6 | Fusionado; constraints reales pendientes |
 | 2026-11-02 | Revalidar estados concurrentes de pagos/activaciones y unificar valores médicos validados/persistidos | PR #7 | Fusionado; despliegue Production completado según registro, prueba manual autenticada pendiente |
 | 2026-11-02 | Priorizar inscripciones funcionales y pruebas completas de navegador/API/BD | Reporte del propietario; PR #8 | Fusionado, CI 89/89, Production completado; inscripción confirmada manualmente por el propietario |
-| 2026-11-02 | Montos fijos, categorías y sanciones | Pendiente de política oficial del club | No definido |
+| 2026-11-03 | Mensualidad fija, conversión según moneda seleccionada y solo cargos adeudados en el panel del representante | Solicitud futura del propietario | Guardado para fase financiera; no implementar hasta acordar tarifa, vigencia, fuente/tasa de conversión y excepciones |
 | 2026-11-02 | Eliminación definitiva y WhatsApp | Pendiente de políticas y consentimiento | No definido |
 
 ### Bitácora de entregas (actualizar tras cada PR)
@@ -320,7 +320,8 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | PR #7, main `8d5855f` | Seguimiento: 64/64 backend local en Node 22/24; CI Node 22/PostgreSQL 16 con 64 backend + 10 Playwright. Production completado; navegación anónima web real escritorio/móvil satisfactoria | Pruebas autenticadas manuales, archivos/privacidad y constraints reales pendientes; no equivale a validación integral de producción |
 | 2026-11-02 | Rama documental `docs/verificacion-pr7-web` | Evidencia de fusión/CI/Production y guía de 75 casos manuales, sin cambios de código | Documentación local para revisión; resultados manuales del propietario por registrar |
 | 2026-11-02 | PR #8 / main `d6d8c38` | CI 64 backend + 25 navegador aprobado; Production completado; siete recursos coinciden; propietario confirma inscripción y recorridos habituales | Nuevos hallazgos registrados; proveedores/constraints productivos sin validar |
-| 2026-11-02 | [PR #9](https://github.com/josentss/jaguares/pull/9), implementación `5772beb` | Fechas civiles, duplicados NFC/nombre completo y mínimo cinco años; 74 backend + 31 navegador locales Node 22/24; [CI 105/105](https://github.com/josentss/jaguares/actions/runs/41563276506) aprobado sobre implementación, Node 22/PostgreSQL 16 | PR abierto, sin fusionar ni desplegar a producción; PDF, entrada visual, eventos/hora y finanzas en bloques separados |
+| 2026-11-03 | [PR #9](https://github.com/josentss/jaguares/pull/9), main `52cd290` | Fechas civiles, duplicados familiares NFC/nombre completo y edad mínima cinco; 74 backend + 31 navegador locales Node 22/24; CI 105/105 en [run 41563588392](https://github.com/josentss/jaguares/actions/runs/41563588392); Production completado | El propietario confirma pruebas web satisfactorias. PDF, entrada visual, eventos/hora y finanzas continúan en bloques separados |
+| 2026-11-03 | Rama `fix/planillas-pdf-completas` | Exportación PDF A4 estable, paginación sin recorte, marcadores finales multipágina e impresión A4; pruebas Chromium 141 escritorio/móvil. 22 interfaz por Node 24 y 22; 36 pruebas backend no PostgreSQL por versión. 41 JS + script inline con sintaxis válida en Node 22/24. PostgreSQL local no pudo enlazar `127.0.0.1` (permiso denegado); pruebas de integración PostgreSQL esperan CI | PR pendiente; no hay cambios ni despliegue de producción |
 
 ### Plantilla breve de actualización futura
 

@@ -1,11 +1,11 @@
-# Pruebas manuales web — Jaguares tras PR #8
+# Pruebas manuales web — Jaguares tras PR #9
 
-Fecha de actualización: 2026-11-02. Versión objetivo: `main` remoto `d6d8c38dc5435006d6628af99b35a1f1e788186a`.
+Fecha de actualización: 2026-11-03. Versión objetivo: `main` remoto `52cd290b03f3ac34df280d6d8f97b2c2d687249d`.
 Esta es una guía para ejecutar; sus casillas no significan que las pruebas autenticadas se hayan realizado.
 
-**Actualización tras PR #8:** la corrección del bloqueo está fusionada en `d6d8c38`, CI 89/89 aprobado y despliegue Production completado. Los recursos públicos corregidos ya se sirven. El propietario confirmó las inscripciones y recorridos habituales. El diagnóstico original y sus límites están en [REVISION_FUNCIONAL_INSCRIPCIONES.md](REVISION_FUNCIONAL_INSCRIPCIONES.md).
+**Actualización tras PR #9:** PR #9 está fusionado en `52cd290`, CI 105/105 y Vercel Production completado. El propietario confirma manualmente el bloque de fechas e identidades. El nuevo bloque de PDF/impresión está en una rama separada y todavía no está desplegado; sus comprobaciones automáticas están en `tests/planilla-pdf.test.js`.
 
-**Resultados recibidos del propietario:** inscripciones y recorridos habituales funcionan; persisten hallazgos de fechas, duplicados, PDF, entrada visual y mejoras de eventos/finanzas. Ver [SEGUIMIENTO_PRUEBAS_WEB.md](SEGUIMIENTO_PRUEBAS_WEB.md) para diagnóstico, orden de bloques y el checklist de aceptación específico de fechas/identidades. El bloque nuevo todavía no está fusionado ni desplegado; las casillas de abajo siguen siendo una guía reutilizable, no un acta de todas las pruebas realizadas.
+**Resultados recibidos del propietario:** inscripciones, fechas/identidades del PR #9 y recorridos habituales satisfactorios. Los problemas restantes —PDF, entrada visual y eventos— se corrigen en bloques separados. La mensualidad fija, conversión de moneda y vista de deuda quedan guardadas para una fase financiera posterior, sin aplicar ahora.
 
 ## Recorrido corto después de la corrección
 
@@ -98,11 +98,11 @@ Ejemplos de textos sintéticos: `José Luis`, `Muñoz`, `Calle de pruebas 12`, `
 - [ ] **ATL-01. Alta propia:** Alfa registra un atleta válido con cédula propia libre. Debe aparecer una sola vez, asociado a Alfa y en espera, visible también para directiva.
 - [ ] **ATL-02. Nombres:** aceptar tildes/ñ/nombres compuestos; impedir cifras o etiquetas HTML. El rechazo no debe crear una ficha parcial.
 - [ ] **ATL-03. Cédula:** aceptar V-/E- y 7–9 dígitos; rechazar formato incompleto. Repetir la cédula de un atleta existente debe producir conflicto, incluso desde otra familia de prueba.
-- [ ] **ATL-04. Edad:** tras desplegar el bloque nuevo, probar cuatro y diecinueve años: rechazo; cinco y dieciocho: permitidos. Comparar `min/max` con el cumpleaños actual en Caracas, sin años fijos. Fechas futuras/imposibles: rechazo. La regla 5–18 sustituye la anterior 0–18 y no asigna categoría competitiva.
+- [ ] **ATL-04. Edad:** con PR #9, probar cuatro y diecinueve años: rechazo; cinco y dieciocho: permitidos. Comparar `min/max` con el cumpleaños actual en Caracas, sin años fijos. Fechas futuras/imposibles: rechazo. La regla 5–18 no asigna categoría competitiva.
 - [ ] **ATL-05. Dirección:** `2356` debe rechazarse. `Calle de pruebas 12` debe aceptarse y conservarse.
 - [ ] **ATL-06. Observación médica:** vacío y texto sintético `Diabetes tipo 1` o `Vitamina B12` deben admitirse; solo cifras o etiquetas deben rechazarse. Abrir después la planilla y comprobar que el texto aceptado no cambió.
 - [ ] **ATL-07. Teléfono:** alternar teléfono propio/del representante. El número resultante debe corresponder a la selección, sin letras ni cifras incompletas.
-- [ ] **ATL-08. Repetición:** registrar de nuevo el mismo nombre completo y nacimiento con el mismo representante. Debe rechazarse sin otra ficha, con otra cédula propia o heredada; tras el bloque nuevo, también con Unicode equivalente o repartiendo el nombre completo entre ambos campos. Otra familia puede tener una coincidencia legítima.
+- [ ] **ATL-08. Repetición:** con PR #9, registrar de nuevo el mismo nombre completo y nacimiento con el mismo representante. Debe rechazarse sin otra ficha, con otra cédula propia o heredada; probar también Unicode equivalente o repartir el nombre completo entre ambos campos. Otra familia puede tener una coincidencia legítima.
 - [ ] **ATL-09. Hermanos:** registrar dos hijos diferentes sin cédula propia. Deben quedar vinculados al mismo representante con identificadores heredados distintos y sin sobrescribir documentos.
 - [ ] **ATL-10. Recarga:** cerrar/reabrir sesión y consultar la lista. Los registros, propietario y estados deben persistir.
 
@@ -125,6 +125,7 @@ Ejemplos de textos sintéticos: `José Luis`, `Muñoz`, `Calle de pruebas 12`, `
 - [ ] **DOC-04. Planilla:** comparar representante, fecha de nacimiento, teléfonos, dirección y observaciones con lo enviado; prestar atención a fechas desplazadas un día.
 - [ ] **DOC-05. Impresión/PDF:** usar Imprimir y Descargar PDF en directiva. Revisar legibilidad, cortes, acentos y correspondencia con la ficha. El PDF depende también de la carga del generador externo.
 - [ ] **DOC-06. WhatsApp de la ficha:** con teléfono sintético/controlado, comprobar que el enlace prepara el número y borrador correctos, sin enviar el mensaje. No hay envío automático ni campañas implementadas.
+- [ ] **DOC-07. PDF multipágina:** revisar exportación e impresión en escritorio y móvil; las columnas no deben recortarse, el último dato debe aparecer y no debe quedar una página final vacía. Esta revisión corresponde al PR nuevo y sigue pendiente del despliegue autorizado.
 
 Subir un archivo aceptado no demuestra validación real de su contenido ni privacidad de su enlace externo. Esas dos garantías siguen pendientes P0; no marcar esta sección como una auditoría completa de almacenamiento.
 

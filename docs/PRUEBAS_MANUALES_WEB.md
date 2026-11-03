@@ -1,11 +1,11 @@
-# Pruebas manuales web — Jaguares tras PR #9
+# Pruebas manuales web — Jaguares tras PR #10
 
-Fecha de actualización: 2026-11-03. Versión objetivo: `main` remoto `52cd290b03f3ac34df280d6d8f97b2c2d687249d`.
+Fecha de actualización: 2026-11-03. Versión objetivo: `main` remoto `3ff6923400eefddd680899e3f407f362efb19fae`.
 Esta es una guía para ejecutar; sus casillas no significan que las pruebas autenticadas se hayan realizado.
 
-**Actualización tras PR #9:** PR #9 está fusionado en `52cd290`, CI 105/105 y Vercel Production completado. El propietario confirma manualmente el bloque de fechas e identidades. El nuevo bloque de PDF/impresión está en una rama separada y todavía no está desplegado; sus comprobaciones automáticas están en `tests/planilla-pdf.test.js`.
+**Actualización tras PR #10:** PR #10 está fusionado en `3ff6923`, CI satisfactorio y Vercel Production completado. El propietario confirma generación correcta de las planillas que fallaban y de una nueva. Sus comprobaciones automáticas están en `tests/planilla-pdf.test.js`. Esta confirmación no marca automáticamente todas las variantes de las casillas siguientes.
 
-**Resultados recibidos del propietario:** inscripciones, fechas/identidades del PR #9 y recorridos habituales satisfactorios. Los problemas restantes —PDF, entrada visual y eventos— se corrigen en bloques separados. La mensualidad fija, conversión de moneda y vista de deuda quedan guardadas para una fase financiera posterior, sin aplicar ahora.
+**Resultados recibidos del propietario:** inscripciones, fechas/identidades, generación de planillas y recorridos habituales satisfactorios. La rama `fix/sesiones-paneles` está en revisión y sus nuevos casos todavía esperan una fusión y despliegue autorizados. Eventos se abordará por separado; la mensualidad fija, conversión de moneda y vista de deuda quedan para una fase financiera posterior.
 
 ## Recorrido corto después de la corrección
 
@@ -82,6 +82,10 @@ Ejemplos de textos sintéticos: `José Luis`, `Muñoz`, `Calle de pruebas 12`, `
 - [ ] **CTA-07. Clave incorrecta:** probar una contraseña incorrecta. Debe mostrar error y permitir corregir/reintentar, sin dejar el botón bloqueado.
 - [ ] **CTA-08. Sesión:** entrar, recargar el panel y abrir otra pestaña del mismo perfil. Debe conservar acceso; cerrar sesión y comprobar que una nueva consulta protegida exige autenticación.
 - [ ] **CTA-09. Panel administrativo:** como Alfa, abrir la URL de panel-directiva. Debe denegar acceso/redirigir y no mostrar registros administrativos.
+- [ ] **CTA-10. Espera de sesión:** tras el despliegue del bloque de sesiones, abrir ambos paneles con conexión lenta y sin sesión: debe mostrarse el aviso de verificación, seguido del login, sin mostrar el contenido del panel.
+- [ ] **CTA-11. Cierre sin conexión:** en un entorno de pruebas y con una sesión activa, desconectar la red antes de cerrar sesión. Debe informar que no pudo confirmarse el cierre y permitir reintentar al recuperar conexión.
+- [ ] **CTA-12. Otras pestañas:** abrir el mismo panel en dos pestañas del mismo navegador y cerrar sesión en una. Ambas deben volver al login; al volver atrás, el panel debe exigir autenticación.
+- [ ] **CTA-13. Regresión de acceso:** entrar con representante, directiva, staff y admin disponibles; comprobar que cada rol autorizado accede y repetir una inscripción, un pago y una planilla de prueba.
 
 ## 3. Perfil y datos históricos — entorno de pruebas
 
@@ -125,7 +129,7 @@ Ejemplos de textos sintéticos: `José Luis`, `Muñoz`, `Calle de pruebas 12`, `
 - [ ] **DOC-04. Planilla:** comparar representante, fecha de nacimiento, teléfonos, dirección y observaciones con lo enviado; prestar atención a fechas desplazadas un día.
 - [ ] **DOC-05. Impresión/PDF:** usar Imprimir y Descargar PDF en directiva. Revisar legibilidad, cortes, acentos y correspondencia con la ficha. El PDF depende también de la carga del generador externo.
 - [ ] **DOC-06. WhatsApp de la ficha:** con teléfono sintético/controlado, comprobar que el enlace prepara el número y borrador correctos, sin enviar el mensaje. No hay envío automático ni campañas implementadas.
-- [ ] **DOC-07. PDF multipágina:** revisar exportación e impresión en escritorio y móvil; las columnas no deben recortarse, el último dato debe aparecer y no debe quedar una página final vacía. Esta revisión corresponde al PR nuevo y sigue pendiente del despliegue autorizado.
+- [ ] **DOC-07. PDF multipágina:** revisar exportación e impresión en escritorio y móvil; las columnas no deben recortarse, el último dato debe aparecer y no debe quedar una página final vacía. PR #10 desplegado y generación confirmada por el propietario; registrar por separado las variantes concretas que se prueben.
 
 Subir un archivo aceptado no demuestra validación real de su contenido ni privacidad de su enlace externo. Esas dos garantías siguen pendientes P0; no marcar esta sección como una auditoría completa de almacenamiento.
 

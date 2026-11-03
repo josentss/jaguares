@@ -3,9 +3,9 @@
 > **Propósito:** documento persistente para continuar el desarrollo del sistema Club de Voleibol Jaguares. Codex debe leerlo al iniciar tareas de este repositorio y proponer actualizaciones cuando cambien el código, las reglas, las pruebas o el estado de los PR.
 >
 > **Última actualización documental:** 2026-11-03
-> **Base comprobada:** `main` remoto `52cd290b03f3ac34df280d6d8f97b2c2d687249d`; árbol `38e8d14521717c9ac7dd7fd4f22835d820633688`. PR #9 fusionado; despliegue Vercel Production `7508559246` en estado satisfactorio. La referencia `main` local se conserva sin cambios.
+> **Base comprobada:** `main` remoto `3ff6923400eefddd680899e3f407f362efb19fae`; árbol `18af0b0460a187ebfe6e2f430443cf12774fade3`, idéntico al head probado del PR #10. Despliegue Vercel Production `7511100715` en estado `success / Deployment has completed`. La referencia `main` local se conserva sin cambios.
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#9 fusionados. El propietario confirmó manualmente que los cambios del PR #9 funcionan. PR #10 abierto desde `fix/planillas-pdf-completas` para corregir exportación PDF e impresión de fichas; CI satisfactorio en Node 22 con PostgreSQL 16 temporal ([run 41582615224](https://github.com/josentss/jaguares/actions/runs/41582615224)). Las pruebas PostgreSQL locales no pudieron ejecutarse porque el entorno denegó el socket TCP loopback. No fusionar ni desplegar sin autorización.
+> **Estado:** PR #1–#10 fusionados. El propietario confirmó después del despliegue que las planillas que fallaban y una nueva se generan correctamente. CI final del PR #10 satisfactorio ([run 41582920053](https://github.com/josentss/jaguares/actions/runs/41582920053)). Rama `fix/sesiones-paneles`: entrada, revalidación y cierre de sesión implementados para revisión; CI con PostgreSQL pendiente. No fusionar ni desplegar sin autorización.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -24,7 +24,7 @@ Prioridades permanentes:
 7. No inventar tarifas, categorías, sanciones, criterios de eliminación ni políticas de comunicación aún no acordadas.
 8. Mantener este documento actualizado con decisiones, estado y limitaciones después de cada bloque.
 
-**Primera tarea recomendada:** auditar relaciones, duplicados, cédulas heredadas, inscripciones simultáneas y consistencia de perfiles; implementar solo correcciones que no dependan de reglas comerciales aún pendientes; crear un PR con pruebas, sin fusionarlo.
+**Bloque actual tras PR #10:** completar la revisión del flujo de sesiones de ambos paneles y su CI. Después corresponde la validación civil de fechas del calendario; la hora de eventos requiere otro bloque. La auditoría inicial de integridad se entregó en PR #6/#7; sus riesgos de esquema/archivos siguen abiertos.
 
 ## 1. Información técnica verificada
 
@@ -69,7 +69,7 @@ Las rutas de directiva admiten los roles administrativos autorizados. Validar el
 
 ## 2. Cambios completados y fusionados
 
-**Estos PR están fusionados en `main` a fecha 2026-11-02.** Codex debe comprobar la situación actual antes de intervenir.
+**Estos PR están fusionados en `main` a fecha 2026-11-03.** Codex debe comprobar la situación actual antes de intervenir.
 
 | PR | Estado | Alcance | Pruebas del CI de ese PR |
 | --- | --- | --- | --- |
@@ -81,6 +81,10 @@ Las rutas de directiva admiten los roles administrativos autorizados. Validar el
 | [#6](https://github.com/josentss/jaguares/pull/6) | Fusionado | Altas atómicas, duplicados normalizados, cédulas heredadas y concurrencia | CI satisfactorio; 53 backend + 10 navegador documentadas en la entrega |
 | [#7](https://github.com/josentss/jaguares/pull/7) | Fusionado | Carreras de estados en pagos/activaciones, consistencia de entradas e aislamiento SQL | **74/74**, logs revisados: 64 backend + 10 Playwright, Node 22/PostgreSQL 16 |
 | [#8](https://github.com/josentss/jaguares/pull/8) | Fusionado | Recuperar envíos de inscripción, errores visibles, respaldo del validador y flujos completos | **89/89**: 64 backend + 25 navegador, Node 22/PostgreSQL 16 |
+| [#9](https://github.com/josentss/jaguares/pull/9) | Fusionado | Fechas civiles, duplicados familiares y nuevas altas de 5–18 años | **105/105**, Node 22/PostgreSQL 16; aceptación manual del propietario |
+| [#10](https://github.com/josentss/jaguares/pull/10) | Fusionado | Exportación e impresión de planillas A4, recursos fallidos y paginación | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41582920053), Node 22/PostgreSQL 16/Chromium; generación validada por el propietario |
+
+**Verificación posterior al PR #10:** fusión `3ff6923`, árbol idéntico a `733eabb`; CI de ese head satisfactorio. Deployment GitHub `7511100715`, SHA de la fusión, entorno Production, completado según registro. El propietario confirma la generación de las planillas antes defectuosas y una nueva. No se marcaron como realizadas todas las variantes de la matriz manual ni se ejecutaron formularios contra producción durante esta revisión.
 
 **Verificación posterior al PR #8:** [CI 41548450422](https://github.com/josentss/jaguares/actions/runs/41548450422) satisfactorio sobre `512eccb`; fusión `d6d8c38` con árbol idéntico. Registro de despliegue GitHub `7506497104`, entorno Production, estado success / Deployment has completed; [Vercel](https://vercel.com/josents-projects/jaguares/BLobrZ5NXcHMVrRTJsoJPi5k1ejM). En la URL pública, ambos paneles, login, validador, cliente API, script de acceso y CSS devolvieron 200 y contenido idéntico al PR #8. Solo se hicieron GET; no se ejecutaron formularios autenticados en producción.
 
@@ -115,6 +119,8 @@ El propietario probó manualmente en Vercel la restricción de pagos, cambios de
 Las siguientes son **áreas pendientes de verificación o mejora**, no afirmaciones de que todas sean fallas explotables:
 
 ### Integridad de datos y modelo
+
+Los PR #6/#7/#9 ya protegen altas, duplicados normalizados, cédulas heredadas y varias carreras de estados. La lista siguiente conserva líneas de auditoría sobre históricos, restricciones reales y caminos aún no cubiertos; no implica que esas correcciones deban repetirse.
 
 - Duplicados de usuarios/representantes/atletas y de cédulas.
 - Identificación de hermanos con cédulas heredadas, secuencias y colisiones.
@@ -153,7 +159,7 @@ En la rama `integridad/altas-atomicas-identidades` se implementaron altas atómi
 
 Los escritores de identidad comparten un advisory lock transaccional PostgreSQL, con espera máxima de 5 segundos (503 recuperable). Se evita repetir un atleta de la misma familia con los mismos nombres, apellidos y nacimiento. No se renumeran cédulas históricas. Las notificaciones se emiten después del commit. El bloqueo es cooperativo y global: requiere revisar rendimiento y complementarlo con constraints después de auditar los datos reales.
 
-**Validación local:** comprobación sintáctica; 53/53 pruebas backend (17 nuevas en PostgreSQL temporal/API) y 10/10 Playwright escritorio/móvil. Chromium del sistema 154 con Playwright 1.56.1, distinto del Chromium 141 del CI. Sin pruebas de producción ni acceso a archivos reales. CI actualizado para ejecutar la nueva suite; estado remoto pendiente de consulta.
+**Validación local de aquella entrega:** comprobación sintáctica; 53/53 pruebas backend (17 nuevas en PostgreSQL temporal/API) y 10/10 Playwright escritorio/móvil. Chromium del sistema 154 con Playwright 1.56.1, distinto del Chromium 141 del CI. Sin pruebas de producción ni acceso a archivos reales. El estado remoto inicialmente pendiente se verificó después: PR #6 fusionado y CI satisfactorio.
 
 **Pendientes confirmados:** `validarMagicBytes` aún devuelve true; no hay atomicidad entre carga Cloudinary y commit SQL ni limpieza garantizada de archivos huérfanos. La autorización del endpoint no garantiza privacidad del enlace externo. Registro público no captura cédula; no se identifica a una misma persona con diferentes correos por su nombre. Constraints reales, duplicados históricos y escrituras externas siguen pendientes de auditoría autorizada.
 
@@ -242,8 +248,10 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 | Prioridad | Bloque | Criterio de finalización |
 | --- | --- | --- |
 | P0 — recuperación confirmada por el propietario | Recuperar la inscripción y comprobar los recorridos principales | PR #8 fusionado/desplegado, CI 89/89; propietario confirma inscripciones y recorridos habituales. Nuevos hallazgos registrados por separado |
-| P1 — completado | Fechas civiles, duplicados familiares y altas de 5–18 años | PR #9 fusionado en `52cd290`; CI 105/105 y Production completado. El propietario confirma el resultado manual.
-| P1 — bloque actual | PDF e impresión de planillas | Ancho de captura A4 estable y paginación validada en Playwright escritorio/móvil; PR #10 abierto y CI satisfactorio con PostgreSQL 16 ([run 41582615224](https://github.com/josentss/jaguares/actions/runs/41582615224)).
+| P1 — completado | Fechas civiles, duplicados familiares y altas de 5–18 años | PR #9 fusionado en `52cd290`; CI 105/105 y Production completado. El propietario confirma el resultado manual. |
+| P1 — completado | PDF e impresión de planillas | PR #10 fusionado en `3ff6923`, CI final y Production satisfactorios; propietario confirma generación de planillas anteriores y nueva. |
+| P1 — en revisión | Sesiones de ambos paneles | Rama `fix/sesiones-paneles`: estado inicial protegido, revalidación y cierre con respuesta comprobada; pruebas locales aprobadas, CI con PostgreSQL pendiente. |
+| P1 — después de sesiones | Fechas de eventos y, en otro bloque, hora explícita | Validación civil estricta en Caracas y límites del formulario; después contrato de hora y migración aditiva revisados, preservando históricos. |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
 | P2 | Migraciones, auditoría y ciclo de vida | Esquema reproducible, eventos trazables, archivado y política de borrado definida |
@@ -254,7 +262,22 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 
 P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 
-## 6. Primera tarea para Codex: auditoría de integridad y siguientes correcciones
+## 6. Próximo bloque y método para las siguientes correcciones
+
+**Sesiones — cambios en la rama, pendientes de revisión y CI:**
+
+- Ambos paneles ocultan su contenido mientras comprueban sesión y rol, incluso si falta la hoja de estilos; un error temporal o la falta del cliente de sesión ofrece reintentar. El backend conserva la autoridad sobre el acceso.
+- Se revalida al volver a la pestaña y al restaurar desde caché; un 401 de una API protegida y el cierre comunicado por otra pestaña llevan al login. La caché HTTP se desactiva en los HTML de panel y las respuestas API servidas por Express.
+- El cierre verifica la respuesta del servidor, evita solicitudes simultáneas y permite reintentar si falla; solo tras confirmación elimina la copia local de usuario y navega al login. Login, perfil y pagos no dependen de poder guardar esa copia en `localStorage`.
+- Playwright cubre ambos paneles en escritorio/móvil, autenticación lenta/fallida, rol ajeno, cierre exitoso/fallido, otra pestaña, navegación atrás, eventos de restauración simulados, falta de recursos/JavaScript y login/perfil/pago con almacenamiento bloqueado. No equivale a probar todas las variantes de caché de cada navegador real.
+
+**Pruebas locales de esta rama:** Node 24.15.0: 41/41 backend sin PostgreSQL y 45/45 navegador (incluye 23 pruebas de sesiones). Node 22.23.4: 41/41 backend sin PostgreSQL y 23/23 pruebas finales de sesiones; las 22 pruebas existentes de interfaz/PDF se ejecutaron en Node 22 antes del último ajuste de almacenamiento. Sintaxis correcta de 43 JS y scripts inline de ambos paneles en ambas versiones. PostgreSQL 18 temporal no inició porque el entorno denegó el socket TCP loopback; `pagos-pg`, `integridad-pg` y `flujos-web-pg` quedan para CI con PostgreSQL 16. No se consultó ni alteró la base productiva.
+
+**Límites de sesión:** el cierre elimina la cookie del navegador; el JWT es autónomo y un token copiado antes del cierre puede seguir siendo válido hasta su vencimiento si cuenta y rol siguen habilitados. La señal entre pestañas usa almacenamiento local cuando está disponible; la revalidación al recuperar visibilidad y la autorización backend siguen siendo necesarias. La aplicación de las cabeceras en Vercel debe comprobarse tras el despliegue autorizado.
+
+**Evidencia anterior a la corrección:** Chromium local sobre el HTML previo, APIs y cookie sintéticas, sin cargar la aplicación/BD de producción: en los dos paneles y ambos tamaños, el contenido era visible mientras `/api/auth/me` esperaba; al devolver 401 redirigía al login. Con logout 503, ambos redirigían igualmente y conservaban la cookie sintética. Esto reproduce fallos de interfaz/cierre, no un bypass de autorización. No se ejecutó una auditoría integral ni se actualizaron dependencias.
+
+Después: corregir fechas del calendario; añadir hora en un bloque separado. Mantener como prioridad de seguridad la validación y privacidad de documentos, dependencias y consistencia Cloudinary/SQL; una exposición concreta de datos personales desplazaría el orden funcional. La mensualidad fija, conversión y deuda individual siguen aplazadas por decisión del propietario.
 
 **No inicies con un rediseño visual ni con la implementación de todas las funciones pendientes.**
 
@@ -321,7 +344,9 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | Rama documental `docs/verificacion-pr7-web` | Evidencia de fusión/CI/Production y guía de 75 casos manuales, sin cambios de código | Documentación local para revisión; resultados manuales del propietario por registrar |
 | 2026-11-02 | PR #8 / main `d6d8c38` | CI 64 backend + 25 navegador aprobado; Production completado; siete recursos coinciden; propietario confirma inscripción y recorridos habituales | Nuevos hallazgos registrados; proveedores/constraints productivos sin validar |
 | 2026-11-03 | [PR #9](https://github.com/josentss/jaguares/pull/9), main `52cd290` | Fechas civiles, duplicados familiares NFC/nombre completo y edad mínima cinco; 74 backend + 31 navegador locales Node 22/24; CI 105/105 en [run 41563588392](https://github.com/josentss/jaguares/actions/runs/41563588392); Production completado | El propietario confirma pruebas web satisfactorias. PDF, entrada visual, eventos/hora y finanzas continúan en bloques separados |
-| 2026-11-03 | [PR #10](https://github.com/josentss/jaguares/pull/10), rama `fix/planillas-pdf-completas` | Exportación PDF A4 estable, paginación sin recorte, marcadores finales multipágina e impresión A4; Chromium 141 escritorio/móvil. 22 interfaz por Node 24 y 22; 36 pruebas backend sin PostgreSQL por versión. 41 JS + script inline con sintaxis válida en Node 22/24. CI Node 22 + PostgreSQL 16 satisfactorio ([run 41582615224](https://github.com/josentss/jaguares/actions/runs/41582615224)). PostgreSQL local no pudo enlazar `127.0.0.1` (permiso denegado) | PR abierto; no hay fusión ni despliegue de producción |
+| 2026-11-03 | [PR #10](https://github.com/josentss/jaguares/pull/10), main `3ff6923` | Exportación PDF A4 e impresión; 22 interfaz y 36 backend sin PostgreSQL por Node 22/24. 41 JS + script inline con sintaxis válida. CI final Node 22 + PostgreSQL 16 satisfactorio ([run 41582920053](https://github.com/josentss/jaguares/actions/runs/41582920053)); Production completado. PostgreSQL local no pudo enlazar loopback | Propietario confirma generación correcta de planillas antes defectuosas y nueva; sesiones, calendario y auditoría de archivos/dependencias pendientes |
+| 2026-11-03 | Revisión `docs/seguimiento-pr10-prioridades` | Confirmadas fusión/despliegue/CI y aceptación del PR #10; reproducción local en ambos paneles, escritorio/móvil, de contenido previo a auth y redirección con cookie conservada tras logout 503 simulado | Actualización documental; corrección de sesiones propuesta, aún no implementada |
+| 2026-11-03 | Rama `fix/sesiones-paneles` | Protección inicial y revalidación del panel, cierre con confirmación, cabeceras `no-store`; pruebas locales Node 24/22 y Playwright descritas en apartado 6 | CI con PostgreSQL pendiente; JWT copiado no se revoca al cerrar sesión; sin fusión ni despliegue |
 
 ### Plantilla breve de actualización futura
 

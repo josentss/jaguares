@@ -47,6 +47,16 @@ app.use(cors({
     credentials: true
 }));
 
+// Respuestas con sesión o datos personales y HTML de panel no deben quedar en cachés.
+const panelesProtegidos = new Set(['/admin/panel-directiva.html', '/admin/panel-representante.html']);
+app.use((req, res, next) => {
+    const ruta = req.path.toLowerCase();
+    if (ruta === '/api' || ruta.startsWith('/api/') || panelesProtegidos.has(ruta)) {
+        res.set('Cache-Control', 'no-store');
+    }
+    next();
+});
+
 // ── Body / cookies ─────────────────────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());

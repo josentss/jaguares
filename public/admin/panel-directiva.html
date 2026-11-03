@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Panel Directiva | Club Jaguares</title>
-    <link rel="stylesheet" href="admin-style.css?v=inscripcion-1">
+    <style>
+        body.panel-body[data-session-state]:not([data-session-state="ready"]) > :not(#session-gate) { display: none !important; }
+        body.panel-body[data-session-state]:not([data-session-state="ready"])::before,
+        body.panel-body[data-session-state]:not([data-session-state="ready"])::after { display: none !important; }
+        #session-gate { display: none; }
+        body.panel-body[data-session-state]:not([data-session-state="ready"]) #session-gate { display: block; }
+    </style>
+    <link rel="stylesheet" href="admin-style.css?v=sesiones-1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -317,7 +324,12 @@
         }
     </style>
 </head>
-<body class="panel-body">
+<body class="panel-body" data-session-state="checking">
+    <main id="session-gate" class="session-gate" role="status" aria-live="polite" aria-busy="true">
+        <p id="session-gate-message">Verificando tu sesión…</p>
+        <button id="session-gate-retry" type="button" hidden>Reintentar</button>
+        <noscript><p>Este panel requiere JavaScript. <a href="/admin/login.html">Ir al inicio de sesión</a>.</p></noscript>
+    </main>
 
     <button class="mobile-menu-toggle" id="mobile-menu-btn">
         <i class="fas fa-bars"></i>
@@ -354,7 +366,7 @@
             <li data-target="sec-atletas"><i class="fas fa-running"></i> Gestión Atletas</li>
             <li data-target="sec-pagos"><i class="fas fa-file-invoice-dollar"></i> Auditoría de Pagos</li>
             <li data-target="sec-cms"><i class="fas fa-globe"></i> Gestión Web</li>
-            <li id="btn-logout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
+            <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
         </ul>
     </div>
 
@@ -684,7 +696,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="fechas.js?v=fechas-1"></script>
     <script src="validacion-formularios.js?v=fechas-1"></script>
-    <script src="api-client.js?v=inscripcion-1"></script>
+    <script src="api-client.js?v=sesiones-1"></script>
+    <script>
+        if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
+            typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {
+            document.body.dataset.sessionState = 'error';
+            document.getElementById('session-gate').setAttribute('aria-busy', 'false');
+            document.getElementById('session-gate-message').textContent = 'No se pudo cargar la verificación de sesión. Inténtalo de nuevo.';
+            const reintentarSesion = document.getElementById('session-gate-retry');
+            reintentarSesion.hidden = false;
+            reintentarSesion.addEventListener('click', () => window.location.reload());
+        }
+    </script>
     <script>
         let currentUser = null;
         let planillaPdfEnCurso = false;
@@ -1776,14 +1799,18 @@
             });
         });
 
-        document.getElementById('btn-logout').addEventListener('click', async () => {
-            try {
-                await apiFetch('/api/auth/logout', { method: 'POST' });
-            } catch (e) {
-                console.error('No se pudo cerrar sesión en el servidor:', e);
+        const logoutButton = document.getElementById('btn-logout');
+        logoutButton.addEventListener('click', async () => {
+            const cerrado = await cerrarSesionPanel(logoutButton);
+            if (cerrado === false && document.body.dataset.sessionState === 'ready') {
+                showToast('No se pudo confirmar el cierre de sesión. Comprueba tu conexión e inténtalo de nuevo.', 'error');
             }
-            localStorage.clear();
-            window.location.href = 'login.html';
+        });
+        logoutButton.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                logoutButton.click();
+            }
         });
 
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -1810,17 +1837,13 @@
         window.addEventListener('resize', () => { if (window.innerWidth > 992) cerrarSidebarMovil(); });
 
         document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
+                typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') return;
+            const rolesPermitidos = ['directiva', 'staff', 'admin'];
             try {
-                const res = await apiFetch('/api/auth/me');
-                if (!res.ok) { window.location.href = 'login.html'; return; }
-                const json = await res.json();
-                if (!json.success) { window.location.href = 'login.html'; return; }
-                const user = json.usuario;
-                if(user.rol !== 'directiva' && user.rol !== 'staff' && user.rol !== 'admin') {
-                    alert('Acceso denegado. No tienes permisos de directiva.');
-                    window.location.href = 'login.html';
-                    return;
-                }
+                const user = await exigirSesionPanel(rolesPermitidos);
+                if (!user) return;
+                protegerSesionPanel(rolesPermitidos, user);
                 currentUser = user;
                 const rolEtiqueta = { directiva: 'Directiva', staff: 'Staff', admin: 'Administrador' }[user.rol] || user.rol;
                 document.getElementById('user-info').innerHTML = `<strong>${esc(user.nombres)} ${esc(user.apellidos)}</strong><span class="user-role">${esc(rolEtiqueta)}</span>`;
@@ -1835,8 +1858,8 @@
                 cargarSolicitudesPendientes();
                 cargarEventosAdmin();
             } catch (e) {
-                console.error('Error verificando sesión:', e);
-                window.location.href = 'login.html';
+                console.error('No se pudo iniciar el panel de directiva');
+                actualizarEstadoPanelSesion('error', 'No se pudo cargar el panel. Recarga la página e inténtalo de nuevo.');
             }
         });
 

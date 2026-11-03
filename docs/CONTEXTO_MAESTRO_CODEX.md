@@ -5,7 +5,7 @@
 > **Última actualización documental:** 2026-11-03
 > **Base comprobada:** `main` remoto `52cd290b03f3ac34df280d6d8f97b2c2d687249d`; árbol `38e8d14521717c9ac7dd7fd4f22835d820633688`. PR #9 fusionado; despliegue Vercel Production `7508559246` en estado satisfactorio. La referencia `main` local se conserva sin cambios.
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#9 fusionados. El propietario confirmó manualmente que los cambios del PR #9 funcionan. Rama actual `fix/planillas-pdf-completas`: corregir exportación PDF e impresión de fichas. Pruebas locales de interfaz aprobadas en Node 22/24; pruebas PostgreSQL locales pendientes porque el entorno denegó el socket TCP loopback. PR nuevo pendiente de abrir; no fusionar ni desplegar.
+> **Estado:** PR #1–#9 fusionados. El propietario confirmó manualmente que los cambios del PR #9 funcionan. PR #10 abierto desde `fix/planillas-pdf-completas` para corregir exportación PDF e impresión de fichas; CI satisfactorio en Node 22 con PostgreSQL 16 temporal ([run 41582615224](https://github.com/josentss/jaguares/actions/runs/41582615224)). Las pruebas PostgreSQL locales no pudieron ejecutarse porque el entorno denegó el socket TCP loopback. No fusionar ni desplegar sin autorización.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -243,7 +243,7 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 | --- | --- | --- |
 | P0 — recuperación confirmada por el propietario | Recuperar la inscripción y comprobar los recorridos principales | PR #8 fusionado/desplegado, CI 89/89; propietario confirma inscripciones y recorridos habituales. Nuevos hallazgos registrados por separado |
 | P1 — completado | Fechas civiles, duplicados familiares y altas de 5–18 años | PR #9 fusionado en `52cd290`; CI 105/105 y Production completado. El propietario confirma el resultado manual.
-| P1 — bloque actual | PDF e impresión de planillas | Ancho de captura A4 estable y paginación validada en Playwright escritorio/móvil; CI PostgreSQL pendiente en el PR nuevo.
+| P1 — bloque actual | PDF e impresión de planillas | Ancho de captura A4 estable y paginación validada en Playwright escritorio/móvil; PR #10 abierto y CI satisfactorio con PostgreSQL 16 ([run 41582615224](https://github.com/josentss/jaguares/actions/runs/41582615224)).
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
 | P2 | Migraciones, auditoría y ciclo de vida | Esquema reproducible, eventos trazables, archivado y política de borrado definida |
@@ -321,7 +321,7 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 | 2026-11-02 | Rama documental `docs/verificacion-pr7-web` | Evidencia de fusión/CI/Production y guía de 75 casos manuales, sin cambios de código | Documentación local para revisión; resultados manuales del propietario por registrar |
 | 2026-11-02 | PR #8 / main `d6d8c38` | CI 64 backend + 25 navegador aprobado; Production completado; siete recursos coinciden; propietario confirma inscripción y recorridos habituales | Nuevos hallazgos registrados; proveedores/constraints productivos sin validar |
 | 2026-11-03 | [PR #9](https://github.com/josentss/jaguares/pull/9), main `52cd290` | Fechas civiles, duplicados familiares NFC/nombre completo y edad mínima cinco; 74 backend + 31 navegador locales Node 22/24; CI 105/105 en [run 41563588392](https://github.com/josentss/jaguares/actions/runs/41563588392); Production completado | El propietario confirma pruebas web satisfactorias. PDF, entrada visual, eventos/hora y finanzas continúan en bloques separados |
-| 2026-11-03 | Rama `fix/planillas-pdf-completas` | Exportación PDF A4 estable, paginación sin recorte, marcadores finales multipágina e impresión A4; pruebas Chromium 141 escritorio/móvil. 22 interfaz por Node 24 y 22; 36 pruebas backend no PostgreSQL por versión. 41 JS + script inline con sintaxis válida en Node 22/24. PostgreSQL local no pudo enlazar `127.0.0.1` (permiso denegado); pruebas de integración PostgreSQL esperan CI | PR pendiente; no hay cambios ni despliegue de producción |
+| 2026-11-03 | [PR #10](https://github.com/josentss/jaguares/pull/10), rama `fix/planillas-pdf-completas` | Exportación PDF A4 estable, paginación sin recorte, marcadores finales multipágina e impresión A4; Chromium 141 escritorio/móvil. 22 interfaz por Node 24 y 22; 36 pruebas backend sin PostgreSQL por versión. 41 JS + script inline con sintaxis válida en Node 22/24. CI Node 22 + PostgreSQL 16 satisfactorio ([run 41582615224](https://github.com/josentss/jaguares/actions/runs/41582615224)). PostgreSQL local no pudo enlazar `127.0.0.1` (permiso denegado) | PR abierto; no hay fusión ni despliegue de producción |
 
 ### Plantilla breve de actualización futura
 

@@ -296,3 +296,105 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
         await new Promise(resolve=>server.close(resolve));
     }
 });
+
+test('PG: repetir identidad familiar con otra cédula propia o heredada no cambia el nacimiento ni crea otra ficha', async () => {
+    const body = {...atletaBase, nombres:'Repetición Exacta', cedula:'V-89100011'};
+    const primera = await ejecutar(atletas.registrarAtleta, body);
+    assert.equal(primera.codigo,200);
+    for (const cambio of [{cedula:'V-89100012'}, {hereda_cedula:'1',cedula:undefined}]) {
+        const repetida = await ejecutar(atletas.registrarAtleta,{...body,...cambio});
+        assert.equal(repetida.codigo,409);
+        assert.match(repetida.body.message,/ya está registrado/i);
+    }
+    const {rows} = await db.pool.query(`SELECT id_atleta, cedula, fecha_nacimiento::text AS fecha
+        FROM atletas WHERE id_representante = 1 AND nombres = $1`,[body.nombres]);
+    assert.deepEqual(rows,[{id_atleta:primera.body.id_atleta,cedula:body.cedula,fecha:body.fecha_nac}]);
+});
+
+test('PG: variantes Unicode concurrentes de un nombre familiar no generan dos identidades', async () => {
+    const variantes = [
+        {nombres:'Prueba Núñez', apellidos:'Unicode', cedula:'V-89100021'},
+        {nombres:'Prueba Nu\u0301ñez', apellidos:'Unicode', cedula:'V-89100022'}
+    ];
+    const resultados = await Promise.all(variantes.map((variante,i) => ejecutar(
+        i ? atletas.registrarAtletaDirectiva : atletas.registrarAtleta,
+        {...atletaBase,...variante,id_representante:1},
+        i ? {usuarioId:4,usuarioRol:'staff'} : {}
+    )));
+    assert.deepEqual(resultados.map(r=>r.codigo).sort(),[200,409]);
+    const {rows} = await db.pool.query('SELECT count(*)::int AS total FROM atletas WHERE cedula = ANY($1::text[])',
+        [variantes.map(v=>v.cedula)]);
+    assert.equal(rows[0].total,1);
+});
+
+test('PG: repartir el mismo nombre completo entre nombres y apellidos se coordina entre ambos paneles', async () => {
+    const variantes = [
+        {nombres:'Prueba María',apellidos:'Segmentada',cedula:'V-89100031'},
+        {nombres:'Prueba',apellidos:'María Segmentada',cedula:'V-89100032'}
+    ];
+    const resultados = await Promise.all(variantes.map((variante,i) => ejecutar(
+        i ? atletas.registrarAtletaDirectiva : atletas.registrarAtleta,
+        {...atletaBase,...variante,id_representante:1},
+        i ? {usuarioId:4,usuarioRol:'staff'} : {}
+    )));
+    assert.deepEqual(resultados.map(r=>r.codigo).sort(),[200,409]);
+    const {rows} = await db.pool.query('SELECT count(*)::int AS total FROM atletas WHERE cedula = ANY($1::text[])',
+        [variantes.map(v=>v.cedula)]);
+    assert.equal(rows[0].total,1);
+});
+
+test('PG: coincidencias en otra familia y nacimientos diferentes se admiten conservando el día enviado', async () => {
+    const body = {...atletaBase,nombres:'Coincidencia Permitida',cedula:'V-89100041'};
+    const peticiones = [
+        {body,usuarioId:1},
+        {body:{...body,cedula:'V-89100042'},usuarioId:2},
+        {body:{...body,cedula:'V-89100043',fecha_nac:'2014-05-11'},usuarioId:1}
+    ];
+    const ids = [];
+    for (const peticion of peticiones) {
+        const r = await ejecutar(atletas.registrarAtleta,peticion.body,{usuarioId:peticion.usuarioId});
+        assert.equal(r.codigo,200);
+        ids.push(r.body.id_atleta);
+    }
+    const {rows} = await db.pool.query(`SELECT id_representante, fecha_nacimiento::text AS fecha
+        FROM atletas WHERE id_atleta = ANY($1::int[]) ORDER BY id_atleta`,[ids]);
+    assert.deepEqual(rows,peticiones.map(p=>({id_representante:p.usuarioId,fecha:p.body.fecha_nac})));
+});
+
+test('PG: ambos controladores rechazan cuatro años y admiten cinco sin crear altas parciales', async () => {
+    const partes = new Intl.DateTimeFormat('en-US', {
+        timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'
+    }).formatToParts(new Date());
+    const parte = tipo => Number(partes.find(p=>p.type===tipo).value);
+    const nacimiento = edad => {
+        const year = parte('year') - edad;
+        const month = parte('month');
+        const day = Math.min(parte('day'),new Date(Date.UTC(year,month,0)).getUTCDate());
+        return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    };
+    for (const [i,fn] of [atletas.registrarAtleta,atletas.registrarAtletaDirectiva].entries()) {
+        const body = {...atletaBase,nombres:i?'Edad Directiva':'Edad Representante',
+            id_representante:1,cedula:`V-${89100051+i}`};
+        const rechazada = await ejecutar(fn,{...body,fecha_nac:nacimiento(4)});
+        assert.equal(rechazada.codigo,400);
+        assert.match(rechazada.body.message,/5.*18/);
+        const previa = await db.pool.query('SELECT count(*)::int AS total FROM atletas WHERE cedula = $1',[body.cedula]);
+        assert.equal(previa.rows[0].total,0);
+        const admitida = await ejecutar(fn,{...body,fecha_nac:nacimiento(5)});
+        assert.equal(admitida.codigo,200);
+        const persistida = await db.pool.query('SELECT fecha_nacimiento::text AS fecha FROM atletas WHERE id_atleta = $1',
+            [admitida.body.id_atleta]);
+        assert.equal(persistida.rows[0].fecha,nacimiento(5));
+    }
+});
+
+test('PG: DATE se devuelve como fecha civil y TIMESTAMPTZ conserva su instante', async () => {
+    const {rows} = await db.pool.query(`SELECT DATE '2026-11-02' AS fecha,
+        TIMESTAMPTZ '2026-11-02 13:00:00+00' AS instante`);
+    assert.equal(rows[0].fecha,'2026-11-02');
+    assert.ok(rows[0].instante instanceof Date);
+    assert.equal(rows[0].instante.toISOString(),'2026-11-02T13:00:00.000Z');
+    assert.deepEqual(JSON.parse(JSON.stringify(rows[0])),{
+        fecha:'2026-11-02',instante:'2026-11-02T13:00:00.000Z'
+    });
+});

@@ -96,7 +96,7 @@ async function registrarAtletaBase(req, res, { id_representante, estado, mensaje
     if (!esEdadAtletaValida(fecha_nac)) {
         return res.status(400).json({
             success: false,
-            message: 'Fecha de nacimiento fuera del rango: el atleta debe tener entre 0 y 18 años cumplidos y no puede nacer en el futuro'
+            message: 'Fecha de nacimiento fuera del rango: el atleta debe tener entre 5 y 18 años cumplidos'
         });
     }
 

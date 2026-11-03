@@ -113,8 +113,8 @@ test.after(async () => {
     assert.deepEqual(errores,[],'No debe haber excepciones JavaScript en los flujos reales');
 });
 
-async function pagina(viewport = {width:1440,height:900}, sinValidador = false) {
-    const context = await browser.newContext({viewport,timezoneId:'America/Caracas'});
+async function pagina(viewport = {width:1440,height:900}, sinValidador = false, timezoneId = 'America/Caracas') {
+    const context = await browser.newContext({viewport,timezoneId});
     await context.route('**/*',route => {
         const url = route.request().url();
         if (sinValidador && new URL(url).pathname.endsWith('/validacion-formularios.js')) return route.abort();
@@ -126,8 +126,8 @@ async function pagina(viewport = {width:1440,height:900}, sinValidador = false) 
     return page;
 }
 
-async function entrar(correo, viewport, sinValidador = false) {
-    const page = await pagina(viewport, sinValidador);
+async function entrar(correo, viewport, sinValidador = false, timezoneId = 'America/Caracas') {
+    const page = await pagina(viewport, sinValidador, timezoneId);
     await page.goto(base+'/admin/login.html');
     await page.locator('#login-email').fill(correo);
     await page.locator('#login-password').fill(clave);
@@ -461,3 +461,95 @@ test('flujo real: si no carga el validador, ambos paneles envían y el backend v
         } finally {await page.context().close();}
     }
 });
+
+for (const [nombre,viewport,timezoneId] of [
+    ['Escritorio',{width:1440,height:900},'America/Caracas'],
+    ['Móvil',{width:390,height:844},'Asia/Tokyo']
+]) {
+    test(`fechas civiles reales ${nombre} ${timezoneId}: nacimiento, duplicado y pagos conservan el día`, async () => {
+        const rep = await entrar('alfa@example.org',viewport,false,timezoneId);
+        const dir = await entrar('directiva@example.org',viewport,false,timezoneId);
+        const nombres = 'Fechas Civiles '+nombre;
+        const nacimiento = '2014-05-10';
+        const fechaPago = '2026-11-02';
+        try {
+            await rep.waitForFunction(()=>document.querySelector('#perfil-cedula')?.value==='V-91000002');
+            await seccion(rep,'sec-atletas');
+            await rellenarAtleta(rep,'atl',nombres);
+            const alta = await enviar(rep,'#form-add-atleta','/api/atletas/registrar-atleta');
+            const persistida = await db.pool.query('SELECT fecha_nacimiento FROM atletas WHERE id_atleta=$1',[alta.id_atleta]);
+            assert.equal(persistida.rows[0].fecha_nacimiento,nacimiento);
+
+            // Cambiar la cédula no convierte una misma identidad familiar en otro atleta.
+            await seccion(rep,'sec-atletas');
+            await rellenarAtleta(rep,'atl',nombres);
+            await enviar(rep,'#form-add-atleta','/api/atletas/registrar-atleta',409);
+            const conteo = await db.pool.query(`SELECT count(*)::int AS total FROM atletas
+                WHERE id_representante=2 AND nombres=$1`,[nombres]);
+            assert.equal(conteo.rows[0].total,1);
+            await rep.waitForFunction(()=>document.querySelector('#toast-container')?.textContent.includes('ya está registrado'));
+
+            const listado = await (await rep.request.get(base+'/api/atletas/representante/2')).json();
+            assert.equal(listado.atletas.find(a=>a.id_atleta===alta.id_atleta).fecha_nacimiento,nacimiento);
+            const ficha = await (await dir.request.get(base+`/api/atletas/${alta.id_atleta}`)).json();
+            assert.equal(ficha.atleta.fecha_nacimiento,nacimiento);
+            await dir.reload();
+            await seccion(dir,'sec-atletas');
+            const filaAtleta = dir.locator('#body-atletas tr').filter({hasText:nombres+' Núñez'});
+            await filaAtleta.waitFor({state:'visible'});
+            assert.equal((await filaAtleta.locator('td').nth(2).innerText()).trim(),'10/5/2014');
+            await filaAtleta.getByRole('button',{name:'Planilla',exact:true}).click();
+            const fechaPlanilla = dir.locator('#planillaModal .planilla-table tr').filter({hasText:'Fecha de nacimiento'}).locator('td');
+            await fechaPlanilla.waitFor({state:'visible'});
+            assert.equal((await fechaPlanilla.innerText()).trim(),'10/5/2014');
+            await dir.locator('#planillaModal').getByRole('button',{name:'Cerrar',exact:true}).click();
+
+            const activacion = dir.waitForResponse(r=>r.url().endsWith('/api/directiva/atleta/estado')&&r.request().method()==='PUT');
+            await dir.locator(`.js-atleta-estado[data-id="${alta.id_atleta}"][data-estado="activo"]`).click();
+            assert.equal((await activacion).status(),200);
+            await rep.reload();
+            await rep.locator(`#pay-atleta option[value="${alta.id_atleta}"]`).waitFor({state:'attached'});
+            await seccion(rep,'sec-pagos');
+            for (const metodo of ['Efectivo','Transferencia Bancaria']) {
+                await rep.selectOption('#pay-atleta',String(alta.id_atleta));
+                await rep.selectOption('#pay-mes','Noviembre');
+                await rep.selectOption('#pay-metodo',metodo);
+                if (metodo==='Efectivo') {
+                    await rep.locator('#pay-monto-efec').fill('10.00');
+                    await rep.selectOption('#pay-moneda-efec','USD');
+                    await rep.locator('#pay-fecha-efec').fill(fechaPago);
+                } else {
+                    await rep.locator('#pay-monto-trans').fill('35.50');
+                    await rep.locator('#pay-referencia').fill('REFERENCIA-FECHAS-'+nombre);
+                    await rep.locator('#pay-fecha-trans').fill(fechaPago);
+                    await rep.locator('#pay-captura').setInputFiles({name:'comprobante-fechas.png',mimeType:'image/png',
+                        buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')});
+                }
+                await enviar(rep,'#form-report-pago','/api/pagos/reportar');
+            }
+
+            const pagosSQL = await db.pool.query('SELECT fecha_pago FROM pagos WHERE id_atleta=$1 ORDER BY id_pago',[alta.id_atleta]);
+            assert.deepEqual(pagosSQL.rows.map(p=>p.fecha_pago),[fechaPago,fechaPago]);
+            const historial = await (await rep.request.get(base+'/api/pagos/historial/2')).json();
+            assert.deepEqual(historial.datos.filter(p=>p.id_atleta===alta.id_atleta).map(p=>p.fecha_pago),[fechaPago,fechaPago]);
+            await seccion(rep,'sec-historial');
+            await rep.waitForFunction(n=>[...document.querySelectorAll('#table-my-pagos tbody tr')]
+                .filter(f=>f.textContent.includes(n)).length===2,nombres);
+            const filasRep = rep.locator('#table-my-pagos tbody tr').filter({hasText:nombres+' Núñez'});
+            assert.deepEqual((await filasRep.locator('td:first-child').allTextContents()).map(x=>x.trim()),['2/11/2026','2/11/2026']);
+
+            const auditoria = await (await dir.request.get(base+'/api/directiva/auditoria')).json();
+            assert.equal(auditoria.atletas.find(a=>a.id_atleta===alta.id_atleta).fecha_nac,nacimiento);
+            assert.deepEqual(auditoria.pagos.filter(p=>p.atl_nombres===nombres).map(p=>p.fecha_pago),[fechaPago,fechaPago]);
+            await dir.reload();
+            await seccion(dir,'sec-pagos');
+            const filasDir = dir.locator('#body-pagos tr').filter({hasText:nombres+' Núñez'});
+            await filasDir.first().waitFor({state:'visible'});
+            assert.equal(await filasDir.count(),2);
+            assert.deepEqual((await filasDir.locator('td:nth-child(3)').allTextContents()).map(x=>x.trim()),['2/11/2026','2/11/2026']);
+        } finally {
+            await rep.context().close();
+            await dir.context().close();
+        }
+    });
+}

@@ -383,3 +383,104 @@ test('inscripción: recalcula errores anteriores cuando el navegador completa va
         await enviada;
     } finally {await browser.close();}
 });
+
+async function comprobarFechasPanel(browser, { panel, timezoneId, viewport, legacy = false, sinHelper = false }) {
+    const context = await browser.newContext({ viewport, timezoneId });
+    const page = await context.newPage();
+    const errores = [];
+    const altas = [];
+    page.on('pageerror', error => errores.push(error.message));
+    page.on('request', request => {
+        if (request.method() === 'POST' && request.url().endsWith('/registrar-atleta')) altas.push(request);
+    });
+    await page.clock.setFixedTime(new Date('2026-11-03T02:00:00Z')); // Todavía 02/11 en Caracas.
+    await page.route('**/*', async route => {
+        const url = new URL(route.request().url());
+        if (url.origin !== baseUrl) return route.abort();
+        if (sinHelper && url.pathname.endsWith('/fechas.js')) return route.abort();
+        if (['/api/directiva/auditoria', '/api/pagos/historial/5'].includes(url.pathname)) {
+            const response = await route.fetch();
+            const data = await response.json();
+            const sufijo = legacy ? 'T00:00:00.000Z' : '';
+            if (data.atletas) {
+                data.atletas[0].fecha_nac = '2011-02-01' + sufijo;
+                data.pagos[0].fecha_pago = '2026-11-02' + sufijo;
+                data.tasa_fecha = '2026-11-02T00:00:00.000Z'; // Instante: 01/11 en Caracas.
+            } else data.datos[0].fecha_pago = '2026-11-02' + sufijo;
+            return route.fulfill({ response, json: data });
+        }
+        return route.continue();
+    });
+    try {
+        await page.goto(`${baseUrl}/admin/panel-${panel}.html`);
+        const directiva = panel === 'directiva';
+        if (directiva) {
+            await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
+            assert.equal((await page.locator('#body-atletas tr').first().locator('td').nth(2).textContent()).trim(), '1/2/2011');
+            assert.equal((await page.locator('#body-pagos tr').first().locator('td').nth(2).textContent()).trim(), '2/11/2026');
+            assert.equal(await page.locator('#stat-tasa-fecha').textContent(), 'Fecha: 1/11/2026');
+        } else {
+            await page.waitForFunction(() => document.querySelector('#table-my-pagos tbody')?.textContent.includes('Noviembre'));
+            assert.equal((await page.locator('#table-my-pagos tbody tr').first().locator('td').first().textContent()).trim(), '2/11/2026');
+            await page.evaluate(() => document.querySelector('[data-target="sec-pagos"]').click());
+            await page.locator('#pay-metodo').selectOption('Efectivo');
+            assert.equal(await page.locator('#pay-fecha-efec').inputValue(), '2026-11-02');
+            assert.equal(await page.locator('#pay-fecha-efec').getAttribute('max'), '2026-11-02');
+        }
+        if (sinHelper) assert.equal(await page.evaluate(() => typeof window.FechasJaguares), 'undefined');
+        const seccion = directiva ? 'sec-registrar' : 'sec-atletas';
+        await page.evaluate(id => document.querySelector(`[data-target="${id}"]`).click(), seccion);
+        const prefijo = directiva ? 'dir' : 'atl';
+        const formulario = directiva ? '#form-dir-atleta' : '#form-add-atleta';
+        if (directiva) {
+            await page.locator('#dir-rep option[value="5"]').waitFor({state:'attached'});
+            await page.locator('#dir-rep').selectOption('5');
+        }
+        for (const [campo, valor] of Object.entries({ nombres:'Atleta Fechas', apellidos:'Sintético',
+            cedula:'84000001', direccion:'Calle de pruebas 12', telefono:'04140000001' })) {
+            await page.locator(`#${prefijo}-${campo}`).fill(valor);
+        }
+        const nacimiento = page.locator(`#${prefijo}-fecha-nac`);
+        assert.equal(await nacimiento.getAttribute('min'), '2007-11-03');
+        assert.equal(await nacimiento.getAttribute('max'), '2021-11-02');
+        for (const invalida of ['2007-11-02', '2021-11-03']) {
+            await nacimiento.fill(invalida);
+            await page.locator(`${formulario} button[type=submit]`).click();
+            const mensaje = page.locator(`${formulario} .form-validation-message`);
+            await mensaje.waitFor({state:'visible'});
+            assert.ok((await mensaje.textContent()).includes('5 y 18'));
+            assert.equal(altas.length, 0, 'Una edad de 19 o de 4 años no debe enviar el formulario');
+        }
+        await nacimiento.fill('2007-11-03');
+        assert.equal(await nacimiento.evaluate(campo => campo.validity.valid), true, '18 años cumplidos son válidos');
+        await nacimiento.fill('2021-11-02');
+        assert.equal(await nacimiento.evaluate(campo => campo.validity.valid), true, 'Cumplir 5 hoy es válido');
+        const enviada = page.waitForRequest(request => request.method() === 'POST' &&
+            request.url().endsWith('/registrar-atleta'), {timeout:5000});
+        await page.locator(`${formulario} button[type=submit]`).click();
+        assert.ok((await enviada).postData().includes('2021-11-02'));
+        assert.equal(altas.length, 1);
+        assert.deepEqual(errores, []);
+    } finally { await context.close(); }
+}
+
+for (const timezoneId of ['America/Caracas', 'UTC', 'Asia/Tokyo']) {
+    test(`fechas civiles ${timezoneId}: mismo día y límites de edad en ambos paneles, escritorio y móvil`, async () => {
+        const browser = await chromium.launch({headless:true});
+        try {
+            for (const legacy of [false, true]) for (const panel of ['representante', 'directiva']) {
+                await comprobarFechasPanel(browser, { panel, timezoneId, legacy,
+                    viewport: legacy ? {width:390,height:844} : {width:1440,height:900} });
+            }
+        } finally { await browser.close(); }
+    });
+}
+
+test('fechas civiles sin helper: validación, formato y envío siguen disponibles en ambos paneles', async () => {
+    const browser = await chromium.launch({headless:true});
+    try {
+        for (const panel of ['representante', 'directiva']) await comprobarFechasPanel(browser, {
+            panel, timezoneId:'Asia/Tokyo', viewport:{width:390,height:844}, sinHelper:true
+        });
+    } finally { await browser.close(); }
+});

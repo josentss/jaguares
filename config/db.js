@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 
 const connectionString = (process.env.DATABASE_URL || '').trim();
 
@@ -9,6 +9,14 @@ if (!connectionString) {
 
 const pool = new Pool({
     connectionString: connectionString || undefined,
+    // DATE es un día civil, no un instante a medianoche del huso del servidor.
+    // Aislar este parser en el pool; los timestamps y otros clientes no cambian.
+    types: {
+        getTypeParser(oid, format) {
+            if (oid === types.builtins.DATE && (!format || format === 'text')) return value => value;
+            return types.getTypeParser(oid, format);
+        }
+    },
     ssl: connectionString ? { rejectUnauthorized: false } : false,
     max: 3,
     idleTimeoutMillis: 10000,

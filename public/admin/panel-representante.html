@@ -337,7 +337,8 @@
         </section>
     </div>
 
-<script src="validacion-formularios.js?v=inscripcion-1"></script>
+<script src="fechas.js?v=fechas-1"></script>
+<script src="validacion-formularios.js?v=fechas-1"></script>
 <script src="api-client.js?v=inscripcion-1"></script>
 <script>
         let repCache = {};
@@ -365,7 +366,12 @@
             const transPanel = document.getElementById('panel-transferencia');
             const efecPanel = document.getElementById('panel-efectivo');
 
-            const hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+            const partes = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).formatToParts(new Date());
+            const parte = tipo => partes.find(p => p.type === tipo)?.value;
+            const hoy = window.FechasJaguares?.hoyVenezuela() ||
+                [parte('year'), parte('month'), parte('day')].join('-');
             ['pay-fecha-trans', 'pay-fecha-efec'].forEach(id => {
                 const f = document.getElementById(id);
                 if (f) { f.max = hoy; if (!f.value) f.value = hoy; }
@@ -809,7 +815,10 @@
 
                         pagosFiltrados.forEach(pago => {
                             let badgeClass = pago.estado_pago === 'aprobado' ? 'estado-activo' : (pago.estado_pago === 'rechazado' ? 'estado-inactivo' : 'estado-espera');
-                            let fechaStr = pago.fecha_pago ? new Date(pago.fecha_pago).toLocaleDateString('es-VE') : 'N/A';
+                            const fechaPago = /^(\d{4})-(\d{2})-(\d{2})(?:T|$)/.exec(String(pago.fecha_pago || ''));
+                            const fechaStr = window.FechasJaguares
+                                ? window.FechasJaguares.formatearFechaCivil(pago.fecha_pago)
+                                : (fechaPago ? `${Number(fechaPago[3])}/${Number(fechaPago[2])}/${fechaPago[1]}` : 'N/A');
 
                             tbody.innerHTML += `<tr>
                                 <td>${fechaStr}</td>

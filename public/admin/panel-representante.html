@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Panel Representante | Club Jaguares</title>
-    <link rel="stylesheet" href="admin-style.css?v=inscripcion-1">
+    <style>
+        body.panel-body[data-session-state]:not([data-session-state="ready"]) > :not(#session-gate) { display: none !important; }
+        body.panel-body[data-session-state]:not([data-session-state="ready"])::before,
+        body.panel-body[data-session-state]:not([data-session-state="ready"])::after { display: none !important; }
+        #session-gate { display: none; }
+        body.panel-body[data-session-state]:not([data-session-state="ready"]) #session-gate { display: block; }
+    </style>
+    <link rel="stylesheet" href="admin-style.css?v=sesiones-1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -47,7 +54,12 @@
         .search-wrapper i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #888; }
     </style>
 </head>
-<body class="panel-body">
+<body class="panel-body" data-session-state="checking">
+    <main id="session-gate" class="session-gate" role="status" aria-live="polite" aria-busy="true">
+        <p id="session-gate-message">Verificando tu sesión…</p>
+        <button id="session-gate-retry" type="button" hidden>Reintentar</button>
+        <noscript><p>Este panel requiere JavaScript. <a href="/admin/login.html">Ir al inicio de sesión</a>.</p></noscript>
+    </main>
 
     <div id="toast-container"></div>
     <!-- Onboarding: perfil incompleto -->
@@ -96,7 +108,7 @@
             <li data-target="sec-pagos"><i class="fas fa-money-bill-wave"></i> Reportar Pago</li>
             <li data-target="sec-historial" data-title="Historial de Pagos"><i class="fas fa-history"></i> Mi Historial</li>
             <li data-target="sec-perfil"><i class="fas fa-user-gear"></i> Mi Perfil</li>
-            <li id="btn-logout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
+            <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
         </ul>
     </div>
 
@@ -339,7 +351,18 @@
 
 <script src="fechas.js?v=fechas-1"></script>
 <script src="validacion-formularios.js?v=fechas-1"></script>
-<script src="api-client.js?v=inscripcion-1"></script>
+<script src="api-client.js?v=sesiones-1"></script>
+<script>
+    if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
+        typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {
+        document.body.dataset.sessionState = 'error';
+        document.getElementById('session-gate').setAttribute('aria-busy', 'false');
+        document.getElementById('session-gate-message').textContent = 'No se pudo cargar la verificación de sesión. Inténtalo de nuevo.';
+        const reintentarSesion = document.getElementById('session-gate-retry');
+        reintentarSesion.hidden = false;
+        reintentarSesion.addEventListener('click', () => window.location.reload());
+    }
+</script>
 <script>
         let repCache = {};
 
@@ -412,21 +435,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-                    let userData = null;
-                    try {
-                        const res = await apiFetch('/api/auth/me');
-                        if (!res.ok) { window.location.href = 'login.html'; return; }
-                        const json = await res.json();
-                        if (!json.success) { window.location.href = 'login.html'; return; }
-                        userData = json.usuario;
-                        // Keep client-side cache in sync
-                        localStorage.setItem('usuario', JSON.stringify(userData));
-                    } catch (e) {
-                        console.error('Error verificando sesión:', e);
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    if (!userData || userData.rol !== 'representante') { window.location.href = 'login.html'; return; }
+            if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
+                typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') return;
+            try {
+            const rolesPermitidos = ['representante'];
+            const userData = await exigirSesionPanel(rolesPermitidos);
+            if (!userData) return;
+            try { localStorage.setItem('usuario', JSON.stringify(userData)); } catch (_) {}
 
                     const userBadge = document.getElementById('user-info');
             function actualizarTitulo() {
@@ -874,7 +889,7 @@
                         showToast('¡Perfil actualizado!', 'success');
                         userData.nombres = updatedData.nombres;
                         userData.apellidos = updatedData.apellidos;
-                        localStorage.setItem('usuario', JSON.stringify(userData));
+                        try { localStorage.setItem('usuario', JSON.stringify(userData)); } catch (_) {}
                         actualizarTitulo();
                         document.getElementById('perfil-password').value = "";
 
@@ -1030,13 +1045,6 @@
                      return;
                  }
 
-                // Obtenemos los datos de sesión actuales
-                const userData = JSON.parse(localStorage.getItem('usuario'));
-                if (!userData) {
-                    showToast('Sesión expirada. Por favor recarga e inicia sesión.', 'error');
-                    return;
-                }
-
                 const btn = form.querySelector('button[type="submit"]');
                 const btnText = btn.innerHTML;
                 btn.disabled = true;
@@ -1098,15 +1106,23 @@
             });
 
             // --- DESTRUCCIÓN DE SESIÓN ---
-            document.getElementById('btn-logout').addEventListener('click', async () => {
-                try {
-                    await apiFetch('/api/auth/logout', { method: 'POST' });
-                } catch (e) {
-                    console.error('No se pudo cerrar sesión en el servidor:', e);
+            const logoutButton = document.getElementById('btn-logout');
+            logoutButton.addEventListener('click', async () => {
+                const cerrado = await cerrarSesionPanel(logoutButton);
+                if (cerrado === false && document.body.dataset.sessionState === 'ready') {
+                    showToast('No se pudo confirmar el cierre de sesión. Comprueba tu conexión e inténtalo de nuevo.', 'error');
                 }
-                localStorage.clear();
-                window.location.href = 'login.html';
             });
+            logoutButton.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    logoutButton.click();
+                }
+            });
+            protegerSesionPanel(rolesPermitidos, userData);
+            } catch (_) {
+                actualizarEstadoPanelSesion('error', 'No se pudo cargar el panel. Recarga la página e inténtalo de nuevo.');
+            }
         });
     </script>
 </body>

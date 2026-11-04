@@ -111,7 +111,7 @@ formLogin.addEventListener('submit', async (e) => {
         const result = await res.json();
 
         if (result.success) {
-            localStorage.setItem('usuario', JSON.stringify(result.usuario));
+            try { localStorage.setItem('usuario', JSON.stringify(result.usuario)); } catch (_) {}
             const rol = result.usuario.rol;
 
             if (['admin', 'staff', 'directiva'].includes(rol)) {

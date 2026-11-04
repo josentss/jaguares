@@ -184,6 +184,30 @@ test('una respuesta temporal fallida ofrece reintentar sin mostrar datos del pan
     }
 });
 
+for (const role of ['directiva', 'representante']) {
+    test(`${role} móvil: el menú funciona después de una verificación lenta`, async () => {
+        reiniciarEstado(role);
+        let liberar;
+        state.esperaMe = new Promise(resolve => { liberar = resolve; });
+        const { browser, context } = await nuevoContexto({ width: 390, height: 844 });
+        try {
+            const { page } = await abrirPanel(context, role);
+            await esperarRuta('/api/auth/me');
+            const menu = page.locator(role === 'directiva' ? '#mobile-menu-btn' : '#menu-toggle');
+            assert.equal(await menu.isVisible(), false);
+            liberar();
+            await page.locator('.main-content').waitFor({ state: 'visible' });
+            await menu.click();
+            await page.locator('[data-target="sec-pagos"]').click();
+            assert.equal(await page.locator('#sec-pagos').isVisible(), true);
+        } finally {
+            liberar?.();
+            await context.close();
+            await browser.close();
+        }
+    });
+}
+
 for (const dispositivo of [
     { nombre: 'escritorio', viewport: { width: 1440, height: 900 } },
     { nombre: 'movil', viewport: { width: 390, height: 844 } }
@@ -245,6 +269,54 @@ test('revalida al volver a una pestaña y redirige si la sesión fue revocada', 
         state.autenticada = false;
         await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
         await page.waitForURL('**/admin/login.html');
+    } finally {
+        await context.close();
+        await browser.close();
+    }
+});
+
+for (const role of ['directiva', 'representante']) {
+    test(`${role}: oculta los datos mientras revalida al volver a la pestaña`, async () => {
+        reiniciarEstado(role);
+        const { browser, context } = await nuevoContexto({ width: 390, height: 844 });
+        let liberar;
+        try {
+            const { page } = await abrirPanel(context, role);
+            await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
+            await page.bringToFront();
+            const anteriores = state.requests.filter(request => request.pathname === '/api/auth/me').length;
+            state.esperaMe = new Promise(resolve => { liberar = resolve; });
+            await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+            await esperarRuta('/api/auth/me', anteriores + 1);
+            assert.equal(await page.locator('.main-content').isVisible(), false);
+            assert.equal(await page.locator('#session-gate').isVisible(), true);
+            liberar();
+            await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
+            assert.equal(await page.locator('.main-content').isVisible(), true);
+        } finally {
+            liberar?.();
+            await context.close();
+            await browser.close();
+        }
+    });
+}
+
+test('un error al revalidar oculta el panel y permite recuperar la sesión', async () => {
+    reiniciarEstado('representante');
+    const { browser, context } = await nuevoContexto({ width: 390, height: 844 });
+    try {
+        const { page } = await abrirPanel(context, 'representante');
+        await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
+        await page.bringToFront();
+        state.meStatus = 503;
+        await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+        await page.waitForFunction(() => document.body.dataset.sessionState === 'error');
+        assert.equal(await page.locator('.main-content').isVisible(), false);
+        assert.equal(await page.locator('#session-gate-retry').isVisible(), true);
+        state.meStatus = 200;
+        await page.locator('#session-gate-retry').click();
+        await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
+        assert.equal(await page.locator('.main-content').isVisible(), true);
     } finally {
         await context.close();
         await browser.close();

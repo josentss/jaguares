@@ -134,7 +134,7 @@ function protegerSesionPanel(rolesPermitidos, usuarioAutenticado) {
     });
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && document.body.dataset.sessionState === 'ready') {
-            revalidar();
+            revalidar({ ocultar: true });
         }
     });
     actualizarEstadoPanelSesion('ready');

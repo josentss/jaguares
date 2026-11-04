@@ -141,6 +141,7 @@ async function entrar(correo, viewport, sinValidador = false, timezoneId = 'Amer
 
 async function seccion(page, id) {
     // El mismo elemento del menú, con clic físico también en el viewport móvil.
+    await page.locator('.main-content').waitFor({ state: 'visible' });
     const menu = page.locator('.mobile-menu-toggle');
     const item = page.locator(`[data-target="${id}"]`);
     if (await menu.isVisible() && !(await page.locator('#sidebar').evaluate(e=>e.classList.contains('open')))) {

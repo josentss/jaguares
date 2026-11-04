@@ -3,9 +3,9 @@
 > **Propósito:** documento persistente para continuar el desarrollo del sistema Club de Voleibol Jaguares. Codex debe leerlo al iniciar tareas de este repositorio y proponer actualizaciones cuando cambien el código, las reglas, las pruebas o el estado de los PR.
 >
 > **Última actualización documental:** 2026-11-04
-> **Base comprobada:** `main` remoto `3ff6923400eefddd680899e3f407f362efb19fae`; árbol `18af0b0460a187ebfe6e2f430443cf12774fade3`, idéntico al head probado del PR #10. Despliegue Vercel Production `7511100715` en estado `success / Deployment has completed`. La referencia `main` local se conserva sin cambios.
+> **Base comprobada:** `main` remoto `39960c1b9e5ade540eeb9799bd660b0ecb8b07a5`; árbol `c01b337f198a3cf0af05879360c8631fc4b4eac3`, idéntico al head probado del PR #11. Despliegue Vercel Production `7555067963` en estado `success / Deployment has completed`. La referencia `main` local se conserva sin cambios.
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#10 fusionados. El propietario confirmó después del despliegue que las planillas que fallaban y una nueva se generan correctamente. CI final del PR #10 satisfactorio ([run 41582920053](https://github.com/josentss/jaguares/actions/runs/41582920053)). [PR #11](https://github.com/josentss/jaguares/pull/11), rama `fix/sesiones-paneles`, abierto para revisión; consultar el CI del último commit. No fusionar ni desplegar sin autorización.
+> **Estado:** PR #1–#11 fusionados. El propietario confirmó después del despliegue del PR #10 que las planillas que fallaban y una nueva se generan correctamente. El [PR #11](https://github.com/josentss/jaguares/pull/11) tiene [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41873432620) y despliegue Production completado; quedan pendientes las pruebas autenticadas del propietario. No fusionar ni desplegar sin autorización.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -24,7 +24,7 @@ Prioridades permanentes:
 7. No inventar tarifas, categorías, sanciones, criterios de eliminación ni políticas de comunicación aún no acordadas.
 8. Mantener este documento actualizado con decisiones, estado y limitaciones después de cada bloque.
 
-**Bloque actual tras PR #10:** completar la revisión del flujo de sesiones de ambos paneles y su CI. Después corresponde la validación civil de fechas del calendario; la hora de eventos requiere otro bloque. La auditoría inicial de integridad se entregó en PR #6/#7; sus riesgos de esquema/archivos siguen abiertos.
+**Bloque actual tras PR #11:** esperar las pruebas autenticadas del propietario sobre las sesiones. Después corresponde la validación civil de fechas del calendario; la hora de eventos requiere otro bloque. La auditoría inicial de integridad se entregó en PR #6/#7; sus riesgos de esquema/archivos siguen abiertos.
 
 ## 1. Información técnica verificada
 
@@ -69,7 +69,7 @@ Las rutas de directiva admiten los roles administrativos autorizados. Validar el
 
 ## 2. Cambios completados y fusionados
 
-**Estos PR están fusionados en `main` a fecha 2026-11-03.** Codex debe comprobar la situación actual antes de intervenir.
+**Estos PR están fusionados en `main` a fecha 2026-11-04.** Codex debe comprobar la situación actual antes de intervenir.
 
 | PR | Estado | Alcance | Pruebas del CI de ese PR |
 | --- | --- | --- | --- |
@@ -83,6 +83,9 @@ Las rutas de directiva admiten los roles administrativos autorizados. Validar el
 | [#8](https://github.com/josentss/jaguares/pull/8) | Fusionado | Recuperar envíos de inscripción, errores visibles, respaldo del validador y flujos completos | **89/89**: 64 backend + 25 navegador, Node 22/PostgreSQL 16 |
 | [#9](https://github.com/josentss/jaguares/pull/9) | Fusionado | Fechas civiles, duplicados familiares y nuevas altas de 5–18 años | **105/105**, Node 22/PostgreSQL 16; aceptación manual del propietario |
 | [#10](https://github.com/josentss/jaguares/pull/10) | Fusionado | Exportación e impresión de planillas A4, recursos fallidos y paginación | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41582920053), Node 22/PostgreSQL 16/Chromium; generación validada por el propietario |
+| [#11](https://github.com/josentss/jaguares/pull/11) | Fusionado | Entrada, revalidación y cierre de sesión en ambos paneles; cabeceras de privacidad | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41873432620), 79 backend + 63 navegador, sin omisiones; pruebas autenticadas manuales pendientes |
+
+**Verificación posterior al PR #11:** fusión `39960c1`, con árbol idéntico a `5d41f6f`; deployment GitHub `7555067963` a Production con estado success. Las respuestas GET anónimas de portada, paneles y cliente API fueron 200; `/api/auth/me` respondió 401. Ambos paneles y esa API entregaron `Cache-Control: no-store`. Cinco recursos del panel coincidieron con Git. Chromium anónimo de escritorio y móvil verificó en ambos paneles que el contenido permanecía oculto durante una comprobación de sesión demorada y después redirigía al login, sin errores JavaScript observados. No se usaron cuentas ni se ejecutaron formularios o escrituras en producción.
 
 **Verificación posterior al PR #10:** fusión `3ff6923`, árbol idéntico a `733eabb`; CI de ese head satisfactorio. Deployment GitHub `7511100715`, SHA de la fusión, entorno Production, completado según registro. El propietario confirma la generación de las planillas antes defectuosas y una nueva. No se marcaron como realizadas todas las variantes de la matriz manual ni se ejecutaron formularios contra producción durante esta revisión.
 
@@ -250,7 +253,7 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 | P0 — recuperación confirmada por el propietario | Recuperar la inscripción y comprobar los recorridos principales | PR #8 fusionado/desplegado, CI 89/89; propietario confirma inscripciones y recorridos habituales. Nuevos hallazgos registrados por separado |
 | P1 — completado | Fechas civiles, duplicados familiares y altas de 5–18 años | PR #9 fusionado en `52cd290`; CI 105/105 y Production completado. El propietario confirma el resultado manual. |
 | P1 — completado | PDF e impresión de planillas | PR #10 fusionado en `3ff6923`, CI final y Production satisfactorios; propietario confirma generación de planillas anteriores y nueva. |
-| P1 — en revisión | Sesiones de ambos paneles | PR #11: estado inicial protegido, revalidación y cierre con respuesta comprobada; consultar el CI del último commit antes de fusionar. |
+| P1 — fusionado; verificación manual pendiente | Sesiones de ambos paneles | PR #11 fusionado y desplegado; CI y navegación anónima satisfactorios. El propietario debe comprobar los flujos autenticados en producción. |
 | P1 — después de sesiones | Fechas de eventos y, en otro bloque, hora explícita | Validación civil estricta en Caracas y límites del formulario; después contrato de hora y migración aditiva revisados, preservando históricos. |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
@@ -264,7 +267,7 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 
 ## 6. Próximo bloque y método para las siguientes correcciones
 
-**Sesiones — cambios en la rama, pendientes de revisión y CI:**
+**Sesiones — PR #11 fusionado y desplegado; pruebas autenticadas pendientes:**
 
 - Ambos paneles ocultan su contenido mientras comprueban sesión y rol, incluso si falta la hoja de estilos; un error temporal o la falta del cliente de sesión ofrece reintentar. El backend conserva la autoridad sobre el acceso.
 - Se oculta y revalida al volver a la pestaña y al restaurar desde caché; un 401 de una API protegida y el cierre comunicado por otra pestaña llevan al login. La caché HTTP se desactiva en los HTML de panel y las respuestas API servidas por Express.
@@ -273,9 +276,9 @@ P0 y P1 pueden coexistir en PR separados; priorizar riesgos graves confirmados.
 
 **Pruebas de esta rama:** Node 24.15.0 y Node 22.23.4: 41/41 backend sin PostgreSQL y 49/49 navegador en cada versión, más una prueba posterior de recuperación tras error de revalidación ejecutada por separado en ambas versiones; sintaxis correcta de 43 JS y scripts inline de ambos paneles en ambas versiones. PostgreSQL 18 temporal no inició porque el entorno denegó el socket TCP loopback; `pagos-pg`, `integridad-pg` y `flujos-web-pg` se ejecutan en CI con PostgreSQL 16. No se consultó ni alteró la base productiva.
 
-**Primera ejecución del PR:** [CI 41594079402](https://github.com/josentss/jaguares/actions/runs/41594079402) aprobó backend y falló en una prueba de navegación móvil: el helper intentaba comprobar el menú antes de que el panel terminara de verificar la sesión. Se ajustó la espera y se añadieron casos de navegación móvil y revalidación lenta para ambos roles. Comprobar el resultado del último commit del PR; el primer CI fallido no demuestra por sí solo un fallo de la aplicación.
+**Ejecuciones del PR:** [CI final 41873432620](https://github.com/josentss/jaguares/actions/runs/41873432620), Node 22/PostgreSQL 16/Chromium, aprobó 79/79 backend y 63/63 navegador sin omisiones. El [primer CI 41594079402](https://github.com/josentss/jaguares/actions/runs/41594079402) aprobó backend y falló en una prueba móvil que consultaba el menú antes de terminar la verificación de sesión; se corrigió la espera y se añadieron casos de navegación y revalidación lenta. Este fallo no demostró por sí solo un fallo de la aplicación.
 
-**Límites de sesión:** el cierre elimina la cookie del navegador; el JWT es autónomo y un token copiado antes del cierre puede seguir siendo válido hasta su vencimiento si cuenta y rol siguen habilitados. La señal entre pestañas usa almacenamiento local cuando está disponible; la revalidación al recuperar visibilidad y la autorización backend siguen siendo necesarias. La aplicación de las cabeceras en Vercel debe comprobarse tras el despliegue autorizado.
+**Límites de sesión:** el cierre elimina la cookie del navegador; el JWT es autónomo y un token copiado antes del cierre puede seguir siendo válido hasta su vencimiento si cuenta y rol siguen habilitados. La señal entre pestañas usa almacenamiento local cuando está disponible; la revalidación al recuperar visibilidad y la autorización backend siguen siendo necesarias. Se verificó `no-store` en Vercel para ambos paneles y la respuesta anónima de `/api/auth/me`; no se probaron todas las respuestas autenticadas.
 
 **Evidencia anterior a la corrección:** Chromium local sobre el HTML previo, APIs y cookie sintéticas, sin cargar la aplicación/BD de producción: en los dos paneles y ambos tamaños, el contenido era visible mientras `/api/auth/me` esperaba; al devolver 401 redirigía al login. Con logout 503, ambos redirigían igualmente y conservaban la cookie sintética. Esto reproduce fallos de interfaz/cierre, no un bypass de autorización. No se ejecutó una auditoría integral ni se actualizaron dependencias.
 
@@ -348,7 +351,7 @@ Después: corregir fechas del calendario; añadir hora en un bloque separado. Ma
 | 2026-11-03 | [PR #9](https://github.com/josentss/jaguares/pull/9), main `52cd290` | Fechas civiles, duplicados familiares NFC/nombre completo y edad mínima cinco; 74 backend + 31 navegador locales Node 22/24; CI 105/105 en [run 41563588392](https://github.com/josentss/jaguares/actions/runs/41563588392); Production completado | El propietario confirma pruebas web satisfactorias. PDF, entrada visual, eventos/hora y finanzas continúan en bloques separados |
 | 2026-11-03 | [PR #10](https://github.com/josentss/jaguares/pull/10), main `3ff6923` | Exportación PDF A4 e impresión; 22 interfaz y 36 backend sin PostgreSQL por Node 22/24. 41 JS + script inline con sintaxis válida. CI final Node 22 + PostgreSQL 16 satisfactorio ([run 41582920053](https://github.com/josentss/jaguares/actions/runs/41582920053)); Production completado. PostgreSQL local no pudo enlazar loopback | Propietario confirma generación correcta de planillas antes defectuosas y nueva; sesiones, calendario y auditoría de archivos/dependencias pendientes |
 | 2026-11-03 | Revisión `docs/seguimiento-pr10-prioridades` | Confirmadas fusión/despliegue/CI y aceptación del PR #10; reproducción local en ambos paneles, escritorio/móvil, de contenido previo a auth y redirección con cookie conservada tras logout 503 simulado | Actualización documental; corrección de sesiones propuesta, aún no implementada |
-| 2026-11-04 | [PR #11](https://github.com/josentss/jaguares/pull/11), rama `fix/sesiones-paneles` | Protección inicial y revalidación del panel, cierre con confirmación, cabeceras `no-store`; primer fallo de CI y corrección de su prueba descritos en apartado 6 | Consultar CI del head; JWT copiado no se revoca al cerrar sesión; sin fusión ni despliegue |
+| 2026-11-04 | [PR #11](https://github.com/josentss/jaguares/pull/11), main `39960c1` | Protección inicial y revalidación, cierre con confirmación y `no-store`; CI 79 backend + 63 navegador y Production completado; navegación anónima comprobada | Pruebas autenticadas del propietario pendientes; JWT copiado no se revoca al cerrar sesión |
 
 ### Plantilla breve de actualización futura
 

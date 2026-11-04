@@ -5,7 +5,7 @@ Esta es una guía para ejecutar; sus casillas no significan que las pruebas aute
 
 **Actualización tras PR #10:** PR #10 está fusionado en `3ff6923`, CI satisfactorio y Vercel Production completado. El propietario confirma generación correcta de las planillas que fallaban y de una nueva. Sus comprobaciones automáticas están en `tests/planilla-pdf.test.js`. Esta confirmación no marca automáticamente todas las variantes de las casillas siguientes.
 
-**Resultados recibidos del propietario:** inscripciones, fechas/identidades, generación de planillas y recorridos habituales satisfactorios. El [PR #11](https://github.com/josentss/jaguares/pull/11) de sesiones está en revisión y sus nuevos casos todavía esperan una fusión y despliegue autorizados. Eventos se abordará por separado; la mensualidad fija, conversión de moneda y vista de deuda quedan para una fase financiera posterior.
+**Resultados recibidos del propietario:** inscripciones, fechas/identidades, generación de planillas y recorridos habituales satisfactorios. El [PR #11](https://github.com/josentss/jaguares/pull/11) de sesiones está fusionado y desplegado; sus pruebas autenticadas manuales siguen pendientes. Eventos se abordará por separado; la mensualidad fija, conversión de moneda y vista de deuda quedan para una fase financiera posterior.
 
 ## Recorrido corto después de la corrección
 

@@ -1,35 +1,48 @@
-Deployment checklist for DigitalOcean Droplet (2 vCPU / 4GB)
+# Despliegue de Jaguares
 
-1) Prepare Droplet
-   - Create droplet (Ubuntu 22.04) and enable backups.
-   - Open firewall for ports 22, 80, 443, and your app port if needed (3000).
+La producción actual usa Vercel para la aplicación y PostgreSQL/Supabase para datos. Esta guía no autoriza escrituras directas, migraciones ni despliegues.
 
-2) Install Docker & Docker Compose
-   - curl -fsSL https://get.docker.com | sh
-   - sudo usermod -aG docker $USER
-   - sudo apt install -y docker-compose-plugin
+## Flujo normal
 
-3) Clone repo and configure
-   - git clone ... && cd jaguares
-   - cp .env.example .env  and fill values (use Managed MySQL/Spaces creds if available)
+1. Crear una rama desde `main` actualizado.
+2. Implementar y ejecutar las pruebas proporcionales al cambio.
+3. Publicar la rama y abrir un Pull Request.
+4. Esperar el CI con Node.js 22 y PostgreSQL temporal cuando corresponda.
+5. Revisar el diff y fusionar solo con autorización del propietario.
+6. Confirmar en Vercel que el SHA fusionado terminó en Production.
+7. Ejecutar un recorrido manual corto, sin datos personales reales.
 
-4) Run with docker-compose
-   - docker compose -f docker-compose.prod.yml up -d --build
-   - Verify containers: docker compose ps
+`vercel.json` dirige las solicitudes a `index.js`. No cambiar runtime, versión de Node o arquitectura solo para resolver una diferencia local.
 
-5) Optional: Use systemd timer for purge (if not using purge container)
-   - Copy scripts/systemd/jaguares-purge.service -> /etc/systemd/system/jaguares-purge.service
-   - Copy scripts/systemd/jaguares-purge.timer -> /etc/systemd/system/jaguares-purge.timer
-   - sudo systemctl daemon-reload
-   - sudo systemctl enable --now jaguares-purge.timer
+## Variables de entorno
 
-6) TLS and reverse proxy
-   - Install Traefik or Nginx as reverse-proxy and configure Let's Encrypt.
-   - Point domain to droplet IP and configure CORS_ORIGIN, TRUST_PROXY.
+Configurar en el proveedor apropiado, nunca en Git:
 
-7) Monitoring & backups
-   - Enable DigitalOcean Monitoring; configure backups for DB and droplet snapshots.
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `CORS_ORIGIN`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `EXCHANGERATE_API_KEY` si la función que la usa está habilitada
+- `TRUST_PROXY`, `PGOPTIONS`, `PURGE_RETENTION_DAYS` y `PURGE_BATCH_SIZE` solo según la configuración operativa acordada
 
-Notes
-- Prefer Managed MySQL and DigitalOcean Spaces for production storage and backups.
-- When using Spaces, adapt pagosController to serve files from Spaces (presigned URLs) instead of sendFile.
+`NODE_ENV`, `PORT` y `VERCEL` suelen ser administradas por la plataforma. No copiar valores productivos a documentación, pruebas o logs.
+
+## Base de datos
+
+- Supabase de producción no se usa para pruebas.
+- Toda migración debe estar versionada, revisada, ser compatible con históricos y tener estrategia de reversión.
+- Validar primero contra PostgreSQL temporal.
+- Antes de añadir unicidad o claves foráneas, auditar datos existentes.
+- No ejecutar cambios destructivos sin autorización y respaldo confirmado.
+
+## Comprobación posterior
+
+- SHA correcto y despliegue `success`.
+- Inicio, recarga y cierre de sesión.
+- Un flujo crítico afectado por el PR.
+- Rutas protegidas sin exposición anónima.
+- Logs sin secretos ni datos personales.
+
+Usar [docs/PRUEBAS_MANUALES_WEB.md](docs/PRUEBAS_MANUALES_WEB.md) para una regresión más amplia.

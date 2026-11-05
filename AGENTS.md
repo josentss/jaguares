@@ -14,4 +14,4 @@ Antes de comenzar cualquier tarea, lee **[docs/CONTEXTO_MAESTRO_CODEX.md](docs/C
 - En cada PR relevante, actualiza también el contexto maestro: cambios, decisiones, evidencia de pruebas, riesgo residual, estado de tareas y nuevos enlaces.
 - No marques una funcionalidad como «implementada» si solo se propuso; no marques «probada en producción» si solo usaste mocks o CI.
 
-**Primera tarea sugerida:** integridad de usuarios, representantes y atletas (duplicados, cédulas heredadas, permisos de edición y creación simultánea), con diagnóstico priorizado y PR separado. Consulta el apartado 6 del contexto maestro.
+**Siguiente bloque sugerido:** hora de los eventos con compatibilidad para históricos, validación de backend y pruebas de zona horaria. Un hallazgo real de seguridad o integridad tiene prioridad. Consulta la hoja de ruta del contexto maestro.

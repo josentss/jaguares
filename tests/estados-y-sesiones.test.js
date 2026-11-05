@@ -2,6 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 const { esEstadoAtletaValido, esEstadoPagoValido } = require('../utils/validators');
+process.env.JWT_SECRET = 'secreto-sintetico-estados-sesiones';
+const { crearCredenciales } = require('../utils/sesion');
+function reqSesion(id_usuario = 5, rol = 'representante') {
+    return { cookies: crearCredenciales({ id_usuario, rol }).cookies };
+}
 
 function cargar(modulo, mocks) {
     const ruta = require.resolve(modulo);
@@ -45,9 +50,8 @@ test('JWT firmado: sesión vigente se verifica con BD y se reutiliza por solicit
         assert.deepEqual(params, [5]);
         cb(null, [{ rol: 'representante', estado: 'aprobado' }]);
     }};
-    const jwt = { verify() { return { id_usuario: 5, rol: 'representante' }; } };
-    const auth = cargar('../middlewares/authMiddleware', { '../config/db': db, jsonwebtoken: jwt });
-    const req = { cookies: { token: 'token-valido' } };
+    const auth = cargar('../middlewares/authMiddleware', { '../config/db': db });
+    const req = reqSesion();
     const res = resMock();
     let llamadas = 0;
     auth.verificarSesion(req, res, () => { llamadas++; });
@@ -62,13 +66,13 @@ test('JWT previo: desactivar la cuenta revoca todas las nuevas solicitudes', () 
     let estado = 'aprobado';
     const db = { query(sql, params, cb) { cb(null, [{ rol: 'representante', estado }]); } };
     const auth = cargar('../middlewares/authMiddleware', {
-        '../config/db': db, jsonwebtoken: { verify: () => ({ id_usuario: 5, rol: 'representante' }) }
+        '../config/db': db
     });
     let nexts = 0;
-    auth.verificarSesion({ cookies: { token: 'jwt' } }, resMock(), () => { nexts++; });
+    auth.verificarSesion(reqSesion(), resMock(), () => { nexts++; });
     estado = 'inactivo';
     const res = resMock();
-    auth.verificarSesion({ cookies: { token: 'jwt' } }, res, () => { nexts++; });
+    auth.verificarSesion(reqSesion(), res, () => { nexts++; });
     assert.equal(nexts, 1);
     assert.equal(res.statusCode, 403);
 });
@@ -81,7 +85,7 @@ test('JWT con rol desactualizado o usuario inexistente: sin acceso', () => {
     ]) {
         const db = { query(sql, params, cb) { cb(null, rows); } };
         const auth = cargar('../middlewares/authMiddleware', {
-            '../config/db': db, jsonwebtoken: { verify: () => ({ id_usuario: 5, rol: 'admin' }) }
+            '../config/db': db
         });
         const res = resMock();
         let next = false;
@@ -89,17 +93,17 @@ test('JWT con rol desactualizado o usuario inexistente: sin acceso', () => {
         assert.equal(next, false);
         assert.ok([401, 403].includes(res.statusCode));
     }
-    function reqMock() { return { cookies: { token: 'jwt' } }; }
+    function reqMock() { return reqSesion(5, 'admin'); }
 });
 
 test('Fallo de BD al comprobar sesión: modo cerrado 503', () => {
     const db = { query(sql, params, cb) { cb(new Error('DB caída')); } };
     const auth = cargar('../middlewares/authMiddleware', {
-        '../config/db': db, jsonwebtoken: { verify: () => ({ id_usuario: 5, rol: 'representante' }) }
+        '../config/db': db
     });
     const res = resMock();
     const errOriginal = console.error; console.error = () => {};
-    try { auth.verificarSesion({ cookies: { token: 'jwt' } }, res, () => assert.fail('No permitir')); }
+    try { auth.verificarSesion(reqSesion(), res, () => assert.fail('No permitir')); }
     finally { console.error = errOriginal; }
     assert.equal(res.statusCode, 503);
 });
@@ -107,10 +111,10 @@ test('Fallo de BD al comprobar sesión: modo cerrado 503', () => {
 test('Admin con rol de BD válido: sigue pudiendo acceder', () => {
     const db = { query(sql, params, cb) { cb(null, [{ rol: 'directiva', estado: 'activo' }]); } };
     const auth = cargar('../middlewares/authMiddleware', {
-        '../config/db': db, jsonwebtoken: { verify: () => ({ id_usuario: 9, rol: 'directiva' }) }
+        '../config/db': db
     });
     let nexts = 0;
-    const req = { cookies: { token: 'jwt' } };
+    const req = reqSesion(9, 'directiva');
     auth.verificarSesionRole(['admin', 'staff', 'directiva'])(req, resMock(), () => nexts++);
     assert.equal(nexts, 1);
 });

@@ -55,7 +55,11 @@ test.before(async () => {
         }
         if (pathname.startsWith('/api/')) {
             if (pathname === '/api/auth/me') {
-                return json(res, { success: true, usuario: {
+                const ahora = Date.now();
+                return json(res, { success: true,
+                    sesion: { id: 'sesion-sintetica-planilla', servidor: ahora,
+                        vence: ahora + 900000, limite: ahora + 43200000 },
+                    usuario: {
                     id_usuario: 9, rol: 'directiva', nombres: 'Directiva', apellidos: 'Sintética'
                 } });
             }

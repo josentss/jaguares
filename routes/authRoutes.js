@@ -10,5 +10,6 @@ router.post('/logout', authController.logout);
 // Ruta para que el frontend verifique la sesión actual (usa cookie httpOnly 'token')
 const { verificarSesion } = require('../middlewares/authMiddleware');
 router.get('/me', verificarSesion, authController.me);
+router.post('/actividad', verificarSesion, authController.actividad);
 
 module.exports = router;

@@ -61,7 +61,10 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
-// ── Estáticos (en Vercel se sirven automáticamente desde /public) ──────────
+// Autorizar los HTML privados antes de que el servidor de archivos pueda entregarlos.
+app.use(require('./middlewares/panelMiddleware'));
+
+// Vercel enruta las solicitudes a Express según vercel.json.
 app.use(express.static(path.join(__dirname, './public')));
 
 // ── Rutas API ──────────────────────────────────────────────────────────────

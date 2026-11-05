@@ -8,7 +8,7 @@ const db = require('../config/db');
 const pagos = require('../controllers/pagosController');
 const directiva = require('../controllers/directivaController');
 const auth = require('../middlewares/authMiddleware');
-const jwt = require('jsonwebtoken');
+const { crearCredenciales } = require('../utils/sesion');
 
 function responder() {
     let resolver;
@@ -154,7 +154,7 @@ test('PostgreSQL: solicitudes ajenas al rol representante no pueden aprobarse', 
 
 function probarSesion(token) {
     return new Promise(resolve => {
-        const req = {cookies:{token}};
+        const req = {cookies:token.cookies};
         const {res, fin} = responder();
         auth.verificarSesion(req, res, () => resolve({codigo:200, usuarioId:req.usuarioId}));
         fin.then(resolve);
@@ -163,7 +163,7 @@ function probarSesion(token) {
 
 test('PostgreSQL: revocar cuenta invalida JWT previamente emitido', async () => {
     process.env.JWT_SECRET = 'clave-temporal-ci-pruebas-internas';
-    const token = jwt.sign({id_usuario: 5, rol: 'representante'}, process.env.JWT_SECRET);
+    const token = crearCredenciales({id_usuario: 5, rol: 'representante'});
     const vigente = await probarSesion(token);
     assert.equal(vigente.codigo, 200);
     await db.pool.query("UPDATE usuarios SET estado = 'inactivo' WHERE id_usuario = 5");

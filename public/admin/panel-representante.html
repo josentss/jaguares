@@ -110,6 +110,7 @@
             <li data-target="sec-atletas"><i class="fas fa-user-plus"></i> Registrar Atleta</li>
             <li data-target="sec-pagos"><i class="fas fa-money-bill-wave"></i> Reportar Pago</li>
             <li data-target="sec-historial" data-title="Historial de Pagos"><i class="fas fa-history"></i> Mi Historial</li>
+            <li data-target="sec-eventos"><i class="fas fa-calendar-alt"></i> Eventos</li>
             <li data-target="sec-perfil"><i class="fas fa-user-gear"></i> Mi Perfil</li>
             <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
         </ul>
@@ -319,6 +320,18 @@
                         <tbody>
                             <tr><td colspan="5" style="text-align: center;">Cargando historial...</td></tr>
                         </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="sec-eventos" class="panel-section">
+            <div class="table-container">
+                <h3>Próximos eventos</h3>
+                <div style="overflow-x:auto;">
+                    <table id="table-eventos-representante">
+                        <thead><tr><th>Evento</th><th>Fecha y hora</th><th>Lugar</th></tr></thead>
+                        <tbody><tr><td colspan="3">Cargando eventos...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -850,11 +863,31 @@
                 } catch (error) { console.error(error); }
             }
 
+            async function cargarEventosRepresentante() {
+                const tbody = document.querySelector('#table-eventos-representante tbody');
+                try {
+                    const response = await apiFetch('/api/cms/public/eventos');
+                    const data = await response.json();
+                    if (!response.ok || !data.success) throw new Error('Error al cargar eventos');
+                    const eventos = data.eventos || [];
+                    tbody.innerHTML = eventos.length ? eventos.map(ev => `<tr>
+                        <td>${esc(ev.titulo || 'Evento')}</td>
+                        <td>${window.FechasJaguares.formatearFechaCivil(ev.fecha_evento, {
+                            weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+                        })}${ev.hora_evento ? `<br><small>${esc(ev.hora_evento)} (Venezuela)</small>` : ''}</td>
+                        <td>${esc(ev.lugar || '—')}</td>
+                    </tr>`).join('') : '<tr><td colspan="3">No hay eventos próximos.</td></tr>';
+                } catch (error) {
+                    tbody.innerHTML = '<tr><td colspan="3">No se pudieron cargar los eventos.</td></tr>';
+                }
+            }
+
             // Inicialización coordinada de datos
             cargarPerfil().then(() => {
                 cargarAtletasPanel();
                 cargarHistorialPagos();
                 cargarNotificacionesServidor();
+                cargarEventosRepresentante();
             });
 
             // Consulta automática de notificaciones cada 15 segundos

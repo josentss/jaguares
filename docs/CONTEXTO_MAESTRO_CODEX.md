@@ -6,10 +6,10 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
-- Base verificada el 5 de noviembre de 2026: `52486687b9275619daaac056face0cedb971c25c`.
-- PR #1 al #15 fusionados; no había PR abiertos al iniciar esta limpieza.
+- Base verificada el 5 de noviembre de 2026: `4f2dfa8663cf30c851a646f3896b58008b3dd50a`.
+- PR #1 al #16 fusionados; no había PR abiertos al comenzar el cambio de hora de eventos.
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
-- El último despliegue Production asociado al PR #15 figura como `success`.
+- El último despliegue Production, asociado al PR #16, figura como `success`.
 - El propietario confirmó manualmente en Production el comportamiento del PR #15.
 - CI usa Node.js 22. El entorno local habitual usa Node.js 24; no cambiar versiones sin necesidad.
 
@@ -75,7 +75,9 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - Directiva crea, completa y cancela eventos; representantes ven los vigentes.
 - Eventos nuevos: desde hoy en Caracas hasta el 31 de diciembre del año siguiente.
 - Los históricos fuera del rango se conservan.
-- Los eventos todavía no tienen hora.
+- La rama `feat/hora-eventos` añade `hora_evento TIME WITHOUT TIME ZONE` nullable: los históricos quedan sin hora y Express exige `HH:mm` para nuevas altas. La hora es civil de Venezuela, sin conversión a UTC.
+- El calendario público y los paneles de directiva y representantes muestran la hora cuando existe. Los históricos se presentan solo con fecha.
+- **Condición de publicación:** revisar y aplicar primero `migrations/2026-11-05_eventos_hora.sql` en producción mediante el proceso autorizado, antes de desplegar el código que lee la columna. Esta rama no aplica cambios en Supabase.
 - Las notificaciones son informativas y de mejor esfuerzo; no hay lectura persistente.
 
 ## 5. Riesgos y deuda vigentes
@@ -108,7 +110,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 
 Cada punto debe ir en un PR separado y conservar compatibilidad.
 
-1. **Hora de eventos.** Hora local clara y opcional para históricos, con backend, paneles y pruebas de zona horaria.
+1. **Hora de eventos.** Implementada en la rama `feat/hora-eventos`; pendiente de revisión, migración autorizada y despliegue.
 2. **Pagos guiados por deuda.** Solo conceptos pendientes, monto oficial y conversión. Bloqueado hasta definir tarifa, moneda base, tasa, redondeo, vencimientos y pagos parciales.
 3. **Categorías, equipos y temporadas.** Asignación por edad, temporada y rendimiento; requiere reglas deportivas.
 4. **Traspasos y plantillas.** Historial de movimientos y plantillas por categoría, después del modelo anterior.
@@ -150,12 +152,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Preparar la **hora de los eventos** como cambio compatible:
+Revisar el PR de hora de eventos y coordinar la migración aditiva antes de su publicación. No se ha probado en producción.
 
-1. inspeccionar esquema y consumidores de eventos;
-2. decidir representación SQL y semántica de Caracas sin alterar fechas;
-3. permitir ausencia de hora en históricos;
-4. validar en backend y mostrarla en ambos paneles;
-5. cubrir API, PostgreSQL temporal y Playwright.
-
-Antes de comenzar, comprobar otra vez `main`, PR, CI y despliegue.
+Evidencia local del 5 de noviembre de 2026: `node --check` en 46 archivos JavaScript; 58 pruebas backend con mocks; 52 pruebas de integración con PostgreSQL 18 temporal y Playwright; 62 pruebas de interfaz, PDF y sesiones en escritorio y móvil; caso de calendario repetido tras ampliar aserciones de hora (1 aprobado). El CI del nuevo PR queda pendiente. Riesgo residual: el esquema efectivo de Supabase no se inspeccionó ni modificó; el despliegue de código antes de la migración produciría errores en eventos.

@@ -664,6 +664,10 @@
                             <input type="date" id="evento-fecha" required>
                         </div>
                         <div class="form-group-panel">
+                            <label for="evento-hora">Hora (Venezuela)</label>
+                            <input type="time" id="evento-hora" step="60" required>
+                        </div>
+                        <div class="form-group-panel">
                             <label for="evento-lugar">Lugar</label>
                             <input type="text" id="evento-lugar" maxlength="300" placeholder="Ej: Cancha Principal" required>
                         </div>
@@ -1970,7 +1974,7 @@
 
                     tbody.innerHTML += `<tr>
                         <td><strong>${esc(ev.titulo)}</strong></td>
-                        <td>${formatFechaEvento(ev.fecha_evento)}</td>
+                        <td>${formatFechaEvento(ev.fecha_evento)}${ev.hora_evento ? `<br><small>${esc(ev.hora_evento)} (Venezuela)</small>` : ''}</td>
                         <td>${esc(ev.lugar || '—')}</td>
                         <td><span class="${badgeEvento(est)}">${labelEstadoEvento(est)}</span></td>
                         <td style="white-space:nowrap;">${acciones}</td>
@@ -2014,11 +2018,12 @@
             const bodyData = {
                 titulo: document.getElementById('evento-titulo').value.trim(),
                 fecha_evento: document.getElementById('evento-fecha').value,
+                hora_evento: document.getElementById('evento-hora').value,
                 lugar: document.getElementById('evento-lugar').value.trim()
             };
 
-            if (!bodyData.titulo || !bodyData.fecha_evento || !bodyData.lugar) {
-                showToast('Completa título, fecha y lugar', 'error');
+            if (!bodyData.titulo || !bodyData.fecha_evento || !bodyData.hora_evento || !bodyData.lugar) {
+                showToast('Completa título, fecha, hora y lugar', 'error');
                 return;
             }
             if (!fechaEventoFormularioValida()) {

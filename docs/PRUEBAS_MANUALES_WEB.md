@@ -26,9 +26,10 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Fecha del pago:** la fecha elegida coincide en ambos paneles y en el historial, sin restar un día.
 - [ ] **Pago inválido:** atleta inactivo o representante no aprobado se rechaza desde el backend aunque la pestaña sea antigua.
 - [ ] **Propiedad:** una familia no puede consultar ni editar atletas, pagos o documentos de otra mediante URL o API.
-- [ ] **Evento válido:** crear desde hoy hasta el 31 de diciembre del año siguiente; aparece en ambos paneles.
+- [ ] **Evento válido:** crear desde hoy hasta el 31 de diciembre del año siguiente con hora de Venezuela; fecha y hora aparecen en directiva, representantes y calendario público.
+- [ ] **Hora inválida:** omitirla o enviar por API un valor distinto de `HH:mm`; el backend rechaza el evento sin insertarlo.
 - [ ] **Evento inválido:** fecha pasada o posterior al límite se rechaza en interfaz y backend.
-- [ ] **Histórico:** eventos antiguos siguen visibles donde corresponde; no se reescriben.
+- [ ] **Histórico:** eventos antiguos siguen visibles donde corresponde, sin hora inventada ni reescritura.
 - [ ] **Completar/cancelar:** deja de mostrarse como vigente, pero permanece en el historial administrativo.
 
 ## Sesión

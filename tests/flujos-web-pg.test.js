@@ -80,6 +80,9 @@ test.before(async () => {
         CREATE TABLE audit_uploads (id SERIAL PRIMARY KEY, ts TIMESTAMPTZ, success BOOLEAN, reason TEXT,
             user_id INTEGER, original_name TEXT, stored_filename TEXT, ip TEXT, meta JSONB);
     `);
+    await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Histórico sin hora', '2020-01-01', 'Cancha', 'completado')");
+    await db.pool.query(await fs.readFile(require('node:path').join(__dirname, '../migrations/2026-11-05_eventos_hora.sql'), 'utf8'));
+    assert.equal((await db.pool.query("SELECT hora_evento FROM eventos WHERE titulo='Histórico sin hora'")).rows[0].hora_evento, null);
     const hash = await bcrypt.hash(clave,10);
     for (const [correo,nombres,cedula,rol] of [
         ['directiva@example.org','Directiva Prueba','V-91000001','directiva'],
@@ -413,19 +416,43 @@ test('flujo real: calendario crea y cancela el evento desde directiva y actualiz
         assert.equal(await page.locator('#evento-fecha').getAttribute('min'), hoy);
         assert.equal(await page.locator('#evento-fecha').getAttribute('max'), maximo);
         assert.equal((await page.request.post(base+'/api/cms/admin/eventos', {data: {
-            titulo: 'Fecha imposible', fecha_evento: '2026-02-30', lugar: 'Cancha de pruebas'
+            titulo: 'Fecha imposible', fecha_evento: '2026-02-30', hora_evento: '14:30', lugar: 'Cancha de pruebas'
         }})).status(), 400);
         assert.equal((await page.request.post(base+'/api/cms/admin/eventos', {data: {
-            titulo: 'Fecha demasiado lejana', fecha_evento: `${Number(hoy.slice(0,4))+2}-01-01`, lugar: 'Cancha de pruebas'
+            titulo: 'Fecha demasiado lejana', fecha_evento: `${Number(hoy.slice(0,4))+2}-01-01`, hora_evento: '14:30', lugar: 'Cancha de pruebas'
         }})).status(), 400);
+        for (const hora_evento of [undefined, '24:00', '14:30Z']) {
+            assert.equal((await page.request.post(base+'/api/cms/admin/eventos', {data: {
+                titulo: 'Hora inválida', fecha_evento: hoy, hora_evento, lugar: 'Cancha de pruebas'
+            }})).status(), 400);
+        }
         await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Evento vencido', '2020-01-01', 'Cancha', 'proximo')");
+        const historico = page.locator('#body-eventos tr').filter({hasText:'Histórico sin hora'});
+        await historico.waitFor();
+        assert.equal((await historico.textContent()).includes('undefined'), false);
         await page.locator('#evento-titulo').fill('Encuentro de Prueba');
         await page.locator('#evento-lugar').fill('Cancha de pruebas');
-        await page.locator('#evento-fecha').fill(new Date(Date.now()+7*86400000).toISOString().slice(0,10));
+        await page.locator('#evento-fecha').fill(hoy);
+        await page.locator('#evento-hora').fill('14:30');
         const creado = await enviar(page,'#form-evento','/api/cms/admin/eventos',201);
         const publico = async () => (await (await page.request.get(base+'/api/cms/public/eventos')).json()).eventos;
         assert.equal((await publico()).some(e=>e.titulo==='Evento vencido'),false);
         assert.equal((await publico()).some(e=>e.id_evento===creado.id_evento),true);
+        assert.equal((await publico()).find(e=>e.id_evento===creado.id_evento).hora_evento,'14:30');
+        const fila = page.locator('#body-eventos tr').filter({hasText:'Encuentro de Prueba'});
+        await fila.getByText('14:30 (Venezuela)').waitFor();
+        for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {
+            const rep = await entrar('alfa@example.org', viewport, false, 'Asia/Tokyo');
+            try {
+                await seccion(rep,'sec-eventos');
+                await rep.locator('#table-eventos-representante tbody').getByText('14:30 (Venezuela)').waitFor();
+            } finally { await rep.context().close(); }
+            const publica = await pagina(viewport, false, 'Asia/Tokyo');
+            try {
+                await publica.goto(base+'/index.html');
+                await publica.locator('#lista-eventos-publicos').getByText('14:30 (Venezuela)', {exact:false}).waitFor();
+            } finally { await publica.context().close(); }
+        }
         const cancelado = page.waitForResponse(r=>r.url().endsWith('/api/cms/admin/eventos/'+creado.id_evento)&&r.request().method()==='PUT');
         await page.locator('#body-eventos tr').filter({hasText:'Encuentro de Prueba'}).getByRole('button',{name:'Cancelar',exact:true}).click();
         assert.equal((await cancelado).status(),200);

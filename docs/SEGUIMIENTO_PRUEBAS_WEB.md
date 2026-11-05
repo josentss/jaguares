@@ -28,7 +28,7 @@ Los eventos cancelados/completados permanecen en administración y salen del cal
 - El formulario usa el día de Caracas como `min`; un selector nativo puede seguir mostrando años deshabilitados, pero no permite enviarlos. No se definió un máximo futuro porque no existe una política institucional que lo justifique.
 - La consulta pública deja fuera eventos vencidos aún marcados `proximo`; conserva los que directiva haya marcado `en_progreso`. Administración conserva todo el historial.
 - La web pública calcula hoy y el próximo evento con Caracas, independientemente de la zona del navegador.
-- Sin cambios de esquema, datos históricos, dependencias ni hora. Pruebas: 58/58 backend sin PostgreSQL y 62/62 navegador en Node 22/24; con PostgreSQL 18 temporal, 96/96 backend y 76/76 navegador en Node 24. No se usó producción.
+- Sin cambios de esquema, datos históricos, dependencias ni hora. Pruebas: 58/58 backend sin PostgreSQL y 62/62 navegador en Node 22/24; con PostgreSQL 18 temporal, 96/96 backend y 76/76 navegador en Node 24. El [CI 41982556954](https://github.com/josentss/jaguares/actions/runs/41982556954) aprobó 96/96 backend con PostgreSQL 16 y 76/76 navegador en Node 22. No se usó producción.
 
 ## Correcciones de este bloque
 

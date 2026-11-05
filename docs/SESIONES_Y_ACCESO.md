@@ -33,7 +33,9 @@ Pruebas nuevas de firma/vencimiento, actividad ajena/alterada/ausente, límite a
 
 Resultado local final en Node 24.15.0 y Node 22.23.4: **55/55 pruebas backend sin PostgreSQL y 59/59 de navegador** en cada versión; 46 archivos JavaScript con sintaxis correcta en ambas y `git diff --check` correcto. Playwright 1.56.1 se instaló en una carpeta temporal; no se cambiaron dependencias ni versiones del proyecto.
 
-PostgreSQL 18 temporal volvió a fallar al enlazar el puerto local, también fuera del aislamiento. Las pruebas completas con PostgreSQL se ejecutarán en el CI con PostgreSQL 16; no se ha consultado ni alterado Supabase de producción. Registrar los resultados definitivos del CI en el PR antes de fusionarlo.
+PostgreSQL 18 temporal volvió a fallar al enlazar el puerto local, también fuera del aislamiento. Las pruebas completas se ejecutaron en el CI con PostgreSQL 16; no se ha consultado ni alterado Supabase de producción.
+
+**CI del PR #12:** [ejecución 41963996872](https://github.com/josentss/jaguares/actions/runs/41963996872), satisfactoria: sintaxis, 93/93 backend con Node 22/PostgreSQL 16 y 73/73 navegador con Chromium. El Preview creado automáticamente por Vercel no es Production y no fue usado para escribir datos.
 
 ## Comprobación manual después del despliegue autorizado
 

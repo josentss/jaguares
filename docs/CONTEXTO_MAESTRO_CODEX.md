@@ -3,9 +3,9 @@
 > **Propósito:** documento persistente para continuar el desarrollo del sistema Club de Voleibol Jaguares. Codex debe leerlo al iniciar tareas de este repositorio y proponer actualizaciones cuando cambien el código, las reglas, las pruebas o el estado de los PR.
 >
 > **Última actualización documental:** 2026-11-05
-> **Base comprobada:** `main` remoto `1ac08b1fe13ea25a8ee6ef66920a3f28526fe481`; árbol `ef6a12bab2b4a71b4d88eab66fd1c05d43921f8b`, idéntico al head probado del PR #12. Despliegue Vercel Production `7565382672` en estado `success / Deployment has completed`.
+> **Base comprobada:** `main` remoto `add4de854adafb239b9afe970a1458bc890c32fb`; árbol `9dd1bec4526dfc18f36518c540ec36ff89a78b5d`. El PR #13 está fusionado y el despliegue Vercel Production `7566820170` figura en estado `success`.
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#12 fusionados. El [PR #12](https://github.com/josentss/jaguares/pull/12) tiene [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41964532958), Production completado y aceptación manual del propietario: aviso al minuto 14, continuación sin perder datos, cierre al minuto 15 sin actividad, pestañas coordinadas e inscripción sin regresiones. [PR #13](https://github.com/josentss/jaguares/pull/13) abierto: pulido visual aislado del aviso, sin cambiar la política ni los tiempos. No fusionar ni desplegar a Production sin autorización.
+> **Estado:** PR #1–#13 fusionados. El [PR #13](https://github.com/josentss/jaguares/pull/13) compactó el aviso sin cambiar la política ni los tiempos; su [CI final](https://github.com/josentss/jaguares/actions/runs/41979272651) y Production terminaron satisfactoriamente. El propietario dejó la revisión visual para después y confirmó previamente la lógica de inactividad. Rama actual `fix/calendario-fechas-civiles`: corrección aislada de fechas de eventos, sin hora ni migraciones. No fusionar ni desplegar a Production sin autorización.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -24,7 +24,7 @@ Prioridades permanentes:
 7. No inventar tarifas, categorías, sanciones, criterios de eliminación ni políticas de comunicación aún no acordadas.
 8. Mantener este documento actualizado con decisiones, estado y limitaciones después de cada bloque.
 
-**Bloque actual tras PR #12:** pulir visualmente el aviso de inactividad en un PR pequeño y, después, abordar la validación civil de fechas del calendario; la hora requiere otro bloque. La exclusividad de navegador sigue descartada. La auditoría inicial de integridad se entregó en PR #6/#7; sus riesgos de esquema/archivos siguen abiertos.
+**Bloque actual tras PR #13:** validación civil de fechas del calendario en Caracas. La hora del evento requiere otro bloque y una estrategia de compatibilidad para históricos. La exclusividad de navegador sigue descartada. La auditoría inicial de integridad se entregó en PR #6/#7; sus riesgos de esquema/archivos siguen abiertos.
 
 ## 1. Información técnica verificada
 
@@ -85,6 +85,9 @@ Las rutas de directiva admiten los roles administrativos autorizados. Validar el
 | [#10](https://github.com/josentss/jaguares/pull/10) | Fusionado | Exportación e impresión de planillas A4, recursos fallidos y paginación | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41582920053), Node 22/PostgreSQL 16/Chromium; generación validada por el propietario |
 | [#11](https://github.com/josentss/jaguares/pull/11) | Fusionado | Entrada, revalidación y cierre de sesión en ambos paneles; cabeceras de privacidad | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41873432620), 79 backend + 63 navegador, sin omisiones; pruebas autenticadas manuales pendientes |
 | [#12](https://github.com/josentss/jaguares/pull/12) | Fusionado | Autorización del HTML en servidor e inactividad de 15 minutos con múltiples ventanas/navegadores | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41964532958), 93 backend + 73 navegador; aceptación manual del propietario |
+| [#13](https://github.com/josentss/jaguares/pull/13) | Fusionado | Aviso de inactividad compacto y responsive, sin cambios de seguridad o tiempos | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41979272651), Production completado; revisión visual manual aplazada |
+
+**Verificación posterior al PR #13:** fusión `add4de8`, árbol `9dd1bec`; deployment GitHub/Vercel `7566820170` a Production completado. No se ejecutaron formularios ni escrituras productivas durante esta comprobación.
 
 **Verificación posterior al PR #12:** fusión `1ac08b1`, árbol idéntico a `69100c4`; deployment GitHub/Vercel `7565382672` a Production completado. Ambos paneles anónimos respondieron 302 directo al login con `no-store`, y el cliente desplegado contiene la renovación de actividad. El propietario comprobó dos pestañas, cierre coordinado, aviso real tras 14 minutos, continuación conservando datos, expiración sin interacción e inscripción. Varias sesiones entre navegadores continúan permitidas por decisión vigente.
 
@@ -256,8 +259,9 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 | P0 — recuperación confirmada por el propietario | Recuperar la inscripción y comprobar los recorridos principales | PR #8 fusionado/desplegado, CI 89/89; propietario confirma inscripciones y recorridos habituales. Nuevos hallazgos registrados por separado |
 | P1 — completado | Fechas civiles, duplicados familiares y altas de 5–18 años | PR #9 fusionado en `52cd290`; CI 105/105 y Production completado. El propietario confirma el resultado manual. |
 | P1 — completado | PDF e impresión de planillas | PR #10 fusionado en `3ff6923`, CI final y Production satisfactorios; propietario confirma generación de planillas anteriores y nueva. |
-| P1 — completado; pulido visual aislado | Sesiones de ambos paneles | PR #12 fusionado/desplegado y aceptado manualmente. `ui/aviso-inactividad` solo compacta el aviso; no altera tiempos ni autorización. |
-| P1 — después de sesiones | Fechas de eventos y, en otro bloque, hora explícita | Validación civil estricta en Caracas y límites del formulario; después contrato de hora y migración aditiva revisados, preservando históricos. |
+| P1 — completado | Sesiones de ambos paneles | PR #12 fusionado/desplegado y aceptado manualmente; PR #13 fusionó el aviso compacto sin alterar tiempos ni autorización. |
+| P1 — en rama aislada | Fechas de eventos | Validación civil estricta en Caracas, límite mínimo del formulario y exclusión pública de próximos vencidos; sin migración ni cambios históricos. |
+| P1 — siguiente bloque separado | Hora explícita de eventos | Definir contrato y migración aditiva revisada, preservando eventos históricos sin inventar horas. |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
 | P2 | Migraciones, auditoría y ciclo de vida | Esquema reproducible, eventos trazables, archivado y política de borrado definida |
@@ -296,13 +300,17 @@ Comportamiento entregado por el PR #11 (histórico, parcialmente sustituido por 
 
 **Pulido posterior en [PR #13](https://github.com/josentss/jaguares/pull/13):** aviso compacto inspirado en los `toast` existentes, con fondo blanco, franja naranja, jerarquía de título/texto, botón reducido y márgenes seguros en móvil. No cambia el minuto 14/15, renovación, cierre ni almacenamiento de datos. Validación local: 55/55 backend sin PostgreSQL en Node 24, 59/59 navegador en Node 24 y Node 22, y sintaxis correcta de 46 JavaScript en ambas versiones; capturas sintéticas de escritorio/móvil inspeccionadas. La [ejecución CI 41978791699](https://github.com/josentss/jaguares/actions/runs/41978791699) aprobó sintaxis, **93/93 backend** con PostgreSQL 16 y **73/73 navegador** con Chromium en Node 22.
 
+**Fechas de eventos — rama `fix/calendario-fechas-civiles`:** se confirmó que el rango 5–18 pertenece a nacimientos y ya estaba resuelto; no se cambió. En eventos se reprodujeron dos fallos: `new Date()` normalizaba fechas imposibles y la comparación de medianoche UTC con el instante actual rechazaba el día de hoy. El backend ahora exige `YYYY-MM-DD` gregoriano real, compara días civiles de Caracas y acepta hoy. El formulario fija `min` dinámico de Caracas, vuelve a comprobarlo al usarlo y conserva al servidor como autoridad. El calendario público toma el día de Caracas incluso si el navegador usa otra zona y ya no publica eventos vencidos que sigan en estado `proximo`; los `en_progreso` se conservan. No se alteran filas históricas, esquema, hora, estados ni dependencias. IDs malformados al cambiar estado reciben 400 antes de SQL.
+
+**Pruebas locales del bloque de eventos:** Node 24.15.0 y Node 22.23.4: **58/58 backend sin PostgreSQL** y **62/62 navegador** en cada versión. Con PostgreSQL 18 temporal local, aplicación/SQL reales y Chromium: **96/96 backend** y **76/76 navegador** en Node 24. Incluye escritorio/móvil, navegador Tokio frente al día Caracas, fecha imposible, hoy/pasado, creación/cancelación y exclusión pública del evento vencido. La instancia temporal fue detenida y eliminada; no se consultó Supabase ni se escribieron datos productivos.
+
 **Ejecuciones del PR:** [CI final 41873432620](https://github.com/josentss/jaguares/actions/runs/41873432620), Node 22/PostgreSQL 16/Chromium, aprobó 79/79 backend y 63/63 navegador sin omisiones. El [primer CI 41594079402](https://github.com/josentss/jaguares/actions/runs/41594079402) aprobó backend y falló en una prueba móvil que consultaba el menú antes de terminar la verificación de sesión; se corrigió la espera y se añadieron casos de navegación y revalidación lenta. Este fallo no demostró por sí solo un fallo de la aplicación.
 
 **Límites de sesión:** el cierre elimina la cookie del navegador; el JWT es autónomo y un token copiado antes del cierre puede seguir siendo válido hasta su vencimiento si cuenta y rol siguen habilitados. La señal entre pestañas usa almacenamiento local cuando está disponible; la revalidación al recuperar visibilidad y la autorización backend siguen siendo necesarias. Se verificó `no-store` en Vercel para ambos paneles y la respuesta anónima de `/api/auth/me`; no se probaron todas las respuestas autenticadas.
 
 **Evidencia anterior a la corrección:** Chromium local sobre el HTML previo, APIs y cookie sintéticas, sin cargar la aplicación/BD de producción: en los dos paneles y ambos tamaños, el contenido era visible mientras `/api/auth/me` esperaba; al devolver 401 redirigía al login. Con logout 503, ambos redirigían igualmente y conservaban la cookie sintética. Esto reproduce fallos de interfaz/cierre, no un bypass de autorización. No se ejecutó una auditoría integral ni se actualizaron dependencias.
 
-Después: corregir fechas del calendario; añadir hora en un bloque separado. Mantener como prioridad de seguridad la validación y privacidad de documentos, dependencias y consistencia Cloudinary/SQL; una exposición concreta de datos personales desplazaría el orden funcional. La mensualidad fija, conversión y deuda individual siguen aplazadas por decisión del propietario.
+Después de revisar el bloque de fechas: añadir la hora en un PR separado. Mantener como prioridad de seguridad la validación y privacidad de documentos, dependencias y consistencia Cloudinary/SQL; una exposición concreta de datos personales desplazaría el orden funcional. La mensualidad fija, conversión y deuda individual siguen aplazadas por decisión del propietario.
 
 **No inicies con un rediseño visual ni con la implementación de todas las funciones pendientes.**
 
@@ -375,6 +383,7 @@ Después: corregir fechas del calendario; añadir hora en un bloque separado. Ma
 | 2026-11-03 | Revisión `docs/seguimiento-pr10-prioridades` | Confirmadas fusión/despliegue/CI y aceptación del PR #10; reproducción local en ambos paneles, escritorio/móvil, de contenido previo a auth y redirección con cookie conservada tras logout 503 simulado | Actualización documental; corrección de sesiones propuesta, aún no implementada |
 | 2026-11-04 | [PR #11](https://github.com/josentss/jaguares/pull/11), main `39960c1` | Protección inicial y revalidación, cierre con confirmación y `no-store`; CI 79 backend + 63 navegador y Production completado; navegación anónima comprobada | Pruebas autenticadas del propietario pendientes; JWT copiado no se revoca al cerrar sesión |
 | 2026-11-05 | [PR #12](https://github.com/josentss/jaguares/pull/12), main `1ac08b1` | Acceso HTML autorizado e inactividad de 15 minutos; CI final 93 backend + 73 navegador, Production completado y aceptación manual satisfactoria | Revocación central fuera de alcance; pulido visual del aviso en PR separado |
+| 2026-11-05 | [PR #13](https://github.com/josentss/jaguares/pull/13), main `add4de8` | Aviso de inactividad compacto; CI final y Production satisfactorios, lógica ya aceptada manualmente | Revisión visual aplazada por el propietario; fechas de eventos pasan al bloque siguiente |
 
 ### Plantilla breve de actualización futura
 

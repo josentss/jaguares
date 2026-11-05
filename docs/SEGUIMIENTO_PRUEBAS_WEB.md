@@ -17,10 +17,18 @@ Esto es confirmación manual del propietario, no una auditoría completa de segu
 | 1 — completado (PR #9) | Atletas visualmente iguales dentro de una familia | La repetición exacta ya devolvía 409. **Reproducidos otros dos escapes:** Unicode equivalente y reparto del mismo nombre completo entre nombres/apellidos. La captura por sí sola no prueba que se enviara exactamente la misma fecha. | Comparar nombre completo NFC, espacios y mayúsculas normalizados, misma fecha y representante, dentro del bloqueo/transacción existente. |
 | 2 — completado (PR #10) | PDF incompleto/recortado | Captura dependiente del diseño del panel/modal y paginación inestable. Durante las pruebas de la corrección, fijar el viewport a `794px` también recortaba horizontalmente en escritorio. El iframe de impresión original usaba ancho cero y activaba la vista móvil. | Documento A4 estable, recursos con fallback y paginación; impresión con iframe de 794px. CI final satisfactorio en [run 41582920053](https://github.com/josentss/jaguares/actions/runs/41582920053); propietario confirma generación correcta tras desplegar. |
 | 3 — desplegado; prueba manual pendiente | Entrada y cierre de sesión en ambos paneles | **Reproducido antes de corregir:** contenido visible antes de `/api/auth/me`; con logout 503 redirigía al login y conservaba cookie sintética. Ambos paneles, escritorio/móvil; no se demostró fuga de datos. | PR #11 fusionado y desplegado; CI aprobado y navegación anónima comprobada. Pendiente la comprobación autenticada del propietario. |
-| 4 | Eventos: límites y hora | **Confirmados:** fecha sin `min` y hora ausente. El backend compara una medianoche UTC con el instante actual; rechaza hoy y normaliza fechas imposibles. | Validación civil estricta en Caracas y límites nativos. Después, hora con contrato y migración aditiva revisados; no inventar hora para eventos históricos. |
+| 4 — fechas en rama aislada | Eventos: límites y hora | **Confirmados:** fecha sin `min` y hora ausente. El backend comparaba una medianoche UTC con el instante actual; rechazaba hoy y normalizaba fechas imposibles. | `fix/calendario-fechas-civiles` corrige fecha y calendario público. Después, hora con contrato y migración aditiva revisados; no inventar hora para eventos históricos. |
 | 5 — requiere política oficial | Deudas y mensualidad fija | El propietario solicita para una fase posterior: importe mensual fijo, conversión automática a la moneda elegida y mostrar solo lo que el representante debe. **No implementarlo ahora.** | Acordar tarifa, vigencia, fuente/tasa y momento de conversión, períodos y excepciones antes de modelar cargos/deudas; conservar historial. |
 
 Los eventos cancelados/completados permanecen en administración y salen del calendario público: conservar ese historial es coherente. Los controles nativos de fecha pueden mostrar años deshabilitados aunque `min/max` impidan seleccionarlos; no hace falta crear otro calendario para aplicar límites.
+
+### Bloque actual: fechas civiles de eventos
+
+- El servidor exige una fecha `YYYY-MM-DD` gregoriana real, permite el día de hoy en Caracas y rechaza el pasado o tipos manipulados antes de SQL.
+- El formulario usa el día de Caracas como `min`; un selector nativo puede seguir mostrando años deshabilitados, pero no permite enviarlos. No se definió un máximo futuro porque no existe una política institucional que lo justifique.
+- La consulta pública deja fuera eventos vencidos aún marcados `proximo`; conserva los que directiva haya marcado `en_progreso`. Administración conserva todo el historial.
+- La web pública calcula hoy y el próximo evento con Caracas, independientemente de la zona del navegador.
+- Sin cambios de esquema, datos históricos, dependencias ni hora. Pruebas: 58/58 backend sin PostgreSQL y 62/62 navegador en Node 22/24; con PostgreSQL 18 temporal, 96/96 backend y 76/76 navegador en Node 24. No se usó producción.
 
 ## Correcciones de este bloque
 

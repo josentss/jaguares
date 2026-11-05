@@ -5,7 +5,7 @@
 > **Última actualización documental:** 2026-11-05
 > **Base comprobada:** `main` remoto `a4a98ab189df0166a5f8daca29423c62d9918c3f`; árbol `234f2acffb62692ba238794702206fad686349a5`. El PR #14 está fusionado y el despliegue Vercel Production `7579807497` figura en estado `success`.
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#14 fusionados. El propietario comprobó en Production las fechas nuevas del calendario después del PR #14. Rama actual `fix/calendario-limite-anual`: limitar nuevas fechas desde hoy hasta el 31 de diciembre del año siguiente, sin cambiar históricos. No fusionar ni desplegar a Production sin autorización.
+> **Estado:** PR #1–#14 fusionados. El propietario comprobó en Production las fechas nuevas del calendario después del PR #14. [PR #15](https://github.com/josentss/jaguares/pull/15) abierto: limitar nuevas fechas desde hoy hasta el 31 de diciembre del año siguiente, sin cambiar históricos. No fusionar ni desplegar a Production sin autorización.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -263,7 +263,7 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 | P1 — completado | Fechas civiles, duplicados familiares y altas de 5–18 años | PR #9 fusionado en `52cd290`; CI 105/105 y Production completado. El propietario confirma el resultado manual. |
 | P1 — completado | PDF e impresión de planillas | PR #10 fusionado en `3ff6923`, CI final y Production satisfactorios; propietario confirma generación de planillas anteriores y nueva. |
 | P1 — completado | Sesiones de ambos paneles | PR #12 fusionado/desplegado y aceptado manualmente; PR #13 fusionó el aviso compacto sin alterar tiempos ni autorización. |
-| P1 — PR #14 completado; límite máximo en rama pequeña | Fechas de eventos | Validación civil estricta en Caracas y exclusión pública de próximos vencidos. Regla acordada posterior: nuevas fechas solo hasta el 31/12 del año siguiente. |
+| P1 — PR #14 completado; PR #15 abierto | Fechas de eventos | Validación civil estricta en Caracas y exclusión pública de próximos vencidos. Regla acordada posterior: nuevas fechas solo hasta el 31/12 del año siguiente. |
 | P1 — siguiente bloque separado | Hora explícita de eventos | Definir contrato y migración aditiva revisada, preservando eventos históricos sin inventar horas. |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
@@ -307,7 +307,7 @@ Comportamiento entregado por el PR #11 (histórico, parcialmente sustituido por 
 
 **Pruebas del bloque de eventos:** Node 24.15.0 y Node 22.23.4: **58/58 backend sin PostgreSQL** y **62/62 navegador** en cada versión. Con PostgreSQL 18 temporal local, aplicación/SQL reales y Chromium: **96/96 backend** y **76/76 navegador** en Node 24. Incluye escritorio/móvil, navegador Tokio frente al día Caracas, fecha imposible, hoy/pasado, creación/cancelación y exclusión pública del evento vencido. La instancia temporal fue detenida y eliminada; no se consultó Supabase ni se escribieron datos productivos. El [CI 41982556954](https://github.com/josentss/jaguares/actions/runs/41982556954) aprobó **96/96 backend** con PostgreSQL 16 y **76/76 navegador** en Node 22.
 
-**Límite máximo posterior acordado:** las nuevas altas de eventos admiten desde hoy en Caracas hasta el **31 de diciembre del año siguiente**. Es un límite por años calendario, no 365 días exactos. Se aplica en `min/max` del navegador y obligatoriamente en backend; no modifica ni oculta eventos históricos ya guardados. Pruebas específicas locales: 12/12 backend y 2/2 Playwright (escritorio/móvil), además de sintaxis de los JavaScript modificados.
+**Límite máximo posterior acordado — [PR #15](https://github.com/josentss/jaguares/pull/15):** las nuevas altas de eventos admiten desde hoy en Caracas hasta el **31 de diciembre del año siguiente**. Es un límite por años calendario, no 365 días exactos. Se aplica en `min/max` del navegador y obligatoriamente en backend; no modifica ni oculta eventos históricos ya guardados. Pruebas específicas locales: 12/12 backend y 2/2 Playwright (escritorio/móvil), además de sintaxis de los JavaScript modificados.
 
 **Ejecuciones del PR:** [CI final 41873432620](https://github.com/josentss/jaguares/actions/runs/41873432620), Node 22/PostgreSQL 16/Chromium, aprobó 79/79 backend y 63/63 navegador sin omisiones. El [primer CI 41594079402](https://github.com/josentss/jaguares/actions/runs/41594079402) aprobó backend y falló en una prueba móvil que consultaba el menú antes de terminar la verificación de sesión; se corrigió la espera y se añadieron casos de navegación y revalidación lenta. Este fallo no demostró por sí solo un fallo de la aplicación.
 
@@ -372,7 +372,7 @@ Después de revisar el bloque de fechas: añadir la hora en un PR separado. Mant
 | 2026-11-03 | Mensualidad fija, conversión según moneda seleccionada y solo cargos adeudados en el panel del representante | Solicitud futura del propietario | Guardado para fase financiera; no implementar hasta acordar tarifa, vigencia, fuente/tasa de conversión y excepciones |
 | 2026-11-04 | Una sola ventana del panel por cuenta | Petición inicial en la revisión del PR #11 | Descartada por el propietario antes de implementarse |
 | 2026-11-04 | Varias ventanas/navegadores permitidos; inactividad de 15 minutos con aviso previo | Corrección del propietario y elección explícita de 15 minutos | PR #12 fusionado/desplegado y aceptado manualmente |
-| 2026-11-05 | Eventos nuevos desde hoy hasta el 31/12 del año siguiente | Decisión expresa del propietario tras probar PR #14 | En rama pequeña; backend y selector aplican la misma regla |
+| 2026-11-05 | Eventos nuevos desde hoy hasta el 31/12 del año siguiente | Decisión expresa del propietario tras probar PR #14 | [PR #15](https://github.com/josentss/jaguares/pull/15) abierto; backend y selector aplican la misma regla |
 | 2026-11-02 | Eliminación definitiva y WhatsApp | Pendiente de políticas y consentimiento | No definido |
 
 ### Bitácora de entregas (actualizar tras cada PR)

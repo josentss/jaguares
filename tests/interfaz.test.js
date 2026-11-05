@@ -487,3 +487,50 @@ test('fechas civiles sin helper: validación, formato y envío siguen disponible
         });
     } finally { await browser.close(); }
 });
+
+for (const dispositivo of [
+    {nombre: 'escritorio', viewport: {width: 1440, height: 900}},
+    {nombre: 'móvil', viewport: {width: 390, height: 844}}
+]) {
+    test(`eventos ${dispositivo.nombre}: mínimo de Caracas, pasado bloqueado y hoy permitido`, async () => {
+        const browser = await chromium.launch({headless: true});
+        const context = await browser.newContext({viewport: dispositivo.viewport, timezoneId: 'Asia/Tokyo'});
+        const page = await context.newPage();
+        const errores = [];
+        page.on('pageerror', error => errores.push(error.message));
+        await page.clock.setFixedTime(new Date('2026-11-03T02:00:00Z')); // 02/11 en Caracas, 03/11 en Tokio.
+        try {
+            await page.goto(baseUrl + '/admin/panel-directiva.html');
+            await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
+            await page.evaluate(() => document.querySelector('[data-target="sec-cms"]').click());
+            const fecha = page.locator('#evento-fecha');
+            assert.equal(await fecha.getAttribute('min'), '2026-11-02');
+            await fecha.fill('2026-11-01');
+            assert.equal(await fecha.evaluate(campo => campo.validity.valid), false);
+
+            await page.locator('#evento-titulo').fill('Encuentro civil');
+            await page.locator('#evento-lugar').fill('Cancha sintética');
+            await fecha.fill('2026-11-02');
+            assert.equal(await fecha.evaluate(campo => campo.validity.valid), true);
+            const enviada = page.waitForRequest(request =>
+                request.method() === 'POST' && request.url().endsWith('/api/cms/admin/eventos'));
+            await page.locator('#form-evento button[type=submit]').click();
+            assert.equal((await enviada).postDataJSON().fecha_evento, '2026-11-02');
+            assert.deepEqual(errores, []);
+        } finally { await browser.close(); }
+    });
+}
+
+test('calendario público usa el día actual de Caracas aunque el navegador esté en otra zona', async () => {
+    const browser = await chromium.launch({headless: true});
+    const context = await browser.newContext({viewport: {width: 390, height: 844}, timezoneId: 'Asia/Tokyo'});
+    const page = await context.newPage();
+    await page.route('https://**/*', route => route.abort());
+    await page.clock.setFixedTime(new Date('2026-11-03T02:00:00Z'));
+    try {
+        await page.goto(baseUrl + '/index.html');
+        await page.locator('#calendar-days .cal-day.today').waitFor();
+        assert.equal((await page.locator('#month-year').textContent()).trim(), 'Noviembre 2026');
+        assert.equal((await page.locator('#calendar-days .cal-day.today').textContent()).trim(), '2');
+    } finally { await browser.close(); }
+});

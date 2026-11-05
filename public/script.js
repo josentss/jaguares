@@ -227,9 +227,18 @@ document.addEventListener('keydown', (e) => {
 
 /* 5. Calendario y eventos */
 const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-let date = new Date();
-let currentMonth = date.getMonth();
-let currentYear = date.getFullYear();
+
+function hoyCaracasISO(ahora = new Date()) {
+    const partes = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(ahora);
+    const dato = tipo => partes.find(parte => parte.type === tipo)?.value;
+    return [dato('year'), dato('month'), dato('day')].join('-');
+}
+
+const hoyInicialCalendario = hoyCaracasISO().split('-').map(Number);
+let currentMonth = hoyInicialCalendario[1] - 1;
+let currentYear = hoyInicialCalendario[0];
 
 /** @type {Array<{id_evento:number,titulo:string,fecha_evento:string,lugar:string,estado:string}>} */
 let eventosPublicos = [];
@@ -251,19 +260,14 @@ function escapeHTML(texto) {
         .replace(/'/g, '&#39;');
 }
 
-function fechaLocalISO(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-}
-
 function parseFechaEvento(fecha) {
     if (!fecha) return null;
     // Formato '2026-11-05' o ISO completo
     const s = String(fecha).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    const civil = new Date(s + 'T12:00:00Z');
+    if (Number.isNaN(civil.getTime()) || civil.toISOString().slice(0, 10) !== s) return null;
     const [y, m, d] = s.split('-').map(Number);
-    if (!y || !m || !d) return null;
     return { y, m: m - 1, d, key: s };
 }
 
@@ -329,7 +333,7 @@ function renderCalendar() {
         calendarDays.appendChild(emptyDiv);
     }
 
-    const todayDate = new Date();
+    const hoyKey = hoyCaracasISO();
     for (let i = 1; i <= daysInMonth; i++) {
         const dayDiv = document.createElement('div');
         dayDiv.classList.add('cal-day');
@@ -337,7 +341,7 @@ function renderCalendar() {
 
         const key = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
 
-        if (i === todayDate.getDate() && currentMonth === todayDate.getMonth() && currentYear === todayDate.getFullYear()) {
+        if (key === hoyKey) {
             dayDiv.classList.add('today');
         }
 
@@ -375,8 +379,8 @@ const proximoEl = document.getElementById('proximo-evento');
 
 function diasHasta(key) {
     const [y, m, d] = key.split('-').map(Number);
-    const hoy = new Date();
-    const a = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const [ah, mh, dh] = hoyCaracasISO().split('-').map(Number);
+    const a = Date.UTC(ah, mh - 1, dh);
     const b = Date.UTC(y, m - 1, d);
     return Math.round((b - a) / 86400000);
 }

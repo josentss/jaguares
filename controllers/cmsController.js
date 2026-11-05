@@ -4,6 +4,7 @@
 // ==========================================
 
 const db = require('../config/db');
+const { esEnteroPositivo, esFechaISOValida, hoyCaracasISO } = require('../utils/validators');
 
 // ==========================================
 // UTILIDADES
@@ -39,24 +40,21 @@ const validarNoticiaData = (titulo, resumen, contenido) => {
 const validarEventoData = (titulo, fecha_evento, lugar) => {
     const errores = [];
 
-    if (!titulo || titulo.trim().length === 0) {
+    if (typeof titulo !== 'string' || titulo.trim().length === 0) {
         errores.push('El título del evento es obligatorio');
     } else if (titulo.trim().length > 255) {
         errores.push('El título no puede exceder 255 caracteres');
     }
 
-    if (!fecha_evento) {
+    if (typeof fecha_evento !== 'string' || fecha_evento.length === 0) {
         errores.push('La fecha del evento es obligatoria');
-    } else {
-        const fecha = new Date(fecha_evento);
-        if (isNaN(fecha.getTime())) {
-            errores.push('La fecha del evento tiene un formato inválido');
-        } else if (fecha < new Date()) {
-            errores.push('La fecha del evento no puede ser en el pasado');
-        }
+    } else if (!esFechaISOValida(fecha_evento)) {
+        errores.push('La fecha del evento tiene un formato inválido');
+    } else if (fecha_evento < hoyCaracasISO()) {
+        errores.push('La fecha del evento no puede ser en el pasado');
     }
 
-    if (!lugar || lugar.trim().length === 0) {
+    if (typeof lugar !== 'string' || lugar.trim().length === 0) {
         errores.push('El lugar del evento es obligatorio');
     } else if (lugar.trim().length > 300) {
         errores.push('El lugar no puede exceder 300 caracteres');
@@ -302,12 +300,15 @@ const eliminarNoticiaAdmin = async (req, res) => {
 
 const obtenerEventosPublicos = async (req, res) => {
     try {
+        const hoy = hoyCaracasISO();
         const [eventos] = await db.promise().query(
             `SELECT id_evento, titulo, fecha_evento, lugar, estado
              FROM eventos
-             WHERE COALESCE(estado, 'proximo') IN ('proximo', 'en_progreso')
+             WHERE (COALESCE(estado, 'proximo') = 'en_progreso'
+                OR (COALESCE(estado, 'proximo') = 'proximo' AND fecha_evento >= ?))
              ORDER BY fecha_evento ASC
-             LIMIT 20`
+             LIMIT 20`,
+            [hoy]
         );
 
         res.status(200).json({
@@ -330,7 +331,7 @@ const obtenerEventosPublicos = async (req, res) => {
 
 const crearEventoAdmin = async (req, res) => {
     try {
-        const { titulo, fecha_evento, lugar } = req.body;
+        const { titulo, fecha_evento, lugar } = req.body || {};
         const usuario_id = req.usuarioId;
 
         const erroresValidacion = validarEventoData(titulo, fecha_evento, lugar);
@@ -391,7 +392,14 @@ const obtenerEventosAdmin = async (req, res) => {
 const actualizarEventoAdmin = async (req, res) => {
     try {
         const { id } = req.params;
-        const { estado } = req.body;
+        const { estado } = req.body || {};
+
+        if (!esEnteroPositivo(id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'El identificador del evento es inválido'
+            });
+        }
 
         const estadosValidos = ['proximo', 'en_progreso', 'completado', 'cancelado'];
         if (!estadosValidos.includes(estado)) {

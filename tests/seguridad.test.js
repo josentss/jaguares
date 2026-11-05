@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
-const { esMontoValido, esEnteroPositivo, esFechaISOValida } = require('../utils/validators');
+const { esMontoValido, esEnteroPositivo, esFechaISOValida, hoyCaracasISO } = require('../utils/validators');
 
 function cargarConMocks(modulo, mocks) {
     const ruta = require.resolve(modulo);
@@ -55,6 +55,64 @@ test('fechas: calendario gregoriano válido, sin rollover ni formato ambiguo', (
     for (const invalido of ['2026-02-29', '2026-04-31', '2026-13-01', '02/11/2026', '2026-1-2', '0000-01-01', '', null]) {
         assert.equal(esFechaISOValida(invalido), false, String(invalido));
     }
+});
+
+test('eventos: hoy en Caracas es válido; pasado, fecha imposible y tipos incorrectos no consultan SQL', async () => {
+    const consultas = [];
+    const db = { promise() { return { query: async (sql, params) => {
+        consultas.push({sql, params});
+        return [{insertId: 41, affectedRows: 1}];
+    }}; }};
+    const cms = cargarConMocks('../controllers/cmsController', {'../config/db': db});
+    const hoy = hoyCaracasISO();
+    const ayer = new Date(hoy + 'T12:00:00Z');
+    ayer.setUTCDate(ayer.getUTCDate() - 1);
+
+    for (const body of [
+        undefined,
+        {titulo: 'Encuentro', fecha_evento: '2026-02-30', lugar: 'Cancha'},
+        {titulo: 'Encuentro', fecha_evento: ayer.toISOString().slice(0, 10), lugar: 'Cancha'},
+        {titulo: 123, fecha_evento: hoy, lugar: 'Cancha'},
+        {titulo: 'Encuentro', fecha_evento: hoy, lugar: {nombre: 'Cancha'}}
+    ]) {
+        const res = respuesta();
+        await cms.crearEventoAdmin({body, usuarioId: 9}, res);
+        assert.equal(res.statusCode, 400, JSON.stringify(body));
+    }
+    assert.equal(consultas.length, 0);
+
+    const res = respuesta();
+    await cms.crearEventoAdmin({
+        body: {titulo: 'Encuentro de hoy', fecha_evento: hoy, lugar: 'Cancha principal'},
+        usuarioId: 9
+    }, res);
+    assert.equal(res.statusCode, 201);
+    assert.equal(consultas.length, 1);
+    assert.deepEqual(consultas[0].params, ['Encuentro de hoy', hoy, 'Cancha principal']);
+});
+
+test('eventos públicos: la consulta excluye fechas vencidas usando el día civil de Caracas', async () => {
+    let consulta;
+    const db = { promise() { return { query: async (sql, params) => {
+        consulta = {sql, params};
+        return [[]];
+    }}; }};
+    const cms = cargarConMocks('../controllers/cmsController', {'../config/db': db});
+    const res = respuesta();
+    await cms.obtenerEventosPublicos({}, res);
+    assert.equal(res.statusCode, 200);
+    assert.match(consulta.sql, /fecha_evento >= \?/);
+    assert.deepEqual(consulta.params, [hoyCaracasISO()]);
+});
+
+test('eventos: un identificador malformado se rechaza antes de actualizar', async () => {
+    let consultas = 0;
+    const db = { promise() { return { query: async () => { consultas++; return [{affectedRows: 1}]; } }; } };
+    const cms = cargarConMocks('../controllers/cmsController', {'../config/db': db});
+    const res = respuesta();
+    await cms.actualizarEventoAdmin({params: {id: 'abc'}, body: {estado: 'cancelado'}}, res);
+    assert.equal(res.statusCode, 400);
+    assert.equal(consultas, 0);
 });
 
 test('pago válido: consulta restringida por propietario y ambos estados', () => {

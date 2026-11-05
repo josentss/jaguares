@@ -28,6 +28,15 @@ exports.esFechaISOValida = (value) => {
         Number(value.slice(0, 4)) >= 1900;
 };
 
+exports.hoyCaracasISO = (ahora = new Date()) => {
+    if (!(ahora instanceof Date) || Number.isNaN(ahora.getTime())) return '';
+    const partes = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(ahora);
+    const dato = tipo => partes.find(x => x.type === tipo)?.value;
+    return [dato('year'), dato('month'), dato('day')].join('-');
+};
+
 exports.normalizarTexto = (value, maxLength = 255) => {
     if (typeof value !== 'string') return '';
     return value.trim().slice(0, maxLength);
@@ -84,14 +93,7 @@ exports.esTextoLibreValido = (value, maxLength = 255, obligatorio = true) =>
  */
 exports.esEdadAtletaValida = (fechaNacimiento, hoyISO) => {
     if (!exports.esFechaISOValida(fechaNacimiento)) return false;
-    let hoy = hoyISO;
-    if (hoy === undefined) {
-        const partes = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit'
-        }).formatToParts(new Date());
-        const dato = tipo => partes.find(x => x.type === tipo)?.value;
-        hoy = [dato('year'), dato('month'), dato('day')].join('-');
-    }
+    const hoy = hoyISO === undefined ? exports.hoyCaracasISO() : hoyISO;
     if (!exports.esFechaISOValida(hoy)) return false;
     const [an, mn, dn] = fechaNacimiento.split('-').map(Number);
     const [ah, mh, dh] = hoy.split('-').map(Number);

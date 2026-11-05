@@ -656,16 +656,16 @@
                 <form id="form-evento">
                     <div class="form-grid-panel">
                         <div class="form-group-panel full-width">
-                            <label>Título del Encuentro</label>
-                            <input type="text" id="evento-titulo" placeholder="Ej: Final Sub-15 vs Equipo B" required>
+                            <label for="evento-titulo">Título del encuentro</label>
+                            <input type="text" id="evento-titulo" maxlength="255" placeholder="Ej: Final Sub-15 vs Equipo B" required>
                         </div>
                         <div class="form-group-panel">
-                            <label>Fecha</label>
+                            <label for="evento-fecha">Fecha</label>
                             <input type="date" id="evento-fecha" required>
                         </div>
                         <div class="form-group-panel">
-                            <label>Lugar</label>
-                            <input type="text" id="evento-lugar" placeholder="Ej: Cancha Principal" required>
+                            <label for="evento-lugar">Lugar</label>
+                            <input type="text" id="evento-lugar" maxlength="300" placeholder="Ej: Cancha Principal" required>
                         </div>
                     </div>
                     <button type="submit" class="btn-panel-submit">Guardar en Calendario</button>
@@ -1870,6 +1870,28 @@
         // LÓGICA DEL CMS - EVENTOS
         // ==========================================
 
+        function actualizarMinimoFechaEvento() {
+            const campo = document.getElementById('evento-fecha');
+            if (!campo || !window.FechasJaguares) return '';
+            const hoy = window.FechasJaguares.hoyVenezuela();
+            campo.min = hoy;
+            return hoy;
+        }
+
+        function fechaEventoFormularioValida() {
+            const campo = document.getElementById('evento-fecha');
+            const hoy = actualizarMinimoFechaEvento();
+            if (!campo || !window.FechasJaguares) return Boolean(campo?.value);
+            const valida = window.FechasJaguares.esFechaISOValida(campo.value) && campo.value >= hoy;
+            campo.setCustomValidity(valida || !campo.value ? '' : 'Selecciona una fecha válida de hoy en adelante.');
+            return valida;
+        }
+
+        const fechaEventoCampo = document.getElementById('evento-fecha');
+        actualizarMinimoFechaEvento();
+        fechaEventoCampo?.addEventListener('focus', actualizarMinimoFechaEvento);
+        fechaEventoCampo?.addEventListener('input', fechaEventoFormularioValida);
+
         function badgeEvento(estado) {
             const e = (estado || 'proximo').toLowerCase();
             if (e === 'completado') return 'badge badge-activo';
@@ -1993,6 +2015,11 @@
 
             if (!bodyData.titulo || !bodyData.fecha_evento || !bodyData.lugar) {
                 showToast('Completa título, fecha y lugar', 'error');
+                return;
+            }
+            if (!fechaEventoFormularioValida()) {
+                document.getElementById('evento-fecha').reportValidity();
+                showToast('Selecciona una fecha válida de hoy en adelante', 'error');
                 return;
             }
 

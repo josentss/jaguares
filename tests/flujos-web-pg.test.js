@@ -408,11 +408,18 @@ test('flujo real: calendario crea y cancela el evento desde directiva y actualiz
     const page = await entrar('directiva@example.org');
     try {
         await seccion(page,'sec-cms');
+        const hoy = await page.evaluate(() => window.FechasJaguares.hoyVenezuela());
+        assert.equal(await page.locator('#evento-fecha').getAttribute('min'), hoy);
+        assert.equal((await page.request.post(base+'/api/cms/admin/eventos', {data: {
+            titulo: 'Fecha imposible', fecha_evento: '2026-02-30', lugar: 'Cancha de pruebas'
+        }})).status(), 400);
+        await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Evento vencido', '2020-01-01', 'Cancha', 'proximo')");
         await page.locator('#evento-titulo').fill('Encuentro de Prueba');
         await page.locator('#evento-lugar').fill('Cancha de pruebas');
         await page.locator('#evento-fecha').fill(new Date(Date.now()+7*86400000).toISOString().slice(0,10));
         const creado = await enviar(page,'#form-evento','/api/cms/admin/eventos',201);
         const publico = async () => (await (await page.request.get(base+'/api/cms/public/eventos')).json()).eventos;
+        assert.equal((await publico()).some(e=>e.titulo==='Evento vencido'),false);
         assert.equal((await publico()).some(e=>e.id_evento===creado.id_evento),true);
         const cancelado = page.waitForResponse(r=>r.url().endsWith('/api/cms/admin/eventos/'+creado.id_evento)&&r.request().method()==='PUT');
         await page.locator('#body-eventos tr').filter({hasText:'Encuentro de Prueba'}).getByRole('button',{name:'Cancelar',exact:true}).click();

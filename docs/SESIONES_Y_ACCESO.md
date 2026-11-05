@@ -1,6 +1,6 @@
 # Acceso al panel y caducidad por inactividad
 
-Fecha: 2026-11-04. Rama: `fix/acceso-servidor-inactividad`. Base de producción: PR #11, `main` `39960c1`.
+Fecha actualizada: 2026-11-05. Implementación: PR #12, fusionado en `main` `1ac08b1` y desplegado a Production.
 
 ## Decisión vigente
 
@@ -35,7 +35,13 @@ Resultado local final en Node 24.15.0 y Node 22.23.4: **55/55 pruebas backend si
 
 PostgreSQL 18 temporal volvió a fallar al enlazar el puerto local, también fuera del aislamiento. Las pruebas completas se ejecutaron en el CI con PostgreSQL 16; no se ha consultado ni alterado Supabase de producción.
 
-**CI del PR #12:** [ejecución 41963996872](https://github.com/josentss/jaguares/actions/runs/41963996872), satisfactoria: sintaxis, 93/93 backend con Node 22/PostgreSQL 16 y 73/73 navegador con Chromium. El Preview creado automáticamente por Vercel no es Production y no fue usado para escribir datos.
+**CI y despliegue del PR #12:** [ejecución final 41964532958](https://github.com/josentss/jaguares/actions/runs/41964532958), satisfactoria: sintaxis, 93/93 backend con Node 22/PostgreSQL 16 y 73/73 navegador con Chromium. Production `7565382672` completado; no se usó esta verificación para escribir datos productivos.
+
+## Aceptación manual y pulido visual
+
+El propietario confirmó en Production el aviso tras 14 minutos sin interacción, la renovación conservando el formulario, el cierre al dejar vencer el aviso, la coordinación entre pestañas y una inscripción sin regresiones. La coexistencia entre navegador normal e incógnito es intencional: son sesiones independientes y no se usa la IP como identidad.
+
+El [PR #13](https://github.com/josentss/jaguares/pull/13) reduce el peso visual del aviso siguiendo el sistema existente de notificaciones: fondo blanco, franja naranja, icono, título y texto compactos, botón menor y márgenes seguros en móvil. No modifica la seguridad ni los plazos. Pruebas locales: 55/55 backend sin PostgreSQL en Node 24, 59/59 navegador en Node 24 y Node 22, sintaxis de 46 JavaScript en ambas versiones y revisión visual de capturas sintéticas. La [ejecución CI 41978791699](https://github.com/josentss/jaguares/actions/runs/41978791699) aprobó 93/93 backend con PostgreSQL 16 y 73/73 navegador con Chromium en Node 22.
 
 ## Comprobación manual después del despliegue autorizado
 

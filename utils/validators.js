@@ -37,6 +37,11 @@ exports.hoyCaracasISO = (ahora = new Date()) => {
     return [dato('year'), dato('month'), dato('day')].join('-');
 };
 
+exports.limitesFechaEvento = (hoy = exports.hoyCaracasISO()) => {
+    if (!exports.esFechaISOValida(hoy)) return null;
+    return { min: hoy, max: `${Number(hoy.slice(0, 4)) + 1}-12-31` };
+};
+
 exports.normalizarTexto = (value, maxLength = 255) => {
     if (typeof value !== 'string') return '';
     return value.trim().slice(0, maxLength);

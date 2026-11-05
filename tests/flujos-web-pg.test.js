@@ -409,9 +409,14 @@ test('flujo real: calendario crea y cancela el evento desde directiva y actualiz
     try {
         await seccion(page,'sec-cms');
         const hoy = await page.evaluate(() => window.FechasJaguares.hoyVenezuela());
+        const maximo = `${Number(hoy.slice(0,4))+1}-12-31`;
         assert.equal(await page.locator('#evento-fecha').getAttribute('min'), hoy);
+        assert.equal(await page.locator('#evento-fecha').getAttribute('max'), maximo);
         assert.equal((await page.request.post(base+'/api/cms/admin/eventos', {data: {
             titulo: 'Fecha imposible', fecha_evento: '2026-02-30', lugar: 'Cancha de pruebas'
+        }})).status(), 400);
+        assert.equal((await page.request.post(base+'/api/cms/admin/eventos', {data: {
+            titulo: 'Fecha demasiado lejana', fecha_evento: `${Number(hoy.slice(0,4))+2}-01-01`, lugar: 'Cancha de pruebas'
         }})).status(), 400);
         await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Evento vencido', '2020-01-01', 'Cancha', 'proximo')");
         await page.locator('#evento-titulo').fill('Encuentro de Prueba');

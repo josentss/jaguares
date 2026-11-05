@@ -1,7 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
-const { esMontoValido, esEnteroPositivo, esFechaISOValida, hoyCaracasISO } = require('../utils/validators');
+const { esMontoValido, esEnteroPositivo, esFechaISOValida, hoyCaracasISO,
+    limitesFechaEvento } = require('../utils/validators');
 
 function cargarConMocks(modulo, mocks) {
     const ruta = require.resolve(modulo);
@@ -65,6 +66,7 @@ test('eventos: hoy en Caracas es válido; pasado, fecha imposible y tipos incorr
     }}; }};
     const cms = cargarConMocks('../controllers/cmsController', {'../config/db': db});
     const hoy = hoyCaracasISO();
+    const limites = limitesFechaEvento(hoy);
     const ayer = new Date(hoy + 'T12:00:00Z');
     ayer.setUTCDate(ayer.getUTCDate() - 1);
 
@@ -72,6 +74,7 @@ test('eventos: hoy en Caracas es válido; pasado, fecha imposible y tipos incorr
         undefined,
         {titulo: 'Encuentro', fecha_evento: '2026-02-30', lugar: 'Cancha'},
         {titulo: 'Encuentro', fecha_evento: ayer.toISOString().slice(0, 10), lugar: 'Cancha'},
+        {titulo: 'Encuentro', fecha_evento: `${Number(hoy.slice(0, 4)) + 2}-01-01`, lugar: 'Cancha'},
         {titulo: 123, fecha_evento: hoy, lugar: 'Cancha'},
         {titulo: 'Encuentro', fecha_evento: hoy, lugar: {nombre: 'Cancha'}}
     ]) {
@@ -89,6 +92,15 @@ test('eventos: hoy en Caracas es válido; pasado, fecha imposible y tipos incorr
     assert.equal(res.statusCode, 201);
     assert.equal(consultas.length, 1);
     assert.deepEqual(consultas[0].params, ['Encuentro de hoy', hoy, 'Cancha principal']);
+    assert.deepEqual(limites, {min: hoy, max: `${Number(hoy.slice(0, 4)) + 1}-12-31`});
+
+    const resMaximo = respuesta();
+    await cms.crearEventoAdmin({
+        body: {titulo: 'Encuentro límite', fecha_evento: limites.max, lugar: 'Cancha principal'},
+        usuarioId: 9
+    }, resMaximo);
+    assert.equal(resMaximo.statusCode, 201);
+    assert.deepEqual(consultas[1].params, ['Encuentro límite', limites.max, 'Cancha principal']);
 });
 
 test('eventos públicos: la consulta excluye fechas vencidas usando el día civil de Caracas', async () => {

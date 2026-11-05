@@ -172,6 +172,7 @@ La creación de notificaciones es de mejor esfuerzo y puede fallar después de u
 
 - [ ] **CAL-01. Evento:** crear un evento futuro ficticio con título/lugar. Debe aparecer como Próximo en Gestión Web y en el calendario público del mismo entorno, tras recargar.
 - [ ] **CAL-02. Validación:** el mínimo del selector debe ser hoy en Caracas. Omitir título/lugar, elegir ayer o enviar manualmente una fecha imposible como `2026-02-30`: debe rechazar sin crear evento. Hoy debe permitirse.
+- [ ] **CAL-02A. Límite máximo:** el selector debe permitir hasta el 31/12 del año siguiente y bloquear el 01/01 posterior. Una petición manual con una fecha más lejana también debe recibir 400 y no crear el evento.
 - [ ] **CAL-02B. Eventos vencidos:** un evento antiguo que por error siga como Próximo se conserva en administración, pero no aparece en la consulta/calendario público. Un evento marcado En progreso sí puede permanecer visible.
 - [ ] **CAL-03. Estados:** con directiva/admin, completar o cancelar un evento sintético. Debe conservarse en administración con su estado y desaparecer de la consulta pública; Reactivar lo devuelve a Próximo.
 - [ ] **CAL-04. Roles:** staff puede crear/consultar eventos; modificar estados está permitido a directiva/admin. La interfaz puede mostrar controles que el servidor deniega a staff; registrar esa discrepancia si ocurre.

@@ -75,7 +75,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - Directiva crea, completa y cancela eventos; representantes ven los vigentes.
 - Eventos nuevos: desde hoy en Caracas hasta el 31 de diciembre del año siguiente.
 - Los históricos fuera del rango se conservan.
-- La rama `feat/hora-eventos` añade `hora_evento TIME WITHOUT TIME ZONE` nullable: los históricos quedan sin hora y Express exige `HH:mm` para nuevas altas. La hora es civil de Venezuela, sin conversión a UTC.
+- [PR #17](https://github.com/josentss/jaguares/pull/17), rama `feat/hora-eventos`, añade `hora_evento TIME WITHOUT TIME ZONE` nullable: los históricos quedan sin hora y Express exige `HH:mm` para nuevas altas. La hora es civil de Venezuela, sin conversión a UTC.
 - El calendario público y los paneles de directiva y representantes muestran la hora cuando existe. Los históricos se presentan solo con fecha.
 - **Condición de publicación:** revisar y aplicar primero `migrations/2026-11-05_eventos_hora.sql` en producción mediante el proceso autorizado, antes de desplegar el código que lee la columna. Esta rama no aplica cambios en Supabase.
 - Las notificaciones son informativas y de mejor esfuerzo; no hay lectura persistente.

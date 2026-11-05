@@ -1,8 +1,9 @@
-const jwt = require('jsonwebtoken');
+const { verificarCredenciales } = require('../utils/sesion');
 const db = require('../config/db');
 
 function denegar(req, res, codigo, mensaje, redirigir) {
     if (redirigir && codigo !== 503) return res.redirect('/admin/login.html');
+    if (redirigir) return res.status(503).type('html').send('<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Acceso temporalmente no disponible</title><body><main><h1>No se pudo comprobar tu acceso</h1><p>Inténtalo de nuevo en unos momentos.</p><a href="">Reintentar</a></main></body></html>');
     return res.status(codigo).json({ success: false, message: mensaje });
 }
 
@@ -14,7 +15,10 @@ function validarSesion(req, res, next, redirigir = false) {
 
     let payload;
     try {
-        payload = jwt.verify(token, process.env.JWT_SECRET);
+        const credenciales = verificarCredenciales(req.cookies);
+        payload = credenciales.payload;
+        req.actividadExp = credenciales.actividad.exp;
+        req.sesionPayload = payload;
     } catch (err) {
         return denegar(req, res, 401, 'Sesión inválida o expirada.', redirigir);
     }

@@ -1,16 +1,9 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const { conIdentidades, comprobarUsuario, responderError } = require('../utils/integridad');
-const jwt = require('jsonwebtoken');
+const { establecerSesion, establecerActividad, cerrarSesion, informacionSesion } = require('../utils/sesion');
 const { esEmailValido, esPasswordValida, normalizarTexto, esNombreValido } = require('../utils/validators');
 const { logAdminRequest } = require('../utils/requestLogger');
-
-const COOKIE_OPTS = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 12 * 60 * 60 * 1000
-};
 
 // LOGIN
 exports.login = (req, res) => {
@@ -59,13 +52,7 @@ exports.login = (req, res) => {
 
             delete usuario.password_hash;
 
-            const token = jwt.sign(
-                { id_usuario: usuario.id_usuario, rol: usuario.rol },
-                process.env.JWT_SECRET,
-                { expiresIn: '12h' }
-            );
-
-            res.cookie('token', token, COOKIE_OPTS);
+            establecerSesion(res, usuario, req.cookies);
 
             res.json({ success: true, message: 'Login exitoso', usuario });
         } catch (errCompare) {
@@ -77,7 +64,7 @@ exports.login = (req, res) => {
 
 // LOGOUT
 exports.logout = (req, res) => {
-    res.clearCookie('token', COOKIE_OPTS);
+    cerrarSesion(res, req.cookies);
     res.json({ success: true, message: 'Sesión cerrada' });
 };
 
@@ -89,8 +76,23 @@ exports.me = (req, res) => {
     db.query('SELECT id_usuario, nombres, apellidos, correo, rol FROM usuarios WHERE id_usuario = ?', [id], (err, results) => {
         if (err) return res.status(500).json({ success: false, message: 'Error de servidor' });
         if (!results || results.length === 0) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
-        res.json({ success: true, usuario: results[0] });
+        res.json({ success: true, usuario: results[0], sesion: informacionSesion(req) });
     });
+};
+
+// Solo una interacción explícita renueva la actividad; las consultas automáticas no lo hacen.
+exports.actividad = (req, res) => {
+    let origenValido = true;
+    const origen = req.get('origin');
+    if (origen) {
+        try { origenValido = new URL(origen).host === String(req.get('host') || '').toLowerCase(); }
+        catch { origenValido = false; }
+    }
+    if (!origenValido || req.get('x-jaguares-activity') !== '1') {
+        return res.status(403).json({ success: false, message: 'Solicitud de actividad no válida.' });
+    }
+    req.actividadExp = establecerActividad(res, req.sesionPayload);
+    return res.json({ success: true, sesion: informacionSesion(req) });
 };
 
 // REGISTRO

@@ -26,8 +26,11 @@ test.before(async () => {
             const soloInactivos = (req.headers.referer || '').includes('inactivos=1');
             if (pathname === '/api/auth/me') {
                 const esDirectiva = (req.headers.referer || '').includes('panel-directiva.html');
+                const ahora = Date.now();
                 return json(res, {
                     success: true,
+                    sesion: { id: 'sesion-sintetica-interfaz', servidor: ahora,
+                        vence: ahora + 900000, limite: ahora + 43200000 },
                     usuario: { id_usuario: esDirectiva ? 9 : 5,
                         rol: esDirectiva ? 'directiva' : 'representante',
                         nombres: 'Prueba', apellidos: esDirectiva ? 'Directiva' : 'Representante' }

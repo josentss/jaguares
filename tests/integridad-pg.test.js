@@ -10,7 +10,7 @@ const atletas = require('../controllers/atletaController');
 const usuarios = require('../controllers/userController');
 const auth = require('../controllers/authController');
 const { conIdentidades } = require('../utils/integridad');
-const jwt = require('jsonwebtoken');
+const { crearCredenciales } = require('../utils/sesion');
 let esquemaCreado = false;
 
 const atletaBase = {
@@ -260,7 +260,10 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
     const server=http.createServer(app);
     await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
     const base=`http://127.0.0.1:${server.address().port}`;
-    const token=id=>jwt.sign({id_usuario:id,rol:id===4?'staff':'representante'},process.env.JWT_SECRET);
+    const token=id=> {
+        const credenciales = crearCredenciales({id_usuario:id,rol:id===4?'staff':'representante'});
+        return `${credenciales.token}; jaguares_actividad_${credenciales.payload.jti}=${credenciales.actividad}`;
+    };
     try {
         const {rows}=await db.pool.query('SELECT id_atleta FROM atletas WHERE id_representante = 1 LIMIT 1');
         const id=rows[0].id_atleta;

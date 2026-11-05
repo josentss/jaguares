@@ -150,6 +150,26 @@ async function seccion(page, id) {
     await item.click();
 }
 
+test('sesiones reales: permite dos navegadores y cerrar uno conserva el acceso del otro', async () => {
+    const primera = await entrar('directiva@example.org');
+    const segunda = await entrar('directiva@example.org');
+    let segundaCerrada = false;
+    try {
+        const cookies1 = await primera.context().cookies();
+        const cookies2 = await segunda.context().cookies();
+        assert.notEqual(cookies1.find(c=>c.name==='token').value,cookies2.find(c=>c.name==='token').value);
+        assert.ok(cookies1.some(c=>c.name.startsWith('jaguares_actividad_')));
+        await segunda.context().close();
+        segundaCerrada = true;
+        await primera.reload();
+        await primera.locator('.main-content').waitFor({state:'visible'});
+        assert.equal(await primera.evaluate(async()=> (await apiFetch('/api/auth/me')).status),200);
+    } finally {
+        await primera.context().close();
+        if (!segundaCerrada) await segunda.context().close();
+    }
+});
+
 async function rellenarAtleta(page, prefijo, nombres, numero = cedulaLibre()) {
     for (const [campo,valor] of Object.entries({nombres,apellidos:'Núñez',
         'fecha-nac':'2014-05-10',direccion:'Calle de pruebas 12',telefono:'04140000001',cedula:numero})) {

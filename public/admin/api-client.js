@@ -28,6 +28,33 @@ function validarFormularioJaguares(formulario) {
 const CLAVE_CIERRE_SESION = 'jaguares:sesion-cerrada';
 const TIEMPO_MAXIMO_SESION_MS = 10000;
 let sesionPanelFinalizada = false;
+let sesionVigente = null;
+const CLAVE_ACTIVIDAD_SESION = 'jaguares:actividad';
+
+function metadatosSesionValidos(sesion) {
+    return sesion && typeof sesion.id === 'string' && sesion.id &&
+        [sesion.vence, sesion.limite, sesion.servidor].every(Number.isFinite) &&
+        sesion.servidor > 0 && sesion.vence > sesion.servidor &&
+        sesion.limite >= sesion.vence;
+}
+
+function registrarVigenciaSesion(sesion, recibidoEn = Date.now()) {
+    if (sesionPanelFinalizada || !metadatosSesionValidos(sesion) || !Number.isFinite(recibidoEn)) return false;
+    if (sesionVigente?.id === sesion.id && sesion.vence < sesionVigente.vence) return false;
+    sesionVigente = { ...sesion, desfase: recibidoEn - sesion.servidor };
+    return true;
+}
+
+function interpretarSesion(payload, rolesPermitidos) {
+    const usuario = payload?.usuario;
+    const id = typeof usuario?.id_usuario === 'number' ? usuario.id_usuario
+        : typeof usuario?.id_usuario === 'string' && /^[1-9]\d*$/.test(usuario.id_usuario) ? Number(usuario.id_usuario) : NaN;
+    if (payload?.success !== true || !usuario || !Number.isSafeInteger(id) || id <= 0 ||
+        !rolesPermitidos.includes(usuario.rol) || !metadatosSesionValidos(payload.sesion)) {
+        return { estado: 'invalida' };
+    }
+    return { estado: 'valida', usuario, sesion: payload.sesion };
+}
 
 function actualizarEstadoPanelSesion(estado, mensaje) {
     if (!document.body) return;
@@ -59,18 +86,7 @@ async function consultarSesionPanel(rolesPermitidos) {
         if (response.status === 401 || response.status === 403) return { estado: 'invalida' };
         if (!response.ok) return { estado: 'error' };
 
-        const payload = await response.json();
-        const usuario = payload?.usuario;
-        const idUsuario = typeof usuario?.id_usuario === 'number'
-            ? usuario.id_usuario
-            : typeof usuario?.id_usuario === 'string' && /^[1-9]\d*$/.test(usuario.id_usuario)
-                ? Number(usuario.id_usuario) : NaN;
-        if (!payload?.success || !usuario ||
-            !Number.isSafeInteger(idUsuario) || idUsuario <= 0 ||
-            !rolesPermitidos.includes(usuario.rol)) {
-            return { estado: 'invalida' };
-        }
-        return { estado: 'valida', usuario };
+        return interpretarSesion(await response.json(), rolesPermitidos);
     } catch (_) {
         return { estado: 'error' };
     } finally {
@@ -79,9 +95,18 @@ async function consultarSesionPanel(rolesPermitidos) {
 }
 
 async function exigirSesionPanel(rolesPermitidos) {
-    const resultado = await consultarSesionPanel(rolesPermitidos);
+    const inicial = document.getElementById('sesion-inicial');
+    let resultado;
+    if (inicial) {
+        try { resultado = interpretarSesion(JSON.parse(inicial.textContent), rolesPermitidos); } catch (_) {}
+        inicial.remove();
+    }
+    if (!resultado) resultado = await consultarSesionPanel(rolesPermitidos);
     if (sesionPanelFinalizada) return null;
-    if (resultado.estado === 'valida') return resultado.usuario;
+    if (resultado.estado === 'valida') {
+        registrarVigenciaSesion(resultado.sesion);
+        return resultado.usuario;
+    }
     if (resultado.estado === 'invalida') {
         redirigirLoginPorSesion();
         return null;
@@ -108,11 +133,13 @@ function protegerSesionPanel(rolesPermitidos, usuarioAutenticado) {
             if (resultado.estado === 'invalida' ||
                 (resultado.estado === 'valida' &&
                     (String(resultado.usuario.id_usuario) !== String(usuarioAutenticado.id_usuario) ||
-                    resultado.usuario.rol !== usuarioAutenticado.rol))) {
+                    resultado.usuario.rol !== usuarioAutenticado.rol ||
+                    (sesionVigente && resultado.sesion?.id !== sesionVigente.id)))) {
                 redirigirLoginPorSesion();
                 return;
             }
             if (resultado.estado === 'valida') {
+                registrarVigenciaSesion(resultado.sesion);
                 actualizarEstadoPanelSesion('ready');
             } else if (document.body.dataset.sessionState === 'checking') {
                 actualizarEstadoPanelSesion('error', 'No se pudo verificar tu sesión. Inténtalo de nuevo.');
@@ -134,10 +161,122 @@ function protegerSesionPanel(rolesPermitidos, usuarioAutenticado) {
     });
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && document.body.dataset.sessionState === 'ready') {
-            revalidar({ ocultar: true });
+            revalidar();
         }
     });
     actualizarEstadoPanelSesion('ready');
+    vigilarInactividad(rolesPermitidos, usuarioAutenticado);
+}
+
+function vigilarInactividad(rolesPermitidos, usuarioAutenticado) {
+    if (!sesionVigente) return;
+    const idSesion = sesionVigente.id;
+    let ultimaRenovacion = Date.now();
+    let actividadPendiente = false;
+    let ultimaInteraccion = 0;
+    let solicitudEnCurso = false;
+    const aviso = document.createElement('aside');
+    aviso.id = 'session-idle-warning';
+    aviso.className = 'session-idle-warning';
+    aviso.setAttribute('role', 'status');
+    aviso.setAttribute('aria-live', 'polite');
+    aviso.hidden = true;
+    const mensaje = document.createElement('p');
+    const continuar = document.createElement('button');
+    continuar.type = 'button';
+    continuar.textContent = 'Continuar sesión';
+    aviso.append(mensaje, continuar);
+    document.body.append(aviso);
+    const restantes = () => sesionVigente.vence - (Date.now() - sesionVigente.desfase);
+
+    const comprobar = async () => {
+        if (solicitudEnCurso || sesionPanelFinalizada) return;
+        solicitudEnCurso = true;
+        try {
+            // Otra pestaña puede haber renovado la cookie, incluso sin localStorage.
+            const resultado = await consultarSesionPanel(rolesPermitidos);
+            if (sesionPanelFinalizada) return;
+            if (resultado.estado === 'invalida' || (resultado.estado === 'valida' &&
+                (String(resultado.usuario.id_usuario) !== String(usuarioAutenticado.id_usuario) ||
+                resultado.usuario.rol !== usuarioAutenticado.rol || resultado.sesion?.id !== idSesion))) {
+                redirigirLoginPorSesion();
+            } else if (resultado.estado === 'valida') {
+                registrarVigenciaSesion(resultado.sesion);
+                if (restantes() <= 0) redirigirLoginPorSesion();
+                else actualizarEstadoPanelSesion('ready');
+            } else {
+                actualizarEstadoPanelSesion('error', 'No se pudo comprobar si tu sesión sigue activa. Comprueba la conexión y reintenta.');
+            }
+        } finally { solicitudEnCurso = false; }
+    };
+
+    const renovar = async () => {
+        if (solicitudEnCurso || sesionPanelFinalizada) return;
+        solicitudEnCurso = true;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), TIEMPO_MAXIMO_SESION_MS);
+        try {
+            const response = await apiFetch('/api/auth/actividad', { method: 'POST',
+                headers: { 'X-Jaguares-Activity': '1' }, signal: controller.signal });
+            const payload = await response.json();
+            if (sesionPanelFinalizada) return;
+            if (response.ok && payload.success && payload.sesion?.id === idSesion) {
+                registrarVigenciaSesion(payload.sesion);
+                ultimaRenovacion = Date.now();
+                actividadPendiente = false;
+                aviso.hidden = true;
+                try { localStorage.setItem(CLAVE_ACTIVIDAD_SESION, JSON.stringify({sesion:payload.sesion, recibidoEn:Date.now()})); } catch (_) {}
+            } else if (response.status === 401 || response.status === 403 || (response.ok && payload.sesion?.id !== idSesion)) {
+                redirigirLoginPorSesion();
+            } else {
+                mensaje.textContent = 'No se pudo renovar la sesión. Comprueba tu conexión y vuelve a intentarlo.';
+                aviso.hidden = false;
+            }
+        } catch (_) {
+            mensaje.textContent = 'No se pudo renovar la sesión. Comprueba tu conexión y vuelve a intentarlo.';
+            aviso.hidden = false;
+        } finally { clearTimeout(timeout); solicitudEnCurso = false; }
+    };
+
+    const revisar = () => {
+        if (sesionPanelFinalizada || document.visibilityState !== 'visible') return;
+        if (Date.now() - ultimaInteraccion > 35000) actividadPendiente = false;
+        const tiempo = restantes();
+        if (tiempo <= 0) {
+            actualizarEstadoPanelSesion('checking', 'Comprobando la vigencia de tu sesión…');
+            comprobar();
+        } else if (actividadPendiente && Date.now() - ultimaRenovacion >= 30000) {
+            renovar();
+        } else {
+            aviso.hidden = tiempo > 60000;
+            const limiteCercano = sesionVigente.limite - (Date.now() - sesionVigente.desfase) <= 60000;
+            continuar.hidden = limiteCercano;
+            if (!aviso.hidden) mensaje.textContent = limiteCercano
+                ? 'Tu sesión alcanzará su duración máxima en menos de un minuto. Guarda tus cambios e inicia sesión de nuevo.'
+                : 'Tu sesión vencerá por inactividad en menos de un minuto. Puedes continuar para mantenerla abierta.';
+        }
+    };
+    continuar.addEventListener('click', renovar);
+    for (const evento of ['pointerdown', 'keydown', 'input', 'scroll']) {
+        document.addEventListener(evento, event => {
+            if (!event.isTrusted || document.visibilityState !== 'visible' || sesionPanelFinalizada) return;
+            actividadPendiente = true;
+            ultimaInteraccion = Date.now();
+            if (restantes() > 0 && Date.now() - ultimaRenovacion >= 30000) renovar();
+        }, { passive: true, capture: true });
+    }
+    window.addEventListener('storage', event => {
+        if (event.key !== CLAVE_ACTIVIDAD_SESION || !event.newValue) return;
+        try {
+            const dato = JSON.parse(event.newValue);
+            if (dato.sesion?.id === idSesion && dato.sesion.vence > sesionVigente.vence) {
+                if (registrarVigenciaSesion(dato.sesion, dato.recibidoEn)) aviso.hidden = true;
+            }
+        } catch (_) {}
+    });
+    document.addEventListener('visibilitychange', revisar);
+    const timer = setInterval(revisar, 5000);
+    window.addEventListener('pagehide', event => { if (!event.persisted) clearInterval(timer); });
 }
 
 async function cerrarSesionPanel(elemento) {

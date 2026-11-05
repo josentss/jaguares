@@ -27,8 +27,9 @@ test.after(async () => {
 
 for (const panel of ['directiva', 'representante']) {
     test(`el HTML del panel ${panel} lleva Cache-Control no-store`, async () => {
-        const response = await fetch(baseUrl + '/admin/panel-' + panel + '.html');
-        assert.equal(response.status, 200);
+        const response = await fetch(baseUrl + '/admin/panel-' + panel + '.html', { redirect: 'manual' });
+        assert.equal(response.status, 302);
+        assert.equal(response.headers.get('location'), '/admin/login.html');
         assert.equal(response.headers.get('cache-control'), 'no-store');
     });
 }

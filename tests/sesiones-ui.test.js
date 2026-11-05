@@ -23,6 +23,10 @@ function reiniciarEstado(role = 'directiva') {
     state.meStatus = 200;
     state.cierres = [];
     state.atletas = [];
+    state.ahora = Date.now();
+    state.sesion = {id:'sesion-sintetica-compartida',servidor:state.ahora,
+        vence:state.ahora+900000,limite:state.ahora+43200000};
+    state.bootstrap = false;
 }
 
 test.before(async () => {
@@ -40,10 +44,11 @@ test.before(async () => {
             if (pathname === '/api/auth/me') {
                 if (state.esperaMe) await state.esperaMe;
                 if (state.meStatus !== 200) return json(res, state.meStatus, { success: false });
+                if (state.sesion && state.ahora >= state.sesion.vence) return json(res, 401, { success: false });
                 if (!state.autenticada || !req.headers.cookie?.includes('token=synthetic-session-fixture')) {
                     return json(res, 401, { success: false });
                 }
-                return json(res, 200, { success: true, usuario: {
+                return json(res, 200, { success: true, sesion: state.sesion, usuario: {
                     id_usuario: 9001, rol: state.role,
                     nombres: 'Prueba', apellidos: 'Sintetica', correo: 'sesiones@example.org'
                 } });
@@ -59,6 +64,11 @@ test.before(async () => {
                 return json(res, 200, { success: true });
             }
             if (!state.autenticada) return json(res, 401, { success: false });
+            if (pathname === '/api/auth/actividad') {
+                if (!state.sesion || state.ahora >= state.sesion.vence) return json(res,401,{success:false});
+                state.sesion = {...state.sesion, servidor:state.ahora, vence:Math.min(state.ahora+900000,state.sesion.limite)};
+                return json(res,200,{success:true,sesion:state.sesion});
+            }
             if (pathname === '/api/directiva/auditoria') return json(res, 200, {
                 metricas: { activos: 0, espera: 0, pagos_pendientes: 0 },
                 tasa_bcv: 36.5, tasa_fecha: null, atletas: [], pagos: []
@@ -82,7 +92,13 @@ test.before(async () => {
             res.writeHead(403); return res.end();
         }
         try {
-            const body = await fs.readFile(filePath);
+            let body = await fs.readFile(filePath);
+            if (state.bootstrap && /panel-(directiva|representante)\.html$/.test(pathname)) {
+                const inicial = {success:true,sesion:state.sesion,usuario:{id_usuario:9001,rol:state.role,nombres:'Prueba',apellidos:'Sintética'}};
+                body = Buffer.from(body.toString('utf8').replace('<!-- SESION_INICIAL -->',
+                    `<script id="sesion-inicial" type="application/json">${JSON.stringify(inicial)}</script>`)
+                    .replace('data-session-state="checking"','data-session-state="starting"'));
+            }
             const contentType = {
                 '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
                 '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon'
@@ -101,8 +117,9 @@ test.after(async () => {
     if (server) await new Promise(resolve => server.close(resolve));
 });
 
-async function abrirPanel(context, role) {
+async function abrirPanel(context, role, preparar) {
     const page = await context.newPage();
+    if (preparar) await preparar(page);
     const pageErrors = [];
     page.on('pageerror', error => pageErrors.push(error.message));
     await page.route('https://**/*', route => route.abort());
@@ -182,6 +199,17 @@ test('una respuesta temporal fallida ofrece reintentar sin mostrar datos del pan
         await context.close();
         await browser.close();
     }
+});
+
+test('una respuesta autenticada sin metadatos de vigencia no abre el panel', async () => {
+    reiniciarEstado('representante');
+    state.sesion = null;
+    const {browser,context} = await nuevoContexto({width:1440,height:900});
+    try {
+        const {page} = await abrirPanel(context,'representante');
+        await page.waitForURL('**/admin/login.html');
+        assert.equal(state.requests.filter(r=>r.pathname === '/api/auth/me').length,1);
+    } finally { await context.close(); await browser.close(); }
 });
 
 for (const role of ['directiva', 'representante']) {
@@ -276,7 +304,7 @@ test('revalida al volver a una pestaña y redirige si la sesión fue revocada', 
 });
 
 for (const role of ['directiva', 'representante']) {
-    test(`${role}: oculta los datos mientras revalida al volver a la pestaña`, async () => {
+    test(`${role}: revalida al volver sin sustituir el panel por una pantalla de espera`, async () => {
         reiniciarEstado(role);
         const { browser, context } = await nuevoContexto({ width: 390, height: 844 });
         let liberar;
@@ -288,8 +316,8 @@ for (const role of ['directiva', 'representante']) {
             state.esperaMe = new Promise(resolve => { liberar = resolve; });
             await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
             await esperarRuta('/api/auth/me', anteriores + 1);
-            assert.equal(await page.locator('.main-content').isVisible(), false);
-            assert.equal(await page.locator('#session-gate').isVisible(), true);
+            assert.equal(await page.locator('.main-content').isVisible(), true);
+            assert.equal(await page.locator('#session-gate').isVisible(), false);
             liberar();
             await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
             assert.equal(await page.locator('.main-content').isVisible(), true);
@@ -301,7 +329,7 @@ for (const role of ['directiva', 'representante']) {
     });
 }
 
-test('un error al revalidar oculta el panel y permite recuperar la sesión', async () => {
+test('un error temporal al comprobar en segundo plano conserva el panel ya autorizado', async () => {
     reiniciarEstado('representante');
     const { browser, context } = await nuevoContexto({ width: 390, height: 844 });
     try {
@@ -309,12 +337,15 @@ test('un error al revalidar oculta el panel y permite recuperar la sesión', asy
         await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
         await page.bringToFront();
         state.meStatus = 503;
+        const respuesta = page.waitForResponse(r=>new URL(r.url()).pathname === '/api/auth/me' && r.status() === 503);
         await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-        await page.waitForFunction(() => document.body.dataset.sessionState === 'error');
-        assert.equal(await page.locator('.main-content').isVisible(), false);
-        assert.equal(await page.locator('#session-gate-retry').isVisible(), true);
+        await respuesta;
+        assert.equal(await page.locator('.main-content').isVisible(), true);
+        assert.equal(await page.locator('#session-gate').isVisible(), false);
         state.meStatus = 200;
-        await page.locator('#session-gate-retry').click();
+        const recuperada = page.waitForResponse(r=>new URL(r.url()).pathname === '/api/auth/me' && r.status() === 200);
+        await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+        await recuperada;
         await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
         assert.equal(await page.locator('.main-content').isVisible(), true);
     } finally {
@@ -588,4 +619,123 @@ test('cerrar sesión en una pestaña redirige otra pestaña del mismo navegador'
         await context.close();
         await browser.close();
     }
+});
+
+function activarVigenciaSintetica() {
+    state.bootstrap = true;
+}
+
+for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {
+    for (const role of ['directiva','representante']) {
+        test(`${role} ${viewport.width}: usa la sesión inicial sin petición ni aviso de verificación`, async () => {
+            reiniciarEstado(role);
+            activarVigenciaSintetica();
+            const {browser,context} = await nuevoContexto(viewport);
+            try {
+                const {page,pageErrors} = await abrirPanel(context,role);
+                await page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+                assert.equal(await page.locator('.main-content').isVisible(),true);
+                assert.equal(await page.locator('#session-gate').isVisible(),false);
+                assert.equal(state.requests.some(r=>r.pathname === '/api/auth/me'),false);
+                assert.deepEqual(pageErrors,[]);
+            } finally { await context.close(); await browser.close(); }
+        });
+    }
+}
+
+test('inactividad: avisa al minuto catorce y sale al quince sin renovar por consultas automáticas', async () => {
+    reiniciarEstado('representante');
+    activarVigenciaSintetica();
+    const inicio = state.ahora;
+    const {browser,context} = await nuevoContexto({width:390,height:844});
+    try {
+        const {page} = await abrirPanel(context,'representante',p=>p.clock.install({time:new Date(inicio)}));
+        await page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        state.ahora = inicio+840000;
+        await page.clock.fastForward(840000);
+        await page.locator('#session-idle-warning').waitFor({state:'visible'});
+        assert.match(await page.locator('#session-idle-warning').textContent(),/inactividad/);
+        assert.equal(state.requests.some(r=>r.pathname === '/api/auth/actividad'),false);
+        state.ahora = inicio+901000;
+        await page.clock.fastForward(61000);
+        await page.waitForURL('**/admin/login.html');
+        assert.equal(state.requests.some(r=>r.pathname === '/api/auth/actividad'),false);
+    } finally { await context.close(); await browser.close(); }
+});
+
+test('continuar sesión tras el aviso renueva y conserva el formulario', async () => {
+    reiniciarEstado('representante');
+    activarVigenciaSintetica();
+    const inicio = state.ahora;
+    const {browser,context} = await nuevoContexto({width:1440,height:900});
+    try {
+        const {page} = await abrirPanel(context,'representante',p=>p.clock.install({time:new Date(inicio)}));
+        await page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        await page.locator('[data-target="sec-atletas"]').click();
+        await page.locator('#atl-nombres').fill('Borrador Sintético');
+        // Confirmar la última interacción inicial, después dejar de interactuar.
+        state.ahora = inicio+30000;
+        await page.clock.fastForward(30000);
+        await esperarRuta('/api/auth/actividad');
+        await page.waitForFunction(()=>!document.querySelector('#session-idle-warning')?.offsetHeight);
+        state.ahora = inicio+870000;
+        await page.clock.fastForward(840000);
+        await page.locator('#session-idle-warning').waitFor({state:'visible'});
+        const respuesta = page.waitForResponse(r=>new URL(r.url()).pathname === '/api/auth/actividad');
+        await page.locator('#session-idle-warning button').click();
+        assert.equal((await respuesta).status(),200);
+        await page.locator('#session-idle-warning').waitFor({state:'hidden'});
+        assert.equal(await page.locator('#atl-nombres').inputValue(),'Borrador Sintético');
+        assert.equal(state.sesion.vence,state.ahora+900000);
+    } finally { await context.close(); await browser.close(); }
+});
+
+test('la actividad se comparte entre pestañas y cerrar una no cierra la restante', async () => {
+    reiniciarEstado('directiva');
+    activarVigenciaSintetica();
+    const inicio = state.ahora;
+    const {browser,context} = await nuevoContexto({width:1440,height:900});
+    try {
+        const primera = await abrirPanel(context,'directiva',p=>p.clock.install({time:new Date(inicio)}));
+        await primera.page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        const segunda = await abrirPanel(context,'directiva',p=>p.clock.install({time:new Date(inicio)}));
+        await segunda.page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        state.ahora = inicio+840000;
+        await segunda.page.clock.fastForward(840000);
+        await segunda.page.locator('#session-idle-warning').waitFor({state:'visible'});
+        const respuesta = segunda.page.waitForResponse(r=>new URL(r.url()).pathname === '/api/auth/actividad');
+        await segunda.page.locator('#session-idle-warning button').click();
+        await respuesta;
+        await primera.page.waitForFunction(exp=>sesionVigente.vence === exp,state.sesion.vence);
+        await segunda.page.close();
+        state.ahora = inicio+960000;
+        await primera.page.clock.fastForward(960000);
+        await primera.page.bringToFront();
+        await primera.page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        assert.equal(await primera.page.locator('.main-content').isVisible(),true);
+        assert.equal(state.requests.some(r=>r.pathname === '/api/auth/logout'),false);
+    } finally { await context.close(); await browser.close(); }
+});
+
+test('sin almacenamiento local, consulta la vigencia del servidor antes de salir por inactividad', async () => {
+    reiniciarEstado('directiva');
+    activarVigenciaSintetica();
+    const inicio = state.ahora;
+    const {browser,context} = await nuevoContexto({width:390,height:844});
+    try {
+        const {page} = await abrirPanel(context,'directiva',async p=> {
+            await p.clock.install({time:new Date(inicio)});
+            await p.addInitScript(()=>{ Storage.prototype.setItem = function(){ throw new Error('Almacenamiento sintético bloqueado'); }; });
+        });
+        await page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        // Simular la renovación de la misma cookie compartida desde otra pestaña.
+        state.ahora = inicio+901000;
+        state.sesion = {...state.sesion,servidor:state.ahora,vence:state.ahora+900000};
+        const comprobacion = page.waitForResponse(r=>new URL(r.url()).pathname === '/api/auth/me');
+        await page.clock.fastForward(901000);
+        assert.equal((await comprobacion).status(),200);
+        await page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        assert.equal(await page.locator('.main-content').isVisible(),true);
+        assert.equal(state.requests.some(r=>r.pathname === '/api/auth/actividad'),false);
+    } finally { await context.close(); await browser.close(); }
 });

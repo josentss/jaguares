@@ -5,7 +5,7 @@
 > **Última actualización documental:** 2026-11-05
 > **Base comprobada:** `main` remoto `1ac08b1fe13ea25a8ee6ef66920a3f28526fe481`; árbol `ef6a12bab2b4a71b4d88eab66fd1c05d43921f8b`, idéntico al head probado del PR #12. Despliegue Vercel Production `7565382672` en estado `success / Deployment has completed`.
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#12 fusionados. El [PR #12](https://github.com/josentss/jaguares/pull/12) tiene [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41964532958), Production completado y aceptación manual del propietario: aviso al minuto 14, continuación sin perder datos, cierre al minuto 15 sin actividad, pestañas coordinadas e inscripción sin regresiones. Rama `ui/aviso-inactividad`: pulido visual aislado del aviso, sin cambiar la política ni los tiempos. No fusionar ni desplegar a Production sin autorización.
+> **Estado:** PR #1–#12 fusionados. El [PR #12](https://github.com/josentss/jaguares/pull/12) tiene [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41964532958), Production completado y aceptación manual del propietario: aviso al minuto 14, continuación sin perder datos, cierre al minuto 15 sin actividad, pestañas coordinadas e inscripción sin regresiones. [PR #13](https://github.com/josentss/jaguares/pull/13) abierto: pulido visual aislado del aviso, sin cambiar la política ni los tiempos. No fusionar ni desplegar a Production sin autorización.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -294,7 +294,7 @@ Comportamiento entregado por el PR #11 (histórico, parcialmente sustituido por 
 
 **CI y producción del PR #12:** la [ejecución final 41964532958](https://github.com/josentss/jaguares/actions/runs/41964532958) aprobó sintaxis, **93/93 backend** con Node 22/PostgreSQL 16 y **73/73 navegador** con Chromium. Production completado y pruebas manuales descritas arriba; no se consultó directamente Supabase ni se forzaron fallos productivos.
 
-**Pulido posterior en `ui/aviso-inactividad`:** aviso compacto inspirado en los `toast` existentes, con fondo blanco, franja naranja, jerarquía de título/texto, botón reducido y márgenes seguros en móvil. No cambia el minuto 14/15, renovación, cierre ni almacenamiento de datos. Validación local: 55/55 backend sin PostgreSQL en Node 24, 59/59 navegador en Node 24 y Node 22, y sintaxis correcta de 46 JavaScript en ambas versiones; capturas sintéticas de escritorio/móvil inspeccionadas.
+**Pulido posterior en [PR #13](https://github.com/josentss/jaguares/pull/13):** aviso compacto inspirado en los `toast` existentes, con fondo blanco, franja naranja, jerarquía de título/texto, botón reducido y márgenes seguros en móvil. No cambia el minuto 14/15, renovación, cierre ni almacenamiento de datos. Validación local: 55/55 backend sin PostgreSQL en Node 24, 59/59 navegador en Node 24 y Node 22, y sintaxis correcta de 46 JavaScript en ambas versiones; capturas sintéticas de escritorio/móvil inspeccionadas.
 
 **Ejecuciones del PR:** [CI final 41873432620](https://github.com/josentss/jaguares/actions/runs/41873432620), Node 22/PostgreSQL 16/Chromium, aprobó 79/79 backend y 63/63 navegador sin omisiones. El [primer CI 41594079402](https://github.com/josentss/jaguares/actions/runs/41594079402) aprobó backend y falló en una prueba móvil que consultaba el menú antes de terminar la verificación de sesión; se corrigió la espera y se añadieron casos de navegación y revalidación lenta. Este fallo no demostró por sí solo un fallo de la aplicación.
 

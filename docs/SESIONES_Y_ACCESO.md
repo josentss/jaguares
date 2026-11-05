@@ -41,7 +41,7 @@ PostgreSQL 18 temporal volvió a fallar al enlazar el puerto local, también fue
 
 El propietario confirmó en Production el aviso tras 14 minutos sin interacción, la renovación conservando el formulario, el cierre al dejar vencer el aviso, la coordinación entre pestañas y una inscripción sin regresiones. La coexistencia entre navegador normal e incógnito es intencional: son sesiones independientes y no se usa la IP como identidad.
 
-La rama `ui/aviso-inactividad` reduce el peso visual del aviso siguiendo el sistema existente de notificaciones: fondo blanco, franja naranja, icono, título y texto compactos, botón menor y márgenes seguros en móvil. No modifica la seguridad ni los plazos. Pruebas locales: 55/55 backend sin PostgreSQL en Node 24, 59/59 navegador en Node 24 y Node 22, sintaxis de 46 JavaScript en ambas versiones y revisión visual de capturas sintéticas.
+El [PR #13](https://github.com/josentss/jaguares/pull/13) reduce el peso visual del aviso siguiendo el sistema existente de notificaciones: fondo blanco, franja naranja, icono, título y texto compactos, botón menor y márgenes seguros en móvil. No modifica la seguridad ni los plazos. Pruebas locales: 55/55 backend sin PostgreSQL en Node 24, 59/59 navegador en Node 24 y Node 22, sintaxis de 46 JavaScript en ambas versiones y revisión visual de capturas sintéticas.
 
 ## Comprobación manual después del despliegue autorizado
 

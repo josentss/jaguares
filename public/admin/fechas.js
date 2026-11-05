@@ -32,6 +32,11 @@
         return { min: minimo.toISOString().slice(0, 10), max: aniversario(5).toISOString().slice(0, 10) };
     }
 
+    function limitesFechaEvento(hoy = hoyVenezuela()) {
+        if (!esFechaISOValida(hoy)) return null;
+        return { min: hoy, max: `${Number(hoy.slice(0, 4)) + 1}-12-31` };
+    }
+
     function esEdadValida(fecha, hoy = hoyVenezuela()) {
         if (!esFechaISOValida(fecha)) return false;
         const limites = limitesNacimientoAtleta(hoy);
@@ -57,6 +62,6 @@
         return instante.toLocaleDateString('es-VE', { ...opciones, timeZone: 'America/Caracas' });
     }
 
-    return { esFechaISOValida, hoyVenezuela, limitesNacimientoAtleta, esEdadValida,
+    return { esFechaISOValida, hoyVenezuela, limitesNacimientoAtleta, limitesFechaEvento, esEdadValida,
         formatearFechaCivil, formatearInstante };
 });

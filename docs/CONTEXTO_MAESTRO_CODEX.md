@@ -3,9 +3,9 @@
 > **Propósito:** documento persistente para continuar el desarrollo del sistema Club de Voleibol Jaguares. Codex debe leerlo al iniciar tareas de este repositorio y proponer actualizaciones cuando cambien el código, las reglas, las pruebas o el estado de los PR.
 >
 > **Última actualización documental:** 2026-11-05
-> **Base comprobada:** `main` remoto `add4de854adafb239b9afe970a1458bc890c32fb`; árbol `9dd1bec4526dfc18f36518c540ec36ff89a78b5d`. El PR #13 está fusionado y el despliegue Vercel Production `7566820170` figura en estado `success`.
+> **Base comprobada:** `main` remoto `a4a98ab189df0166a5f8daca29423c62d9918c3f`; árbol `234f2acffb62692ba238794702206fad686349a5`. El PR #14 está fusionado y el despliegue Vercel Production `7579807497` figura en estado `success`.
 > **Repositorio:** https://github.com/josentss/jaguares  
-> **Estado:** PR #1–#13 fusionados. El [PR #13](https://github.com/josentss/jaguares/pull/13) compactó el aviso sin cambiar la política ni los tiempos; su [CI final](https://github.com/josentss/jaguares/actions/runs/41979272651) y Production terminaron satisfactoriamente. El propietario dejó la revisión visual para después y confirmó previamente la lógica de inactividad. [PR #14](https://github.com/josentss/jaguares/pull/14) abierto: corrección aislada de fechas de eventos, sin hora ni migraciones. No fusionar ni desplegar a Production sin autorización.
+> **Estado:** PR #1–#14 fusionados. El propietario comprobó en Production las fechas nuevas del calendario después del PR #14. [PR #15](https://github.com/josentss/jaguares/pull/15) abierto: limitar nuevas fechas desde hoy hasta el 31 de diciembre del año siguiente, sin cambiar históricos. No fusionar ni desplegar a Production sin autorización.
 
 ## 0. Prompt maestro: cómo debe trabajar Codex
 
@@ -24,7 +24,7 @@ Prioridades permanentes:
 7. No inventar tarifas, categorías, sanciones, criterios de eliminación ni políticas de comunicación aún no acordadas.
 8. Mantener este documento actualizado con decisiones, estado y limitaciones después de cada bloque.
 
-**Bloque actual tras PR #13:** validación civil de fechas del calendario en Caracas. La hora del evento requiere otro bloque y una estrategia de compatibilidad para históricos. La exclusividad de navegador sigue descartada. La auditoría inicial de integridad se entregó en PR #6/#7; sus riesgos de esquema/archivos siguen abiertos.
+**Bloque actual tras PR #14:** límite máximo acordado para nuevos eventos: desde hoy en Caracas hasta el 31 de diciembre del año siguiente. La hora del evento requiere otro bloque y una estrategia de compatibilidad para históricos.
 
 ## 1. Información técnica verificada
 
@@ -86,6 +86,9 @@ Las rutas de directiva admiten los roles administrativos autorizados. Validar el
 | [#11](https://github.com/josentss/jaguares/pull/11) | Fusionado | Entrada, revalidación y cierre de sesión en ambos paneles; cabeceras de privacidad | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41873432620), 79 backend + 63 navegador, sin omisiones; pruebas autenticadas manuales pendientes |
 | [#12](https://github.com/josentss/jaguares/pull/12) | Fusionado | Autorización del HTML en servidor e inactividad de 15 minutos con múltiples ventanas/navegadores | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41964532958), 93 backend + 73 navegador; aceptación manual del propietario |
 | [#13](https://github.com/josentss/jaguares/pull/13) | Fusionado | Aviso de inactividad compacto y responsive, sin cambios de seguridad o tiempos | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41979272651), Production completado; revisión visual manual aplazada |
+| [#14](https://github.com/josentss/jaguares/pull/14) | Fusionado | Fechas civiles de eventos en Caracas, mínimo nativo y próximos vencidos fuera del calendario público | [CI final satisfactorio](https://github.com/josentss/jaguares/actions/runs/41982949451), 96 backend + 76 navegador; Production y prueba manual satisfactorias |
+
+**Verificación posterior al PR #14:** fusión `a4a98ab`, árbol `234f2ac`; deployment GitHub/Vercel `7579807497` a Production completado. El propietario creó un evento y confirmó el comportamiento de fechas nuevas/no antiguas.
 
 **Verificación posterior al PR #13:** fusión `add4de8`, árbol `9dd1bec`; deployment GitHub/Vercel `7566820170` a Production completado. No se ejecutaron formularios ni escrituras productivas durante esta comprobación.
 
@@ -260,7 +263,7 @@ No bloquear fases técnicas independientes por la ausencia de estas decisiones.
 | P1 — completado | Fechas civiles, duplicados familiares y altas de 5–18 años | PR #9 fusionado en `52cd290`; CI 105/105 y Production completado. El propietario confirma el resultado manual. |
 | P1 — completado | PDF e impresión de planillas | PR #10 fusionado en `3ff6923`, CI final y Production satisfactorios; propietario confirma generación de planillas anteriores y nueva. |
 | P1 — completado | Sesiones de ambos paneles | PR #12 fusionado/desplegado y aceptado manualmente; PR #13 fusionó el aviso compacto sin alterar tiempos ni autorización. |
-| P1 — PR #14 abierto | Fechas de eventos | Validación civil estricta en Caracas, límite mínimo del formulario y exclusión pública de próximos vencidos; sin migración ni cambios históricos. |
+| P1 — PR #14 completado; PR #15 abierto | Fechas de eventos | Validación civil estricta en Caracas y exclusión pública de próximos vencidos. Regla acordada posterior: nuevas fechas solo hasta el 31/12 del año siguiente. |
 | P1 — siguiente bloque separado | Hora explícita de eventos | Definir contrato y migración aditiva revisada, preservando eventos históricos sin inventar horas. |
 | P0 | Seguridad crítica y protección de datos | Hallazgos confirmados corregidos, secretos/archivos seguros, dependencias evaluadas, autorización revisada y pruebas |
 | P1 — PR #6/#7 fusionados; esquema real pendiente | Integridad de identidades, cédulas, atletas y perfiles | CI confirmado; completar pruebas manuales autenticadas y auditar duplicados/constraints históricos con acceso de lectura |
@@ -303,6 +306,8 @@ Comportamiento entregado por el PR #11 (histórico, parcialmente sustituido por 
 **Fechas de eventos — [PR #14](https://github.com/josentss/jaguares/pull/14):** se confirmó que el rango 5–18 pertenece a nacimientos y ya estaba resuelto; no se cambió. En eventos se reprodujeron dos fallos: `new Date()` normalizaba fechas imposibles y la comparación de medianoche UTC con el instante actual rechazaba el día de hoy. El backend ahora exige `YYYY-MM-DD` gregoriano real, compara días civiles de Caracas y acepta hoy. El formulario fija `min` dinámico de Caracas, vuelve a comprobarlo al usarlo y conserva al servidor como autoridad. El calendario público toma el día de Caracas incluso si el navegador usa otra zona y ya no publica eventos vencidos que sigan en estado `proximo`; los `en_progreso` se conservan. No se alteran filas históricas, esquema, hora, estados ni dependencias. IDs malformados al cambiar estado reciben 400 antes de SQL.
 
 **Pruebas del bloque de eventos:** Node 24.15.0 y Node 22.23.4: **58/58 backend sin PostgreSQL** y **62/62 navegador** en cada versión. Con PostgreSQL 18 temporal local, aplicación/SQL reales y Chromium: **96/96 backend** y **76/76 navegador** en Node 24. Incluye escritorio/móvil, navegador Tokio frente al día Caracas, fecha imposible, hoy/pasado, creación/cancelación y exclusión pública del evento vencido. La instancia temporal fue detenida y eliminada; no se consultó Supabase ni se escribieron datos productivos. El [CI 41982556954](https://github.com/josentss/jaguares/actions/runs/41982556954) aprobó **96/96 backend** con PostgreSQL 16 y **76/76 navegador** en Node 22.
+
+**Límite máximo posterior acordado — [PR #15](https://github.com/josentss/jaguares/pull/15):** las nuevas altas de eventos admiten desde hoy en Caracas hasta el **31 de diciembre del año siguiente**. Es un límite por años calendario, no 365 días exactos. Se aplica en `min/max` del navegador y obligatoriamente en backend; no modifica ni oculta eventos históricos ya guardados. Pruebas específicas locales: 12/12 backend y 2/2 Playwright (escritorio/móvil), además de sintaxis de los JavaScript modificados.
 
 **Ejecuciones del PR:** [CI final 41873432620](https://github.com/josentss/jaguares/actions/runs/41873432620), Node 22/PostgreSQL 16/Chromium, aprobó 79/79 backend y 63/63 navegador sin omisiones. El [primer CI 41594079402](https://github.com/josentss/jaguares/actions/runs/41594079402) aprobó backend y falló en una prueba móvil que consultaba el menú antes de terminar la verificación de sesión; se corrigió la espera y se añadieron casos de navegación y revalidación lenta. Este fallo no demostró por sí solo un fallo de la aplicación.
 
@@ -367,6 +372,7 @@ Después de revisar el bloque de fechas: añadir la hora en un PR separado. Mant
 | 2026-11-03 | Mensualidad fija, conversión según moneda seleccionada y solo cargos adeudados en el panel del representante | Solicitud futura del propietario | Guardado para fase financiera; no implementar hasta acordar tarifa, vigencia, fuente/tasa de conversión y excepciones |
 | 2026-11-04 | Una sola ventana del panel por cuenta | Petición inicial en la revisión del PR #11 | Descartada por el propietario antes de implementarse |
 | 2026-11-04 | Varias ventanas/navegadores permitidos; inactividad de 15 minutos con aviso previo | Corrección del propietario y elección explícita de 15 minutos | PR #12 fusionado/desplegado y aceptado manualmente |
+| 2026-11-05 | Eventos nuevos desde hoy hasta el 31/12 del año siguiente | Decisión expresa del propietario tras probar PR #14 | [PR #15](https://github.com/josentss/jaguares/pull/15) abierto; backend y selector aplican la misma regla |
 | 2026-11-02 | Eliminación definitiva y WhatsApp | Pendiente de políticas y consentimiento | No definido |
 
 ### Bitácora de entregas (actualizar tras cada PR)
@@ -384,6 +390,7 @@ Después de revisar el bloque de fechas: añadir la hora en un PR separado. Mant
 | 2026-11-04 | [PR #11](https://github.com/josentss/jaguares/pull/11), main `39960c1` | Protección inicial y revalidación, cierre con confirmación y `no-store`; CI 79 backend + 63 navegador y Production completado; navegación anónima comprobada | Pruebas autenticadas del propietario pendientes; JWT copiado no se revoca al cerrar sesión |
 | 2026-11-05 | [PR #12](https://github.com/josentss/jaguares/pull/12), main `1ac08b1` | Acceso HTML autorizado e inactividad de 15 minutos; CI final 93 backend + 73 navegador, Production completado y aceptación manual satisfactoria | Revocación central fuera de alcance; pulido visual del aviso en PR separado |
 | 2026-11-05 | [PR #13](https://github.com/josentss/jaguares/pull/13), main `add4de8` | Aviso de inactividad compacto; CI final y Production satisfactorios, lógica ya aceptada manualmente | Revisión visual aplazada por el propietario; fechas de eventos pasan al bloque siguiente |
+| 2026-11-05 | [PR #14](https://github.com/josentss/jaguares/pull/14), main `a4a98ab` | Fechas civiles de eventos; CI 96 backend + 76 navegador, Production completado y prueba manual satisfactoria | Límite máximo por años calendario en PR separado; hora continúa pendiente |
 
 ### Plantilla breve de actualización futura
 

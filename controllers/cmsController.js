@@ -4,7 +4,7 @@
 // ==========================================
 
 const db = require('../config/db');
-const { esEnteroPositivo, esFechaISOValida, hoyCaracasISO } = require('../utils/validators');
+const { esEnteroPositivo, esFechaISOValida, hoyCaracasISO, limitesFechaEvento } = require('../utils/validators');
 
 // ==========================================
 // UTILIDADES
@@ -39,6 +39,7 @@ const validarNoticiaData = (titulo, resumen, contenido) => {
 
 const validarEventoData = (titulo, fecha_evento, lugar) => {
     const errores = [];
+    const limites = limitesFechaEvento();
 
     if (typeof titulo !== 'string' || titulo.trim().length === 0) {
         errores.push('El título del evento es obligatorio');
@@ -50,8 +51,10 @@ const validarEventoData = (titulo, fecha_evento, lugar) => {
         errores.push('La fecha del evento es obligatoria');
     } else if (!esFechaISOValida(fecha_evento)) {
         errores.push('La fecha del evento tiene un formato inválido');
-    } else if (fecha_evento < hoyCaracasISO()) {
+    } else if (fecha_evento < limites.min) {
         errores.push('La fecha del evento no puede ser en el pasado');
+    } else if (fecha_evento > limites.max) {
+        errores.push(`La fecha del evento no puede ser posterior al ${limites.max}`);
     }
 
     if (typeof lugar !== 'string' || lugar.trim().length === 0) {

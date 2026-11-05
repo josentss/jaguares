@@ -697,7 +697,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="fechas.js?v=fechas-1"></script>
+    <script src="fechas.js?v=eventos-limite-1"></script>
     <script src="validacion-formularios.js?v=fechas-1"></script>
     <script src="api-client.js?v=sesion-aviso-1"></script>
     <script>
@@ -1870,26 +1870,30 @@
         // LÓGICA DEL CMS - EVENTOS
         // ==========================================
 
-        function actualizarMinimoFechaEvento() {
+        function actualizarLimitesFechaEvento() {
             const campo = document.getElementById('evento-fecha');
-            if (!campo || !window.FechasJaguares) return '';
-            const hoy = window.FechasJaguares.hoyVenezuela();
-            campo.min = hoy;
-            return hoy;
+            if (!campo || !window.FechasJaguares) return null;
+            const limites = window.FechasJaguares.limitesFechaEvento();
+            if (!limites) return null;
+            campo.min = limites.min;
+            campo.max = limites.max;
+            return limites;
         }
 
         function fechaEventoFormularioValida() {
             const campo = document.getElementById('evento-fecha');
-            const hoy = actualizarMinimoFechaEvento();
+            const limites = actualizarLimitesFechaEvento();
             if (!campo || !window.FechasJaguares) return Boolean(campo?.value);
-            const valida = window.FechasJaguares.esFechaISOValida(campo.value) && campo.value >= hoy;
-            campo.setCustomValidity(valida || !campo.value ? '' : 'Selecciona una fecha válida de hoy en adelante.');
+            const valida = Boolean(limites && window.FechasJaguares.esFechaISOValida(campo.value) &&
+                campo.value >= limites.min && campo.value <= limites.max);
+            campo.setCustomValidity(valida || !campo.value ? '' :
+                `Selecciona una fecha entre hoy y el 31/12/${limites?.max.slice(0, 4) || 'el año siguiente'}.`);
             return valida;
         }
 
         const fechaEventoCampo = document.getElementById('evento-fecha');
-        actualizarMinimoFechaEvento();
-        fechaEventoCampo?.addEventListener('focus', actualizarMinimoFechaEvento);
+        actualizarLimitesFechaEvento();
+        fechaEventoCampo?.addEventListener('focus', actualizarLimitesFechaEvento);
         fechaEventoCampo?.addEventListener('input', fechaEventoFormularioValida);
 
         function badgeEvento(estado) {
@@ -2019,7 +2023,7 @@
             }
             if (!fechaEventoFormularioValida()) {
                 document.getElementById('evento-fecha').reportValidity();
-                showToast('Selecciona una fecha válida de hoy en adelante', 'error');
+                showToast('Selecciona una fecha válida dentro del período permitido', 'error');
                 return;
             }
 

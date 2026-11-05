@@ -505,7 +505,10 @@ for (const dispositivo of [
             await page.evaluate(() => document.querySelector('[data-target="sec-cms"]').click());
             const fecha = page.locator('#evento-fecha');
             assert.equal(await fecha.getAttribute('min'), '2026-11-02');
+            assert.equal(await fecha.getAttribute('max'), '2027-12-31');
             await fecha.fill('2026-11-01');
+            assert.equal(await fecha.evaluate(campo => campo.validity.valid), false);
+            await fecha.fill('2028-01-01');
             assert.equal(await fecha.evaluate(campo => campo.validity.valid), false);
 
             await page.locator('#evento-titulo').fill('Encuentro civil');

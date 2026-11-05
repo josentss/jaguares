@@ -180,12 +180,23 @@ function vigilarInactividad(rolesPermitidos, usuarioAutenticado) {
     aviso.className = 'session-idle-warning';
     aviso.setAttribute('role', 'status');
     aviso.setAttribute('aria-live', 'polite');
+    aviso.setAttribute('aria-atomic', 'true');
     aviso.hidden = true;
+    const icono = document.createElement('span');
+    icono.className = 'session-idle-icon';
+    icono.setAttribute('aria-hidden', 'true');
+    icono.textContent = '!';
+    const contenido = document.createElement('div');
+    contenido.className = 'session-idle-content';
+    const titulo = document.createElement('strong');
+    titulo.className = 'session-idle-title';
+    titulo.textContent = 'Sesión por vencer';
     const mensaje = document.createElement('p');
     const continuar = document.createElement('button');
     continuar.type = 'button';
     continuar.textContent = 'Continuar sesión';
-    aviso.append(mensaje, continuar);
+    contenido.append(titulo, mensaje, continuar);
+    aviso.append(icono, contenido);
     document.body.append(aviso);
     const restantes = () => sesionVigente.vence - (Date.now() - sesionVigente.desfase);
 
@@ -229,10 +240,12 @@ function vigilarInactividad(rolesPermitidos, usuarioAutenticado) {
             } else if (response.status === 401 || response.status === 403 || (response.ok && payload.sesion?.id !== idSesion)) {
                 redirigirLoginPorSesion();
             } else {
+                titulo.textContent = 'No se pudo renovar la sesión';
                 mensaje.textContent = 'No se pudo renovar la sesión. Comprueba tu conexión y vuelve a intentarlo.';
                 aviso.hidden = false;
             }
         } catch (_) {
+            titulo.textContent = 'No se pudo renovar la sesión';
             mensaje.textContent = 'No se pudo renovar la sesión. Comprueba tu conexión y vuelve a intentarlo.';
             aviso.hidden = false;
         } finally { clearTimeout(timeout); solicitudEnCurso = false; }
@@ -251,9 +264,12 @@ function vigilarInactividad(rolesPermitidos, usuarioAutenticado) {
             aviso.hidden = tiempo > 60000;
             const limiteCercano = sesionVigente.limite - (Date.now() - sesionVigente.desfase) <= 60000;
             continuar.hidden = limiteCercano;
-            if (!aviso.hidden) mensaje.textContent = limiteCercano
-                ? 'Tu sesión alcanzará su duración máxima en menos de un minuto. Guarda tus cambios e inicia sesión de nuevo.'
-                : 'Tu sesión vencerá por inactividad en menos de un minuto. Puedes continuar para mantenerla abierta.';
+            if (!aviso.hidden) {
+                titulo.textContent = limiteCercano ? 'Sesión por finalizar' : 'Sesión por vencer';
+                mensaje.textContent = limiteCercano
+                    ? 'Alcanzará su duración máxima en menos de un minuto. Guarda tus cambios e inicia sesión de nuevo.'
+                    : 'Se cerrará por inactividad en menos de un minuto.';
+            }
         }
     };
     continuar.addEventListener('click', renovar);

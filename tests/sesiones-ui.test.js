@@ -654,7 +654,20 @@ test('inactividad: avisa al minuto catorce y sale al quince sin renovar por cons
         state.ahora = inicio+840000;
         await page.clock.fastForward(840000);
         await page.locator('#session-idle-warning').waitFor({state:'visible'});
+        await new Promise(resolve=>setTimeout(resolve,300));
         assert.match(await page.locator('#session-idle-warning').textContent(),/inactividad/);
+        assert.equal(await page.locator('.session-idle-title').textContent(),'Sesión por vencer');
+        const presentacion = await page.locator('#session-idle-warning').evaluate(elemento => {
+            const caja = elemento.getBoundingClientRect();
+            const estilos = getComputedStyle(elemento);
+            return {width:caja.width,height:caja.height,background:estilos.backgroundColor,
+                borderLeft:estilos.borderLeftWidth,display:estilos.display};
+        });
+        assert.ok(presentacion.width <= 366 && presentacion.height < 180);
+        assert.deepEqual({background:presentacion.background,borderLeft:presentacion.borderLeft,display:presentacion.display},
+            {background:'rgb(255, 255, 255)',borderLeft:'5px',display:'grid'});
+        await fs.mkdir('test-artifacts',{recursive:true});
+        await page.screenshot({path:'test-artifacts/aviso-inactividad-movil.png'});
         assert.equal(state.requests.some(r=>r.pathname === '/api/auth/actividad'),false);
         state.ahora = inicio+901000;
         await page.clock.fastForward(61000);
@@ -681,6 +694,10 @@ test('continuar sesión tras el aviso renueva y conserva el formulario', async (
         state.ahora = inicio+870000;
         await page.clock.fastForward(840000);
         await page.locator('#session-idle-warning').waitFor({state:'visible'});
+        await new Promise(resolve=>setTimeout(resolve,300));
+        const cajaAviso = await page.locator('#session-idle-warning').boundingBox();
+        assert.ok(cajaAviso.width <= 360 && cajaAviso.height < 180);
+        await page.screenshot({path:'test-artifacts/aviso-inactividad-escritorio.png'});
         const respuesta = page.waitForResponse(r=>new URL(r.url()).pathname === '/api/auth/actividad');
         await page.locator('#session-idle-warning button').click();
         assert.equal((await respuesta).status(),200);

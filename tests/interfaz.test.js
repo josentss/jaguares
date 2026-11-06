@@ -542,3 +542,45 @@ test('calendario público usa el día actual de Caracas aunque el navegador est�
         assert.equal((await page.locator('#calendar-days .cal-day.today').textContent()).trim(), '2');
     } finally { await browser.close(); }
 });
+
+for (const dispositivo of [
+    {nombre: 'escritorio', viewport: {width: 1440, height: 900}},
+    {nombre: 'móvil', viewport: {width: 390, height: 844}}
+]) {
+    test(`calendario público ${dispositivo.nombre}: lista de eventos acotada, filtrable y sin XSS`, async () => {
+        const browser = await chromium.launch({headless: true});
+        const page = await browser.newPage({viewport: dispositivo.viewport, timezoneId: 'Asia/Tokyo'});
+        const errores = [];
+        page.on('pageerror', err => errores.push(err.message));
+        await page.clock.setFixedTime(new Date('2026-11-06T16:00:00Z'));
+        const eventos = Array.from({length: 5}, (_, i) => ({
+            id_evento: i + 1,
+            titulo: i === 0 ? 'Encuentro <img src=x onerror=alert(1)>' : `Encuentro ${i + 1}`,
+            fecha_evento: i < 4 ? '2026-11-18' : '2026-11-20',
+            hora_evento: '14:30',
+            lugar: 'Cancha de pruebas',
+            estado: 'proximo'
+        }));
+        await page.route('**/api/cms/public/eventos', route => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({success: true, eventos})
+        }));
+        try {
+            await page.goto(baseUrl + '/index.html');
+            await page.waitForFunction(() => document.querySelector('#eventos-resumen')?.textContent.includes('5 eventos'));
+            assert.equal(await page.locator('#lista-eventos-publicos li').count(), 3);
+            assert.equal(await page.locator('#lista-eventos-publicos img').count(), 0);
+            await page.locator('#eventos-ver-mas').click();
+            assert.equal(await page.locator('#lista-eventos-publicos li').count(), 5);
+            await page.locator('[data-fecha="2026-11-18"]').click();
+            assert.equal(await page.locator('#lista-eventos-publicos li').count(), 3);
+            assert.equal(await page.locator('#eventos-resumen').textContent(), '4 eventos en el día seleccionado');
+            await page.locator('#eventos-ver-mas').click();
+            assert.equal(await page.locator('#lista-eventos-publicos li').count(), 4);
+            await page.locator('#eventos-limpiar-filtro').click();
+            assert.equal(await page.locator('#lista-eventos-publicos li').count(), 3);
+            assert.equal(await page.locator('#eventos-limpiar-filtro').isHidden(), true);
+            assert.deepEqual(errores, []);
+        } finally { await browser.close(); }
+    });
+}

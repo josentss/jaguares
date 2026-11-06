@@ -1125,3 +1125,5 @@ body.modal-open { overflow: hidden; }
     .eventos-cabecera-lista { flex-wrap: wrap; }
     .eventos-lista li { padding: 10px 11px; }
 }
+
+.eventos-filtro-limpiar[hidden] { display: none; }

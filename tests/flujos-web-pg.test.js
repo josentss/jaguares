@@ -470,7 +470,6 @@ test('flujo real: calendario crea y elimina el evento desde directiva y actualiz
             assert.equal(denegado.status(), 403);
         } finally { await representante.context().close(); }
         const borrado = page.waitForResponse(r=>r.url().endsWith('/api/cms/admin/eventos/'+creado.id_evento)&&r.request().method()==='DELETE');
-        page.once('dialog', dialog => dialog.accept());
         await page.locator('#body-eventos tr').filter({hasText:'Encuentro de Prueba'})
             .getByRole('button',{name:'Eliminar evento: Encuentro de Prueba'}).click();
         assert.equal((await borrado).status(), 200);

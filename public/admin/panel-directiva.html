@@ -1998,6 +1998,10 @@
             const lista = eventosAdminCache.filter(ev => {
                 const historico = ['completado', 'cancelado'].includes(ev.estado);
                 return vistaEventosAdmin === 'historial' ? historico : !historico;
+            }).sort((a, b) => {
+                const orden = String(a.fecha_evento).localeCompare(String(b.fecha_evento)) ||
+                    String(a.hora_evento || '').localeCompare(String(b.hora_evento || ''));
+                return vistaEventosAdmin === 'historial' ? -orden : orden;
             });
             if (!lista.length) {
                 tbody.innerHTML = `<tr><td colspan="5" class="evento-sin-registros">${vistaEventosAdmin === 'historial'

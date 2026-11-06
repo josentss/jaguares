@@ -410,7 +410,7 @@ test('flujo real: registro pendiente, aprobación, perfil, inscripción, activac
     }
 });
 
-test('flujo real: calendario crea y cancela el evento desde directiva y actualiza la consulta pública', async () => {
+test('flujo real: calendario crea y elimina el evento desde directiva y actualiza la consulta pública', async () => {
     const page = await entrar('directiva@example.org');
     try {
         await seccion(page,'sec-cms');
@@ -424,12 +424,13 @@ test('flujo real: calendario crea y cancela el evento desde directiva y actualiz
         assert.equal((await page.request.post(base+'/api/cms/admin/eventos', {data: {
             titulo: 'Fecha demasiado lejana', fecha_evento: `${Number(hoy.slice(0,4))+2}-01-01`, hora_evento: '14:30', lugar: 'Cancha de pruebas'
         }})).status(), 400);
-        for (const hora_evento of [undefined, '24:00', '14:30Z']) {
+        for (const hora_evento of [undefined, '24:00', '14:30Z', '02:00', '04:55', '22:05', '14:02']) {
             assert.equal((await page.request.post(base+'/api/cms/admin/eventos', {data: {
                 titulo: 'Hora inválida', fecha_evento: hoy, hora_evento, lugar: 'Cancha de pruebas'
             }})).status(), 400);
         }
         await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Evento vencido', '2020-01-01', 'Cancha', 'proximo')");
+        await page.locator('#eventos-tab-historial').click();
         const historico = page.locator('#body-eventos tr').filter({hasText:'Histórico sin hora'});
         await historico.waitFor();
         assert.equal((await historico.textContent()).includes('undefined'), false);
@@ -438,7 +439,9 @@ test('flujo real: calendario crea y cancela el evento desde directiva y actualiz
         await page.locator('#evento-titulo').fill('Encuentro de Prueba');
         await page.locator('#evento-lugar').fill('Cancha de pruebas');
         await page.locator('#evento-fecha').fill(hoy);
-        await page.locator('#evento-hora').fill('14:30');
+        await page.locator('#evento-hora-hora').selectOption('14');
+        await page.locator('#evento-hora-minuto').selectOption('30');
+        await page.locator('#eventos-tab-proximos').click();
         const creado = await enviar(page,'#form-evento','/api/cms/admin/eventos',201);
         const guardado = await db.pool.query('SELECT fecha_evento FROM eventos WHERE id_evento=$1',[creado.id_evento]);
         assert.equal(guardado.rows[0].fecha_evento.toISOString(), `${hoy}T00:00:00.000Z`);
@@ -458,13 +461,20 @@ test('flujo real: calendario crea y cancela el evento desde directiva y actualiz
             const publica = await pagina(viewport, false, 'Asia/Tokyo');
             try {
                 await publica.goto(base+'/index.html');
-                await publica.locator('#lista-eventos-publicos').getByText('14:30 (Venezuela)', {exact:false}).waitFor();
+                await publica.locator('#lista-eventos-publicos').getByText('14:30', {exact:false}).waitFor();
             } finally { await publica.context().close(); }
         }
-        const cancelado = page.waitForResponse(r=>r.url().endsWith('/api/cms/admin/eventos/'+creado.id_evento)&&r.request().method()==='PUT');
-        await page.locator('#body-eventos tr').filter({hasText:'Encuentro de Prueba'}).getByRole('button',{name:'Cancelar',exact:true}).click();
-        assert.equal((await cancelado).status(),200);
+        const representante = await entrar('alfa@example.org', {width: 390, height: 844});
+        try {
+            const denegado = await representante.request.delete(base+'/api/cms/admin/eventos/'+creado.id_evento);
+            assert.equal(denegado.status(), 403);
+        } finally { await representante.context().close(); }
+        const borrado = page.waitForResponse(r=>r.url().endsWith('/api/cms/admin/eventos/'+creado.id_evento)&&r.request().method()==='DELETE');
+        await page.locator('#body-eventos tr').filter({hasText:'Encuentro de Prueba'})
+            .getByRole('button',{name:'Eliminar evento: Encuentro de Prueba'}).click();
+        assert.equal((await borrado).status(), 200);
         assert.equal((await publico()).some(e=>e.id_evento===creado.id_evento),false);
+        assert.equal((await db.pool.query('SELECT count(*) AS n FROM eventos WHERE id_evento=$1',[creado.id_evento])).rows[0].n, '0');
     } finally {await page.context().close();}
 });
 

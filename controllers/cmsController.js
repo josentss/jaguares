@@ -58,7 +58,7 @@ const validarEventoData = (titulo, fecha_evento, hora_evento, lugar) => {
     }
 
     if (!esHoraEventoValida(hora_evento)) {
-        errores.push('La hora del evento es obligatoria y debe tener formato HH:mm (hora de Venezuela)');
+        errores.push('Selecciona una hora entre 05:00 y 22:00, en intervalos de 5 minutos (hora de Venezuela)');
     }
 
     if (typeof lugar !== 'string' || lugar.trim().length === 0) {
@@ -317,11 +317,9 @@ const obtenerEventosPublicos = async (req, res) => {
                     to_char(fecha_evento AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS fecha_evento,
                     to_char(hora_evento, 'HH24:MI') AS hora_evento, lugar, estado
              FROM eventos
-             WHERE (COALESCE(estado, 'proximo') = 'en_progreso'
-                OR (COALESCE(estado, 'proximo') = 'proximo'
-                    AND fecha_evento >= (?::date::timestamp AT TIME ZONE 'UTC')))
-             ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST
-             LIMIT 20`,
+             WHERE COALESCE(estado, 'proximo') IN ('proximo', 'en_progreso')
+               AND fecha_evento >= (?::date::timestamp AT TIME ZONE 'UTC')
+             ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST`,
             [hoy]
         );
 
@@ -385,11 +383,19 @@ const crearEventoAdmin = async (req, res) => {
 
 const obtenerEventosAdmin = async (req, res) => {
     try {
+        // Estado efectivo calculado al leer: la última fecha civil ya pasó.
+        // No muta históricos ni depende de cron (Vercel es serverless).
+        // Se conserva el evento visible durante todo su día de celebración.
         const [eventos] = await db.promise().query(
             `SELECT id_evento, titulo,
                     to_char(fecha_evento AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS fecha_evento,
                     to_char(hora_evento, 'HH24:MI') AS hora_evento,
-                    lugar, estado FROM eventos ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST`
+                    lugar,
+                    CASE WHEN COALESCE(estado, 'proximo') IN ('proximo', 'en_progreso')
+                          AND fecha_evento < (?::date::timestamp AT TIME ZONE 'UTC')
+                         THEN 'completado' ELSE COALESCE(estado, 'proximo') END AS estado
+             FROM eventos ORDER BY fecha_evento DESC, hora_evento ASC NULLS LAST`,
+            [hoyCaracasISO()]
         );
 
         res.status(200).json({
@@ -453,6 +459,26 @@ const actualizarEventoAdmin = async (req, res) => {
     }
 };
 
+// Solo la directiva o administración puede eliminar definitivamente un evento.
+// La ruta contiene la autorización; el controlador valida el ID y comprueba existencia.
+const eliminarEventoAdmin = async (req, res) => {
+    const { id } = req.params;
+    if (!esEnteroPositivo(id)) {
+        return res.status(400).json({ success: false, error: 'El identificador del evento es inválido' });
+    }
+    try {
+        const [result] = await db.promise().query('DELETE FROM eventos WHERE id_evento = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: 'El evento no existe' });
+        }
+        logAccion('Evento eliminado definitivamente', { id: Number(id), usuario: req.usuarioId });
+        return res.status(200).json({ success: true, mensaje: 'Evento eliminado del calendario' });
+    } catch (error) {
+        console.error('Error al eliminar evento:', error.code || 'INTERNAL');
+        return res.status(500).json({ success: false, error: 'No se pudo eliminar el evento' });
+    }
+};
+
 // ==========================================
 // EXPORTAR CONTROLADORES
 // ==========================================
@@ -466,5 +492,6 @@ module.exports = {
     obtenerEventosPublicos,
     crearEventoAdmin,
     obtenerEventosAdmin,
-    actualizarEventoAdmin
+    actualizarEventoAdmin,
+    eliminarEventoAdmin
 };

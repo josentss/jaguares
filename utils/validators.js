@@ -42,9 +42,13 @@ exports.limitesFechaEvento = (hoy = exports.hoyCaracasISO()) => {
     return { min: hoy, max: `${Number(hoy.slice(0, 4)) + 1}-12-31` };
 };
 
-// Hora civil de Venezuela, sin conversión a UTC ni dependencia del huso del servidor.
-exports.esHoraEventoValida = value =>
-    typeof value === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+// Horario del club en hora civil de Venezuela: 05:00–22:00 en bloques de cinco minutos.
+exports.esHoraEventoValida = value => {
+    if (typeof value !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) return false;
+    const hora = Number(value.slice(0, 2));
+    const minuto = Number(value.slice(3));
+    return hora >= 5 && hora <= 22 && minuto % 5 === 0 && (hora < 22 || minuto === 0);
+};
 
 exports.normalizarTexto = (value, maxLength = 255) => {
     if (typeof value !== 'string') return '';

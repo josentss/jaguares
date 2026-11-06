@@ -1074,3 +1074,56 @@ body.modal-open { overflow: hidden; }
     }
     .galeria-item { border-radius: 10px; }
 }
+
+/* Calendario público: jerarquía más limpia y listado contenido. */
+.calendar-container { max-width: 720px; }
+.calendar-days { gap: 5px; }
+.cal-day { border-radius: 9px; background: transparent; }
+.cal-day:not(.empty):not(.has-event):hover { background: rgba(128, 128, 128, 0.06); }
+.cal-day.has-event {
+    background: rgba(255, 102, 0, 0.08);
+    border: 1px solid rgba(255, 102, 0, 0.48);
+}
+.cal-day.has-event.selected {
+    background: rgba(255, 102, 0, 0.2);
+    outline: 2px solid var(--naranja);
+    outline-offset: -2px;
+}
+.cal-day.has-event:focus-visible,
+.eventos-ver-mas:focus-visible,
+.eventos-filtro-limpiar:focus-visible {
+    outline: 3px solid var(--naranja);
+    outline-offset: 2px;
+}
+.calendar-footer { text-align: left; }
+.cal-legend { justify-content: flex-start; margin: 0 0 12px; gap: 14px; }
+.eventos-cabecera-lista {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding-top: 12px; border-top: 1px solid rgba(128,128,128,.16);
+}
+.eventos-cabecera-lista strong { color: var(--text-color); font-size: .95rem; }
+.eventos-instruccion { margin: 5px 0 10px; font-size: .77rem; }
+.eventos-filtro-limpiar, .eventos-ver-mas {
+    border: 0; background: transparent; color: var(--naranja);
+    font: inherit; font-weight: 600; font-size: .82rem;
+    cursor: pointer; padding: 8px 0;
+}
+.eventos-filtro-limpiar:hover, .eventos-ver-mas:hover { text-decoration: underline; }
+.eventos-ver-mas { display: block; margin: 8px auto 0; }
+.eventos-ver-mas[hidden] { display: none; }
+.eventos-lista { margin-top: 8px; }
+.eventos-lista li {
+    padding: 12px 14px; background: transparent;
+    border: 1px solid rgba(128,128,128,.15); border-left: 3px solid var(--naranja);
+    border-radius: 8px; margin-bottom: 7px;
+}
+.eventos-lista li strong { font-size: .88rem; }
+.eventos-lista li span { font-size: .8rem; }
+.eventos-lista .empty-ev { border: none; padding: 10px 0; }
+@media (max-width: 480px) {
+    .calendar-days { gap: 3px; }
+    .eventos-cabecera-lista { flex-wrap: wrap; }
+    .eventos-lista li { padding: 10px 11px; }
+}
+
+.eventos-filtro-limpiar[hidden] { display: none; }

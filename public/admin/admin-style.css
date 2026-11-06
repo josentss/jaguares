@@ -1032,3 +1032,68 @@ tr:hover td { background-color: #f8fafc; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Calendario: formulario equilibrado y acciones con foco visible. */
+#form-evento .evento-form-grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 16px 20px;
+    align-items: start;
+}
+#form-evento .evento-hora-selectores {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+#form-evento .evento-hora-selectores select {
+    min-width: 0;
+    flex: 1 1 0;
+    cursor: pointer;
+    background: #fff;
+}
+#form-evento .evento-hora-selectores > span { font-weight: 700; }
+#form-evento .evento-hora-ayuda { color: var(--text-muted); font-size: 0.75rem; line-height: 1.45; }
+.evento-nota { margin: -8px 0 14px; color: var(--text-muted); font-size: 0.84rem; line-height: 1.45; }
+.evento-aviso-vencidos {
+    padding: 12px 14px;
+    margin: 0 0 14px;
+    background: #fff4e8;
+    border: 1px solid #ffcc9e;
+    border-radius: 10px;
+    font-size: 0.86rem;
+    color: #7a3c13;
+}
+.evento-aviso-vencidos[hidden] { display: none; }
+.evento-vistas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.evento-vista {
+    background: #f1f5f9;
+    border: 1px solid #d7e0e8;
+    color: var(--text-main);
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.evento-vista.activa { background: #fff1e7; border-color: var(--naranja); color: #ad3d00; }
+.evento-eliminar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e9c7c6;
+    border-radius: 10px;
+    color: #a8322c;
+    background: #fff5f4;
+    cursor: pointer;
+}
+.evento-eliminar:hover { color: #fff; background: #bd332e; border-color: #bd332e; }
+.evento-eliminar:disabled { opacity: 0.55; cursor: not-allowed; }
+.evento-eliminar:focus-visible, .evento-vista:focus-visible,
+#form-evento select:focus-visible { outline: 3px solid #ff9933; outline-offset: 2px; }
+.evento-sin-registros { text-align: center; color: var(--text-muted); padding: 24px 12px !important; }
+@media (max-width: 768px) {
+    #form-evento .evento-form-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    #form-evento .evento-hora-selectores { gap: 8px; }
+}

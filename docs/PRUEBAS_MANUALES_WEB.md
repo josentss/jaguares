@@ -27,10 +27,16 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Pago inválido:** atleta inactivo o representante no aprobado se rechaza desde el backend aunque la pestaña sea antigua.
 - [ ] **Propiedad:** una familia no puede consultar ni editar atletas, pagos o documentos de otra mediante URL o API.
 - [ ] **Evento válido:** crear desde hoy hasta el 31 de diciembre del año siguiente con hora de Venezuela; fecha y hora aparecen en directiva, representantes y calendario público.
-- [ ] **Hora inválida:** omitirla o enviar por API un valor distinto de `HH:mm`; el backend rechaza el evento sin insertarlo.
+- [ ] **Hora válida:** selector de 05:00 a 22:00 con pasos de cinco minutos; 05:00, 14:30 y 22:00 se aceptan; 22:05 no se ofrece.
+- [ ] **Hora inválida:** omitirla o enviar por API 02:00, 04:55, 14:02, 22:05, 23:00 o un valor distinto de `HH:mm`; el backend rechaza sin insertar.
 - [ ] **Evento inválido:** fecha pasada o posterior al límite se rechaza en interfaz y backend.
 - [ ] **Histórico:** los eventos antiguos conservan el día que ya mostraba el sistema, sin desplazarse al día anterior en Caracas, sin hora inventada ni reescritura.
-- [ ] **Completar/cancelar:** deja de mostrarse como vigente, pero permanece en el historial administrativo.
+- [ ] **Estado derivado:** un evento de hoy sigue programado y visible durante su día; al día civil siguiente aparece como «Completado» en el historial de directiva y desaparece de la web pública sin proceso programado.
+- [ ] **Historial:** las pestañas Programados/Historial alternan correctamente; la directiva ve una sugerencia de revisión cuando existen completados.
+- [ ] **Papelera:** el botón SVG solicita confirmación; cancelar no elimina. Confirmar elimina solo el evento elegido y lo retira del panel y la web, sin alterar otros registros.
+- [ ] **Permisos:** representantes y staff no pueden invocar el borrado mediante API ni desde la interfaz; solo directiva/admin.
+- [ ] **Diseño:** formulario con título/lugar y fecha/hora alineados en escritorio, apilado en móvil; ningún selector se desborda.
+- [ ] **Calendario público concurrido:** se muestran tres tarjetas inicialmente y «Ver todos» amplía la lista; tocar un día filtra y «Ver mes completo» restaura el mes.
 
 ## Sesión
 

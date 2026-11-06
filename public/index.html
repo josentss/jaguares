@@ -40,7 +40,7 @@
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
       <link rel="preload" as="image" href="img/cat-2.jpg" fetchpriority="high">
-      <link rel="stylesheet" href="style.css">
+      <link rel="stylesheet" href="style.css?v=calendario-ux-1">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -251,8 +251,13 @@
                         <span class="lg-hoy">Hoy</span>
                         <span class="lg-evento">Con evento</span>
                     </div>
-                    <p id="calendar-hint"><i class="fas fa-info-circle"></i> Toca un día marcado para ver el evento.</p>
+                    <div class="eventos-cabecera-lista">
+                        <strong id="eventos-resumen" aria-live="polite">Eventos del mes</strong>
+                        <button type="button" id="eventos-limpiar-filtro" class="eventos-filtro-limpiar" hidden>Ver mes completo</button>
+                    </div>
+                    <p id="calendar-hint" class="eventos-instruccion">Selecciona un día destacado para ver solo sus eventos.</p>
                     <ul id="lista-eventos-publicos" class="eventos-lista"></ul>
+                    <button type="button" id="eventos-ver-mas" class="eventos-ver-mas" hidden>Ver todos</button>
                 </div>
             </div>
          </section>
@@ -392,6 +397,6 @@
           </div>
       </div>
 
-      <script src="script.js?v=eventos-hora-1"></script>
+      <script src="script.js?v=calendario-ux-1"></script>
    </body>
 </html>

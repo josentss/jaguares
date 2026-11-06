@@ -654,22 +654,31 @@
             <div class="form-container-panel">
                 <h3>Agendar Nuevo Evento</h3>
                 <form id="form-evento">
-                    <div class="form-grid-panel">
-                        <div class="form-group-panel full-width">
+                    <div class="form-grid-panel evento-form-grid">
+                        <div class="form-group-panel">
                             <label for="evento-titulo">Título del encuentro</label>
                             <input type="text" id="evento-titulo" maxlength="255" placeholder="Ej: Final Sub-15 vs Equipo B" required>
+                        </div>
+                        <div class="form-group-panel">
+                            <label for="evento-lugar">Lugar</label>
+                            <input type="text" id="evento-lugar" maxlength="300" placeholder="Ej: Cancha Principal" required>
                         </div>
                         <div class="form-group-panel">
                             <label for="evento-fecha">Fecha</label>
                             <input type="date" id="evento-fecha" required>
                         </div>
                         <div class="form-group-panel">
-                            <label for="evento-hora">Hora (Venezuela)</label>
-                            <input type="time" id="evento-hora" step="60" required>
-                        </div>
-                        <div class="form-group-panel">
-                            <label for="evento-lugar">Lugar</label>
-                            <input type="text" id="evento-lugar" maxlength="300" placeholder="Ej: Cancha Principal" required>
+                            <label for="evento-hora-hora">Hora</label>
+                            <div class="evento-hora-selectores">
+                                <select id="evento-hora-hora" aria-label="Hora del encuentro" required>
+                                    <option value="">Hora</option>
+                                </select>
+                                <span aria-hidden="true">:</span>
+                                <select id="evento-hora-minuto" aria-label="Minutos del encuentro" required>
+                                    <option value="">Min.</option>
+                                </select>
+                            </div>
+                            <small class="evento-hora-ayuda">De 5:00 a. m. a 10:00 p. m. · intervalos de 5 min.</small>
                         </div>
                     </div>
                     <button type="submit" class="btn-panel-submit">Guardar en Calendario</button>
@@ -677,9 +686,12 @@
             </div>
             <div class="table-container" style="margin-top: 10px;">
                 <h3>Eventos del calendario</h3>
-                <p style="font-size:0.85rem;color:#666;margin:-10px 0 16px;">
-                    Estos eventos pueden mostrarse en la web pública del club.
-                </p>
+                <p class="evento-nota">Los eventos se completan automáticamente al terminar su día. Solo se eliminan si lo confirmas.</p>
+                <p id="aviso-eventos-vencidos" class="evento-aviso-vencidos" role="status" hidden></p>
+                <div class="evento-vistas" role="group" aria-label="Filtrar eventos">
+                    <button type="button" id="eventos-tab-proximos" class="evento-vista activa" aria-pressed="true">Programados</button>
+                    <button type="button" id="eventos-tab-historial" class="evento-vista" aria-pressed="false">Historial</button>
+                </div>
                 <div style="overflow-x:auto;">
                     <table>
                         <thead>
@@ -1900,6 +1912,53 @@
         fechaEventoCampo?.addEventListener('focus', actualizarLimitesFechaEvento);
         fechaEventoCampo?.addEventListener('input', fechaEventoFormularioValida);
 
+        const EVENTO_ICONO_PAPELERA = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 10v7M14 10v7"/></svg>';
+        let eventosAdminCache = [];
+        let vistaEventosAdmin = 'proximos';
+
+        function prepararHorarioEvento() {
+            const horas = document.getElementById('evento-hora-hora');
+            const minutos = document.getElementById('evento-hora-minuto');
+            if (!horas || !minutos) return;
+            for (let h = 5; h <= 22; h++) {
+                const v = String(h).padStart(2, '0');
+                const option = new Option(`${v}:00`, v);
+                horas.add(option);
+            }
+            for (let m = 0; m < 60; m += 5) {
+                const v = String(m).padStart(2, '0');
+                minutos.add(new Option(v, v));
+            }
+            function limitarMinutos() {
+                const final = horas.value === '22';
+                for (const opt of minutos.options) opt.disabled = Boolean(final && opt.value && opt.value !== '00');
+                if (final && minutos.value && minutos.value !== '00') minutos.value = '00';
+            }
+            horas.addEventListener('change', limitarMinutos);
+            document.getElementById('form-evento')?.addEventListener('reset', () => {
+                queueMicrotask(limitarMinutos);
+            });
+            limitarMinutos();
+        }
+        prepararHorarioEvento();
+
+        function horaEventoSeleccionada() {
+            const h = document.getElementById('evento-hora-hora')?.value;
+            const m = document.getElementById('evento-hora-minuto')?.value;
+            return h && m ? `${h}:${m}` : '';
+        }
+
+        function cambiarVistaEventos(vista) {
+            vistaEventosAdmin = vista;
+            document.getElementById('eventos-tab-proximos').classList.toggle('activa', vista === 'proximos');
+            document.getElementById('eventos-tab-historial').classList.toggle('activa', vista === 'historial');
+            document.getElementById('eventos-tab-proximos').setAttribute('aria-pressed', String(vista === 'proximos'));
+            document.getElementById('eventos-tab-historial').setAttribute('aria-pressed', String(vista === 'historial'));
+            pintarEventosAdmin();
+        }
+        document.getElementById('eventos-tab-proximos')?.addEventListener('click', () => cambiarVistaEventos('proximos'));
+        document.getElementById('eventos-tab-historial')?.addEventListener('click', () => cambiarVistaEventos('historial'));
+
         function badgeEvento(estado) {
             const e = (estado || 'proximo').toLowerCase();
             if (e === 'completado') return 'badge badge-activo';
@@ -1926,89 +1985,80 @@
                 }) : formatFecha(fecha);
         }
 
+        function pintarEventosAdmin() {
+            const tbody = document.getElementById('body-eventos');
+            if (!tbody) return;
+            const historicos = eventosAdminCache.filter(ev => ['completado', 'cancelado'].includes(ev.estado));
+            const aviso = document.getElementById('aviso-eventos-vencidos');
+            const pendientes = historicos.filter(ev => ev.estado === 'completado');
+            aviso.hidden = pendientes.length === 0;
+            aviso.textContent = pendientes.length
+                ? `${pendientes.length} evento${pendientes.length === 1 ? '' : 's'} completado${pendientes.length === 1 ? '' : 's'} en el historial. Puedes revisarlos y eliminarlos cuando corresponda.`
+                : '';
+            const lista = eventosAdminCache.filter(ev => {
+                const historico = ['completado', 'cancelado'].includes(ev.estado);
+                return vistaEventosAdmin === 'historial' ? historico : !historico;
+            });
+            if (!lista.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="evento-sin-registros">${vistaEventosAdmin === 'historial'
+                    ? 'No hay eventos en el historial.'
+                    : 'No hay eventos programados. Agenda un encuentro con el formulario de arriba.'}</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = lista.map(ev => {
+                const id = Number(ev.id_evento);
+                if (!Number.isSafeInteger(id) || id <= 0) return '';
+                const est = (ev.estado || 'proximo').toLowerCase();
+                return `<tr>
+                    <td><strong>${esc(ev.titulo)}</strong></td>
+                    <td>${formatFechaEvento(ev.fecha_evento)}${ev.hora_evento ? `<br><small>${esc(ev.hora_evento)} (Venezuela)</small>` : ''}</td>
+                    <td>${esc(ev.lugar || '—')}</td>
+                    <td><span class="${badgeEvento(est)}">${labelEstadoEvento(est)}</span></td>
+                    <td><button type="button" class="evento-eliminar" data-id="${id}" data-titulo="${esc(ev.titulo)}" aria-label="Eliminar evento: ${esc(ev.titulo)}" title="Eliminar definitivamente">${EVENTO_ICONO_PAPELERA}</button></td>
+                </tr>`;
+            }).join('');
+        }
+
         async function cargarEventosAdmin() {
             const tbody = document.getElementById('body-eventos');
             if (!tbody) return;
-
             try {
                 const res = await apiFetch('/api/cms/admin/eventos');
                 const data = await res.json();
-
-                if (!res.ok || !data.success) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#c0392b;">
-                        No se pudieron cargar los eventos
-                    </td></tr>`;
-                    return;
-                }
-
-                const eventos = data.eventos || [];
-                if (eventos.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5">
-                        <div class="empty-state">
-
-                            <p>No hay eventos en el calendario</p>
-                            <span>Agenda el primer encuentro con el formulario de arriba.</span>
-                        </div>
-                    </td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = '';
-                eventos.forEach(ev => {
-                    const id = ev.id_evento;
-                    const est = (ev.estado || 'proximo').toLowerCase();
-                    let acciones = '';
-
-                    if (est === 'proximo' || est === 'en_progreso') {
-                        acciones += `<button type="button" class="btn-action btn-aprob" onclick="cambiarEstadoEvento(${id}, 'completado')">
-                            Completado
-                        </button>
-                        <button type="button" class="btn-action btn-rech" onclick="cambiarEstadoEvento(${id}, 'cancelado')">
-                            Cancelar
-                        </button>`;
-                    } else {
-                        acciones = `<button type="button" class="btn-action btn-view" onclick="cambiarEstadoEvento(${id}, 'proximo')">
-                            Reactivar
-                        </button>`;
-                    }
-
-                    tbody.innerHTML += `<tr>
-                        <td><strong>${esc(ev.titulo)}</strong></td>
-                        <td>${formatFechaEvento(ev.fecha_evento)}${ev.hora_evento ? `<br><small>${esc(ev.hora_evento)} (Venezuela)</small>` : ''}</td>
-                        <td>${esc(ev.lugar || '—')}</td>
-                        <td><span class="${badgeEvento(est)}">${labelEstadoEvento(est)}</span></td>
-                        <td style="white-space:nowrap;">${acciones}</td>
-                    </tr>`;
-                });
+                if (!res.ok || !data.success) throw new Error('No se pudieron cargar los eventos');
+                eventosAdminCache = data.eventos || [];
+                pintarEventosAdmin();
             } catch (err) {
                 console.error(err);
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#c0392b;">Error de conexión</td></tr>`;
+                tbody.innerHTML = '<tr><td colspan="5" class="evento-sin-registros">No se pudieron cargar los eventos.</td></tr>';
             }
         }
 
-        async function cambiarEstadoEvento(id, estado) {
-            const textos = {
-                completado: 'marcar como completado',
-                cancelado: 'cancelar',
-                proximo: 'reactivar como próximo'
-            };
-            if (!confirm(`¿Confirmas ${textos[estado] || 'cambiar el estado de'} este evento?`)) return;
+        document.getElementById('body-eventos')?.addEventListener('click', (e) => {
+            const boton = e.target.closest('.evento-eliminar');
+            if (!boton) return;
+            eliminarEvento(boton);
+        });
 
+        async function eliminarEvento(boton) {
+            const id = Number(boton.dataset.id);
+            if (!Number.isSafeInteger(id) || id <= 0 || boton.disabled) return;
+            const titulo = boton.dataset.titulo || 'este encuentro';
+            if (!confirm(`¿Eliminar definitivamente "${titulo}"? No se podrá recuperar desde el panel.`)) return;
+            boton.disabled = true;
             try {
-                const res = await apiFetch(`/api/cms/admin/eventos/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ estado })
-                });
+                const res = await apiFetch(`/api/cms/admin/eventos/${id}`, { method: 'DELETE' });
                 const data = await res.json().catch(() => ({}));
-                if (res.ok && data.success !== false) {
-                    showToast(data.mensaje || data.message || 'Evento actualizado', 'success');
-                    cargarEventosAdmin();
-                } else {
-                    showToast(data.error || data.message || 'No se pudo actualizar', 'error');
+                if (!res.ok || data.success !== true) {
+                    showToast(data.error || data.message || 'No se pudo eliminar el evento', 'error');
+                    return;
                 }
-            } catch (err) {
-                showToast('Error de conexión', 'error');
+                showToast(data.mensaje || 'Evento eliminado', 'success');
+                await cargarEventosAdmin();
+            } catch (error) {
+                showToast('Error de conexión al eliminar', 'error');
+            } finally {
+                boton.disabled = false;
             }
         }
 
@@ -2018,7 +2068,7 @@
             const bodyData = {
                 titulo: document.getElementById('evento-titulo').value.trim(),
                 fecha_evento: document.getElementById('evento-fecha').value,
-                hora_evento: document.getElementById('evento-hora').value,
+                hora_evento: horaEventoSeleccionada(),
                 lugar: document.getElementById('evento-lugar').value.trim()
             };
 
@@ -2029,6 +2079,11 @@
             if (!fechaEventoFormularioValida()) {
                 document.getElementById('evento-fecha').reportValidity();
                 showToast('Selecciona una fecha válida dentro del período permitido', 'error');
+                return;
+            }
+            const [hora, minuto] = bodyData.hora_evento.split(':').map(Number);
+            if (hora < 5 || hora > 22 || minuto % 5 !== 0 || (hora === 22 && minuto !== 0)) {
+                showToast('Elige una hora de 05:00 a 22:00, cada 5 minutos', 'error');
                 return;
             }
 

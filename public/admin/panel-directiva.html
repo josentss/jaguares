@@ -2014,7 +2014,9 @@
                     <td>${formatFechaEvento(ev.fecha_evento)}${ev.hora_evento ? `<br><small>${esc(ev.hora_evento)} (Venezuela)</small>` : ''}</td>
                     <td>${esc(ev.lugar || '—')}</td>
                     <td><span class="${badgeEvento(est)}">${labelEstadoEvento(est)}</span></td>
-                    <td><button type="button" class="evento-eliminar" data-id="${id}" data-titulo="${esc(ev.titulo)}" aria-label="Eliminar evento: ${esc(ev.titulo)}" title="Eliminar definitivamente">${EVENTO_ICONO_PAPELERA}</button></td>
+                    <td>${['directiva', 'admin'].includes(currentUser?.rol)
+                        ? `<button type="button" class="evento-eliminar" data-id="${id}" data-titulo="${esc(ev.titulo)}" aria-label="Eliminar evento: ${esc(ev.titulo)}" title="Eliminar definitivamente">${EVENTO_ICONO_PAPELERA}</button>`
+                        : '—'}</td>
                 </tr>`;
             }).join('');
         }

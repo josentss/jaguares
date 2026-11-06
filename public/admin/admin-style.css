@@ -902,11 +902,11 @@ tr:hover td { background-color: #f8fafc; }
     }
 
     /* Campo principal (nombre) ocupa toda la fila, sin etiqueta */
-    :is(#body-solicitudes, #body-atletas, #body-pagos, #body-eventos, #table-my-atletas tbody) td:nth-child(1),
+    :is(#body-solicitudes, #body-atletas, #body-pagos, #body-eventos, #table-my-atletas tbody, #table-eventos-representante tbody) td:nth-child(1),
     #body-solicitudes td:nth-child(2),
     #body-atletas td:nth-child(2),
     #table-my-pagos tbody td:nth-child(2) { grid-column: 1 / -1; }
-    :is(#body-solicitudes, #body-atletas, #body-pagos, #body-eventos, #table-my-atletas tbody) td:nth-child(1):not([colspan]),
+    :is(#body-solicitudes, #body-atletas, #body-pagos, #body-eventos, #table-my-atletas tbody, #table-eventos-representante tbody) td:nth-child(1):not([colspan]),
     #table-my-pagos tbody td:nth-child(2):not([colspan]) { font-size: 1.02rem; }
     #table-my-pagos tbody td:nth-child(2):not([colspan]) { order: -1; font-weight: 600; }
 
@@ -926,6 +926,8 @@ tr:hover td { background-color: #f8fafc; }
     #body-eventos td:not([colspan]):nth-child(2)::before { content: 'Fecha'; }
     #body-eventos td:not([colspan]):nth-child(3)::before { content: 'Lugar'; }
     #body-eventos td:not([colspan]):nth-child(4)::before { content: 'Estado'; }
+    #table-eventos-representante td:not([colspan]):nth-child(2)::before { content: 'Fecha y hora'; }
+    #table-eventos-representante td:not([colspan]):nth-child(3)::before { content: 'Lugar'; }
     #table-my-atletas tbody td:not([colspan]):nth-child(2)::before { content: 'Cédula'; }
     #table-my-atletas tbody td:not([colspan]):nth-child(3)::before { content: 'Estado'; }
     #table-my-pagos tbody td:not([colspan]):nth-child(1)::before { content: 'Fecha reporte'; }

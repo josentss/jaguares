@@ -240,7 +240,7 @@ const hoyInicialCalendario = hoyCaracasISO().split('-').map(Number);
 let currentMonth = hoyInicialCalendario[1] - 1;
 let currentYear = hoyInicialCalendario[0];
 
-/** @type {Array<{id_evento:number,titulo:string,fecha_evento:string,lugar:string,estado:string}>} */
+/** @type {Array<{id_evento:number,titulo:string,fecha_evento:string,hora_evento:string|null,lugar:string,estado:string}>} */
 let eventosPublicos = [];
 
 const monthYearText = document.getElementById('month-year');
@@ -307,7 +307,7 @@ function renderListaEventos(filtroKey /* YYYY-MM-DD o null = todos del mes */) {
             : '';
         return `<li>
             <strong>${escapeHTML(ev.titulo || 'Evento')}</strong>
-            <span>${fechaTxt}${ev.lugar ? ' · ' + escapeHTML(ev.lugar) : ''}</span>
+            <span>${fechaTxt}${ev.hora_evento ? ' · ' + escapeHTML(ev.hora_evento) + ' (Venezuela)' : ''}${ev.lugar ? ' · ' + escapeHTML(ev.lugar) : ''}</span>
         </li>`;
     }).join('');
 }
@@ -391,7 +391,8 @@ function renderProximoEvento() {
     const futuros = eventosPublicos
         .map(ev => ({ ev, p: parseFechaEvento(ev.fecha_evento) }))
         .filter(x => x.p && diasHasta(x.p.key) >= 0)
-        .sort((a, b) => (a.p.key < b.p.key ? -1 : a.p.key > b.p.key ? 1 : 0));
+        .sort((a, b) => a.p.key.localeCompare(b.p.key) ||
+            (a.ev.hora_evento || '99:99').localeCompare(b.ev.hora_evento || '99:99'));
 
     if (futuros.length === 0) {
         proximoEl.hidden = true;
@@ -406,7 +407,8 @@ function renderProximoEvento() {
         weekday: 'long', day: 'numeric', month: 'long'
     });
 
-    const detalle = fechaTxt + (ev.lugar ? ' · ' + ev.lugar : '');
+    const detalle = fechaTxt + (ev.hora_evento ? ' · ' + ev.hora_evento + ' (Venezuela)' : '') +
+        (ev.lugar ? ' · ' + ev.lugar : '');
     proximoEl.innerHTML = `<span class="pe-dot" aria-hidden="true"></span><span class="pe-txt"><strong>Próximo:</strong> ${escapeHTML(ev.titulo || 'Evento')}</span><span class="pe-cuando">· ${cuando}</span>`;
     proximoEl.title = detalle;
     proximoEl.setAttribute('aria-label', `Próximo evento: ${ev.titulo || 'Evento'}, ${cuando}. ${detalle}. Ver en el calendario`);

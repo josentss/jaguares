@@ -72,11 +72,13 @@ test('eventos: hoy en Caracas es válido; pasado, fecha imposible y tipos incorr
 
     for (const body of [
         undefined,
-        {titulo: 'Encuentro', fecha_evento: '2026-02-30', lugar: 'Cancha'},
-        {titulo: 'Encuentro', fecha_evento: ayer.toISOString().slice(0, 10), lugar: 'Cancha'},
-        {titulo: 'Encuentro', fecha_evento: `${Number(hoy.slice(0, 4)) + 2}-01-01`, lugar: 'Cancha'},
-        {titulo: 123, fecha_evento: hoy, lugar: 'Cancha'},
-        {titulo: 'Encuentro', fecha_evento: hoy, lugar: {nombre: 'Cancha'}}
+        {titulo: 'Encuentro', fecha_evento: '2026-02-30', hora_evento: '14:30', lugar: 'Cancha'},
+        {titulo: 'Encuentro', fecha_evento: ayer.toISOString().slice(0, 10), hora_evento: '14:30', lugar: 'Cancha'},
+        {titulo: 'Encuentro', fecha_evento: `${Number(hoy.slice(0, 4)) + 2}-01-01`, hora_evento: '14:30', lugar: 'Cancha'},
+        {titulo: 123, fecha_evento: hoy, hora_evento: '14:30', lugar: 'Cancha'},
+        {titulo: 'Encuentro', fecha_evento: hoy, hora_evento: '14:30', lugar: {nombre: 'Cancha'}},
+        ...[undefined, null, '', '24:00', '9:00', '14:60', '14:30Z', '14:30:00', 1430]
+            .map(hora_evento => ({titulo: 'Encuentro', fecha_evento: hoy, hora_evento, lugar: 'Cancha'}))
     ]) {
         const res = respuesta();
         await cms.crearEventoAdmin({body, usuarioId: 9}, res);
@@ -86,21 +88,21 @@ test('eventos: hoy en Caracas es válido; pasado, fecha imposible y tipos incorr
 
     const res = respuesta();
     await cms.crearEventoAdmin({
-        body: {titulo: 'Encuentro de hoy', fecha_evento: hoy, lugar: 'Cancha principal'},
+        body: {titulo: 'Encuentro de hoy', fecha_evento: hoy, hora_evento: '00:00', lugar: 'Cancha principal'},
         usuarioId: 9
     }, res);
     assert.equal(res.statusCode, 201);
     assert.equal(consultas.length, 1);
-    assert.deepEqual(consultas[0].params, ['Encuentro de hoy', hoy, 'Cancha principal']);
+    assert.deepEqual(consultas[0].params, ['Encuentro de hoy', hoy, '00:00', 'Cancha principal']);
     assert.deepEqual(limites, {min: hoy, max: `${Number(hoy.slice(0, 4)) + 1}-12-31`});
 
     const resMaximo = respuesta();
     await cms.crearEventoAdmin({
-        body: {titulo: 'Encuentro límite', fecha_evento: limites.max, lugar: 'Cancha principal'},
+        body: {titulo: 'Encuentro límite', fecha_evento: limites.max, hora_evento: '23:59', lugar: 'Cancha principal'},
         usuarioId: 9
     }, resMaximo);
     assert.equal(resMaximo.statusCode, 201);
-    assert.deepEqual(consultas[1].params, ['Encuentro límite', limites.max, 'Cancha principal']);
+    assert.deepEqual(consultas[1].params, ['Encuentro límite', limites.max, '23:59', 'Cancha principal']);
 });
 
 test('eventos públicos: la consulta excluye fechas vencidas usando el día civil de Caracas', async () => {

@@ -42,6 +42,10 @@ exports.limitesFechaEvento = (hoy = exports.hoyCaracasISO()) => {
     return { min: hoy, max: `${Number(hoy.slice(0, 4)) + 1}-12-31` };
 };
 
+// Hora civil de Venezuela, sin conversión a UTC ni dependencia del huso del servidor.
+exports.esHoraEventoValida = value =>
+    typeof value === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+
 exports.normalizarTexto = (value, maxLength = 255) => {
     if (typeof value !== 'string') return '';
     return value.trim().slice(0, maxLength);

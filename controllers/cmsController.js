@@ -4,7 +4,7 @@
 // ==========================================
 
 const db = require('../config/db');
-const { esEnteroPositivo, esFechaISOValida, hoyCaracasISO, limitesFechaEvento } = require('../utils/validators');
+const { esEnteroPositivo, esFechaISOValida, esHoraEventoValida, hoyCaracasISO, limitesFechaEvento } = require('../utils/validators');
 
 // ==========================================
 // UTILIDADES
@@ -37,7 +37,7 @@ const validarNoticiaData = (titulo, resumen, contenido) => {
     return errores;
 };
 
-const validarEventoData = (titulo, fecha_evento, lugar) => {
+const validarEventoData = (titulo, fecha_evento, hora_evento, lugar) => {
     const errores = [];
     const limites = limitesFechaEvento();
 
@@ -55,6 +55,10 @@ const validarEventoData = (titulo, fecha_evento, lugar) => {
         errores.push('La fecha del evento no puede ser en el pasado');
     } else if (fecha_evento > limites.max) {
         errores.push(`La fecha del evento no puede ser posterior al ${limites.max}`);
+    }
+
+    if (!esHoraEventoValida(hora_evento)) {
+        errores.push('La hora del evento es obligatoria y debe tener formato HH:mm (hora de Venezuela)');
     }
 
     if (typeof lugar !== 'string' || lugar.trim().length === 0) {
@@ -305,11 +309,11 @@ const obtenerEventosPublicos = async (req, res) => {
     try {
         const hoy = hoyCaracasISO();
         const [eventos] = await db.promise().query(
-            `SELECT id_evento, titulo, fecha_evento, lugar, estado
+            `SELECT id_evento, titulo, fecha_evento, to_char(hora_evento, 'HH24:MI') AS hora_evento, lugar, estado
              FROM eventos
              WHERE (COALESCE(estado, 'proximo') = 'en_progreso'
                 OR (COALESCE(estado, 'proximo') = 'proximo' AND fecha_evento >= ?))
-             ORDER BY fecha_evento ASC
+             ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST
              LIMIT 20`,
             [hoy]
         );
@@ -334,10 +338,10 @@ const obtenerEventosPublicos = async (req, res) => {
 
 const crearEventoAdmin = async (req, res) => {
     try {
-        const { titulo, fecha_evento, lugar } = req.body || {};
+        const { titulo, fecha_evento, hora_evento, lugar } = req.body || {};
         const usuario_id = req.usuarioId;
 
-        const erroresValidacion = validarEventoData(titulo, fecha_evento, lugar);
+        const erroresValidacion = validarEventoData(titulo, fecha_evento, hora_evento, lugar);
         if (erroresValidacion.length > 0) {
             return res.status(400).json({
                 success: false,
@@ -347,9 +351,9 @@ const crearEventoAdmin = async (req, res) => {
         }
 
         const [result] = await db.promise().query(
-            `INSERT INTO eventos (titulo, fecha_evento, lugar, estado)
-             VALUES (?, ?, ?, 'proximo')`,
-            [titulo.trim(), fecha_evento, lugar.trim()]
+            `INSERT INTO eventos (titulo, fecha_evento, hora_evento, lugar, estado)
+             VALUES (?, ?, ?, ?, 'proximo')`,
+            [titulo.trim(), fecha_evento, hora_evento, lugar.trim()]
         );
 
         logAccion('Evento creado', {
@@ -375,7 +379,8 @@ const crearEventoAdmin = async (req, res) => {
 const obtenerEventosAdmin = async (req, res) => {
     try {
         const [eventos] = await db.promise().query(
-            `SELECT * FROM eventos ORDER BY fecha_evento ASC`
+            `SELECT id_evento, titulo, fecha_evento, to_char(hora_evento, 'HH24:MI') AS hora_evento,
+                    lugar, estado FROM eventos ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST`
         );
 
         res.status(200).json({

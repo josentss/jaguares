@@ -513,12 +513,14 @@ for (const dispositivo of [
 
             await page.locator('#evento-titulo').fill('Encuentro civil');
             await page.locator('#evento-lugar').fill('Cancha sintética');
+            await page.locator('#evento-hora').fill('14:30');
             await fecha.fill('2026-11-02');
             assert.equal(await fecha.evaluate(campo => campo.validity.valid), true);
             const enviada = page.waitForRequest(request =>
                 request.method() === 'POST' && request.url().endsWith('/api/cms/admin/eventos'));
             await page.locator('#form-evento button[type=submit]').click();
             assert.equal((await enviada).postDataJSON().fecha_evento, '2026-11-02');
+            assert.equal((await enviada).postDataJSON().hora_evento, '14:30');
             assert.deepEqual(errores, []);
         } finally { await browser.close(); }
     });

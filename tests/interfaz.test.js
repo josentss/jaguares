@@ -561,6 +561,7 @@ for (const dispositivo of [
             lugar: 'Cancha de pruebas',
             estado: 'proximo'
         }));
+        await page.route('https://**/*', route => route.abort());
         await page.route('**/api/cms/public/eventos', route => route.fulfill({
             status: 200, contentType: 'application/json',
             body: JSON.stringify({success: true, eventos})

@@ -319,8 +319,7 @@ const obtenerEventosPublicos = async (req, res) => {
              FROM eventos
              WHERE COALESCE(estado, 'proximo') IN ('proximo', 'en_progreso')
                AND fecha_evento >= (?::date::timestamp AT TIME ZONE 'UTC')
-             ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST
-             LIMIT 200`,
+             ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST`,
             [hoy]
         );
 

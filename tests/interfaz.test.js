@@ -513,7 +513,10 @@ for (const dispositivo of [
 
             await page.locator('#evento-titulo').fill('Encuentro civil');
             await page.locator('#evento-lugar').fill('Cancha sintética');
-            await page.locator('#evento-hora').fill('14:30');
+            await page.locator('#evento-hora-hora').selectOption('14');
+            await page.locator('#evento-hora-minuto').selectOption('30');
+            assert.equal(await page.locator('#evento-hora-hora option:enabled').count(), 19);
+            assert.equal(await page.locator('#evento-hora-minuto option:enabled').count(), 13);
             await fecha.fill('2026-11-02');
             assert.equal(await fecha.evaluate(campo => campo.validity.valid), true);
             const enviada = page.waitForRequest(request =>

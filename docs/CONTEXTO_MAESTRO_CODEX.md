@@ -43,7 +43,7 @@ Las rutas, controladores y esquema reales prevalecen sobre descripciones histór
 
 ### Esquema SQL comunicado por el propietario (6 de noviembre de 2026)
 
-Este inventario resume el DDL compartido en conversación **antes de aplicar `hora_evento`**. No procede de una introspección directa de Supabase ni sustituye un volcado completo: no incluye definiciones de secuencias, índices independientes, disparadores, permisos ni políticas RLS. Verificar el catálogo efectivo antes de cada migración. Las claves primarias son enteros con `nextval(...)`; solo `usuarios.correo` declara `UNIQUE` en el DDL recibido.
+Este inventario, preparado en [PR #18](https://github.com/josentss/jaguares/pull/18), resume el DDL compartido en conversación **antes de aplicar `hora_evento`**. No procede de una introspección directa de Supabase ni sustituye un volcado completo: no incluye definiciones de secuencias, índices independientes, disparadores, permisos ni políticas RLS. Verificar el catálogo efectivo antes de cada migración. Las claves primarias son enteros con `nextval(...)`; aparte de las PK, solo `usuarios.correo` declara `UNIQUE` en el DDL recibido.
 
 | Tabla `public` | Relaciones declaradas | Tipos y restricciones que afectan al sistema |
 | --- | --- | --- |

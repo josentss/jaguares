@@ -70,6 +70,14 @@ router.put(
     cmsController.actualizarEventoAdmin
 );
 
+// Borrado permanente por decisión explícita de la directiva; nunca automático.
+router.delete(
+    '/admin/eventos/:id',
+    verificarSesion,
+    verificarSesionRole(['directiva', 'admin']),
+    cmsController.eliminarEventoAdmin
+);
+
 // ==========================================
 // MANEJO DE ERRORES GLOBAL
 // ==========================================

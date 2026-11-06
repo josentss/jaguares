@@ -251,6 +251,7 @@ const listaEventosEl = document.getElementById('lista-eventos-publicos');
 const calendarHint = document.getElementById('calendar-hint');
 const eventosVerMas = document.getElementById('eventos-ver-mas');
 const eventosResumen = document.getElementById('eventos-resumen');
+const eventosLimpiarFiltro = document.getElementById('eventos-limpiar-filtro');
 let diaEventosSeleccionado = null;
 let eventosListaExtendida = false;
 const EVENTOS_INICIALES = 3;
@@ -322,6 +323,7 @@ function renderListaEventos(filtroKey = diaEventosSeleccionado) {
 function seleccionarDiaEventos(dia) {
     diaEventosSeleccionado = dia;
     eventosListaExtendida = false;
+    if (eventosLimpiarFiltro) eventosLimpiarFiltro.hidden = !dia;
     renderListaEventos(dia);
     for (const celda of calendarDays?.querySelectorAll('.cal-day.has-event') || []) {
         const activo = celda.dataset.fecha === dia;

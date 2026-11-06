@@ -7,9 +7,10 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
 - `main` remoto verificado el 6 de noviembre de 2026: `043530d1f387a4533a2888111e1de9d51e431e90`.
-- PR #1 al #18 fusionados; no había PR abiertos al iniciar la corrección de fechas de eventos.
+- PR #1 al #18 fusionados. [PR #19](https://github.com/josentss/jaguares/pull/19) abierto para la corrección de fecha civil de eventos; GitHub lo marcó fusionable y sin conflictos el 6 de noviembre de 2026.
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
 - El último despliegue Production, asociado al PR #18, figura como `success`; el CI del PR #18 pasó.
+- En el SHA inicial del PR #19 pasaron el CI `Sintaxis y pruebas backend`, Vercel Preview y su estado de despliegue Preview. Production no contiene todavía este cambio.
 - Tras añadir `hora_evento` en Supabase, el propietario confirmó `time without time zone` nullable. `GET /api/cms/public/eventos` pasó de HTTP 500 a 200 el 6 de noviembre de 2026.
 - El propietario confirmó manualmente en Production el comportamiento del PR #15.
 - CI usa Node.js 22. El entorno local habitual usa Node.js 24; no cambiar versiones sin necesidad.
@@ -80,7 +81,7 @@ ORDER BY rol, estado;
 
 ### Diferencias comprobadas entre el DDL recibido, el código y las pruebas
 
-1. **Fecha de eventos (prioridad alta):** Supabase confirmó `eventos.fecha_evento timestamptz NOT NULL`, mientras `config/db.js` conserva como texto solo columnas `DATE` y las pruebas previas creaban `fecha_evento DATE`. El propietario ejecutó una consulta agregada: **9 eventos, los 9 a medianoche UTC y los 9 con día diferente en Caracas**. El día UTC es el que la API vigente serializa y la interfaz ha mostrado; convertir a día de Caracas desplazaría los nueve históricos. La rama `fix/eventos-fecha-civil-timestamptz` fija explícitamente el día UTC como fecha civil sin alterar datos ni tipo SQL y cambia la prueba temporal a `timestamptz`.
+1. **Fecha de eventos (prioridad alta):** Supabase confirmó `eventos.fecha_evento timestamptz NOT NULL`, mientras `config/db.js` conserva como texto solo columnas `DATE` y las pruebas previas creaban `fecha_evento DATE`. El propietario ejecutó una consulta agregada: **9 eventos, los 9 a medianoche UTC y los 9 con día diferente en Caracas**. El día UTC es el que la API vigente serializa y la interfaz ha mostrado; convertir a día de Caracas desplazaría los nueve históricos. El [PR #19](https://github.com/josentss/jaguares/pull/19) fija explícitamente el día UTC como fecha civil sin alterar datos ni tipo SQL y cambia la prueba temporal a `timestamptz`.
 2. **Hora de eventos:** `hora_evento TIME WITHOUT TIME ZONE` nullable ya existe en Supabase; el calendario público volvió a HTTP 200. Los históricos quedan sin hora y los nuevos la exigen en Express. La hora no se combina con el instante de `fecha_evento` para inferir otro día.
 3. **Estado de cuentas (prioridad de acceso):** el `CHECK` recibido para `usuarios.estado` no permite `inactivo`, pero permite `NULL` porque la columna no es `NOT NULL`. La autenticación contempla `inactivo` y las pruebas lo usan; una prueba incluso simula directiva con estado `activo`, que tampoco figura en el `CHECK`. El middleware permite a staff, directiva o admin con `estado NULL` pasar la comprobación de estado. La consulta agregada del propietario mostró **una directiva aprobada y ninguna cuenta privilegiada con estado NULL**; el riesgo de futuras filas inválidas persiste. El controlador de directiva solo aprueba o rechaza solicitudes pendientes; la inactivación del panel corresponde a atletas.
 4. **Identidades y pruebas:** el DDL recibido no declara unicidad de `usuarios.cedula` ni `atletas.cedula`; el código coordina altas con bloqueo asesor y comprobaciones, pero eso no protege escritores SQL ajenos. Los esquemas temporales de algunas pruebas sí declaran esas unicidades y no reproducen el `CHECK` de estados; no asumir que sus resultados certifican esas restricciones en producción.
@@ -122,7 +123,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - Eventos nuevos: desde hoy en Caracas hasta el 31 de diciembre del año siguiente.
 - Los históricos fuera del rango se conservan.
 - [PR #17](https://github.com/josentss/jaguares/pull/17) desplegó código que exige `HH:mm` para eventos nuevos y usa `hora_evento TIME WITHOUT TIME ZONE` nullable. La interfaz presenta la hora civil de Venezuela cuando existe; los históricos deben quedar sin hora.
-- Supabase ya contiene `hora_evento` nullable y la ruta pública responde HTTP 200. Todavía falta comprobar en producción un evento nuevo con hora en los dos paneles y el calendario, y fusionar la corrección de fecha civil para el `timestamptz` real.
+- Supabase ya contiene `hora_evento` nullable y la ruta pública responde HTTP 200. Todavía falta comprobar en producción un evento nuevo con hora en los dos paneles y el calendario, y fusionar el [PR #19](https://github.com/josentss/jaguares/pull/19) para el `timestamptz` real.
 - Las notificaciones son informativas y de mejor esfuerzo; no hay lectura persistente.
 
 ## 5. Riesgos y deuda vigentes
@@ -159,7 +160,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 
 Cada punto debe ir en un PR separado y conservar compatibilidad.
 
-1. **Integridad del calendario y esquema.** Hora agregada y ruta pública restaurada; revisar el PR de fecha civil sobre `timestamptz` real, preservar los nueve días históricos y probar los paneles en Production sin datos ficticios.
+1. **Integridad del calendario y esquema.** Hora agregada y ruta pública restaurada; revisar el [PR #19](https://github.com/josentss/jaguares/pull/19) de fecha civil sobre `timestamptz` real, preservar los nueve días históricos y probar los paneles en Production sin datos ficticios.
 2. **Pagos guiados por deuda.** Solo conceptos pendientes, monto oficial y conversión. Bloqueado hasta definir tarifa, moneda base, tasa, redondeo, vencimientos y pagos parciales.
 3. **Categorías, equipos y temporadas.** Asignación por edad, temporada y rendimiento; requiere reglas deportivas.
 4. **Traspasos y plantillas.** Historial de movimientos y plantillas por categoría, después del modelo anterior.
@@ -201,6 +202,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Revisar el PR de fecha civil compatible con `timestamptz`, sin reescribir filas ni ejecutar otra migración. El día elegido por la directiva debe permanecer como `YYYY-MM-DD` en API, paneles y calendario independientemente de la zona de conexión; la hora local permanece en `hora_evento`. Probar con PostgreSQL temporal que reproduzca el tipo real, navegadores en escritorio y móvil y zonas horarias distintas. Después del merge autorizado, confirmar el SHA en Production y hacer un recorrido con un evento legítimo.
+Revisar el [PR #19](https://github.com/josentss/jaguares/pull/19) de fecha civil compatible con `timestamptz`, sin reescribir filas ni ejecutar otra migración. El día elegido por la directiva debe permanecer como `YYYY-MM-DD` en API, paneles y calendario independientemente de la zona de conexión; la hora local permanece en `hora_evento`. Después del merge autorizado, confirmar el SHA en Production y hacer un recorrido con un evento legítimo.
 
-Evidencia del propietario del 6 de noviembre: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; 9 eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. La ruta pública respondió HTTP 200 tras añadir la hora. Esto no prueba aún la creación ni presentación de un evento nuevo en Production.
+Evidencia del propietario del 6 de noviembre: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; 9 eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. La ruta pública respondió HTTP 200 tras añadir la hora. El PR #19 se revalidó localmente con sintaxis de 46 archivos JavaScript, 96 pruebas backend y 76 pruebas de PostgreSQL temporal/Playwright en escritorio y móvil; sus checks iniciales de GitHub y Vercel también pasaron. Esto no prueba aún la creación ni presentación de un evento nuevo en Production.

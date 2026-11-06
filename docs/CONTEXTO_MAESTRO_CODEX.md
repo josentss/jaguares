@@ -6,11 +6,11 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
-- `main` remoto verificado el 6 de noviembre de 2026: `043530d1f387a4533a2888111e1de9d51e431e90`.
-- PR #1 al #18 fusionados. [PR #19](https://github.com/josentss/jaguares/pull/19) abierto para la corrección de fecha civil de eventos; GitHub lo marcó fusionable y sin conflictos el 6 de noviembre de 2026.
+- `main` remoto verificado el 6 de noviembre de 2026: `4d250430860eed35fe1f826d65007c2e580eb1f2` (merge PR #19).
+- PR #1 al #19 fusionados. [PR #19](https://github.com/josentss/jaguares/pull/19) se fusionó el 6 de noviembre de 2026. Rama de trabajo posterior: `feat/calendario-ux-horarios-gestion` (pendiente de revisión y pruebas CI).
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
 - El último despliegue Production, asociado al PR #18, figura como `success`; el CI del PR #18 pasó.
-- En el SHA inicial del PR #19 pasaron el CI `Sintaxis y pruebas backend`, Vercel Preview y su estado de despliegue Preview. Production no contiene todavía este cambio.
+- En el SHA del PR #19 pasó el CI `Sintaxis y pruebas backend` y su Preview estuvo disponible. El propietario compartió capturas de calendario y panel funcionando tras la fusión; no se ha verificado aquí el SHA efectivo en Production.
 - Tras añadir `hora_evento` en Supabase, el propietario confirmó `time without time zone` nullable. `GET /api/cms/public/eventos` pasó de HTTP 500 a 200 el 6 de noviembre de 2026.
 - El propietario confirmó manualmente en Production el comportamiento del PR #15.
 - CI usa Node.js 22. El entorno local habitual usa Node.js 24; no cambiar versiones sin necesidad.
@@ -26,8 +26,8 @@ Este estado debe contrastarse con GitHub y Vercel al comenzar cada bloque.
 5. Usar consultas parametrizadas y cambios de base compatibles y no destructivos.
 6. No escribir en Supabase de producción durante desarrollo o pruebas.
 7. Proteger especialmente datos personales, documentos y datos médicos de menores.
-8. No inventar tarifas, categorías, sanciones, eliminación ni comunicaciones.
-9. Conservar históricos; archivado y eliminación requieren política institucional.
+8. No inventar tarifas, categorías, sanciones, eliminación de datos personales ni comunicaciones. El propietario autorizó implementar un borrado manual y confirmado para eventos únicamente.
+9. Conservar históricos personales; archivado y eliminación requieren política institucional. Los eventos se conservan hasta que la directiva/admin decide eliminarlos explícitamente.
 10. No declarar probada una función si no se ejecutó la prueba correspondiente.
 
 ## 3. Arquitectura vigente
@@ -119,11 +119,12 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 
 ### Calendario y notificaciones
 
-- Directiva crea, completa y cancela eventos; representantes ven los vigentes.
+- Directiva programa eventos; representantes y público ven los próximos. La rama pendiente elimina los controles manuales de «Completado/Cancelar» de la interfaz y propone papelera confirmada solo para directiva/admin.
 - Eventos nuevos: desde hoy en Caracas hasta el 31 de diciembre del año siguiente.
 - Los históricos fuera del rango se conservan.
 - [PR #17](https://github.com/josentss/jaguares/pull/17) desplegó código que exige `HH:mm` para eventos nuevos y usa `hora_evento TIME WITHOUT TIME ZONE` nullable. La interfaz presenta la hora civil de Venezuela cuando existe; los históricos deben quedar sin hora.
-- Supabase ya contiene `hora_evento` nullable y la ruta pública responde HTTP 200. Todavía falta comprobar en producción un evento nuevo con hora en los dos paneles y el calendario, y fusionar el [PR #19](https://github.com/josentss/jaguares/pull/19) para el `timestamptz` real.
+- Supabase ya contiene `hora_evento` nullable. El [PR #19](https://github.com/josentss/jaguares/pull/19) fue fusionado; el propietario verificó visualmente registro y presentación de evento con hora. Falta una confirmación trazable del SHA de Production.
+- **Rama de calendario pendiente de revisión:** horas de 05:00 a 22:00 (cada cinco minutos; a las 22:00 solo minuto 00), estado «Completado» derivado al día civil siguiente sin reescribir históricos, aviso en directiva, separación Programados/Historial, DELETE confirmado con autorización directiva/admin y listado público limitado inicialmente a tres elementos con ampliación. No hay cron ni eliminación automática.
 - Las notificaciones son informativas y de mejor esfuerzo; no hay lectura persistente.
 
 ## 5. Riesgos y deuda vigentes
@@ -133,7 +134,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - Evitar publicación o registro de documentos, recibos y datos médicos reales.
 - Revisar archivos privados presentes en la historia Git y acordar remediación antes de reescribirla.
 - Confirmar en PostgreSQL real restricciones, claves foráneas y duplicados antes de migrar.
-- Corregir el contrato de fecha de eventos con evidencia del esquema y datos históricos; el DDL comunicado usa `timestamptz` y las pruebas usan `DATE`.
+- Verificar en Production tras despliegue autorizado que se conserva la fecha civil del PR #19 y que los históricos no cambian; las pruebas temporales ya modelan `timestamptz`.
 - Auditar estados `NULL` de cuentas privilegiadas y alinear autenticación, `CHECK` y pruebas sin asumir su estado legítimo.
 - Mantener autorización backend en toda ruta nueva; la interfaz no es una barrera.
 
@@ -160,7 +161,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 
 Cada punto debe ir en un PR separado y conservar compatibilidad.
 
-1. **Integridad del calendario y esquema.** Hora agregada y ruta pública restaurada; revisar el [PR #19](https://github.com/josentss/jaguares/pull/19) de fecha civil sobre `timestamptz` real, preservar los nueve días históricos y probar los paneles en Production sin datos ficticios.
+1. **Cerrar calendario y experiencia.** PR #19 fusionado; probar rama de horario, historial derivado, eliminación protegida y listado público; después comprobar CI, revisar diff y solicitar autorización para merge. Mantener sin cambios los nueve días históricos.
 2. **Pagos guiados por deuda.** Solo conceptos pendientes, monto oficial y conversión. Bloqueado hasta definir tarifa, moneda base, tasa, redondeo, vencimientos y pagos parciales.
 3. **Categorías, equipos y temporadas.** Asignación por edad, temporada y rendimiento; requiere reglas deportivas.
 4. **Traspasos y plantillas.** Historial de movimientos y plantillas por categoría, después del modelo anterior.
@@ -202,6 +203,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Revisar el [PR #19](https://github.com/josentss/jaguares/pull/19) de fecha civil compatible con `timestamptz`, sin reescribir filas ni ejecutar otra migración. El día elegido por la directiva debe permanecer como `YYYY-MM-DD` en API, paneles y calendario independientemente de la zona de conexión; la hora local permanece en `hora_evento`. Después del merge autorizado, confirmar el SHA en Production y hacer un recorrido con un evento legítimo.
+Revisar la rama `feat/calendario-ux-horarios-gestion`: validar UI responsive, rango de 05:00 a 22:00 cada cinco minutos, estado derivado desde el día siguiente, permiso de DELETE solo para directiva/admin, confirmación y calendario público compacto. No se ejecuta DELETE automáticamente ni se modifican históricos. Ejecutar CI/Playwright/PostgreSQL temporal, contrastar el diff y solicitar autorización antes de fusionar o desplegar.
 
-Evidencia del propietario del 6 de noviembre: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; 9 eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. La ruta pública respondió HTTP 200 tras añadir la hora. El PR #19 se revalidó localmente con sintaxis de 46 archivos JavaScript, 96 pruebas backend y 76 pruebas de PostgreSQL temporal/Playwright en escritorio y móvil; sus checks iniciales de GitHub y Vercel también pasaron. Esto no prueba aún la creación ni presentación de un evento nuevo en Production.
+Evidencia previa: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; nueve eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. El PR #19 pasó validaciones anteriores a su fusión; el propietario compartió capturas del funcionamiento posterior. La rama actual debe aportar sus propios resultados de CI; no atribuirle todavía pruebas que no se hayan ejecutado.

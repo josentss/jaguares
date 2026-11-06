@@ -77,7 +77,7 @@ test('eventos: hoy en Caracas es válido; pasado, fecha imposible y tipos incorr
         {titulo: 'Encuentro', fecha_evento: `${Number(hoy.slice(0, 4)) + 2}-01-01`, hora_evento: '14:30', lugar: 'Cancha'},
         {titulo: 123, fecha_evento: hoy, hora_evento: '14:30', lugar: 'Cancha'},
         {titulo: 'Encuentro', fecha_evento: hoy, hora_evento: '14:30', lugar: {nombre: 'Cancha'}},
-        ...[undefined, null, '', '24:00', '9:00', '14:60', '14:30Z', '14:30:00', 1430]
+        ...[undefined, null, '', '24:00', '9:00', '14:60', '14:30Z', '14:30:00', 1430, '04:55', '22:05', '23:00', '14:02', '16:59']
             .map(hora_evento => ({titulo: 'Encuentro', fecha_evento: hoy, hora_evento, lugar: 'Cancha'}))
     ]) {
         const res = respuesta();
@@ -88,21 +88,21 @@ test('eventos: hoy en Caracas es válido; pasado, fecha imposible y tipos incorr
 
     const res = respuesta();
     await cms.crearEventoAdmin({
-        body: {titulo: 'Encuentro de hoy', fecha_evento: hoy, hora_evento: '00:00', lugar: 'Cancha principal'},
+        body: {titulo: 'Encuentro de hoy', fecha_evento: hoy, hora_evento: '05:00', lugar: 'Cancha principal'},
         usuarioId: 9
     }, res);
     assert.equal(res.statusCode, 201);
     assert.equal(consultas.length, 1);
-    assert.deepEqual(consultas[0].params, ['Encuentro de hoy', hoy, '00:00', 'Cancha principal']);
+    assert.deepEqual(consultas[0].params, ['Encuentro de hoy', hoy, '05:00', 'Cancha principal']);
     assert.deepEqual(limites, {min: hoy, max: `${Number(hoy.slice(0, 4)) + 1}-12-31`});
 
     const resMaximo = respuesta();
     await cms.crearEventoAdmin({
-        body: {titulo: 'Encuentro límite', fecha_evento: limites.max, hora_evento: '23:59', lugar: 'Cancha principal'},
+        body: {titulo: 'Encuentro límite', fecha_evento: limites.max, hora_evento: '22:00', lugar: 'Cancha principal'},
         usuarioId: 9
     }, resMaximo);
     assert.equal(resMaximo.statusCode, 201);
-    assert.deepEqual(consultas[1].params, ['Encuentro límite', limites.max, '23:59', 'Cancha principal']);
+    assert.deepEqual(consultas[1].params, ['Encuentro límite', limites.max, '22:00', 'Cancha principal']);
 });
 
 test('eventos públicos: la consulta excluye fechas vencidas usando el día civil de Caracas', async () => {
@@ -128,6 +128,49 @@ test('eventos: un identificador malformado se rechaza antes de actualizar', asyn
     await cms.actualizarEventoAdmin({params: {id: 'abc'}, body: {estado: 'cancelado'}}, res);
     assert.equal(res.statusCode, 400);
     assert.equal(consultas, 0);
+});
+
+test('eventos: el borrado valida ID, usa SQL parametrizado y distingue inexistentes', async () => {
+    const consultas = [];
+    let afectadas = 1;
+    const db = { promise() { return { query: async (sql, params) => {
+        consultas.push({sql, params});
+        return [{affectedRows: afectadas}];
+    }}; }};
+    const cms = cargarConMocks('../controllers/cmsController', {'../config/db': db});
+    const invalido = respuesta();
+    await cms.eliminarEventoAdmin({params: {id: '1 OR 1=1'}, usuarioId: 1}, invalido);
+    assert.equal(invalido.statusCode, 400);
+    assert.equal(consultas.length, 0);
+
+    const borrado = respuesta();
+    await cms.eliminarEventoAdmin({params: {id: '12'}, usuarioId: 1}, borrado);
+    assert.equal(borrado.statusCode, 200);
+    assert.equal(borrado.body.success, true);
+    assert.equal(consultas[0].sql, 'DELETE FROM eventos WHERE id_evento = ?');
+    assert.deepEqual(consultas[0].params, ['12']);
+
+    afectadas = 0;
+    const inexistente = respuesta();
+    await cms.eliminarEventoAdmin({params: {id: '12'}, usuarioId: 1}, inexistente);
+    assert.equal(inexistente.statusCode, 404);
+});
+
+test('eventos: el panel calcula estados vencidos sin alterar datos SQL', async () => {
+    let consulta;
+    const db = { promise() { return { query: async (sql, params) => {
+        consulta = {sql, params};
+        return [[{id_evento:1, estado:'completado'}]];
+    }}; }};
+    const cms = cargarConMocks('../controllers/cmsController', {'../config/db': db});
+    const res = respuesta();
+    await cms.obtenerEventosAdmin({}, res);
+    assert.equal(res.statusCode, 200);
+    assert.match(consulta.sql, /CASE WHEN COALESCE\(estado, 'proximo'\)/);
+    assert.match(consulta.sql, /fecha_evento < \(\?::date::timestamp AT TIME ZONE 'UTC'\)/);
+    assert.match(consulta.sql, /THEN 'completado'/);
+    assert.doesNotMatch(consulta.sql, /UPDATE eventos/);
+    assert.deepEqual(consulta.params, [hoyCaracasISO()]);
 });
 
 test('pago válido: consulta restringida por propietario y ambos estados', () => {

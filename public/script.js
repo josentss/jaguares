@@ -249,6 +249,11 @@ const prevBtn = document.getElementById('prev-month');
 const nextBtn = document.getElementById('next-month');
 const listaEventosEl = document.getElementById('lista-eventos-publicos');
 const calendarHint = document.getElementById('calendar-hint');
+const eventosVerMas = document.getElementById('eventos-ver-mas');
+const eventosResumen = document.getElementById('eventos-resumen');
+let diaEventosSeleccionado = null;
+let eventosListaExtendida = false;
+const EVENTOS_INICIALES = 3;
 
 // Escapa texto del CMS (seguridad)
 function escapeHTML(texto) {
@@ -278,39 +283,67 @@ function eventosDelMes(year, month) {
     });
 }
 
-function renderListaEventos(filtroKey /* YYYY-MM-DD o null = todos del mes */) {
+function renderListaEventos(filtroKey = diaEventosSeleccionado) {
     if (!listaEventosEl) return;
-
+    diaEventosSeleccionado = filtroKey;
     let lista = eventosDelMes(currentYear, currentMonth);
-    if (filtroKey) {
-        lista = lista.filter(ev => {
-            const p = parseFechaEvento(ev.fecha_evento);
-            return p && p.key === filtroKey;
-        });
+    if (filtroKey) lista = lista.filter(ev => parseFechaEvento(ev.fecha_evento)?.key === filtroKey);
+    const total = lista.length;
+    const visibles = eventosListaExtendida ? lista : lista.slice(0, EVENTOS_INICIALES);
+    if (eventosResumen) {
+        eventosResumen.textContent = total === 0
+            ? 'Sin eventos programados'
+            : filtroKey
+                ? `${total} evento${total === 1 ? '' : 's'} en el día seleccionado`
+                : `${total} evento${total === 1 ? '' : 's'} en el mes`;
     }
-
-    if (lista.length === 0) {
-        listaEventosEl.innerHTML = `<li class="empty-ev">${
-            filtroKey
-                ? 'No hay eventos en este día.'
-                : 'No hay eventos próximos en este mes.'
-        }</li>`;
+    if (eventosVerMas) {
+        eventosVerMas.hidden = total <= EVENTOS_INICIALES;
+        eventosVerMas.textContent = eventosListaExtendida ? 'Mostrar menos' : `Ver todos (${total})`;
+    }
+    if (total === 0) {
+        listaEventosEl.innerHTML = `<li class="empty-ev">${filtroKey
+            ? 'No hay eventos en este día.' : 'No hay eventos próximos en este mes.'}</li>`;
         return;
     }
-
-    listaEventosEl.innerHTML = lista.map(ev => {
+    listaEventosEl.innerHTML = visibles.map(ev => {
         const p = parseFechaEvento(ev.fecha_evento);
         const fechaTxt = p
             ? new Date(p.y, p.m, p.d).toLocaleDateString('es-VE', {
                 weekday: 'short', day: 'numeric', month: 'short'
-              })
-            : '';
+            }) : '';
         return `<li>
             <strong>${escapeHTML(ev.titulo || 'Evento')}</strong>
-            <span>${fechaTxt}${ev.hora_evento ? ' · ' + escapeHTML(ev.hora_evento) + ' (Venezuela)' : ''}${ev.lugar ? ' · ' + escapeHTML(ev.lugar) : ''}</span>
+            <span>${fechaTxt}${ev.hora_evento ? ' · ' + escapeHTML(ev.hora_evento) : ''}${ev.lugar ? ' · ' + escapeHTML(ev.lugar) : ''}</span>
         </li>`;
     }).join('');
 }
+
+function seleccionarDiaEventos(dia) {
+    diaEventosSeleccionado = dia;
+    eventosListaExtendida = false;
+    renderListaEventos(dia);
+    for (const celda of calendarDays?.querySelectorAll('.cal-day.has-event') || []) {
+        const activo = celda.dataset.fecha === dia;
+        celda.classList.toggle('selected', activo);
+        celda.setAttribute('aria-pressed', String(activo));
+    }
+    if (calendarHint) {
+        if (dia) {
+            const d = Number(dia.slice(8));
+            calendarHint.textContent = `Eventos del ${d} de ${monthNames[currentMonth]}.`;
+        } else {
+            calendarHint.textContent = 'Selecciona un día destacado para ver solo sus eventos.';
+        }
+    }
+}
+if (eventosVerMas) {
+    eventosVerMas.addEventListener('click', () => {
+        eventosListaExtendida = !eventosListaExtendida;
+        renderListaEventos();
+    });
+}
+document.getElementById('eventos-limpiar-filtro')?.addEventListener('click', () => seleccionarDiaEventos(null));
 
 function renderCalendar() {
     if (!calendarDays || !monthYearText) return;
@@ -348,30 +381,24 @@ function renderCalendar() {
         if (keysConEvento.has(key)) {
             dayDiv.classList.add('has-event');
             dayDiv.title = 'Hay evento(s)';
+            dayDiv.dataset.fecha = key;
             dayDiv.tabIndex = 0;
             dayDiv.setAttribute('role', 'button');
             dayDiv.setAttribute('aria-label', `${i} de ${monthNames[currentMonth]}: ver eventos`);
+            dayDiv.setAttribute('aria-pressed', 'false');
             dayDiv.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     dayDiv.click();
                 }
             });
-            dayDiv.addEventListener('click', () => {
-                renderListaEventos(key);
-                if (calendarHint) {
-                    calendarHint.innerHTML = `<i class="fas fa-calendar-day"></i> Eventos del ${i} de ${monthNames[currentMonth]}.`;
-                }
-            });
+            dayDiv.addEventListener('click', () => seleccionarDiaEventos(key));
         }
 
         calendarDays.appendChild(dayDiv);
     }
 
-    renderListaEventos(null);
-    if (calendarHint) {
-        calendarHint.innerHTML = '<i class="fas fa-info-circle"></i> Toca un día marcado para filtrar; la lista muestra los del mes.';
-    }
+    seleccionarDiaEventos(null);
 }
 
 /* Próximo evento */
@@ -419,10 +446,7 @@ function renderProximoEvento() {
         currentMonth = p.m;
         currentYear = p.y;
         renderCalendar();
-        renderListaEventos(p.key);
-        if (calendarHint) {
-            calendarHint.innerHTML = `<i class="fas fa-calendar-day"></i> Eventos del ${p.d} de ${monthNames[p.m]}.`;
-        }
+        seleccionarDiaEventos(p.key);
     };
 }
 

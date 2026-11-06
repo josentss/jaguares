@@ -1922,7 +1922,7 @@
             if (!horas || !minutos) return;
             for (let h = 5; h <= 22; h++) {
                 const v = String(h).padStart(2, '0');
-                const option = new Option(`${v}:00`, v);
+                const option = new Option(v, v);
                 horas.add(option);
             }
             for (let m = 0; m < 60; m += 5) {

@@ -305,14 +305,21 @@ const eliminarNoticiaAdmin = async (req, res) => {
 // CONTROLADORES DE EVENTOS (Público)
 // ==========================================
 
+// fecha_evento es TIMESTAMPTZ en Supabase, pero representa un día civil.
+// Los históricos están a las 00:00 UTC: usar ese día conserva lo mostrado
+// y evita que la zona de la conexión mueva el calendario. hora_evento es aparte.
+
 const obtenerEventosPublicos = async (req, res) => {
     try {
         const hoy = hoyCaracasISO();
         const [eventos] = await db.promise().query(
-            `SELECT id_evento, titulo, fecha_evento, to_char(hora_evento, 'HH24:MI') AS hora_evento, lugar, estado
+            `SELECT id_evento, titulo,
+                    to_char(fecha_evento AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS fecha_evento,
+                    to_char(hora_evento, 'HH24:MI') AS hora_evento, lugar, estado
              FROM eventos
              WHERE (COALESCE(estado, 'proximo') = 'en_progreso'
-                OR (COALESCE(estado, 'proximo') = 'proximo' AND fecha_evento >= ?))
+                OR (COALESCE(estado, 'proximo') = 'proximo'
+                    AND fecha_evento >= (?::date::timestamp AT TIME ZONE 'UTC')))
              ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST
              LIMIT 20`,
             [hoy]
@@ -352,7 +359,7 @@ const crearEventoAdmin = async (req, res) => {
 
         const [result] = await db.promise().query(
             `INSERT INTO eventos (titulo, fecha_evento, hora_evento, lugar, estado)
-             VALUES (?, ?, ?, ?, 'proximo')`,
+             VALUES (?, (?::date::timestamp AT TIME ZONE 'UTC'), ?, ?, 'proximo')`,
             [titulo.trim(), fecha_evento, hora_evento, lugar.trim()]
         );
 
@@ -379,7 +386,9 @@ const crearEventoAdmin = async (req, res) => {
 const obtenerEventosAdmin = async (req, res) => {
     try {
         const [eventos] = await db.promise().query(
-            `SELECT id_evento, titulo, fecha_evento, to_char(hora_evento, 'HH24:MI') AS hora_evento,
+            `SELECT id_evento, titulo,
+                    to_char(fecha_evento AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS fecha_evento,
+                    to_char(hora_evento, 'HH24:MI') AS hora_evento,
                     lugar, estado FROM eventos ORDER BY fecha_evento ASC, hora_evento ASC NULLS LAST`
         );
 

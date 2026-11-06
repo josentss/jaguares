@@ -6,11 +6,12 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
-- `main` remoto verificado el 6 de noviembre de 2026: `cef95426bd09595e594ce9461390b7ab8811764a`.
-- PR #1 al #17 fusionados; no había PR abiertos al revisar el esquema.
+- `main` remoto verificado el 6 de noviembre de 2026: `043530d1f387a4533a2888111e1de9d51e431e90`.
+- PR #1 al #18 fusionados. [PR #19](https://github.com/josentss/jaguares/pull/19) abierto para la corrección de fecha civil de eventos; GitHub lo marcó fusionable y sin conflictos el 6 de noviembre de 2026.
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
-- El último despliegue Production, asociado al PR #17, figura como `success`; el CI del PR #17 pasó.
-- El 6 de noviembre de 2026, `GET /api/cms/public/eventos` respondió HTTP 500. No se consultaron logs ni se confirmó todavía su causa.
+- El último despliegue Production, asociado al PR #18, figura como `success`; el CI del PR #18 pasó.
+- En el SHA inicial del PR #19 pasaron el CI `Sintaxis y pruebas backend`, Vercel Preview y su estado de despliegue Preview. Production no contiene todavía este cambio.
+- Tras añadir `hora_evento` en Supabase, el propietario confirmó `time without time zone` nullable. `GET /api/cms/public/eventos` pasó de HTTP 500 a 200 el 6 de noviembre de 2026.
 - El propietario confirmó manualmente en Production el comportamiento del PR #15.
 - CI usa Node.js 22. El entorno local habitual usa Node.js 24; no cambiar versiones sin necesidad.
 
@@ -43,7 +44,7 @@ Las rutas, controladores y esquema reales prevalecen sobre descripciones histór
 
 ### Esquema SQL comunicado por el propietario (6 de noviembre de 2026)
 
-Este inventario, preparado en [PR #18](https://github.com/josentss/jaguares/pull/18), resume el DDL compartido en conversación **antes de aplicar `hora_evento`**. No procede de una introspección directa de Supabase ni sustituye un volcado completo: no incluye definiciones de secuencias, índices independientes, disparadores, permisos ni políticas RLS. Verificar el catálogo efectivo antes de cada migración. Las claves primarias son enteros con `nextval(...)`; aparte de las PK, solo `usuarios.correo` declara `UNIQUE` en el DDL recibido.
+Este inventario, preparado en [PR #18](https://github.com/josentss/jaguares/pull/18), resume el DDL compartido en conversación. No procede de una introspección completa de Supabase ni sustituye un volcado: no incluye definiciones de secuencias, índices independientes, disparadores, permisos ni políticas RLS. El propietario verificó posteriormente las columnas de `eventos` en el catálogo y añadió `hora_evento`. Verificar el catálogo efectivo antes de cada migración. Las claves primarias son enteros con `nextval(...)`; aparte de las PK, solo `usuarios.correo` declara `UNIQUE` en el DDL recibido.
 
 | Tabla `public` | Relaciones declaradas | Tipos y restricciones que afectan al sistema |
 | --- | --- | --- |
@@ -52,7 +53,7 @@ Este inventario, preparado en [PR #18](https://github.com/josentss/jaguares/pull
 | `pagos` | PK `id_pago`; `id_atleta` obligatorio referencia `atletas` | `fecha_pago` `date`; `monto` `numeric` sin precisión ni escala declaradas; `estado_pago` nullable con `CHECK` de pendiente, aprobado o rechazado; referencia y ruta de comprobante nullable. |
 | `notificaciones` | PK `id_notificacion`; `id_usuario` obligatorio referencia `usuarios` | `fecha` `timestamptz`; `mensaje` y `tipo` obligatorios. |
 | `noticias` | PK `id_noticia`; sin FK declarada | `fecha_publicacion` `timestamptz`; `estado` publicada, archivada o borrador; texto e imagen URL. |
-| `eventos` | PK `id_evento`; sin FK declarada | `fecha_evento` **`timestamptz`**, no `date`; `estado` proximo, en_progreso, completado o cancelado; el DDL recibido no contiene `hora_evento`. |
+| `eventos` | PK `id_evento`; sin FK declarada | `fecha_evento` **`timestamptz` NOT NULL**, no `date`; `hora_evento` `time without time zone` nullable, añadida después del DDL; `estado` proximo, en_progreso, completado o cancelado. |
 | `audit_uploads` | PK `id`; `user_id` sin FK declarada | `ts` `timestamptz`; `success` booleano; `meta` `text`; nombres, IP y metadatos de cargas potencialmente sensibles. |
 
 La ausencia de `UNIQUE` en una columna del DDL recibido no demuestra que no exista un índice único creado por separado. Tampoco se puede inferir la configuración RLS. No copiar filas, contraseñas, documentos, recibos ni registros de auditoría a pruebas o documentación.
@@ -80,9 +81,9 @@ ORDER BY rol, estado;
 
 ### Diferencias comprobadas entre el DDL recibido, el código y las pruebas
 
-1. **Fecha de eventos (prioridad alta):** el DDL define `eventos.fecha_evento` como `timestamptz`, mientras `config/db.js` conserva como texto únicamente columnas PostgreSQL `DATE` y `tests/flujos-web-pg.test.js` crea `fecha_evento DATE`. Los controladores insertan `YYYY-MM-DD`, comparan con el día de Caracas y devuelven el valor SQL sin convertirlo a fecha civil. Con `timestamptz`, `pg` entrega un instante que se serializa como ISO UTC; cortar sus primeros diez caracteres en la interfaz puede mostrar otro día según el instante almacenado. Auditar zona de sesión y fechas históricas antes de decidir una corrección compatible; no convertir ni reescribir datos a ciegas.
-2. **Hora de eventos:** el PR #17 ya desplegado consulta e inserta `hora_evento`, pero el DDL recibido no la contiene. El HTTP 500 del calendario es compatible con esa ausencia, aunque requiere logs o catálogo SQL para confirmar la causa. La migración propuesta añade una columna `TIME WITHOUT TIME ZONE` nullable; no resuelve por sí sola la diferencia de `fecha_evento`.
-3. **Estado de cuentas (prioridad de acceso):** el `CHECK` recibido para `usuarios.estado` no permite `inactivo`, pero permite `NULL` porque la columna no es `NOT NULL`. La autenticación contempla `inactivo` y las pruebas lo usan; una prueba incluso simula directiva con estado `activo`, que tampoco figura en el `CHECK`. El middleware permite a staff, directiva o admin con `estado NULL` pasar la comprobación de estado; auditar si existen esas filas antes de corregir el contrato para no bloquear cuentas legítimas. El controlador de directiva solo aprueba o rechaza solicitudes pendientes; la guía anterior atribuía inactivación de cuentas a la directiva sin evidencia en el esquema o la ruta actual. Distinguirla de la inactivación de atletas.
+1. **Fecha de eventos (prioridad alta):** Supabase confirmó `eventos.fecha_evento timestamptz NOT NULL`, mientras `config/db.js` conserva como texto solo columnas `DATE` y las pruebas previas creaban `fecha_evento DATE`. El propietario ejecutó una consulta agregada: **9 eventos, los 9 a medianoche UTC y los 9 con día diferente en Caracas**. El día UTC es el que la API vigente serializa y la interfaz ha mostrado; convertir a día de Caracas desplazaría los nueve históricos. El [PR #19](https://github.com/josentss/jaguares/pull/19) fija explícitamente el día UTC como fecha civil sin alterar datos ni tipo SQL y cambia la prueba temporal a `timestamptz`.
+2. **Hora de eventos:** `hora_evento TIME WITHOUT TIME ZONE` nullable ya existe en Supabase; el calendario público volvió a HTTP 200. Los históricos quedan sin hora y los nuevos la exigen en Express. La hora no se combina con el instante de `fecha_evento` para inferir otro día.
+3. **Estado de cuentas (prioridad de acceso):** el `CHECK` recibido para `usuarios.estado` no permite `inactivo`, pero permite `NULL` porque la columna no es `NOT NULL`. La autenticación contempla `inactivo` y las pruebas lo usan; una prueba incluso simula directiva con estado `activo`, que tampoco figura en el `CHECK`. El middleware permite a staff, directiva o admin con `estado NULL` pasar la comprobación de estado. La consulta agregada del propietario mostró **una directiva aprobada y ninguna cuenta privilegiada con estado NULL**; el riesgo de futuras filas inválidas persiste. El controlador de directiva solo aprueba o rechaza solicitudes pendientes; la inactivación del panel corresponde a atletas.
 4. **Identidades y pruebas:** el DDL recibido no declara unicidad de `usuarios.cedula` ni `atletas.cedula`; el código coordina altas con bloqueo asesor y comprobaciones, pero eso no protege escritores SQL ajenos. Los esquemas temporales de algunas pruebas sí declaran esas unicidades y no reproducen el `CHECK` de estados; no asumir que sus resultados certifican esas restricciones en producción.
 5. **Auditoría:** el DDL recibido usa `audit_uploads.meta TEXT`, mientras la prueba web temporal crea `JSONB`; `utils/auditLogger.js` envía JSON serializado como texto. `scripts/purge_audit.js` contiene DDL y sintaxis MySQL incompatibles con PostgreSQL; no ejecutarlo ni definir retención por inferencia.
 
@@ -122,7 +123,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - Eventos nuevos: desde hoy en Caracas hasta el 31 de diciembre del año siguiente.
 - Los históricos fuera del rango se conservan.
 - [PR #17](https://github.com/josentss/jaguares/pull/17) desplegó código que exige `HH:mm` para eventos nuevos y usa `hora_evento TIME WITHOUT TIME ZONE` nullable. La interfaz presenta la hora civil de Venezuela cuando existe; los históricos deben quedar sin hora.
-- El esquema comunicado todavía no incluye `hora_evento`. Confirmar en catálogo la ausencia y el tipo real antes de aplicar la migración aditiva autorizada; ese `ALTER` puede restaurar las consultas, pero no corrige la diferencia independiente `fecha_evento timestamptz`/`DATE`. No se ha probado el flujo nuevo en producción.
+- Supabase ya contiene `hora_evento` nullable y la ruta pública responde HTTP 200. Todavía falta comprobar en producción un evento nuevo con hora en los dos paneles y el calendario, y fusionar el [PR #19](https://github.com/josentss/jaguares/pull/19) para el `timestamptz` real.
 - Las notificaciones son informativas y de mejor esfuerzo; no hay lectura persistente.
 
 ## 5. Riesgos y deuda vigentes
@@ -159,7 +160,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 
 Cada punto debe ir en un PR separado y conservar compatibilidad.
 
-1. **Integridad del calendario y esquema.** PR #17 fusionado y desplegado; verificar el esquema efectivo, resolver el contrato `fecha_evento timestamptz`/`DATE`, coordinar `hora_evento` y probar producción sin alterar históricos a ciegas.
+1. **Integridad del calendario y esquema.** Hora agregada y ruta pública restaurada; revisar el [PR #19](https://github.com/josentss/jaguares/pull/19) de fecha civil sobre `timestamptz` real, preservar los nueve días históricos y probar los paneles en Production sin datos ficticios.
 2. **Pagos guiados por deuda.** Solo conceptos pendientes, monto oficial y conversión. Bloqueado hasta definir tarifa, moneda base, tasa, redondeo, vencimientos y pagos parciales.
 3. **Categorías, equipos y temporadas.** Asignación por edad, temporada y rendimiento; requiere reglas deportivas.
 4. **Traspasos y plantillas.** Historial de movimientos y plantillas por categoría, después del modelo anterior.
@@ -201,6 +202,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Priorizar la reconciliación del esquema real con el calendario antes de seguir la hoja de ruta. Hacer primero consultas de metadatos de solo lectura en Supabase (`information_schema.columns`, `pg_constraint`, `pg_indexes` y zona horaria de la conexión), sin exponer datos personales. Si se confirma que falta `hora_evento`, coordinar la migración nullable ya versionada y verificar el calendario. Después, en un PR separado, reproducir el DDL relevante en PostgreSQL temporal, definir una corrección compatible para `fecha_evento` y ejecutar pruebas de zona horaria e históricos. No aplicar conversiones de tipo ni rellenos de hora sin auditar los datos existentes.
+Revisar el [PR #19](https://github.com/josentss/jaguares/pull/19) de fecha civil compatible con `timestamptz`, sin reescribir filas ni ejecutar otra migración. El día elegido por la directiva debe permanecer como `YYYY-MM-DD` en API, paneles y calendario independientemente de la zona de conexión; la hora local permanece en `hora_evento`. Después del merge autorizado, confirmar el SHA en Production y hacer un recorrido con un evento legítimo.
 
-Evidencia: el PR #17 pasó CI y Vercel marcó `success` para Production; el 6 de noviembre el calendario público respondió HTTP 500. El DDL fue proporcionado por el propietario y no se verificó mediante conexión directa a Supabase. Las pruebas del PR #17 usaron `fecha_evento DATE`, no el `timestamptz` comunicado; su resultado no demuestra compatibilidad con el esquema efectivo.
+Evidencia del propietario del 6 de noviembre: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; 9 eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. La ruta pública respondió HTTP 200 tras añadir la hora. El PR #19 se revalidó localmente con sintaxis de 46 archivos JavaScript, 96 pruebas backend y 76 pruebas de PostgreSQL temporal/Playwright en escritorio y móvil; sus checks iniciales de GitHub y Vercel también pasaron. Esto no prueba aún la creación ni presentación de un evento nuevo en Production.

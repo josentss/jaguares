@@ -115,7 +115,8 @@ test('eventos públicos: la consulta excluye fechas vencidas usando el día civi
     const res = respuesta();
     await cms.obtenerEventosPublicos({}, res);
     assert.equal(res.statusCode, 200);
-    assert.match(consulta.sql, /fecha_evento >= \?/);
+    assert.match(consulta.sql, /fecha_evento >= \(\?::date::timestamp AT TIME ZONE 'UTC'\)/);
+    assert.match(consulta.sql, /to_char\(fecha_evento AT TIME ZONE 'UTC', 'YYYY-MM-DD'\)/);
     assert.deepEqual(consulta.params, [hoyCaracasISO()]);
 });
 

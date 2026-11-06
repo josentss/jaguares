@@ -6,6 +6,8 @@ const { Writable } = require('node:stream');
 const { configurarPostgresTemporal } = require('./helpers/postgres');
 
 const esquema = configurarPostgresTemporal();
+// Contrato civil independiente de la zona horaria de la conexión PostgreSQL.
+process.env.PGOPTIONS += ' -c TimeZone=Asia/Tokyo';
 process.env.JWT_SECRET = 'clave-sintetica-flujos-locales';
 process.env.NODE_ENV = 'test';
 process.env.TRUST_PROXY = '0';
@@ -53,6 +55,7 @@ const errores = [];
 test.before(async () => {
     await db.pool.query(`CREATE SCHEMA ${esquema}`);
     creado = true;
+    assert.equal((await db.pool.query("SELECT current_setting('TimeZone') AS tz")).rows[0].tz, 'Asia/Tokyo');
     await db.pool.query(`
         CREATE TABLE usuarios (
             id_usuario SERIAL PRIMARY KEY, nombres TEXT, apellidos TEXT,
@@ -74,13 +77,13 @@ test.before(async () => {
             id_notificacion SERIAL PRIMARY KEY, id_usuario INTEGER REFERENCES usuarios(id_usuario),
             mensaje TEXT, tipo TEXT, fecha TIMESTAMPTZ DEFAULT now()
         );
-        CREATE TABLE eventos (id_evento SERIAL PRIMARY KEY, titulo TEXT, fecha_evento DATE, lugar TEXT, estado TEXT);
+        CREATE TABLE eventos (id_evento SERIAL PRIMARY KEY, titulo TEXT, fecha_evento TIMESTAMPTZ NOT NULL, lugar TEXT, estado TEXT);
         CREATE TABLE noticias (id_noticia SERIAL PRIMARY KEY, titulo TEXT, resumen TEXT, contenido TEXT,
             imagen_url TEXT, fecha_publicacion TIMESTAMPTZ DEFAULT now(), estado TEXT);
         CREATE TABLE audit_uploads (id SERIAL PRIMARY KEY, ts TIMESTAMPTZ, success BOOLEAN, reason TEXT,
             user_id INTEGER, original_name TEXT, stored_filename TEXT, ip TEXT, meta JSONB);
     `);
-    await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Histórico sin hora', '2020-01-01', 'Cancha', 'completado')");
+    await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Histórico sin hora', TIMESTAMPTZ '2020-01-01 00:00:00+00', 'Cancha', 'completado')");
     await db.pool.query(await fs.readFile(require('node:path').join(__dirname, '../migrations/2026-11-05_eventos_hora.sql'), 'utf8'));
     assert.equal((await db.pool.query("SELECT hora_evento FROM eventos WHERE titulo='Histórico sin hora'")).rows[0].hora_evento, null);
     const hash = await bcrypt.hash(clave,10);
@@ -430,15 +433,20 @@ test('flujo real: calendario crea y cancela el evento desde directiva y actualiz
         const historico = page.locator('#body-eventos tr').filter({hasText:'Histórico sin hora'});
         await historico.waitFor();
         assert.equal((await historico.textContent()).includes('undefined'), false);
+        const admin = (await (await page.request.get(base+'/api/cms/admin/eventos')).json()).eventos;
+        assert.equal(admin.find(e=>e.titulo==='Histórico sin hora').fecha_evento, '2020-01-01');
         await page.locator('#evento-titulo').fill('Encuentro de Prueba');
         await page.locator('#evento-lugar').fill('Cancha de pruebas');
         await page.locator('#evento-fecha').fill(hoy);
         await page.locator('#evento-hora').fill('14:30');
         const creado = await enviar(page,'#form-evento','/api/cms/admin/eventos',201);
+        const guardado = await db.pool.query('SELECT fecha_evento FROM eventos WHERE id_evento=$1',[creado.id_evento]);
+        assert.equal(guardado.rows[0].fecha_evento.toISOString(), `${hoy}T00:00:00.000Z`);
         const publico = async () => (await (await page.request.get(base+'/api/cms/public/eventos')).json()).eventos;
         assert.equal((await publico()).some(e=>e.titulo==='Evento vencido'),false);
         assert.equal((await publico()).some(e=>e.id_evento===creado.id_evento),true);
         assert.equal((await publico()).find(e=>e.id_evento===creado.id_evento).hora_evento,'14:30');
+        assert.equal((await publico()).find(e=>e.id_evento===creado.id_evento).fecha_evento,hoy);
         const fila = page.locator('#body-eventos tr').filter({hasText:'Encuentro de Prueba'});
         await fila.getByText('14:30 (Venezuela)').waitFor();
         for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {

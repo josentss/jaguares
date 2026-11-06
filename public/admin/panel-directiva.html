@@ -1958,6 +1958,11 @@
         }
         document.getElementById('eventos-tab-proximos')?.addEventListener('click', () => cambiarVistaEventos('proximos'));
         document.getElementById('eventos-tab-historial')?.addEventListener('click', () => cambiarVistaEventos('historial'));
+        // Revalidar estado efectivo cuando la directiva vuelve al apartado, incluso
+        // si el panel permaneció abierto al cambiar el día civil en Caracas.
+        document.querySelector('[data-target="sec-cms"]')?.addEventListener('click', () => {
+            if (currentUser) cargarEventosAdmin();
+        });
 
         function badgeEvento(estado) {
             const e = (estado || 'proximo').toLowerCase();

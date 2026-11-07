@@ -2003,8 +2003,9 @@
             }
 
             function enfocarOpcion() {
-                const seleccionada = panel.querySelector('.evento-reloj-opcion[aria-pressed="true"]:not([disabled])');
-                (seleccionada || panel.querySelector('.evento-reloj-opcion:not([disabled])'))?.focus();
+                const vista = vistaMinutos.hidden ? vistaHoras : vistaMinutos;
+                const seleccionada = vista.querySelector('.evento-reloj-opcion[aria-pressed="true"]:not([disabled])');
+                (seleccionada || vista.querySelector('.evento-reloj-opcion:not([disabled])'))?.focus();
             }
 
             function mostrarEtapa(etapa, enfocar = true) {

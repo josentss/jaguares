@@ -101,3 +101,23 @@ test('cloudinary: nunca redirigir hacia origen externo, carpeta ajena o URL mani
         assert.throws(() => enlaceAutorizado(url, 'jaguares/atletas'), /Origen de archivo no permitido/);
     }
 });
+
+
+test('auditoría: resume referencias anonimizadas sin publicar links o identificadores', () => {
+    const { resumir, clasificar } = require('../scripts/auditar-cloudinary');
+    const publico = prefijo + '/image/upload/v123/jaguares/atletas/niño-sintetico.png';
+    const privado = prefijo + '/image/authenticated/v123/jaguares/atletas/niño-sintetico.pdf';
+    assert.equal(clasificar(publico, 'jaguares/atletas'), 'publico');
+    assert.equal(clasificar(privado, 'jaguares/atletas'), 'autenticado');
+    const salida = resumir([
+        ['fotos', 'jaguares/atletas', [publico, privado, null, 'https://example.org/personal.png']],
+        ['comprobantes', 'jaguares_comprobantes', ['jaguares_comprobantes/recibo.jpg']]
+    ]);
+    assert.equal(salida.fotos.total, 4);
+    assert.equal(salida.fotos.publico, 1);
+    assert.equal(salida.fotos.autenticado, 1);
+    assert.equal(salida.fotos.sin_archivo, 1);
+    assert.equal(salida.fotos.revisar_manual, 1);
+    assert.equal(salida.comprobantes.referencia_legacy_sin_url, 1);
+    assert.doesNotMatch(JSON.stringify(salida), /niño-sintetico|recibo\.jpg|example\.org/);
+});

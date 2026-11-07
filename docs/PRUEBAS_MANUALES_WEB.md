@@ -64,7 +64,7 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Origen permitido:** desde la ficha de un atleta propio y la planilla directiva, un JPG/PNG/PDF histórico con URL de la cuenta y carpeta de Jaguares sigue abriéndose.
 - [ ] **Destino incorrecto:** una URL de otro dominio, nube, carpeta o formato no permite redirigir fuera de Cloudinary; la API informa documento no disponible, sin exponer enlaces.
 - [ ] **Metadatos históricos:** verificar en Media Library que ejemplos de ambas carpetas sean Públicos; no asumir que el recurso completo fue inventariado solo con dos muestras.
-- [ ] **Inventario anónimo:** ejecutar `node scripts/auditar-cloudinary.js` solo con acceso autorizado y confirmar que la salida contiene conteos por categoría, sin URL ni datos personales; no se realizan actualizaciones SQL.
+- [ ] **Inventario anónimo:** después de PR #27, ejecutar `node scripts/auditar-cloudinary.js` en la carpeta del proyecto y con `.env` local autorizado, comprobar que carga `DATABASE_URL` y `CLOUDINARY_CLOUD_NAME`, y confirmar salida con solo conteos por categoría. No compartir el `.env`, URL ni datos personales; no se realizan actualizaciones SQL.
 - [ ] **Antes de activar authenticated:** comprobar entrega firmada/no firmada de foto, comprobante y PDF sintéticos en Preview. El checkbox de entrega PDF/ZIP habilitado no prueba por sí solo que ya funcione el flujo completo con `authenticated`.
 - [ ] **Históricos:** no modificar activos reales ni ejecutar `rename`, reemplazos SQL o invalidación de CDN sin revisión del inventario y autorización explícita.
 

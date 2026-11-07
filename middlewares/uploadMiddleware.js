@@ -2,6 +2,7 @@ require('dotenv').config();
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { storageConValidacion } = require('../utils/archivosSeguros');
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -20,8 +21,8 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({
-    storage,
-    limits: { fileSize: 5 * 1024 * 1024 }
+    storage: storageConValidacion(storage, { captura: ['jpg', 'png', 'webp'] }),
+    limits: { fileSize: 5 * 1024 * 1024, files: 1 }
 });
 
 // ── Noticias CMS ───────────────────────────────────────────────────────────
@@ -35,8 +36,8 @@ const storageNoticias = new CloudinaryStorage({
 });
 
 const uploadNoticias = multer({
-    storage: storageNoticias,
-    limits: { fileSize: 5 * 1024 * 1024 },
+    storage: storageConValidacion(storageNoticias, { imagen_noticia: ['jpg', 'png', 'gif', 'webp'] }),
+    limits: { fileSize: 5 * 1024 * 1024, files: 1 },
     fileFilter: (req, file, cb) => {
         const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (allowed.includes(file.mimetype)) cb(null, true);
@@ -56,8 +57,12 @@ const storageAtletas = new CloudinaryStorage({
 });
 
 const uploadAtleta = multer({
-    storage: storageAtletas,
-    limits: { fileSize: 5 * 1024 * 1024 },
+    storage: storageConValidacion(storageAtletas, {
+        foto: ['jpg', 'png', 'webp'],
+        cedula_archivo: ['jpg', 'png', 'webp', 'pdf'],
+        partida_nacimiento: ['jpg', 'png', 'webp', 'pdf']
+    }),
+    limits: { fileSize: 5 * 1024 * 1024, files: 3 },
     fileFilter: (req, file, cb) => {
         const okImage = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         const okDoc = [...okImage, 'application/pdf', 'application/x-pdf'];
@@ -109,8 +114,10 @@ const handleUploadError = (err, req, res, next) => {
     next();
 };
 
-async function validarMagicBytes() {
-    return true;
+// Las firmas se comprueban antes del upload; el marcador solo existe tras
+// la validación de bytes, MIME y extensión dentro de storageConValidacion.
+async function validarMagicBytes(file) {
+    return file?.firmaValidada === true;
 }
 
 module.exports = {
@@ -127,7 +134,7 @@ module.exports = {
     },
     logUploadExitoso: (req, res, next) => {
         if (req.file) {
-            console.log(`[UPLOAD] ${req.file.originalname} → ${req.file.path}`);
+            console.log('[UPLOAD] Archivo validado y almacenado');
         }
         next();
     }

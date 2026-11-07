@@ -76,6 +76,13 @@ test.before(async () => {
             if (pathname === '/api/atletas/representante/5') return json(res, {
                 success: true, atletas: soloInactivos ? atletas.slice(1) : atletas
             });
+            if (pathname === '/api/atletas/11') return json(res, {
+                success: true, atleta: {id_atleta:11, documentos:{
+                    foto_url:'/api/atletas/11/documentos/foto',
+                    cedula_archivo_url:'/api/atletas/11/documentos/cedula_archivo',
+                    partida_nacimiento_url:null
+                }}
+            });
             if (pathname === '/api/pagos/historial/5') return json(res, {
                 success: true, datos: [{
                     id_pago: 1, atl_nombres: atletaXss, atl_apellidos: 'Activo',
@@ -135,6 +142,15 @@ for (const dispositivo of [
             );
             assert.equal(await page.locator('#table-my-pagos tbody img').count(), 0);
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), false);
+            await page.locator('#table-my-atletas button[data-docs-atleta="11"]').click();
+            await page.locator('#documentos-atleta-modal').waitFor({state:'visible'});
+            await page.waitForFunction(() => document.querySelectorAll('#documentos-atleta-enlaces a').length === 2);
+            assert.equal(await page.locator('#documentos-atleta-enlaces a').count(), 2);
+            assert.equal(await page.locator('#documentos-atleta-enlaces a[href="/api/atletas/11/documentos/foto"]').count(), 1);
+            assert.equal(await page.locator('#documentos-atleta-enlaces a[href="/api/atletas/11/documentos/cedula_archivo"]').count(), 1);
+            assert.equal(await page.locator('#documentos-atleta-enlaces img').count(), 0);
+            await page.locator('#documentos-atleta-cerrar').click();
+            assert.equal(await page.locator('#documentos-atleta-modal').isVisible(), false);
             await fs.mkdir('test-artifacts', {recursive: true});
             await page.screenshot({path: 'test-artifacts/representante-' + dispositivo.nombre + '.png', fullPage: true});
             assert.deepEqual(errores, []);

@@ -284,6 +284,42 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
         assert.equal(ficha.status,200);
         assert.equal((await ficha.json()).atleta.representante.id_representante,1);
 
+        // Los archivos se resuelven por ID y propiedad en PostgreSQL, no por
+        // URL/Cloudinary public_id aportado por el cliente.
+        await db.pool.query('UPDATE atletas SET foto_url=$1, cedula_archivo_url=$2 WHERE id_atleta=$3',
+            ['https://example.org/foto-sintetica.png', 'https://example.org/cedula-sintetica.pdf', id]);
+        const rutaFoto = `/api/atletas/${id}/documentos/foto`;
+        for (const ruta of [rutaFoto, `/api/atletas/${id}/documentos/cedula_archivo`]) {
+            assert.equal((await fetch(base + ruta, {redirect:'manual'})).status,401);
+            assert.equal((await fetch(base + ruta, {
+                headers:{cookie:`token=${token(2)}`},redirect:'manual'
+            })).status,403);
+            for (const usuario of [1,4]) {
+                const permitido = await fetch(base + ruta, {
+                    headers:{cookie:`token=${token(usuario)}`},redirect:'manual'
+                });
+                assert.equal(permitido.status,302);
+                assert.match(permitido.headers.get('location'),/^https:\/\/example\.org\//);
+                assert.equal(permitido.headers.get('cache-control'),'no-store');
+            }
+        }
+        const fichaAutorizada = await fetch(base+`/api/atletas/${id}`,{
+            headers:{cookie:`token=${token(1)}`}});
+        const doc = (await fichaAutorizada.json()).atleta.documentos;
+        assert.equal(doc.foto_url,rutaFoto);
+        assert.equal(doc.cedula_archivo_url,`/api/atletas/${id}/documentos/cedula_archivo`);
+        assert.equal(doc.partida_nacimiento_url,null);
+        const familia = await fetch(base+'/api/atletas/representante/1',{
+            headers:{cookie:`token=${token(1)}`}});
+        assert.ok((await familia.json()).atletas.some(a=>a.id_atleta===id&&a.foto_url===rutaFoto));
+        const historial = await fetch(base+'/api/pagos/historial/1',{
+            headers:{cookie:`token=${token(1)}`}});
+        const pagoLista=(await historial.json()).datos.find(p=>p.id_pago===pago.rows[0].id_pago);
+        assert.equal(pagoLista.ruta_captura,captura);
+        assert.equal((await fetch(base+`/api/atletas/${id}/documentos/otro`,{
+            headers:{cookie:`token=${token(1)}`}})).status,400);
+        await db.pool.query('UPDATE atletas SET foto_url=NULL, cedula_archivo_url=NULL WHERE id_atleta=$1',[id]);
+
         // Owner/state come from the session/server. Document URLs come only
         // from Multer's req.files, never from client-supplied JSON fields.
         const alta=await fetch(base+'/api/atletas/registrar-atleta',{

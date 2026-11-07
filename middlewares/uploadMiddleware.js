@@ -3,6 +3,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { storageConValidacion } = require('../utils/archivosSeguros');
+const { esCargaPrivadaHabilitada } = require('../utils/cloudinaryPrivado');
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -15,6 +16,7 @@ const storage = new CloudinaryStorage({
     cloudinary,
     params: {
         folder: 'jaguares_comprobantes',
+        type: esCargaPrivadaHabilitada() ? 'authenticated' : 'upload',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
         transformation: [{ width: 1200, crop: 'limit' }]
     }
@@ -50,6 +52,7 @@ const storageAtletas = new CloudinaryStorage({
     cloudinary,
     params: {
         folder: 'jaguares/atletas',
+        type: esCargaPrivadaHabilitada() ? 'authenticated' : 'upload',
         resource_type: 'auto',
         public_id: (req, file) =>
             `${Date.now()}-${file.fieldname}-${Math.random().toString(36).slice(2, 8)}`

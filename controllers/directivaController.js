@@ -109,7 +109,10 @@ exports.obtenerAuditoria = async (req, res) => {
                             tasa_bcv,
                             tasa_fecha,
                             atletas: listaAtletas,
-                            pagos: listaPagos
+                            pagos: listaPagos.map(p => ({
+                                ...p,
+                                ruta_captura: p.ruta_captura ? `/api/pagos/captura/${p.id_pago}` : null
+                            }))
                         });
                     });
                 });

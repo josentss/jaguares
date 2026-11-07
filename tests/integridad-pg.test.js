@@ -317,6 +317,24 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
             headers:{cookie:`token=${token(1)}`}});
         const pagoLista=(await historial.json()).datos.find(p=>p.id_pago===pago.rows[0].id_pago);
         assert.equal(pagoLista.ruta_captura,captura);
+
+        // Incluso el propietario NO debe recibir un redirect a un dominio
+        // ajeno si una referencia histórica fue dañada o alterada.
+        await db.pool.query('UPDATE atletas SET foto_url=$1 WHERE id_atleta=$2',
+            ['https://example.org/documento-ajeno.jpg', id]);
+        const fueraDeCloud = await fetch(base+rutaFoto,{
+            headers:{cookie:`token=${token(1)}`},redirect:'manual'
+        });
+        assert.equal(fueraDeCloud.status,503);
+        assert.equal(fueraDeCloud.headers.get('location'),null);
+        await db.pool.query('UPDATE pagos SET ruta_captura=$1 WHERE id_pago=$2',
+            ['https://example.org/comprobante-ajeno.png',pago.rows[0].id_pago]);
+        const reciboAjeno = await fetch(base+captura,{
+            headers:{cookie:`token=${token(1)}`},redirect:'manual'
+        });
+        assert.equal(reciboAjeno.status,503);
+        assert.equal((await reciboAjeno.json()).success,false);
+
         assert.equal((await fetch(base+`/api/atletas/${id}/documentos/otro`,{
             headers:{cookie:`token=${token(1)}`}})).status,400);
         await db.pool.query('UPDATE atletas SET foto_url=NULL, cedula_archivo_url=NULL WHERE id_atleta=$1',[id]);

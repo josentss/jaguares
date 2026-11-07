@@ -5,6 +5,7 @@ const http = require('node:http');
 const { configurarPostgresTemporal } = require('./helpers/postgres');
 const esquema = configurarPostgresTemporal();
 process.env.JWT_SECRET = 'clave-sintetica-solo-pruebas-integridad';
+process.env.CLOUDINARY_CLOUD_NAME = 'nube-sintetica';
 const db = require('../config/db');
 const atletas = require('../controllers/atletaController');
 const usuarios = require('../controllers/userController');
@@ -268,7 +269,7 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
         const {rows}=await db.pool.query('SELECT id_atleta FROM atletas WHERE id_representante = 1 LIMIT 1');
         const id=rows[0].id_atleta;
         const pago=await db.pool.query('INSERT INTO pagos (id_atleta,ruta_captura) VALUES ($1,$2) RETURNING id_pago',
-            [id,'https://example.org/comprobante-sintetico']);
+            [id,'https://res.cloudinary.com/nube-sintetica/image/upload/v1/jaguares_comprobantes/comprobante-sintetico.png']);
         const captura=`/api/pagos/captura/${pago.rows[0].id_pago}`;
         for (const ruta of [`/api/atletas/${id}`,'/api/usuarios/perfil/1','/api/atletas/representante/1','/api/pagos/historial/1',captura]) {
             assert.equal((await fetch(base+ruta)).status,401);
@@ -287,7 +288,7 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
         // Los archivos se resuelven por ID y propiedad en PostgreSQL, no por
         // URL/Cloudinary public_id aportado por el cliente.
         await db.pool.query('UPDATE atletas SET foto_url=$1, cedula_archivo_url=$2 WHERE id_atleta=$3',
-            ['https://example.org/foto-sintetica.png', 'https://example.org/cedula-sintetica.pdf', id]);
+            ['https://res.cloudinary.com/nube-sintetica/image/upload/v1/jaguares/atletas/foto-sintetica.png', 'https://res.cloudinary.com/nube-sintetica/image/upload/v1/jaguares/atletas/cedula-sintetica.pdf', id]);
         const rutaFoto = `/api/atletas/${id}/documentos/foto`;
         for (const ruta of [rutaFoto, `/api/atletas/${id}/documentos/cedula_archivo`]) {
             assert.equal((await fetch(base + ruta, {redirect:'manual'})).status,401);
@@ -299,7 +300,7 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
                     headers:{cookie:`token=${token(usuario)}`},redirect:'manual'
                 });
                 assert.equal(permitido.status,302);
-                assert.match(permitido.headers.get('location'),/^https:\/\/example\.org\//);
+                assert.match(permitido.headers.get('location'),/^https:\/\/res\.cloudinary\.com\/nube-sintetica\/image\/upload\//);
                 assert.equal(permitido.headers.get('cache-control'),'no-store');
             }
         }

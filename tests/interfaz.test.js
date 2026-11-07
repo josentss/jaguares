@@ -513,10 +513,47 @@ for (const dispositivo of [
 
             await page.locator('#evento-titulo').fill('Encuentro civil');
             await page.locator('#evento-lugar').fill('Cancha sintética');
-            await page.locator('#evento-hora-hora').selectOption('14');
-            await page.locator('#evento-hora-minuto').selectOption('30');
-            assert.equal(await page.locator('#evento-hora-hora option:enabled').count(), 19);
-            assert.equal(await page.locator('#evento-hora-minuto option:enabled').count(), 13);
+            const reloj = page.locator('#evento-hora-boton');
+            const popover = page.locator('#evento-reloj-panel');
+            await reloj.click();
+            assert.equal(await popover.isVisible(), true);
+            assert.equal(await page.locator('#evento-reloj-horas-am .evento-reloj-opcion').count(), 7);
+            assert.equal(await page.locator('#evento-reloj-horas-pm .evento-reloj-opcion').count(), 11);
+            assert.equal(await page.locator('[data-hora="05"]').textContent(), '5 a. m.');
+            assert.equal(await page.locator('[data-hora="14"]').textContent(), '2 p. m.');
+            const limitesReales = await popover.boundingBox();
+            assert.ok(limitesReales.x >= 0 && limitesReales.y >= 0);
+            assert.ok(limitesReales.x + limitesReales.width <= dispositivo.viewport.width + 1);
+            assert.ok(limitesReales.y + limitesReales.height <= dispositivo.viewport.height + 1);
+            await page.locator('[data-hora="22"]').click();
+            assert.equal(await popover.isHidden(), true);
+            assert.equal(await page.locator('#evento-hora').inputValue(), '22:00');
+            assert.match(await reloj.textContent(), /10:00 p\. m\./);
+
+            await reloj.click();
+            await page.locator('[data-hora="05"]').click();
+            assert.equal(await page.locator('#evento-reloj-vista-minutos').isVisible(), true);
+            assert.equal(await page.locator('#evento-reloj-minutos .evento-reloj-opcion').count(), 12);
+            assert.equal(await page.locator('#evento-reloj-vista-horas').isHidden(), true);
+            await page.locator('[data-minuto="00"]').click();
+            assert.equal(await page.locator('#evento-hora').inputValue(), '05:00');
+            assert.match(await reloj.textContent(), /5:00 a\. m\./);
+
+            await reloj.click();
+            await page.keyboard.press('Escape');
+            assert.equal(await popover.isHidden(), true);
+            assert.equal(await page.locator('#evento-hora').inputValue(), '05:00');
+
+            await page.locator('#form-evento').evaluate(formulario => formulario.reset());
+            assert.equal(await page.locator('#evento-hora').inputValue(), '');
+            assert.match(await reloj.textContent(), /Elegir hora del encuentro/);
+            await reloj.click();
+            await page.locator('[data-hora="14"]').click();
+            await page.locator('[data-minuto="30"]').click();
+            assert.equal(await page.locator('#evento-hora').inputValue(), '14:30');
+            assert.match(await reloj.textContent(), /2:30 p\. m\./);
+            await page.locator('#evento-titulo').fill('Encuentro civil');
+            await page.locator('#evento-lugar').fill('Cancha sintética');
             await fecha.fill('2026-11-02');
             assert.equal(await fecha.evaluate(campo => campo.validity.valid), true);
             const enviada = page.waitForRequest(request =>

@@ -6,10 +6,10 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
-- `main` remoto verificado el 7 de noviembre de 2026: `bab5dee8ae480ab4d68534c1b876287a29e97346` (merge PR #21).
-- PR #1 al #21 fusionados. El [PR #20](https://github.com/josentss/jaguares/pull/20) dejó validados por el propietario el calendario público, el historial, los estados y la papelera. El [PR #21](https://github.com/josentss/jaguares/pull/21) se fusionó y el propietario confirmó su despliegue, pero pidió simplificar el selector de hora. [PR #22](https://github.com/josentss/jaguares/pull/22) abierto como borrador para el diseño compacto acordado; no fusionado.
+- `main` remoto verificado el 7 de noviembre de 2026: `b054addd6912f33c6e8b7e27369a780150aa0816` (merge PR #22).
+- PR #1 al #22 fusionados. El propietario comprobó en Vercel el calendario público, historial, estados, papelera y selector de hora compacto tras el [PR #22](https://github.com/josentss/jaguares/pull/22). [PR #23](https://github.com/josentss/jaguares/pull/23) en borrador, dedicado a limpiar textos redundantes y mejorar el tamaño táctil de los minutos; no fusionado.
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
-- El último despliegue Production, asociado al PR #18, figura como `success`; el CI del PR #18 pasó.
+- El propietario confirmó despliegue en Vercel de PR #22 tras fusionarlo. No se ha comprobado independientemente el SHA exacto actualmente desplegado en Production; no equiparar Preview con Production.
 - En el SHA del PR #19 pasó el CI `Sintaxis y pruebas backend` y su Preview estuvo disponible. El propietario compartió capturas de calendario y panel funcionando tras la fusión; no se ha verificado aquí el SHA efectivo en Production.
 - Tras añadir `hora_evento` en Supabase, el propietario confirmó `time without time zone` nullable. `GET /api/cms/public/eventos` pasó de HTTP 500 a 200 el 6 de noviembre de 2026.
 - El propietario confirmó manualmente en Production el comportamiento del PR #15.
@@ -126,7 +126,8 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - Supabase ya contiene `hora_evento` nullable. El [PR #19](https://github.com/josentss/jaguares/pull/19) fue fusionado; el propietario verificó visualmente registro y presentación de evento con hora. Falta una confirmación trazable del SHA de Production.
 - **PR #20 fusionado y probado visualmente por el propietario:** horas de 05:00 a 22:00 (cada cinco minutos; a las 22:00 solo minuto 00), estado «Completado» derivado al día civil siguiente sin reescribir históricos, aviso, Programados/Historial, DELETE confirmado autorizado y listado público compacto/filtrable. No hay cron ni eliminación automática.
 - **PR #21 fusionado:** introdujo el selector visual de hora a. m./p. m., manteniendo `HH:mm` en API, pero el propietario consideró su diálogo desplegable demasiado grande. Confirmó la funcionalidad y despliegue, sin validar aquí el SHA efectivo de Production.
-- **PR #22 en revisión:** reemplaza solamente el selector de hora del panel de directiva por un popover compacto sin encabezados ni resumen repetido. Una fila con hora en formato 12h, a. m./p. m. y cerrar; dos filas de minutos rápidos en pasos de cinco. El valor `2:30 p. m.` aparece únicamente en el campo principal y API sigue recibiendo `14:30`. Sin cambios de esquema, backend, eventos históricos ni calendario público. Pendientes: CI y revisión visual del propietario.
+- **PR #22 fusionado, probado visualmente y desplegado según el propietario:** popover compacto con hora en formato 12h, a. m./p. m. y minutos rápidos. El valor legible aparece solo en el campo; API conserva `HH:mm`. El propietario registró y verificó eventos correctamente.
+- **PR #23 (borrador):** elimina el texto visible bajo «Hora», el «de 5 en 5» del selector y el párrafo permanente sobre estados. Mantiene el mensaje de horario oculto visualmente pero disponible para tecnologías asistivas, las etiquetas útiles y el aviso dinámico de eventos completados. Aumenta discretamente el área táctil de minutos. Sin cambios de API, datos, lógica o calendario público; pendiente CI y validación del Preview.
 - Las notificaciones son informativas y de mejor esfuerzo; no hay lectura persistente.
 
 ## 5. Riesgos y deuda vigentes
@@ -163,7 +164,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 
 Cada punto debe ir en un PR separado y conservar compatibilidad.
 
-1. **Cerrar calendario y experiencia.** PR #19 fusionado; probar rama de horario, historial derivado, eliminación protegida y listado público; después comprobar CI, revisar diff y solicitar autorización para merge. Mantener sin cambios los nueve días históricos.
+1. **Cerrar calendario y experiencia.** PR #19–#22 fusionados y probados visualmente por el propietario; validar PR #23 (limpieza de textos) en CI y Preview, autorizar su merge y confirmar el SHA desplegado antes de cerrar la fase. Mantener intactos los nueve días históricos.
 2. **Pagos guiados por deuda.** Solo conceptos pendientes, monto oficial y conversión. Bloqueado hasta definir tarifa, moneda base, tasa, redondeo, vencimientos y pagos parciales.
 3. **Categorías, equipos y temporadas.** Asignación por edad, temporada y rendimiento; requiere reglas deportivas.
 4. **Traspasos y plantillas.** Historial de movimientos y plantillas por categoría, después del modelo anterior.
@@ -205,6 +206,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Revisar el [PR #22](https://github.com/josentss/jaguares/pull/22) del reloj compacto: tamaño y ubicación en escritorio/móvil, cambio a. m./p. m., intervalos de cinco minutos, horas límite 05:00 y 22:00, cierre sin guardar, reset y envío `HH:mm`. Verificar CI/Playwright/PostgreSQL temporal y Preview antes de solicitar autorización para merge; no modificar API, base ni históricos.
+Revisar el [PR #23](https://github.com/josentss/jaguares/pull/23): comprobar en escritorio/móvil la retirada de textos visibles redundantes, la ayuda accesible, el tamaño táctil y la permanencia de estados, filtros y avisos del historial. Confirmar CI (backend + PostgreSQL temporal/Playwright) y Preview; pedir autorización antes de fusionar, verificar Production posteriormente y cerrar calendario. **Siguiente bloque potencial:** riesgos de seguridad/privacidad e integridad documentados en §5. La hoja de ruta sitúa pagos guiados por deuda en segundo lugar, pero está bloqueado hasta que el club defina tarifas, moneda, tasas, vencimientos y pagos parciales.
 
-Evidencia previa: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; nueve eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. El PR #19 pasó validaciones anteriores a su fusión; el propietario compartió capturas del funcionamiento posterior. Los PR #19, #20 y #21 están fusionados; el propietario verificó el funcionamiento de las fases anteriores. El PR #22 debe aportar resultados propios de CI y la inspección visual del diseño compacto; no afirmar pruebas de Production sin evidencia de su SHA.
+Evidencia previa: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; nueve eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. El PR #19 pasó validaciones anteriores a su fusión; el propietario compartió capturas del funcionamiento posterior. PR #19–#22 están fusionados; el propietario verificó visualmente el calendario completo tras #22 y su despliegue en Vercel. El PR #23 debe aportar sus propios resultados de CI y revisión de Preview. No afirmar validación independiente de Production ni cambios de datos históricos.

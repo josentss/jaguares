@@ -1039,19 +1039,119 @@ tr:hover td { background-color: #f8fafc; }
     gap: 16px 20px;
     align-items: start;
 }
-#form-evento .evento-hora-selectores {
+/* Selector horario de eventos (no modifica estilos de otros formularios). */
+#form-evento .evento-reloj { width: 100%; }
+#form-evento .evento-reloj-boton {
     display: flex;
     align-items: center;
-    gap: 10px;
-}
-#form-evento .evento-hora-selectores select {
-    min-width: 0;
-    flex: 1 1 0;
-    cursor: pointer;
+    gap: 12px;
+    width: 100%;
+    min-height: 49px;
+    padding: 11px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
     background: #fff;
+    color: var(--text-main);
+    font: inherit;
+    font-size: .9rem;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .2s ease;
 }
-#form-evento .evento-hora-selectores > span { font-weight: 700; }
-#form-evento .evento-hora-ayuda { color: var(--text-muted); font-size: 0.75rem; line-height: 1.45; }
+#form-evento .evento-reloj-boton > svg { flex: 0 0 auto; }
+#form-evento .evento-reloj-boton > svg:first-child { color: var(--naranja); }
+#form-evento .evento-reloj-boton > svg:last-child { margin-left: auto; color: #64748b; }
+#form-evento .evento-reloj-boton:hover { border-color: var(--naranja); }
+#form-evento .evento-reloj-boton:focus-visible,
+#form-evento .evento-reloj-boton[aria-expanded="true"] {
+    outline: none;
+    border-color: var(--naranja);
+    box-shadow: 0 0 0 3px rgba(255, 102, 0, .13);
+}
+#form-evento .evento-reloj-boton[aria-invalid="true"] { border-color: #c53030; }
+#form-evento .evento-reloj-valor { flex: 1; font-weight: 600; }
+#form-evento .evento-reloj-valor.sin-elegir { color: #64748b; font-weight: 400; }
+#form-evento .evento-hora-ayuda { color: var(--text-muted); font-size: .75rem; line-height: 1.45; }
+
+.evento-reloj-panel {
+    position: fixed;
+    z-index: 1200;
+    width: min(376px, calc(100vw - 24px));
+    max-height: min(72vh, 460px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 16px 48px rgba(15, 23, 42, .2);
+    padding: 16px;
+    color: #1f2937;
+    font-family: 'Poppins', sans-serif;
+}
+.evento-reloj-panel[hidden], .evento-reloj-panel [hidden] { display: none !important; }
+.evento-reloj-encabezado { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.evento-reloj-encabezado strong { display: block; font-size: .97rem; line-height: 1.4; }
+.evento-reloj-encabezado p { color: #64748b; font-size: .75rem; margin: 2px 0 0; }
+.evento-reloj-cerrar {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 0;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.evento-reloj-etapas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 14px 0; padding: 4px; border-radius: 10px; background: #f1f5f9; }
+.evento-reloj-etapas button {
+    min-height: 38px;
+    border-radius: 8px;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+}
+.evento-reloj-etapas button[aria-pressed="true"] { color: #ad3d00; background: #fff; box-shadow: 0 1px 5px rgba(15, 23, 42, .09); }
+.evento-reloj-etapas button:disabled { opacity: .5; cursor: default; }
+.evento-reloj-periodo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #475569;
+    font-size: .77rem;
+    font-weight: 700;
+    margin: 12px 0 8px;
+}
+.evento-reloj-periodo span { font-size: .72rem; font-weight: 500; color: #64748b; }
+.evento-reloj-cuadricula { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.evento-reloj-opcion {
+    min-width: 0;
+    min-height: 44px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #334155;
+    font: inherit;
+    font-size: .76rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+.evento-reloj-opcion:hover { background: #fff4e8; border-color: #ffad70; }
+.evento-reloj-opcion[aria-pressed="true"] { color: #af3900; background: #ffe7d6; border-color: var(--naranja); }
+.evento-reloj-contexto { margin: 4px 0 14px; color: #475569; font-size: .82rem; line-height: 1.45; }
+.evento-reloj-panel button:focus-visible { outline: 3px solid #ff9933; outline-offset: 2px; }
+@media (max-width: 480px) {
+    .evento-reloj-panel { padding: 14px; border-radius: 14px; max-height: min(72vh, 440px); }
+    .evento-reloj-cuadricula { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .evento-reloj-opcion { min-height: 46px; font-size: .8rem; }
+}
 .evento-nota { margin: -8px 0 14px; color: var(--text-muted); font-size: 0.84rem; line-height: 1.45; }
 .evento-aviso-vencidos {
     padding: 12px 14px;
@@ -1095,5 +1195,5 @@ tr:hover td { background-color: #f8fafc; }
 .evento-sin-registros { text-align: center; color: var(--text-muted); padding: 24px 12px !important; }
 @media (max-width: 768px) {
     #form-evento .evento-form-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-    #form-evento .evento-hora-selectores { gap: 8px; }
+    #form-evento .evento-reloj-boton { min-height: 46px; }
 }

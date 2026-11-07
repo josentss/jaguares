@@ -439,8 +439,10 @@ test('flujo real: calendario crea y elimina el evento desde directiva y actualiz
         await page.locator('#evento-titulo').fill('Encuentro de Prueba');
         await page.locator('#evento-lugar').fill('Cancha de pruebas');
         await page.locator('#evento-fecha').fill(hoy);
-        await page.locator('#evento-hora-hora').selectOption('14');
-        await page.locator('#evento-hora-minuto').selectOption('30');
+        await page.locator('#evento-hora-boton').click();
+        await page.locator('#evento-reloj-horas-pm [data-hora="14"]').click();
+        await page.locator('#evento-reloj-minutos [data-minuto="30"]').click();
+        assert.equal(await page.locator('#evento-hora').inputValue(), '14:30');
         await page.locator('#eventos-tab-proximos').click();
         const creado = await enviar(page,'#form-evento','/api/cms/admin/eventos',201);
         const guardado = await db.pool.query('SELECT fecha_evento FROM eventos WHERE id_evento=$1',[creado.id_evento]);

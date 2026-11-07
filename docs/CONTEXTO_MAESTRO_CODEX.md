@@ -6,8 +6,8 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
-- `main` remoto verificado el 6 de noviembre de 2026: `4d250430860eed35fe1f826d65007c2e580eb1f2` (merge PR #19).
-- PR #1 al #19 fusionados. [PR #19](https://github.com/josentss/jaguares/pull/19) se fusionó el 6 de noviembre de 2026. [PR #20](https://github.com/josentss/jaguares/pull/20) abierto como borrador para UX, horario y gestión del calendario; no fusionado.
+- `main` remoto verificado el 7 de noviembre de 2026: `88b0822fadc8135e841a622ad0b6a4969e6de3cc` (merge PR #20).
+- PR #1 al #20 fusionados. [PR #20](https://github.com/josentss/jaguares/pull/20) fusionado el 6 de noviembre de 2026; propietario verificó visualmente formulario, calendario, historial, borrado y estados. [PR #21](https://github.com/josentss/jaguares/pull/21) abierto como borrador únicamente para mejorar el selector de hora.
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
 - El último despliegue Production, asociado al PR #18, figura como `success`; el CI del PR #18 pasó.
 - En el SHA del PR #19 pasó el CI `Sintaxis y pruebas backend` y su Preview estuvo disponible. El propietario compartió capturas de calendario y panel funcionando tras la fusión; no se ha verificado aquí el SHA efectivo en Production.
@@ -119,12 +119,13 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 
 ### Calendario y notificaciones
 
-- Directiva programa eventos; representantes y público ven los próximos. La rama pendiente elimina los controles manuales de «Completado/Cancelar» de la interfaz y propone papelera confirmada solo para directiva/admin.
+- Directiva programa eventos; representantes y público ven los próximos. El PR #20 ya eliminó los controles manuales de «Completado/Cancelar» de la interfaz; la directiva/admin puede borrar eventos con confirmación mediante papelera.
 - Eventos nuevos: desde hoy en Caracas hasta el 31 de diciembre del año siguiente.
 - Los históricos fuera del rango se conservan.
 - [PR #17](https://github.com/josentss/jaguares/pull/17) desplegó código que exige `HH:mm` para eventos nuevos y usa `hora_evento TIME WITHOUT TIME ZONE` nullable. La interfaz presenta la hora civil de Venezuela cuando existe; los históricos deben quedar sin hora.
 - Supabase ya contiene `hora_evento` nullable. El [PR #19](https://github.com/josentss/jaguares/pull/19) fue fusionado; el propietario verificó visualmente registro y presentación de evento con hora. Falta una confirmación trazable del SHA de Production.
-- **PR #20 en revisión:** horas de 05:00 a 22:00 (cada cinco minutos; a las 22:00 solo minuto 00), estado «Completado» derivado al día civil siguiente sin reescribir históricos, aviso en directiva, separación Programados/Historial, DELETE confirmado con autorización directiva/admin y listado público limitado inicialmente a tres elementos con ampliación. No hay cron ni eliminación automática.
+- **PR #20 fusionado y probado visualmente por el propietario:** horas de 05:00 a 22:00 (cada cinco minutos; a las 22:00 solo minuto 00), estado «Completado» derivado al día civil siguiente sin reescribir históricos, aviso, Programados/Historial, DELETE confirmado autorizado y listado público compacto/filtrable. No hay cron ni eliminación automática.
+- **PR #21, ajuste de interfaz:** sustituir solamente los dos desplegables largos de hora/minutos por un reloj visual propio. Se muestran horas como «5 a. m.» y «2 p. m.», separadas por período, luego minutos en saltos de cinco; 10 p. m. equivale a 22:00. La API continúa recibiendo `HH:mm` 24h sin cambio de reglas ni esquema. Pendiente de verificar CI y Preview; no fusionado.
 - Las notificaciones son informativas y de mejor esfuerzo; no hay lectura persistente.
 
 ## 5. Riesgos y deuda vigentes
@@ -203,6 +204,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Revisar el [PR #20](https://github.com/josentss/jaguares/pull/20): validar UI responsive, rango de 05:00 a 22:00 cada cinco minutos, estado derivado desde el día siguiente, permiso de DELETE solo para directiva/admin, confirmación y calendario público compacto. No se ejecuta DELETE automáticamente ni se modifican históricos. Ejecutar CI/Playwright/PostgreSQL temporal, contrastar el diff y solicitar autorización antes de fusionar o desplegar.
+Revisar el [PR #21](https://github.com/josentss/jaguares/pull/21), que aborda exclusivamente el diseño del selector de hora según la prueba visual del propietario. Probar reloj en escritorio/móvil, formato a. m./p. m., selección por teclado, cierre, límites y envío `HH:mm`. Verificar CI/Playwright/PostgreSQL temporal y Preview antes de solicitar autorización para fusión. No se modifica la API, la base ni los históricos.
 
-Evidencia previa: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; nueve eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. El PR #19 pasó validaciones anteriores a su fusión; el propietario compartió capturas del funcionamiento posterior. La rama actual debe aportar sus propios resultados de CI; no atribuirle todavía pruebas que no se hayan ejecutado.
+Evidencia previa: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; nueve eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. El PR #19 pasó validaciones anteriores a su fusión; el propietario compartió capturas del funcionamiento posterior. Los PR #19 y #20 ya están fusionados; el propietario aportó capturas verificando UX posterior al #20. El PR #21 debe aportar sus propios resultados de CI; no atribuirle todavía pruebas que no se hayan ejecutado.

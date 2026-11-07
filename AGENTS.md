@@ -14,4 +14,4 @@ Antes de comenzar cualquier tarea, lee **[docs/CONTEXTO_MAESTRO_CODEX.md](docs/C
 - En cada PR relevante, actualiza también el contexto maestro: cambios, decisiones, evidencia de pruebas, riesgo residual, estado de tareas y nuevos enlaces.
 - No marques una funcionalidad como «implementada» si solo se propuso; no marques «probada en producción» si solo usaste mocks o CI.
 
-**Siguiente bloque sugerido:** revisar el PR #21 del selector visual de hora en el calendario, validar escritorio/móvil y confirmar el CI antes de solicitar merge; no reabrir cambios de calendario público, estados ni borrado ya aprobados sin evidencia. Un hallazgo real de seguridad o integridad tiene prioridad. Consulta la hoja de ruta del contexto maestro.
+**Siguiente bloque sugerido:** revisar el PR #22 del selector horario compacto acordado con el propietario; validar escritorio/móvil y CI antes del merge. No cambiar calendario público, estados, borrado ni otros formularios sin evidencia. Un hallazgo real de seguridad o integridad tiene prioridad. Consulta la hoja de ruta del contexto maestro.

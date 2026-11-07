@@ -131,7 +131,7 @@ test('inventario de terminal carga .env local sin abrir conexión ni imprimir se
     const carpeta = mkdtempSync(join(tmpdir(), 'jaguares-env-prueba-'));
     try {
         writeFileSync(join(carpeta, '.env'),
-            'CLOUDINARY_CLOUD_NAME=nube-prueba-local\\nDATABASE_URL=postgres://prueba.invalid/base\\n');
+            'CLOUDINARY_CLOUD_NAME=nube-prueba-local\nDATABASE_URL=postgres://prueba.invalid/base\n');
         const env = { ...process.env };
         delete env.CLOUDINARY_CLOUD_NAME;
         delete env.DATABASE_URL;

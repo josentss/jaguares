@@ -25,8 +25,12 @@ router.post(
     '/admin/noticias',
     verificarSesion,
     verificarSesionRole(['directiva', 'staff', 'admin']),
-    uploadNoticias.single('imagen_noticia'),
-    handleUploadError,
+    (req, res, next) => {
+        uploadNoticias.single('imagen_noticia')(req, res, err => {
+            if (err) return handleUploadError(err, req, res, next);
+            next();
+        });
+    },
     validarArchivoSubido,
     cmsController.crearNoticiaAdmin
 );

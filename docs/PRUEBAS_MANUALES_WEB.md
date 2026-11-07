@@ -48,6 +48,17 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Autorización futura:** solo representante propietario y personal autorizado del panel directiva ven los documentos; nunca otro representante.
 - [ ] **Privacidad pendiente:** no asumir que URL de Cloudinary histórica es privada solo porque Express exija autenticación para devolverla. Habrá un PR adicional para acceso temporal y migración no destructiva.
 
+## Acceso privado y Cloudinary (PR #25)
+
+- [ ] **Propiedad:** un representante propio puede abrir foto, cédula y partida de su atleta desde la ruta `/api/atletas/:id/documentos/:tipo`, incluso al reabrir la planilla; un representante ajeno recibe HTTP 403, sin sesión HTTP 401.
+- [ ] **Directiva:** roles `staff`, `directiva` y `admin` pueden consultar la documentación según la política aprobada, sin revelar URL originales en la planilla JSON.
+- [ ] **Comprobante:** solo propietario o directiva autorizada obtiene enlace al comprobante; el historial y la auditoría no devuelven el URL original.
+- [ ] **Nueva carga privada:** *únicamente tras confirmar configuración de Cloudinary*, activar `CLOUDINARY_AUTHENTICATED_UPLOADS=1` en entorno de prueba. Confirmar que archivos de atletas y comprobantes se guardan como `authenticated`, mientras las imágenes de noticias permanecen públicas.
+- [ ] **Firma con caducidad:** en archivos nuevos, una URL sin firma no debe abrir y la firmada deja de servir tras vencer; una URL temporal compartida funciona durante su vigencia (limitación explícita).
+- [ ] **PDF y planilla:** comprobar vista de cédula/partida PDF, foto, descarga e impresión/exportación de planilla en móvil y escritorio con archivos sintéticos.
+- [ ] **Históricos:** los activos existentes de tipo `upload` siguen accesibles por URL antiguas si se conoce; inventariar y migrar después sin reescribir Supabase ni cambiar URLs sin autorización.
+- [ ] **Rollback:** `CLOUDINARY_AUTHENTICATED_UPLOADS=0` solo controla las cargas futuras; no desprotege los recursos ya guardados como `authenticated`.
+
 ## Sesión
 
 - [ ] Entrar y recargar: vuelve al panel sin tarjeta blanca de verificación.

@@ -440,7 +440,7 @@ test('flujo real: calendario crea y elimina el evento desde directiva y actualiz
         await page.locator('#evento-lugar').fill('Cancha de pruebas');
         await page.locator('#evento-fecha').fill(hoy);
         await page.locator('#evento-hora-boton').click();
-        await page.locator('#evento-reloj-horas-pm [data-hora="14"]').click();
+        await page.locator('#evento-reloj-hora').selectOption('2'); // p. m. por defecto
         await page.locator('#evento-reloj-minutos [data-minuto="30"]').click();
         assert.equal(await page.locator('#evento-hora').inputValue(), '14:30');
         await page.locator('#eventos-tab-proximos').click();

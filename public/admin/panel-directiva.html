@@ -14,7 +14,7 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=reloj-compacto-1">
+    <link rel="stylesheet" href="admin-style.css?v=calendario-cierre-1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -701,13 +701,13 @@
                                             aria-label="Cerrar selector de hora">&times;</button>
                                     </div>
                                     <div class="evento-reloj-minutos-label">
-                                        <span>Minutos</span><span>de 5 en 5</span>
+                                        <span>Minutos</span>
                                     </div>
                                     <div id="evento-reloj-minutos" class="evento-reloj-minutos"
                                         role="group" aria-label="Minutos del encuentro"></div>
                                 </div>
                             </div>
-                            <small id="evento-hora-ayuda" class="evento-hora-ayuda">De 5:00 a. m. a 10:00 p. m. · intervalos de 5 min.</small>
+                            <span id="evento-hora-ayuda" class="evento-reloj-sr-only">Horario disponible de 5 a. m. a 10 p. m.; minutos en intervalos de cinco.</span>
                         </div>
                     </div>
                     <button type="submit" class="btn-panel-submit">Guardar en Calendario</button>
@@ -715,7 +715,6 @@
             </div>
             <div class="table-container" style="margin-top: 10px;">
                 <h3>Eventos del calendario</h3>
-                <p class="evento-nota">Los eventos se completan automáticamente al terminar su día. Solo se eliminan si lo confirmas.</p>
                 <p id="aviso-eventos-vencidos" class="evento-aviso-vencidos" role="status" hidden></p>
                 <div class="evento-vistas" role="group" aria-label="Filtrar eventos">
                     <button type="button" id="eventos-tab-proximos" class="evento-vista activa" aria-pressed="true">Programados</button>

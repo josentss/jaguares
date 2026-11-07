@@ -1071,7 +1071,6 @@ tr:hover td { background-color: #f8fafc; }
 #form-evento .evento-reloj-boton[aria-invalid="true"] { border-color: #c53030; }
 #form-evento .evento-reloj-valor { flex: 1; font-weight: 600; }
 #form-evento .evento-reloj-valor.sin-elegir { color: #64748b; font-weight: 400; }
-#form-evento .evento-hora-ayuda { color: var(--text-muted); font-size: .75rem; line-height: 1.45; }
 
 
 /* Desplegable compacto: un selector de hora, AM/PM y minutos rápidos. */
@@ -1168,7 +1167,6 @@ tr:hover td { background-color: #f8fafc; }
     font-size: .74rem;
     font-weight: 600;
 }
-.evento-reloj-minutos-label > :last-child { color: #64748b; font-weight: 400; }
 .evento-reloj-minutos {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1176,7 +1174,7 @@ tr:hover td { background-color: #f8fafc; }
 }
 .evento-reloj-minuto {
     min-width: 0;
-    min-height: 35px;
+    min-height: 40px;
     padding: 5px 2px;
     border: 1px solid #dde5f0;
     border-radius: 8px;
@@ -1203,9 +1201,8 @@ tr:hover td { background-color: #f8fafc; }
     .evento-reloj-panel { padding: 10px; border-radius: 12px; }
     .evento-reloj-controles { grid-template-columns: 76px minmax(0, 1fr) 30px; gap: 6px; }
     .evento-reloj-periodos button { font-size: .73rem; }
-    .evento-reloj-minuto { font-size: .74rem; min-height: 37px; }
+    .evento-reloj-minuto { font-size: .74rem; min-height: 42px; }
 }
-.evento-nota { margin: -8px 0 14px; color: var(--text-muted); font-size: 0.84rem; line-height: 1.45; }
 .evento-aviso-vencidos {
     padding: 12px 14px;
     margin: 0 0 14px;

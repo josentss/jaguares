@@ -28,7 +28,7 @@ function manejarUpload(req, res, next) {
         if (!req.file) return next();
 
         try {
-            const valido = await validarMagicBytes(req.file.filename, req.file.originalname);
+            const valido = await validarMagicBytes(req.file);
             if (!valido) {
                 try {
                     logUploadEvent({

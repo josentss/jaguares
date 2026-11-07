@@ -55,6 +55,20 @@
         .search-box-container input { width: 100%; max-width: 300px; padding: 8px 35px 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-family: 'Poppins', sans-serif; }
         .search-wrapper { position: relative; width: 100%; max-width: 300px; }
         .search-wrapper i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #888; }
+        /* Acceso documental del representante, sin URL directa en el HTML. */
+        .docs-modal { width: min(440px, calc(100% - 24px)); max-height: 80vh; padding: 22px;
+            border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 18px 55px #0003; color: #243040; }
+        .docs-modal::backdrop { background: rgba(15, 23, 42, .55); }
+        .docs-modal-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .docs-modal-cabecera h3 { margin: 0; font-size: 1.02rem; }
+        .docs-modal-cerrar { display: inline-grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0;
+            border: 0; border-radius: 50%; background: #f1f5f9; color: #475569; font-size: 1.4rem; cursor: pointer; }
+        .docs-modal-enlaces { display: flex; flex-direction: column; gap: 9px; }
+        .docs-modal-enlaces a { display: flex; align-items: center; padding: 11px 14px; border: 1px solid #d8e2ea;
+            border-radius: 9px; color: #b14606; background: #fff8f3; font-size: .9rem; font-weight: 600; text-decoration: none; }
+        .docs-modal-enlaces a:hover { background: #ffeddd; }
+        .docs-atleta-btn { min-height: 40px; padding: 7px 12px; border: 1px solid #ffac78; border-radius: 9px;
+            background: #fff5ed; color: #a83e00; font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
     </style>
 </head>
 <body class="panel-body" data-session-state="checking">
@@ -65,6 +79,14 @@
     </main>
 
     <div id="toast-container"></div>
+    <dialog id="documentos-atleta-modal" class="docs-modal" aria-labelledby="documentos-atleta-titulo">
+        <div class="docs-modal-cabecera">
+            <h3 id="documentos-atleta-titulo">Documentos del atleta</h3>
+            <button type="button" id="documentos-atleta-cerrar" class="docs-modal-cerrar"
+                aria-label="Cerrar documentos">&times;</button>
+        </div>
+        <div id="documentos-atleta-enlaces" class="docs-modal-enlaces" aria-live="polite"></div>
+    </dialog>
     <!-- Onboarding: perfil incompleto -->
     <div class="modal-overlay" id="onboardingModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:2000; justify-content:center; align-items:center; padding:16px;">
         <div style="background:#fff; border-radius:12px; max-width:440px; width:100%; padding:24px; position:relative; box-shadow:0 10px 40px rgba(0,0,0,.25);">
@@ -155,8 +177,8 @@
                 </div>
                 <div style="overflow-x: auto;">
                     <table id="table-my-atletas">
-                        <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Estado</th></tr></thead>
-                        <tbody><tr><td colspan="3" style="text-align: center;">Cargando...</td></tr></tbody>
+                        <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Estado</th><th>Documentos</th></tr></thead>
+                        <tbody><tr><td colspan="4" style="text-align: center;">Cargando...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -775,7 +797,7 @@
                         if (botonReportar) botonReportar.disabled = !data.atletas.some(a => a.estado === 'activo');
 
                         if (data.atletas.length === 0) {
-                          tbody.innerHTML = `<tr><td colspan="3">
+                          tbody.innerHTML = `<tr><td colspan="4">
                               <div class="empty-state">
 
                                   <p>Aún no tienes atletas registrados</p>
@@ -796,6 +818,8 @@
                                 <td><strong>${esc(atleta.nombres)} ${esc(atleta.apellidos)}</strong></td>
                                 <td>${esc(atleta.cedula || 'N/A')}</td>
                                 <td><span class="status-badge ${badgeClass}">${estadoTexto}</span></td>
+                                <td><button type="button" class="docs-atleta-btn" data-docs-atleta="${Number(atleta.id_atleta)}"
+                                    aria-label="Ver documentos de ${esc(atleta.nombres)} ${esc(atleta.apellidos)}">Documentos</button></td>
                             </tr>`;
 
                             if (atleta.estado === 'activo') {
@@ -811,6 +835,45 @@
                     console.error("Error al cargar atletas en el panel:", error);
                 }
             }
+
+            const modalDocumentos = document.getElementById('documentos-atleta-modal');
+            const enlacesDocumentos = document.getElementById('documentos-atleta-enlaces');
+            const cerrarDocumentos = document.getElementById('documentos-atleta-cerrar');
+            cerrarDocumentos?.addEventListener('click', () => modalDocumentos?.close());
+            document.querySelector('#table-my-atletas tbody')?.addEventListener('click', async (event) => {
+                const boton = event.target.closest('button[data-docs-atleta]');
+                if (!boton || !modalDocumentos || !enlacesDocumentos) return;
+                const id = Number(boton.dataset.docsAtleta);
+                if (!Number.isSafeInteger(id) || id <= 0) return;
+                enlacesDocumentos.textContent = 'Consultando archivos...';
+                modalDocumentos.showModal();
+                try {
+                    const respuesta = await apiFetch(`/api/atletas/${id}`);
+                    const datos = await respuesta.json();
+                    if (!respuesta.ok || !datos.success) throw new Error('No se pudieron consultar los documentos');
+                    enlacesDocumentos.replaceChildren();
+                    const campos = [
+                        ['foto_url', 'Foto del atleta', 'foto'],
+                        ['cedula_archivo_url', 'Cédula', 'cedula_archivo'],
+                        ['partida_nacimiento_url', 'Partida de nacimiento', 'partida_nacimiento']
+                    ];
+                    let encontrados = 0;
+                    for (const [campo, etiqueta, tipo] of campos) {
+                        const ruta = datos.atleta?.documentos?.[campo];
+                        if (ruta !== `/api/atletas/${id}/documentos/${tipo}`) continue;
+                        const enlace = document.createElement('a');
+                        enlace.href = ruta;
+                        enlace.target = '_blank';
+                        enlace.rel = 'noopener noreferrer';
+                        enlace.textContent = etiqueta;
+                        enlacesDocumentos.appendChild(enlace);
+                        encontrados++;
+                    }
+                    if (!encontrados) enlacesDocumentos.textContent = 'Este atleta no tiene documentos adjuntos.';
+                } catch {
+                    enlacesDocumentos.textContent = 'No se pudieron cargar los documentos.';
+                }
+            });
 
             // --- CARGAR HISTORIAL (CORREGIDO: Con Cabeceras de Seguridad) ---
             async function cargarHistorialPagos() {

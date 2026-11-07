@@ -14,4 +14,4 @@ Antes de comenzar cualquier tarea, lee **[docs/CONTEXTO_MAESTRO_CODEX.md](docs/C
 - En cada PR relevante, actualiza también el contexto maestro: cambios, decisiones, evidencia de pruebas, riesgo residual, estado de tareas y nuevos enlaces.
 - No marques una funcionalidad como «implementada» si solo se propuso; no marques «probada en producción» si solo usaste mocks o CI.
 
-**Siguiente bloque sugerido:** validar PR #24 sobre firmas de archivos antes de Cloudinary con CI/Preview. Luego implementar enlaces protegidos para representante propietario y personal autorizado de directiva (`staff`, `directiva`, `admin`) sin romper archivos antiguos ni mover datos en Production sin autorización. Después compensar archivos huérfanos.
+**Siguiente bloque sugerido:** revisar PR #25 de entrega autorizada de documentos y comprobantes. Exigir pruebas con propietario/ajeno/staff, confirmar tipo de entrega PDF en Cloudinary y no activar `CLOUDINARY_AUTHENTICATED_UPLOADS=1` sin validación real de cuenta. Mantener históricos, migración y limpieza de archivos huérfanos para cambios separados con autorización.

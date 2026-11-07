@@ -144,6 +144,7 @@ for (const dispositivo of [
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), false);
             await page.locator('#table-my-atletas button[data-docs-atleta="11"]').click();
             await page.locator('#documentos-atleta-modal').waitFor({state:'visible'});
+            await page.waitForFunction(() => document.querySelectorAll('#documentos-atleta-enlaces a').length === 2);
             assert.equal(await page.locator('#documentos-atleta-enlaces a').count(), 2);
             assert.equal(await page.locator('#documentos-atleta-enlaces a[href="/api/atletas/11/documentos/foto"]').count(), 1);
             assert.equal(await page.locator('#documentos-atleta-enlaces a[href="/api/atletas/11/documentos/cedula_archivo"]').count(), 1);

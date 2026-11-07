@@ -556,7 +556,7 @@ for (const dispositivo of [
             assert.equal(await popover.isHidden(), true);
             assert.equal(await page.locator('#evento-hora').inputValue(), '05:00');
             await reloj.click();
-            await hora.selectOption('3');
+            await hora.selectOption('7');
             await page.locator('#evento-titulo').click();
             assert.equal(await popover.isHidden(), true);
             assert.equal(await page.locator('#evento-hora').inputValue(), '05:00');

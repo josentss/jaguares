@@ -27,7 +27,8 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Pago inválido:** atleta inactivo o representante no aprobado se rechaza desde el backend aunque la pestaña sea antigua.
 - [ ] **Propiedad:** una familia no puede consultar ni editar atletas, pagos o documentos de otra mediante URL o API.
 - [ ] **Evento válido:** crear desde hoy hasta el 31 de diciembre del año siguiente con hora de Venezuela; fecha y hora aparecen en directiva, representantes y calendario público.
-- [ ] **Hora válida:** selector de 05:00 a 22:00 con pasos de cinco minutos; 05:00, 14:30 y 22:00 se aceptan; 22:05 no se ofrece.
+- [ ] **Hora válida:** en directiva, el reloj desplegable ofrece «5 a. m.» hasta «10 p. m.», agrupando mañana y tarde/noche; al elegir una hora aparecen minutos de 00 a 55 en pasos de cinco; 10 p. m. confirma directamente 22:00. Verificar que 05:00, 14:30 y 22:00 son aceptadas y que 22:05 no puede elegirse.
+- [ ] **Reloj responsive/accesible:** abrir en escritorio/móvil y comprobar que no se recorta ni invade otras secciones; se puede cerrar con Escape, clic fuera o X, volver a horas, navegar con teclado; elegir 2:30 p. m. envía 14:30 por API. Al restablecer el formulario se limpia su selección.
 - [ ] **Hora inválida:** omitirla o enviar por API 02:00, 04:55, 14:02, 22:05, 23:00 o un valor distinto de `HH:mm`; el backend rechaza sin insertar.
 - [ ] **Evento inválido:** fecha pasada o posterior al límite se rechaza en interfaz y backend.
 - [ ] **Histórico:** los eventos antiguos conservan el día que ya mostraba el sistema, sin desplazarse al día anterior en Caracas, sin hora inventada ni reescritura.

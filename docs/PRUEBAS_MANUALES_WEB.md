@@ -40,6 +40,14 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Diseño:** formulario con título/lugar y fecha/hora alineados en escritorio, apilado en móvil; ningún selector se desborda.
 - [ ] **Calendario público concurrido:** se muestran tres tarjetas inicialmente y «Ver todos» amplía la lista; tocar un día filtra y «Ver mes completo» restaura el mes.
 
+## Archivos y privacidad (PR #24)
+
+- [ ] **Firma válida:** usar PNG, JPEG, WebP, PDF de cédula/partida y GIF para noticias, solo con muestras sintéticas; deben funcionar como antes.
+- [ ] **Firma falsa:** renombrar un TXT/HTML a PNG/PDF y declarar un MIME permitido; la API responde HTTP 400 sin enviarlo a Cloudinary ni guardar registros.
+- [ ] **Contradicción:** imagen con extensión/MIME de PDF, o viceversa, y archivos mayores a 5 MiB se rechazan.
+- [ ] **Autorización futura:** solo representante propietario y personal autorizado del panel directiva ven los documentos; nunca otro representante.
+- [ ] **Privacidad pendiente:** no asumir que URL de Cloudinary histórica es privada solo porque Express exija autenticación para devolverla. Habrá un PR adicional para acceso temporal y migración no destructiva.
+
 ## Sesión
 
 - [ ] Entrar y recargar: vuelve al panel sin tarjeta blanca de verificación.

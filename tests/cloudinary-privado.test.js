@@ -12,7 +12,7 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
-const { analizarAssetAutenticado, enlaceAutorizado, esCargaPrivadaHabilitada } =
+const { analizarAssetAutenticado, analizarAssetGuardado, enlaceAutorizado, esCargaPrivadaHabilitada } =
     require('../utils/cloudinaryPrivado');
 
 const prefijo = 'https://res.cloudinary.com/nube-sintetica';
@@ -66,4 +66,58 @@ test('cloudinary: la activación de privados requiere valor explícito', () => {
         if (antes === undefined) delete process.env.CLOUDINARY_AUTHENTICATED_UPLOADS;
         else process.env.CLOUDINARY_AUTHENTICATED_UPLOADS = antes;
     }
+});
+
+
+test('cloudinary: reconocer recursos públicos históricos solo de carpeta y nube permitidas', () => {
+    const url = prefijo + '/image/upload/v123/jaguares/atletas/foto-legada.jpg';
+    assert.deepEqual(analizarAssetGuardado(url, 'jaguares/atletas'), {
+        public_id: 'jaguares/atletas/foto-legada',
+        format: 'jpg',
+        resource_type: 'image',
+        delivery_type: 'upload'
+    });
+    assert.equal(enlaceAutorizado(url, 'jaguares/atletas'), url);
+    assert.equal(analizarAssetGuardado(prefijo + '/raw/upload/v22/jaguares/atletas/partida.pdf',
+        'jaguares/atletas').public_id, 'jaguares/atletas/partida.pdf');
+    assert.equal(analizarAssetGuardado(foto, 'jaguares/atletas').delivery_type, 'authenticated');
+});
+
+test('cloudinary: nunca redirigir hacia origen externo, carpeta ajena o URL manipulada', () => {
+    for (const url of [
+        'https://example.org/comprobante.pdf',
+        'http://res.cloudinary.com/nube-sintetica/image/upload/jaguares/atletas/foto.jpg',
+        'https://evil.invalid/image/upload/jaguares/atletas/foto.jpg',
+        'https://res.cloudinary.com/otro-cloud/image/upload/jaguares/atletas/foto.jpg',
+        prefijo + '/image/upload/v1/otra-carpeta/documento.jpg',
+        prefijo + '/image/upload/c_scale,w_200/v1/jaguares/atletas/foto.jpg',
+        prefijo + '/image/upload/v1/jaguares/atletas/documento.svg',
+        prefijo + '/image/upload/v1/jaguares/atletas/foto.jpg?foo=bar',
+        prefijo + '/image/private/v1/jaguares/atletas/foto.jpg',
+        prefijo + '/image/upload/v1/jaguares/atletas/%2e%2e/foto.jpg',
+        'javascript:alert(1)'
+    ]) {
+        assert.equal(analizarAssetGuardado(url, 'jaguares/atletas'), null, url);
+        assert.throws(() => enlaceAutorizado(url, 'jaguares/atletas'), /Origen de archivo no permitido/);
+    }
+});
+
+
+test('auditoría: resume referencias anonimizadas sin publicar links o identificadores', () => {
+    const { resumir, clasificar } = require('../scripts/auditar-cloudinary');
+    const publico = prefijo + '/image/upload/v123/jaguares/atletas/atleta-sintetico.png';
+    const privado = prefijo + '/image/authenticated/v123/jaguares/atletas/atleta-sintetico.pdf';
+    assert.equal(clasificar(publico, 'jaguares/atletas'), 'publico');
+    assert.equal(clasificar(privado, 'jaguares/atletas'), 'autenticado');
+    const salida = resumir([
+        ['fotos', 'jaguares/atletas', [publico, privado, null, 'https://example.org/personal.png']],
+        ['comprobantes', 'jaguares_comprobantes', ['jaguares_comprobantes/recibo.jpg']]
+    ]);
+    assert.equal(salida.fotos.total, 4);
+    assert.equal(salida.fotos.publico, 1);
+    assert.equal(salida.fotos.autenticado, 1);
+    assert.equal(salida.fotos.sin_archivo, 1);
+    assert.equal(salida.fotos.revisar_manual, 1);
+    assert.equal(salida.comprobantes.referencia_legacy_sin_url, 1);
+    assert.doesNotMatch(JSON.stringify(salida), /atleta-sintetico|recibo\.jpg|example\.org/);
 });

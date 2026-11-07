@@ -37,6 +37,25 @@ Configurar en el proveedor apropiado, nunca en Git:
 - Antes de activarlo, verificar el plan Cloudinary y la opción de entrega de PDF (en cuentas Free puede estar deshabilitada), y probar con archivos **sintéticos** en un entorno aislado. Validar acceso propio/ajeno, staff y descarga/visualización de PDF y foto en planilla.
 - Al detectar problemas, revertir la variable para **futuras** cargas; esto no convierte automáticamente en públicos los archivos `authenticated` ya subidos. No ejecutar migraciones ni cambios sobre activos antiguos para deshacer una prueba.
 
+### Auditoría de enlaces históricos (PR #26; solo lectura)
+
+Las capturas del propietario muestran entrega PDF/ZIP **habilitada** y ejemplos de fotos/comprobantes con control de acceso **Público**. La API autorizada no revoca las URL antiguas. **No activar la variable en Production basándose únicamente en esas capturas**: un PDF real `authenticated` y su URL firmada deben probarse con un archivo sintético y el SHA de Preview.
+
+Con un entorno autorizado que tenga `DATABASE_URL` y `CLOUDINARY_CLOUD_NAME` configurados, ejecutar localmente:
+
+```bash
+node scripts/auditar-cloudinary.js
+```
+
+El script abre una **transacción PostgreSQL READ ONLY**, clasifica las referencias en fotos, cédulas, partidas y comprobantes y muestra únicamente recuentos agregados. No imprime URL, nombre de persona, `public_id` ni identificadores. No realiza llamadas de escritura a Cloudinary/Supabase; sí requiere lectura de las referencias históricas. No copiar credenciales al chat ni adjuntar resultados con datos personales.
+
+- `publico`: URL identificada como `image|raw/upload` de las carpetas propias; la firma de un nuevo enlace no la vuelve privada.
+- `autenticado`: URL identificada como `image|raw/authenticated`; comprobar que un enlace sin firma realmente falla.
+- `referencia_legacy_sin_url`: un identificador antiguo de comprobante, sin URL completa, que necesita resolver su formato.
+- `revisar_manual`: URL fuera de la cuenta/carpeta o patrón no reconocido; no se debe migrar automáticamente ni enviar al navegador sin validarla.
+
+**Este resultado describe las cadenas SQL, no la metadata real de Cloudinary.** Contrastar `Asset type` y `Delivery type` en Media Library (vista de lista) o Admin API. Preparar respaldo/inventario y pruebas con recursos sintéticos; una migración de `upload` a `authenticated` requerirá cambios de referencia y posible invalidación de CDN, con autorización separada. Cloudinary documenta `rename(to_type)` para cambiar el tipo y advierte que la caché puede mantener temporalmente enlaces antiguos (ver [control de acceso](https://cloudinary.com/documentation/control_access_to_media) y [rename](https://cloudinary.com/documentation/image_upload_api_reference)).
+
 `NODE_ENV`, `PORT` y `VERCEL` suelen ser administradas por la plataforma. No copiar valores productivos a documentación, pruebas o logs.
 
 ## Base de datos

@@ -1984,14 +1984,18 @@
             function ubicarPanel() {
                 if (panel.hidden) return;
                 const ancla = boton.getBoundingClientRect();
+                const margen = 12;
+                const debajo = Math.max(0, window.innerHeight - ancla.bottom - 8 - margen);
+                const encima = Math.max(0, ancla.top - 8 - margen);
+                const usarEncima = encima > debajo && debajo < panel.scrollHeight;
+                const espacio = usarEncima ? encima : debajo;
+                // Mantener el panel separado del campo en vez de superponerlo.
+                panel.style.maxHeight = Math.max(120, Math.min(460, window.innerHeight * .72, espacio)) + 'px';
                 const ancho = panel.offsetWidth;
                 const alto = panel.offsetHeight;
-                const margen = 12;
-                const cabeDebajo = window.innerHeight - ancla.bottom >= alto + 8 + margen;
-                const cabeArriba = ancla.top >= alto + 8 + margen;
-                const arriba = !cabeDebajo && cabeArriba
-                    ? ancla.top - alto - 8
-                    : Math.max(margen, Math.min(ancla.bottom + 8, window.innerHeight - alto - margen));
+                const arriba = usarEncima
+                    ? Math.max(margen, ancla.top - alto - 8)
+                    : Math.min(ancla.bottom + 8, window.innerHeight - alto - margen);
                 panel.style.left = Math.max(margen, Math.min(ancla.left, window.innerWidth - ancho - margen)) + 'px';
                 panel.style.top = arriba + 'px';
             }

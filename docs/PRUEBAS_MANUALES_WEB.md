@@ -50,7 +50,7 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 
 ## Acceso privado y Cloudinary (PR #25)
 
-- [ ] **Propiedad:** un representante propio puede abrir foto, cédula y partida de su atleta desde la ruta `/api/atletas/:id/documentos/:tipo`, incluso al reabrir la planilla; un representante ajeno recibe HTTP 403, sin sesión HTTP 401.
+- [ ] **Propiedad y panel:** el representante puede usar el botón «Documentos» en «Mis atletas» para abrir foto, cédula o partida disponibles en un diálogo compacto, también en móvil. Al seguir la ruta `/api/atletas/:id/documentos/:tipo`, el propietario puede acceder, el ajeno recibe HTTP 403 y la sesión ausente HTTP 401.
 - [ ] **Directiva:** roles `staff`, `directiva` y `admin` pueden consultar la documentación según la política aprobada, sin revelar URL originales en la planilla JSON.
 - [ ] **Comprobante:** solo propietario o directiva autorizada obtiene enlace al comprobante; el historial y la auditoría no devuelven el URL original.
 - [ ] **Nueva carga privada:** *únicamente tras confirmar configuración de Cloudinary*, activar `CLOUDINARY_AUTHENTICATED_UPLOADS=1` en entorno de prueba. Confirmar que archivos de atletas y comprobantes se guardan como `authenticated`, mientras las imágenes de noticias permanecen públicas.

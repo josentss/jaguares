@@ -294,6 +294,38 @@ test('flujo real: fallo SQL del alta compuesta muestra error, revierte y permite
     } finally {await page.context().close();}
 });
 
+test('flujo real: archivos suplantados se rechazan antes de Cloudinary y de SQL', async () => {
+    const representante = await entrar('alfa@example.org');
+    const directiva = await entrar('directiva@example.org');
+    try {
+        const imagenFalsa = {name:'identidad.png', mimeType:'image/png',
+            buffer:Buffer.from('<html>archivo sintético que no es una imagen</html>')};
+        const documentoFalso = {name:'partida.pdf', mimeType:'application/pdf',
+            buffer:Buffer.from('<html>archivo sintético que no es PDF</html>')};
+        const inicio = numeroCarga;
+        const alta = await representante.request.post(base+'/api/atletas/registrar-atleta', {
+            multipart: {foto:imagenFalsa, partida_nacimiento:documentoFalso}
+        });
+        assert.equal(alta.status(),400);
+        assert.equal(numeroCarga,inicio);
+
+        const recibo = await representante.request.post(base+'/api/pagos/reportar', {
+            multipart: {captura:imagenFalsa}
+        });
+        assert.equal(recibo.status(),400);
+        assert.equal(numeroCarga,inicio);
+
+        const noticia = await directiva.request.post(base+'/api/cms/admin/noticias', {
+            multipart: {imagen_noticia:imagenFalsa}
+        });
+        assert.equal(noticia.status(),400);
+        assert.equal(numeroCarga,inicio);
+    } finally {
+        await representante.context().close();
+        await directiva.context().close();
+    }
+});
+
 test('flujo real: archivos pasan por Multer; error del proveedor permite corregir y reintentar', async () => {
     const page = await entrar('alfa@example.org');
     try {

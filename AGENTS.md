@@ -14,4 +14,4 @@ Antes de comenzar cualquier tarea, lee **[docs/CONTEXTO_MAESTRO_CODEX.md](docs/C
 - En cada PR relevante, actualiza también el contexto maestro: cambios, decisiones, evidencia de pruebas, riesgo residual, estado de tareas y nuevos enlaces.
 - No marques una funcionalidad como «implementada» si solo se propuso; no marques «probada en producción» si solo usaste mocks o CI.
 
-**Siguiente bloque sugerido:** validar el PR #23 de limpieza final del calendario (sin textos redundantes; ayuda accesible conservada) con CI y Preview antes de pedir autorización de fusión. Después de comprobar Production, tratar el siguiente bloque de la hoja de ruta, dando prioridad a seguridad e integridad; no inventar reglas institucionales.
+**Siguiente bloque sugerido:** validar PR #24 sobre firmas de archivos antes de Cloudinary con CI/Preview. Luego implementar enlaces protegidos para representante propietario y personal autorizado de directiva (`staff`, `directiva`, `admin`) sin romper archivos antiguos ni mover datos en Production sin autorización. Después compensar archivos huérfanos.

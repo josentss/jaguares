@@ -12,7 +12,7 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
-const { analizarAssetAutenticado, enlaceAutorizado, esCargaPrivadaHabilitada } =
+const { analizarAssetAutenticado, analizarAssetGuardado, enlaceAutorizado, esCargaPrivadaHabilitada } =
     require('../utils/cloudinaryPrivado');
 
 const prefijo = 'https://res.cloudinary.com/nube-sintetica';
@@ -65,5 +65,39 @@ test('cloudinary: la activación de privados requiere valor explícito', () => {
     } finally {
         if (antes === undefined) delete process.env.CLOUDINARY_AUTHENTICATED_UPLOADS;
         else process.env.CLOUDINARY_AUTHENTICATED_UPLOADS = antes;
+    }
+});
+
+
+test('cloudinary: reconocer recursos públicos históricos solo de carpeta y nube permitidas', () => {
+    const url = prefijo + '/image/upload/v123/jaguares/atletas/foto-legada.jpg';
+    assert.deepEqual(analizarAssetGuardado(url, 'jaguares/atletas'), {
+        public_id: 'jaguares/atletas/foto-legada',
+        format: 'jpg',
+        resource_type: 'image',
+        delivery_type: 'upload'
+    });
+    assert.equal(enlaceAutorizado(url, 'jaguares/atletas'), url);
+    assert.equal(analizarAssetGuardado(prefijo + '/raw/upload/v22/jaguares/atletas/partida.pdf',
+        'jaguares/atletas').public_id, 'jaguares/atletas/partida.pdf');
+    assert.equal(analizarAssetGuardado(foto, 'jaguares/atletas').delivery_type, 'authenticated');
+});
+
+test('cloudinary: nunca redirigir hacia origen externo, carpeta ajena o URL manipulada', () => {
+    for (const url of [
+        'https://example.org/comprobante.pdf',
+        'http://res.cloudinary.com/nube-sintetica/image/upload/jaguares/atletas/foto.jpg',
+        'https://evil.invalid/image/upload/jaguares/atletas/foto.jpg',
+        'https://res.cloudinary.com/otro-cloud/image/upload/jaguares/atletas/foto.jpg',
+        prefijo + '/image/upload/v1/otra-carpeta/documento.jpg',
+        prefijo + '/image/upload/c_scale,w_200/v1/jaguares/atletas/foto.jpg',
+        prefijo + '/image/upload/v1/jaguares/atletas/documento.svg',
+        prefijo + '/image/upload/v1/jaguares/atletas/foto.jpg?foo=bar',
+        prefijo + '/image/private/v1/jaguares/atletas/foto.jpg',
+        prefijo + '/image/upload/v1/jaguares/atletas/%2e%2e/foto.jpg',
+        'javascript:alert(1)'
+    ]) {
+        assert.equal(analizarAssetGuardado(url, 'jaguares/atletas'), null, url);
+        assert.throws(() => enlaceAutorizado(url, 'jaguares/atletas'), /Origen de archivo no permitido/);
     }
 });

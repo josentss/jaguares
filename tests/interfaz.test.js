@@ -521,6 +521,15 @@ for (const dispositivo of [
             assert.equal(await popover.isVisible(), true);
             assert.equal(await popover.getAttribute('role'), 'dialog');
             assert.equal(await page.locator('#evento-reloj-panel .evento-reloj-encabezado').count(), 0);
+            // Limpieza visual: no hay notas repetidas, pero se conserva la ayuda
+            // del horario para lectores de pantalla y el aviso dinámico de historial.
+            assert.equal(await page.locator('#evento-hora-ayuda').getAttribute('class'), 'evento-reloj-sr-only');
+            assert.match(await page.locator('#evento-hora-ayuda').textContent(), /5 a\. m\./);
+            assert.equal((await page.locator('.evento-reloj-minutos-label').textContent()).trim(), 'Minutos');
+            assert.equal(await page.locator('#sec-cms .evento-nota').count(), 0);
+            assert.equal(await page.locator('#aviso-eventos-vencidos').count(), 1);
+            const alturaMinuto = await minutos.first().evaluate(el => parseFloat(getComputedStyle(el).minHeight));
+            assert.ok(alturaMinuto >= (dispositivo.viewport.width <= 400 ? 42 : 40));
             assert.equal(await minutos.count(), 12);
             assert.equal(await page.locator('[data-periodo="pm"]').getAttribute('aria-pressed'), 'true');
             assert.equal(await hora.locator('option').count(), 12); // 11 horas p. m. + placeholder

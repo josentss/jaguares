@@ -10,6 +10,13 @@ router.get(
     atletaController.obtenerAtletasPorRepresentante
 );
 
+// El tipo de documento se valida en backend; no se recibe URL del cliente.
+router.get(
+    '/:id/documentos/:tipo',
+    verificarSesion,
+    atletaController.abrirDocumentoAtleta
+);
+
 // Planilla completa — debe ir ANTES de rutas genéricas si las hubiera
 router.get(
     '/:id',

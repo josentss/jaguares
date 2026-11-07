@@ -2,6 +2,7 @@ const db = require('../config/db');
 const path = require('path');
 const { esEnteroPositivo, esMontoValido, esFechaISOValida } = require('../utils/validators');
 const { logUploadEvent } = require('../utils/auditLogger');
+const { enlaceAutorizado } = require('../utils/cloudinaryPrivado');
 
 const METODOS_PAGO = ['Transferencia Bancaria', 'Efectivo'];
 const MESES_PAGO = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -135,7 +136,10 @@ exports.obtenerHistorial = (req, res) => {
 
         res.json({
             success: true,
-            datos: resultados
+            datos: resultados.map(p => ({
+                ...p,
+                ruta_captura: p.ruta_captura ? `/api/pagos/captura/${p.id_pago}` : null
+            }))
         });
     });
 };
@@ -186,10 +190,16 @@ exports.obtenerCaptura = (req, res) => {
             }
         }
 
-        // Responder con la URL limpia en JSON
-        res.json({
-            success: true,
-            url: urlFinal
-        });
+        try {
+            // Para nuevos assets authenticated, firma por 120s SOLO después
+            // de comprobar propiedad/rol. Activos anteriores siguen públicos
+            // hasta la migración acordada: no simular privacidad retroactiva.
+            const url = enlaceAutorizado(urlFinal, 'jaguares_comprobantes');
+            res.set('Cache-Control', 'no-store');
+            res.set('Referrer-Policy', 'no-referrer');
+            return res.json({ success: true, url });
+        } catch {
+            return res.status(503).json({ success: false, message: 'Comprobante no disponible' });
+        }
     });
 };

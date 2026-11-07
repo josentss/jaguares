@@ -4,6 +4,7 @@ const { inscribir } = require('../utils/inscripcion');
 const { responderError } = require('../utils/integridad');
 const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esEdadAtletaValida, esDireccionValida, esCondicionMedicaValida, esIndicadorFormularioValido } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
+const { enlaceAutorizado } = require('../utils/cloudinaryPrivado');
 
 function urlDeArchivo(file) {
     if (!file) return null;
@@ -44,7 +45,10 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
             console.error('Error al obtener atletas:', err.code, err.message);
             return res.status(500).json({ success: false, message: 'Error al consultar atletas' });
         }
-        res.json({ success: true, atletas: results });
+        res.json({ success: true, atletas: results.map(a => ({
+            ...a,
+            foto_url: a.foto_url ? `/api/atletas/${a.id_atleta}/documentos/foto` : null
+        })) });
     });
 };
 
@@ -240,9 +244,9 @@ exports.obtenerAtletaPorId = (req, res) => {
                 alergias_medicas: a.alergias_medicas,
                 estado: a.estado,
                 documentos: {
-                    foto_url: a.foto_url || null,
-                    cedula_archivo_url: a.cedula_archivo_url || null,
-                    partida_nacimiento_url: a.partida_nacimiento_url || null
+                    foto_url: a.foto_url ? `/api/atletas/${a.id_atleta}/documentos/foto` : null,
+                    cedula_archivo_url: a.cedula_archivo_url ? `/api/atletas/${a.id_atleta}/documentos/cedula_archivo` : null,
+                    partida_nacimiento_url: a.partida_nacimiento_url ? `/api/atletas/${a.id_atleta}/documentos/partida_nacimiento` : null
                 },
                 representante: {
                     id_representante: a.id_representante,
@@ -255,5 +259,44 @@ exports.obtenerAtletaPorId = (req, res) => {
                 }
             }
         });
+    });
+};
+
+// Entrega de documentos del atleta: sin IDs arbitrarios de Cloudinary,
+// siempre a partir del propietario obtenido directamente desde PostgreSQL.
+const COLUMNAS_DOCUMENTO = Object.freeze({
+    foto: 'foto_url',
+    cedula_archivo: 'cedula_archivo_url',
+    partida_nacimiento: 'partida_nacimiento_url'
+});
+
+exports.abrirDocumentoAtleta = (req, res) => {
+    const { id, tipo } = req.params;
+    const columna = COLUMNAS_DOCUMENTO[tipo];
+    if (!esEnteroPositivo(id) || !columna) {
+        return res.status(400).json({ success: false, message: 'Documento no válido' });
+    }
+
+    db.query(`SELECT id_representante, ${columna} AS archivo FROM atletas WHERE id_atleta = ?`,
+        [Number(id)], (error, rows) => {
+        if (error) {
+            console.error('Error al consultar documento de atleta:', error.code || 'INTERNAL');
+            return res.status(500).json({ success: false, message: 'No se pudo consultar el archivo' });
+        }
+        const atleta = rows?.[0];
+        if (!atleta) return res.status(404).json({ success: false, message: 'Atleta no encontrado' });
+        const autorizado = ['directiva', 'staff', 'admin'].includes(req.usuarioRol) ||
+            String(req.usuarioId) === String(atleta.id_representante);
+        if (!autorizado) return res.status(403).json({ success: false, message: 'No autorizado' });
+        if (!atleta.archivo) return res.status(404).json({ success: false, message: 'Documento no adjunto' });
+
+        try {
+            const enlace = enlaceAutorizado(atleta.archivo, 'jaguares/atletas');
+            res.set('Referrer-Policy', 'no-referrer');
+            res.set('Cache-Control', 'no-store');
+            return res.redirect(302, enlace);
+        } catch {
+            return res.status(503).json({ success: false, message: 'El documento no está disponible' });
+        }
     });
 };

@@ -121,3 +121,29 @@ test('auditoría: resume referencias anonimizadas sin publicar links o identific
     assert.equal(salida.comprobantes.referencia_legacy_sin_url, 1);
     assert.doesNotMatch(JSON.stringify(salida), /atleta-sintetico|recibo\.jpg|example\.org/);
 });
+
+
+test('inventario de terminal carga .env local sin abrir conexión ni imprimir secretos', () => {
+    const { mkdtempSync, writeFileSync, rmSync } = require('node:fs');
+    const { tmpdir } = require('node:os');
+    const { join, resolve } = require('node:path');
+    const { spawnSync } = require('node:child_process');
+    const carpeta = mkdtempSync(join(tmpdir(), 'jaguares-env-prueba-'));
+    try {
+        writeFileSync(join(carpeta, '.env'),
+            'CLOUDINARY_CLOUD_NAME=nube-prueba-local\nDATABASE_URL=postgres://prueba.invalid/base\n');
+        const env = { ...process.env };
+        delete env.CLOUDINARY_CLOUD_NAME;
+        delete env.DATABASE_URL;
+        const resultado = spawnSync(process.execPath, [
+            '-e',
+            "require(process.argv[1]);process.stdout.write(process.env.CLOUDINARY_CLOUD_NAME + '|' + process.env.DATABASE_URL)",
+            resolve(__dirname, '../scripts/auditar-cloudinary.js')
+        ], { cwd: carpeta, env, encoding: 'utf8', timeout: 10000 });
+        assert.equal(resultado.status, 0, resultado.stderr);
+        assert.equal(resultado.stdout,
+            'nube-prueba-local|postgres://prueba.invalid/base');
+    } finally {
+        rmSync(carpeta, { recursive: true, force: true });
+    }
+});

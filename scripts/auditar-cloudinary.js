@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 
+// El script se ejecuta directamente desde la terminal, fuera del arranque de
+// Express. Debe cargar el .env local antes de verificar la configuración.
+require('dotenv').config();
+
 // Inventario SIN ESCRITURAS: no imprime URL, public_id, ID de atleta,
 // cédula, datos bancarios ni otros datos personales.
 const { analizarAssetGuardado } = require('../utils/cloudinaryPrivado');

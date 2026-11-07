@@ -59,6 +59,15 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Históricos:** los activos existentes de tipo `upload` siguen accesibles por URL antiguas si se conoce; inventariar y migrar después sin reescribir Supabase ni cambiar URLs sin autorización.
 - [ ] **Rollback:** `CLOUDINARY_AUTHENTICATED_UPLOADS=0` solo controla las cargas futuras; no desprotege los recursos ya guardados como `authenticated`.
 
+## Inventario Cloudinary y rutas de documentos (PR #26)
+
+- [ ] **Origen permitido:** desde la ficha de un atleta propio y la planilla directiva, un JPG/PNG/PDF histórico con URL de la cuenta y carpeta de Jaguares sigue abriéndose.
+- [ ] **Destino incorrecto:** una URL de otro dominio, nube, carpeta o formato no permite redirigir fuera de Cloudinary; la API informa documento no disponible, sin exponer enlaces.
+- [ ] **Metadatos históricos:** verificar en Media Library que ejemplos de ambas carpetas sean Públicos; no asumir que el recurso completo fue inventariado solo con dos muestras.
+- [ ] **Inventario anónimo:** ejecutar `node scripts/auditar-cloudinary.js` solo con acceso autorizado y confirmar que la salida contiene conteos por categoría, sin URL ni datos personales; no se realizan actualizaciones SQL.
+- [ ] **Antes de activar authenticated:** comprobar entrega firmada/no firmada de foto, comprobante y PDF sintéticos en Preview. El checkbox de entrega PDF/ZIP habilitado no prueba por sí solo que ya funcione el flujo completo con `authenticated`.
+- [ ] **Históricos:** no modificar activos reales ni ejecutar `rename`, reemplazos SQL o invalidación de CDN sin revisión del inventario y autorización explícita.
+
 ## Sesión
 
 - [ ] Entrar y recargar: vuelve al panel sin tarjeta blanca de verificación.

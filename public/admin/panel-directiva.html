@@ -350,13 +350,6 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="imageModal">
-        <div class="modal-content">
-            <button type="button" class="btn-close-modal" onclick="closeModal()">&times;</button>
-            <img id="modalImage" src="" alt="Comprobante de pago">
-        </div>
-    </div>
-
     <div class="sidebar" id="sidebar">
         <div class="sidebar-logo">
             <img src="../img/logo-sinfondo.png" alt="Logo Jaguares">
@@ -790,20 +783,6 @@
             if(est === 'activo' || est === 'aprobado') return 'badge-activo';
             if(est === 'espera' || est === 'pendiente') return 'badge-espera';
             return 'badge-rechazado';
-        }
-
-        function openModal(imageSrc) {
-            document.getElementById('modalImage').src = imageSrc;
-            document.getElementById('imageModal').classList.add('active');
-        }
-
-        function closeModal() {
-            const img = document.getElementById('modalImage');
-            if (img.src && img.src.startsWith('blob:')) {
-                URL.revokeObjectURL(img.src);
-            }
-            document.getElementById('imageModal').classList.remove('active');
-            setTimeout(() => img.src = '', 200);
         }
 
         function cerrarPlanilla() {
@@ -1376,26 +1355,6 @@
                     boton.removeAttribute('aria-busy');
                 }
                 planillaPdfEnCurso = false;
-            }
-        }
-
-        async function verComprobante(idPago) {
-            if (!currentUser) {
-                showToast('Sesión no disponible, vuelve a iniciar sesión', 'error');
-                return;
-            }
-
-            try {
-                const res = await apiFetch(`/api/pagos/captura/${idPago}`);
-                const data = await res.json();
-
-                if (!res.ok || !data.success) {
-                    throw new Error(data.message || 'No se pudo cargar el comprobante');
-                }
-
-                await window.JaguaresComprobantes.abrir(idPago);
-            } catch (err) {
-                showToast(err.message || 'Error al cargar el comprobante', 'error');
             }
         }
 

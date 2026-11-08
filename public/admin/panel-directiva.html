@@ -1155,97 +1155,185 @@
                 showToast('No hay planilla para descargar', 'error');
                 return;
             }
-            if (typeof html2pdf !== 'function') {
-                showToast('No se pudo cargar el generador de PDF. Usa Imprimir.', 'error');
+            if (typeof html2pdf === 'undefined') {
+                showToast('No se pudo cargar el generador de PDF', 'error');
                 return;
             }
             if (planillaPdfEnCurso) return;
-            planillaPdfEnCurso = true;
 
-            const boton = document.querySelector('#planilla-contenido .planilla-toolbar button[onclick="descargarPlanillaPDF()"]');
-            const botonDeshabilitado = boton?.disabled || false;
+            const nombre = (sheet.querySelector('.planilla-table td strong')?.textContent || 'atleta')
+                .trim()
+                .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
+                .replace(/\s+/g, '_')
+                .replace(/[._]+$/g, '')
+                .slice(0, 80) || 'atleta';
+
+            const boton = sheet.parentElement?.querySelector('.planilla-toolbar button[onclick="descargarPlanillaPDF()"]');
+            const botonEstabaDeshabilitado = boton?.disabled;
+            const imagenesOriginales = Array.from(sheet.querySelectorAll('img'));
             const overlaysAnteriores = new Set(document.querySelectorAll('.html2pdf__overlay'));
-            let temporal = null;
-            let estilo = null;
+            let imagenesParaPdf = [];
+            let fotoOmitida = false;
+            const estilosExportacion = `
+                .planilla-export-document {
+                    box-sizing: border-box !important;
+                    width: 190mm !important;
+                    min-width: 190mm !important;
+                    max-width: 190mm !important;
+                    margin: 0 !important;
+                    padding: 16px !important;
+                    clear: none !important;
+                    float: none !important;
+                    position: relative !important;
+                    left: auto !important;
+                    right: auto !important;
+                    transform: none !important;
+                    overflow: visible !important;
+                    border-radius: 0 !important;
+                    box-shadow: none !important;
+                    background: #fff !important;
+                }
+                .planilla-export-document .planilla-header {
+                    flex-wrap: nowrap !important;
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .planilla-export-document .planilla-header-text { min-width: 0 !important; }
+                .planilla-export-document .planilla-title,
+                .planilla-export-document .planilla-section-title,
+                .planilla-export-document .planilla-footer,
+                .planilla-export-document .planilla-generated {
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .planilla-export-document .planilla-body {
+                    display: grid !important;
+                    grid-template-columns: 120px minmax(0, 1fr) !important;
+                    justify-items: stretch !important;
+                    gap: 14px !important;
+                    align-items: start !important;
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .planilla-export-document .planilla-foto-frame { width: 120px !important; }
+                .planilla-export-document .planilla-foto-box { flex: none !important; }
+                .planilla-export-document .planilla-table {
+                    width: 100% !important;
+                    table-layout: fixed !important;
+                    font-size: 10pt !important;
+                }
+                .planilla-export-document .planilla-table th { width: 36% !important; }
+                .planilla-export-document .planilla-table th,
+                .planilla-export-document .planilla-table td {
+                    overflow-wrap: anywhere !important;
+                    word-break: break-word !important;
+                }
+                .planilla-export-document .planilla-table tr {
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .planilla-export-document .planilla-footer {
+                    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                }
+                .planilla-export-document .no-foto {
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    color: #666 !important;
+                    background: #f5f5f5 !important;
+                    font: 12px sans-serif !important;
+                }
+            `;
+            const opt = {
+                margin:       [10, 10, 12, 10],
+                filename:     `Planilla_Jaguares_${nombre}.pdf`,
+                image:        { type: 'jpeg', quality: 0.95 },
+                html2canvas:  {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    windowWidth: Math.max(Math.ceil(210 / 25.4 * 96), document.documentElement.clientWidth),
+                    imageTimeout: 10000,
+                    scrollX: 0,
+                    scrollY: 0,
+                    onclone: (clonedDocument) => {
+                        const bodyClonado = clonedDocument.body;
+                        bodyClonado.className = '';
+                        bodyClonado.style.setProperty('display', 'block', 'important');
+                        bodyClonado.style.setProperty('position', 'static', 'important');
+                        bodyClonado.style.setProperty('width', 'auto', 'important');
+                        bodyClonado.style.setProperty('min-width', '0', 'important');
+                        bodyClonado.style.setProperty('overflow', 'visible', 'important');
+                        bodyClonado.style.setProperty('padding', '0', 'important');
+                        bodyClonado.style.setProperty('margin', '0', 'important');
+                        bodyClonado.style.setProperty('background', '#fff', 'important');
+                        clonedDocument.documentElement.style.setProperty('overflow', 'visible', 'important');
+
+                        const planillaClonada = clonedDocument.querySelector('.html2pdf__container .planilla-sheet');
+                        if (!planillaClonada) return;
+                        planillaClonada.classList.add('planilla-export-document');
+                        planillaClonada.removeAttribute('id');
+                        planillaClonada.querySelectorAll('[id]').forEach((elemento) => elemento.removeAttribute('id'));
+                        const estilos = clonedDocument.createElement('style');
+                        estilos.textContent = estilosExportacion;
+                        planillaClonada.prepend(estilos);
+
+                        const imagenesClonadas = Array.from(planillaClonada.querySelectorAll('img'));
+                        imagenesClonadas.forEach((imagenClonada, indice) => {
+                            const datos = imagenesParaPdf[indice];
+                            if (datos) {
+                                imagenClonada.src = datos;
+                                imagenClonada.removeAttribute('onerror');
+                                return;
+                            }
+                            if (imagenClonada.classList.contains('planilla-header-logo')) {
+                                imagenClonada.remove();
+                                return;
+                            }
+                            fotoOmitida = true;
+                            const caja = imagenClonada.closest('.planilla-foto-box');
+                            if (caja) caja.innerHTML = '<div class="no-foto">Foto no disponible</div>';
+                            else imagenClonada.remove();
+                        });
+                    }
+                },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    {
+                    mode: ['css', 'legacy'],
+                    avoid: [
+                        '.planilla-header',
+                        '.planilla-title',
+                        '.planilla-body',
+                        '.planilla-section-title',
+                        '.planilla-table tr',
+                        '.planilla-footer',
+                        '.planilla-generated'
+                    ]
+                }
+            };
+
             try {
+                planillaPdfEnCurso = true;
                 if (boton) {
                     boton.disabled = true;
                     boton.setAttribute('aria-busy', 'true');
                 }
+
                 showToast('Generando PDF...', 'success');
-
-                const nombre = (sheet.querySelector('.planilla-table td strong')?.textContent || 'atleta')
-                    .trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
-                    .replace(/\s+/g, '_').replace(/[._]+$/g, '').slice(0, 80) || 'atleta';
-
-                // La captura se genera desde una copia aislada del modal.
-                temporal = document.createElement('div');
-                temporal.style.cssText = 'position:absolute;left:-10000px;top:0;width:190mm;pointer-events:none;';
-                const copia = sheet.cloneNode(true);
-                copia.classList.add('planilla-export-document');
-                copia.removeAttribute('id');
-                temporal.appendChild(copia);
-                document.body.appendChild(temporal);
-
-                estilo = document.createElement('style');
-                estilo.textContent = [
-                    '.planilla-export-document {box-sizing:border-box!important;width:190mm!important;',
-                    'min-width:190mm!important;max-width:190mm!important;margin:0!important;',
-                    'padding:16px!important;position:static!important;float:none!important;',
-                    'clear:none!important;box-shadow:none!important;border-radius:0!important;',
-                    'background:#fff!important;}',
-                    '.planilla-export-document .planilla-header {flex-wrap:nowrap!important;}',
-                    '.planilla-export-document .planilla-header-text {min-width:0!important;}',
-                    '.planilla-export-document .planilla-body {display:grid!important;',
-                    'grid-template-columns:120px minmax(0,1fr)!important;',
-                    'justify-items:stretch!important;align-items:start!important;gap:14px!important;}',
-                    '.planilla-export-document .planilla-foto-frame {width:120px!important;}',
-                    '.planilla-export-document .planilla-table {width:100%!important;',
-                    'table-layout:fixed!important;font-size:10pt!important;}',
-                    '.planilla-export-document .planilla-table th {width:36%!important;}',
-                    '.planilla-export-document .planilla-table th,',
-                    '.planilla-export-document .planilla-table td {overflow-wrap:anywhere!important;}',
-                    '.planilla-export-document .planilla-footer {',
-                    'grid-template-columns:repeat(2,minmax(0,1fr))!important;}',
-                    '.planilla-export-document .no-foto {display:flex;align-items:center;',
-                    'justify-content:center;height:100%;width:100%;font:12px sans-serif;',
-                    'color:#666;background:#f5f5f5;}'
-                ].join('\n');
-                document.head.appendChild(estilo);
-
-                let fotoOmitida = false;
-                for (const imagen of Array.from(copia.querySelectorAll('img'))) {
-                    const datos = await imagenPdfSegura(imagen.src);
-                    if (datos) {
-                        imagen.src = datos;
-                        imagen.removeAttribute('onerror');
-                    } else if (imagen.classList.contains('planilla-header-logo')) {
-                        imagen.remove();
-                    } else {
-                        fotoOmitida = true;
-                        const caja = imagen.closest('.planilla-foto-box');
-                        if (caja) caja.innerHTML = '<div class="no-foto">Foto no disponible</div>';
-                        else imagen.remove();
-                    }
+                if (document.fonts?.ready) {
+                    await Promise.race([
+                        document.fonts.ready,
+                        new Promise((resolve) => setTimeout(resolve, 5000))
+                    ]);
                 }
 
-                const opciones = {
-                    margin: [10, 10, 12, 10],
-                    filename: 'Planilla_Jaguares_' + nombre + '.pdf',
-                    image: { type: 'jpeg', quality: 0.92 },
-                    html2canvas: {
-                        scale: 1.5, logging: false, useCORS: false,
-                        allowTaint: false, backgroundColor: '#ffffff',
-                        windowWidth: 900, scrollX: 0, scrollY: 0
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: {
-                        mode: ['css', 'legacy'],
-                        avoid: ['.planilla-header', '.planilla-body', '.planilla-footer',
-                            '.planilla-table tr', '.planilla-generated']
-                    }
-                };
-                await html2pdf().set(opciones).from(copia).save();
+                imagenesParaPdf = await Promise.all(
+                    imagenesOriginales.map(imagen => imagenPdfSegura(imagen.src))
+                );
+                await html2pdf().set(opt).from(sheet).save();
                 if (fotoOmitida) {
                     showToast('PDF descargado sin foto. Puedes usar Imprimir para incluirla.', 'error');
                 } else {
@@ -1255,13 +1343,11 @@
                 console.error('Falló la generación de PDF:', err?.name || 'Error', err?.message || '');
                 showToast('No se pudo generar el PDF. Puedes usar Imprimir.', 'error');
             } finally {
-                estilo?.remove();
-                temporal?.remove();
                 document.querySelectorAll('.html2pdf__overlay').forEach((overlay) => {
                     if (!overlaysAnteriores.has(overlay)) overlay.remove();
                 });
                 if (boton) {
-                    boton.disabled = botonDeshabilitado;
+                    boton.disabled = Boolean(botonEstabaDeshabilitado);
                     boton.removeAttribute('aria-busy');
                 }
                 planillaPdfEnCurso = false;

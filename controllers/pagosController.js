@@ -197,6 +197,9 @@ exports.obtenerCaptura = (req, res) => {
             const url = enlaceAutorizado(urlFinal, 'jaguares_comprobantes');
             res.set('Cache-Control', 'no-store');
             res.set('Referrer-Policy', 'no-referrer');
+            // Apertura directa desde un enlace de historial. Se comprueban
+            // propietario y rol ANTES de redirigir, igual que en modo JSON.
+            if (req.query?.abrir === '1') return res.redirect(302, url);
             return res.json({ success: true, url });
         } catch {
             return res.status(503).json({ success: false, message: 'Comprobante no disponible' });

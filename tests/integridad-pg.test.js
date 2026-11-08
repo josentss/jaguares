@@ -289,6 +289,26 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
         // URL/Cloudinary public_id aportado por el cliente.
         await db.pool.query('UPDATE atletas SET foto_url=$1, cedula_archivo_url=$2 WHERE id_atleta=$3',
             ['https://res.cloudinary.com/nube-sintetica/image/upload/v1/jaguares/atletas/foto-sintetica.png', 'https://res.cloudinary.com/nube-sintetica/image/upload/v1/jaguares/atletas/cedula-sintetica.pdf', id]);
+        // Historial de representante: la opción ?abrir=1 permite una pestaña
+        // normal, pero mantiene los mismos permisos que la respuesta JSON.
+        const abrirComprobante = captura + '?abrir=1';
+        const sinSesion = await fetch(base + abrirComprobante, {redirect:'manual'});
+        assert.equal(sinSesion.status, 401);
+        const ajenoComprobante = await fetch(base + abrirComprobante, {
+            headers:{cookie:`token=${token(2)}`},redirect:'manual'
+        });
+        assert.equal(ajenoComprobante.status, 403);
+        assert.equal(ajenoComprobante.headers.get('location'), null);
+        for (const usuario of [1, 4]) {
+            const respuesta = await fetch(base + abrirComprobante, {
+                headers:{cookie:`token=${token(usuario)}`}, redirect:'manual'
+            });
+            assert.equal(respuesta.status, 302);
+            assert.match(respuesta.headers.get('location'),
+                /^https:\/\/res\.cloudinary\.com\/nube-sintetica\/image\/upload\//);
+            assert.equal(respuesta.headers.get('cache-control'), 'no-store');
+        }
+
         const rutaFoto = `/api/atletas/${id}/documentos/foto`;
         for (const ruta of [rutaFoto, `/api/atletas/${id}/documentos/cedula_archivo`]) {
             assert.equal((await fetch(base + ruta, {redirect:'manual'})).status,401);

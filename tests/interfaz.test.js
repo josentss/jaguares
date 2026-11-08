@@ -87,7 +87,8 @@ test.before(async () => {
                 success: true, datos: [{
                     id_pago: 1, atl_nombres: atletaXss, atl_apellidos: 'Activo',
                     mes_pagado: 'Noviembre', monto: '25.50', moneda: 'USD',
-                    estado_pago: 'pendiente', fecha_pago: '2026-11-02'
+                    estado_pago: 'pendiente', fecha_pago: '2026-11-02',
+                    ruta_captura: '/api/pagos/captura/1'
                 }]
             });
             if (pathname === '/api/notificaciones/5') return json(res, { success: true, notificaciones: [] });
@@ -141,6 +142,11 @@ for (const dispositivo of [
                 document.querySelector('#table-my-pagos tbody')?.textContent.includes('Noviembre')
             );
             assert.equal(await page.locator('#table-my-pagos tbody img').count(), 0);
+            const enlaceComprobante = page.locator('#table-my-pagos tbody a.pago-comprobante-link');
+            assert.equal(await enlaceComprobante.count(), 1);
+            assert.equal(await enlaceComprobante.getAttribute('href'), '/api/pagos/captura/1?abrir=1');
+            assert.equal(await enlaceComprobante.getAttribute('rel'), 'noopener noreferrer');
+            assert.equal(await page.locator('#table-my-pagos thead th').count(), 6);
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), false);
             await page.locator('#table-my-atletas button[data-docs-atleta="11"]').click();
             await page.locator('#documentos-atleta-modal').waitFor({state:'visible'});
@@ -199,6 +205,88 @@ for (const dispositivo of [
         } finally { await browser.close(); }
     });
 }
+
+test('directiva: PDF fallido libera modal, overlays y botón para reintentar', async () => {
+    const browser = await chromium.launch({headless: true});
+    const page = await browser.newPage({viewport:{width:1280,height:820}});
+    await page.route('https://**/*', route => route.abort());
+    try {
+        await page.goto(baseUrl + '/admin/panel-directiva.html');
+        await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
+        await page.evaluate(() => {
+            const modal = document.getElementById('planillaModal');
+            modal.classList.add('active');
+            document.getElementById('planilla-contenido').innerHTML =
+                '<div class="planilla-sheet" id="planilla-print-root">' +
+                    '<div class="planilla-header">Planilla de prueba</div>' +
+                    '<div class="planilla-body"><table class="planilla-table">' +
+                    '<tr><th>Atleta</th><td><strong>Prueba Sintética</strong></td></tr>' +
+                    '</table></div></div>' +
+                '<div class="planilla-toolbar">' +
+                    '<button onclick="descargarPlanillaPDF()">Descargar PDF</button>' +
+                    '<button onclick="cerrarPlanilla()">Cerrar</button></div>';
+            window.html2pdf = () => ({
+                set() { return this; },
+                from() { return this; },
+                async save() {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'html2pdf__overlay';
+                    document.body.appendChild(overlay);
+                    throw new Error('Error sintético de PDF');
+                }
+            });
+        });
+        await page.evaluate(() => descargarPlanillaPDF());
+        assert.equal(await page.locator('.html2pdf__overlay').count(), 0);
+        assert.equal(await page.locator('.planilla-export-document').count(), 0);
+        assert.equal(await page.locator('#planilla-contenido .planilla-toolbar button').first().isDisabled(), false);
+        assert.equal(await page.locator('#planilla-contenido .planilla-toolbar button').first().getAttribute('aria-busy'), null);
+        assert.equal(await page.locator('#planillaModal').getAttribute('class'), 'modal-overlay active');
+        assert.equal(await page.evaluate(() => planillaPdfEnCurso), false);
+        await page.locator('#planilla-contenido .planilla-toolbar button').last().click();
+        assert.equal(await page.locator('#planillaModal').getAttribute('class'), 'modal-overlay');
+        assert.match((await page.locator('#toast-container').textContent()), /No se pudo generar el PDF/);
+    } finally { await browser.close(); }
+});
+
+test('directiva: PDF exitoso deja la planilla intacta y restaura controles', async () => {
+    const browser = await chromium.launch({headless:true});
+    const page = await browser.newPage({viewport:{width:390,height:844}});
+    await page.route('https://**/*', route => route.abort());
+    try {
+        await page.goto(baseUrl + '/admin/panel-directiva.html');
+        await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
+        const resultado = await page.evaluate(async () => {
+            document.getElementById('planilla-contenido').innerHTML =
+                '<div class="planilla-sheet" id="planilla-print-root"><table class="planilla-table">' +
+                '<tr><th>Nombre</th><td><strong>Atleta Sintético</strong></td></tr></table></div>' +
+                '<div class="planilla-toolbar"><button onclick="descargarPlanillaPDF()">Descargar PDF</button></div>';
+            let fuente = null;
+            window.html2pdf = () => ({
+                set(opt) { window.__opcionesPdf = opt; return this; },
+                from(elemento) { fuente = elemento; return this; },
+                async save() {
+                    if (!fuente || fuente !== document.getElementById('planilla-print-root')) {
+                        throw new Error('El generador no recibió la planilla original');
+                    }
+                }
+            });
+            await descargarPlanillaPDF();
+            return {
+                filename: window.__opcionesPdf.filename,
+                enCurso: planillaPdfEnCurso,
+                original: Boolean(document.getElementById('planilla-print-root')),
+                temporal: Boolean(document.querySelector('.planilla-export-document')),
+                botonActivo: !document.querySelector('.planilla-toolbar button').disabled
+            };
+        });
+        assert.match(resultado.filename, /^Planilla_Jaguares_Atleta_Sintético\.pdf$/);
+        assert.equal(resultado.enCurso, false);
+        assert.equal(resultado.original, true);
+        assert.equal(resultado.temporal, false);
+        assert.equal(resultado.botonActivo, true);
+    } finally { await browser.close(); }
+});
 
 test('registro web: no permite teclear cifras en nombres y rechaza contenido pegado', async () => {
     const browser = await chromium.launch({headless: true});

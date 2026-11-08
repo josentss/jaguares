@@ -1259,6 +1259,30 @@
                     imageTimeout: 10000,
                     scrollX: 0,
                     scrollY: 0,
+                    onrendered: (canvas) => {
+                        let contexto;
+                        try { contexto = canvas.getContext('2d'); } catch { return; }
+                        if (!contexto || canvas.height === 0) return;
+                        let ultimaFilaVisible = -1;
+                        for (let y = canvas.height - 1; y >= 0 && ultimaFilaVisible < 0; y -= 1) {
+                            let pixelesFila;
+                            try { pixelesFila = contexto.getImageData(0, y, canvas.width, 1).data; }
+                            catch { return; }
+                            for (let indice = 0; indice < pixelesFila.length; indice += 4) {
+                                if (pixelesFila[indice] < 250 || pixelesFila[indice + 1] < 250 || pixelesFila[indice + 2] < 250) {
+                                    ultimaFilaVisible = y;
+                                    break;
+                                }
+                            }
+                        }
+                        if (ultimaFilaVisible >= 0 && ultimaFilaVisible < canvas.height - 1) {
+                            try {
+                                const contenido = contexto.getImageData(0, 0, canvas.width, ultimaFilaVisible + 1);
+                                canvas.height = ultimaFilaVisible + 1;
+                                canvas.getContext('2d').putImageData(contenido, 0, 0);
+                            } catch { /* el PDF todavía se genera sin recorte si el canvas no se puede leer */ }
+                        }
+                    },
                     onclone: (clonedDocument) => {
                         const bodyClonado = clonedDocument.body;
                         bodyClonado.className = '';

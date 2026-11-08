@@ -921,8 +921,8 @@ tr:hover td { background-color: #f8fafc; }
     #body-pagos td:not([colspan]):nth-child(4)::before { content: 'Método'; }
     #body-pagos td:not([colspan]):nth-child(5)::before { content: 'Monto'; }
     #body-pagos td:not([colspan]):nth-child(6)::before { content: 'Referencia'; }
-    #body-pagos td:not([colspan]):nth-child(7)::before { content: 'Comprobante'; }
-    #body-pagos td:not([colspan]):nth-child(8)::before { content: 'Estado'; }
+    #body-pagos td:not([colspan]):nth-child(7)::before { content: 'Estado'; }
+    #body-pagos td:not([colspan]):nth-child(8)::before { content: 'Acciones'; }
     #body-eventos td:not([colspan]):nth-child(2)::before { content: 'Fecha'; }
     #body-eventos td:not([colspan]):nth-child(3)::before { content: 'Lugar'; }
     #body-eventos td:not([colspan]):nth-child(4)::before { content: 'Estado'; }

@@ -68,6 +68,14 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Antes de activar authenticated:** comprobar entrega firmada/no firmada de foto, comprobante y PDF sintéticos en Preview. El checkbox de entrega PDF/ZIP habilitado no prueba por sí solo que ya funcione el flujo completo con `authenticated`.
 - [ ] **Históricos:** no modificar activos reales ni ejecutar `rename`, reemplazos SQL o invalidación de CDN sin revisión del inventario y autorización explícita.
 
+## Planilla PDF y comprobantes en representante (PR #28)
+
+- [ ] **PDF real:** en Preview, abrir una planilla sintética con foto, descargar PDF y comprobar texto, foto y firmas. Repetir en móvil y contrastar «Imprimir».
+- [ ] **CORS:** si la foto no puede incluirse en PDF, mostrar marcador y aviso; no aceptar silenciosamente un PDF incompleto.
+- [ ] **Error de exportación:** después de un fallo simulado de html2pdf, se puede cerrar y volver a usar la planilla, sin overlays persistentes. Revisar consola del navegador sin compartir datos privados.
+- [ ] **Historial representante:** «Ver» abre comprobante propio; pagos sin comprobante muestran guion. Directiva mantiene su acción «Ver».
+- [ ] **Seguridad:** `/api/pagos/captura/:id_pago?abrir=1` exige sesión y propietario o staff/directiva/admin; representante ajeno recibe HTTP 403.
+
 ## Sesión
 
 - [ ] Entrar y recargar: vuelve al panel sin tarjeta blanca de verificación.

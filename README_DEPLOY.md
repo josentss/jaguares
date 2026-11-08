@@ -47,7 +47,7 @@ Con un entorno autorizado que tenga `DATABASE_URL` y `CLOUDINARY_CLOUD_NAME` con
 node scripts/auditar-cloudinary.js
 ```
 
-El script abre una **transacción PostgreSQL READ ONLY**, clasifica las referencias en fotos, cédulas, partidas y comprobantes y muestra únicamente recuentos agregados. No imprime URL, nombre de persona, `public_id` ni identificadores. No realiza llamadas de escritura a Cloudinary/Supabase; sí requiere lectura de las referencias históricas. No copiar credenciales al chat ni adjuntar resultados con datos personales.
+El script carga el `.env` local mediante `dotenv` (PR #27), abre una **transacción PostgreSQL READ ONLY**, clasifica las referencias en fotos, cédulas, partidas y comprobantes y muestra únicamente recuentos agregados. No imprime URL, nombre de persona, `public_id` ni identificadores. No realiza llamadas de escritura a Cloudinary/Supabase; sí requiere lectura de las referencias históricas. No copiar credenciales al chat ni adjuntar resultados con datos personales.
 
 - `publico`: URL identificada como `image|raw/upload` de las carpetas propias; la firma de un nuevo enlace no la vuelve privada.
 - `autenticado`: URL identificada como `image|raw/authenticated`; comprobar que un enlace sin firma realmente falla.

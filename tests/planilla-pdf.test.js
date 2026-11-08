@@ -212,7 +212,7 @@ for (const device of [
             const pages = await inspectPdfInBrowser(page, pdfBytes);
             assert.ok(pages.length >= 2, 'el contenido largo debe continuar en páginas siguientes');
             assert.ok(pages[0].minContentX < 60 && pages[0].maxContentX > pages[0].width - 60,
-                'el PDF conserva el ancho de página sin recortar sus columnas');
+                'el PDF conserva el ancho de página sin recortar sus columnas: ' + JSON.stringify(pages[0]));
             assert.ok(pages.at(-1).magentaPixels > 1000,
                 'el contenido final aparece completo en la última página');
         } finally {

@@ -70,6 +70,11 @@
         .docs-modal-enlaces a:hover { background: #ffeddd; }
         .docs-atleta-btn { min-height: 40px; padding: 7px 12px; border: 1px solid #ffac78; border-radius: 9px;
             background: #fff5ed; color: #a83e00; font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
+        .pago-comprobante-link { display: inline-flex; align-items: center; justify-content: center;
+            min-height: 40px; padding: 6px 12px; border: 1px solid #ffac78; border-radius: 9px;
+            background: #fff5ed; color: #a83e00; font-size: .82rem; font-weight: 600; text-decoration: none; }
+        .pago-comprobante-link:hover, .pago-comprobante-link:focus-visible {
+            border-color: #ff6b00; background: #ffeadc; }
     </style>
 </head>
 <body class="panel-body" data-session-state="checking">
@@ -338,10 +343,11 @@
                                 <th>Mes</th>
                                 <th>Monto</th>
                                 <th>Estado</th>
+                                <th>Comprobante</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="5" style="text-align: center;">Cargando historial...</td></tr>
+                            <tr><td colspan="6" style="text-align: center;">Cargando historial...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -895,7 +901,7 @@
                         document.getElementById('stat-pagos').textContent = pagosFiltrados.filter(p => p.estado_pago === 'pendiente').length;
 
                         if(pagosFiltrados.length === 0) {
-                          tbody.innerHTML = `<tr><td colspan="5">
+                          tbody.innerHTML = `<tr><td colspan="6">
                               <div class="empty-state">
 
                                   <p>Aún no has reportado pagos</p>
@@ -915,12 +921,19 @@
                                 ? window.FechasJaguares.formatearFechaCivil(pago.fecha_pago)
                                 : (fechaPago ? `${Number(fechaPago[3])}/${Number(fechaPago[2])}/${fechaPago[1]}` : 'N/A');
 
+                            const idPago = Number(pago.id_pago);
+                            const comprobante = pago.ruta_captura && Number.isSafeInteger(idPago) && idPago > 0
+                                ? `<a class="pago-comprobante-link"
+                                    href="/api/pagos/captura/${idPago}?abrir=1" target="_blank"
+                                    rel="noopener noreferrer" aria-label="Ver comprobante del pago ${idPago}">Ver</a>`
+                                : '<span aria-label="Sin comprobante">—</span>';
                             tbody.innerHTML += `<tr>
                                 <td>${fechaStr}</td>
                                 <td>${esc(pago.atl_nombres)} ${esc(pago.atl_apellidos)}</td>
                                 <td>${esc(pago.mes_pagado)}</td>
                                 <td>${esc(pago.monto)} ${esc(pago.moneda || 'Bs')}</td>
                                 <td><span class="status-badge ${badgeClass}" style="text-transform: capitalize;">${esc(pago.estado_pago)}</span></td>
+                                <td>${comprobante}</td>
                             </tr>`;
                         });
                     }

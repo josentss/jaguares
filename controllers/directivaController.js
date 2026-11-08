@@ -215,6 +215,42 @@ exports.actualizarEstadoPago = (req, res) => {
     );
 };
 
+// Eliminar únicamente reportes rechazados. La condición pertenece a la
+// sentencia DELETE para impedir carreras entre auditoría y eliminación.
+// La copia del comprobante en Cloudinary no se borra automáticamente.
+exports.eliminarPagoRechazado = async (req, res) => {
+    if (!['admin', 'directiva'].includes(req.usuarioRol)) {
+        return res.status(403).json({ success: false, message: 'No tienes permiso para eliminar pagos' });
+    }
+    const id = req.params.id_pago;
+    if (!esEnteroPositivo(id)) {
+        return res.status(400).json({ success: false, message: 'Identificador de pago no válido' });
+    }
+    try {
+        const eliminado = await db.pool.query(
+            "DELETE FROM pagos WHERE id_pago = $1 AND estado_pago = 'rechazado' RETURNING id_pago",
+            [Number(id)]
+        );
+        if (eliminado.rowCount === 1) {
+            // No registrar información financiera ni URL de Cloudinary.
+            console.info('AUDIT_PAGO_RECHAZADO_ELIMINADO', {
+                id_pago: Number(id), id_usuario: req.usuarioId
+            });
+            return res.json({ success: true, message: 'Pago rechazado eliminado' });
+        }
+        const actual = await db.pool.query('SELECT estado_pago FROM pagos WHERE id_pago = $1', [Number(id)]);
+        if (actual.rowCount === 0) {
+            return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+        }
+        return res.status(409).json({
+            success: false, message: 'Solo se pueden eliminar pagos que estén rechazados'
+        });
+    } catch (err) {
+        console.error('Error eliminando pago rechazado:', err.code || 'INTERNAL');
+        return res.status(500).json({ success: false, message: 'No se pudo eliminar el pago' });
+    }
+};
+
 // 4. Obtener lista de usuarios pendientes por aprobar
 exports.obtenerUsuariosPendientes = (req, res) => {
     const query = `

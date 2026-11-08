@@ -249,7 +249,7 @@ test('directiva: PDF fallido libera modal, overlays y botón para reintentar', a
     } finally { await browser.close(); }
 });
 
-test('directiva: PDF exitoso usa copia aislada y restaura controles', async () => {
+test('directiva: PDF exitoso deja la planilla intacta y restaura controles', async () => {
     const browser = await chromium.launch({headless:true});
     const page = await browser.newPage({viewport:{width:390,height:844}});
     await page.route('https://**/*', route => route.abort());
@@ -266,9 +266,8 @@ test('directiva: PDF exitoso usa copia aislada y restaura controles', async () =
                 set(opt) { window.__opcionesPdf = opt; return this; },
                 from(elemento) { fuente = elemento; return this; },
                 async save() {
-                    if (!fuente || fuente === document.getElementById('planilla-print-root') ||
-                        !fuente.classList.contains('planilla-export-document')) {
-                        throw new Error('No se capturó una copia aislada de la planilla');
+                    if (!fuente || fuente !== document.getElementById('planilla-print-root')) {
+                        throw new Error('El generador no recibió la planilla original');
                     }
                 }
             });

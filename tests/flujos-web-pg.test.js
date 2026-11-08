@@ -593,6 +593,7 @@ test('pagos rechazados: permisos, estados y eliminación SQL desde directiva', a
             assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM pagos WHERE id_pago=$1',[id])).rows[0].n,1);
         }
         await seccion(dir,'sec-pagos');
+        await dir.selectOption('#filter-estado-pagos','todos');
         const borrar = dir.locator('#body-pagos button.js-pago-eliminar[data-id="' + rechazado + '"]');
         await borrar.waitFor({state:'visible'});
         assert.equal(await dir.locator('#body-pagos button.js-pago-eliminar[data-id="' + pendiente + '"]').count(),0);

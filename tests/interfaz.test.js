@@ -266,8 +266,10 @@ test('directiva: PDF exitoso usa copia aislada y restaura controles', async () =
                 set(opt) { window.__opcionesPdf = opt; return this; },
                 from(elemento) { fuente = elemento; return this; },
                 async save() {
-                    assert.ok(fuente && fuente !== document.getElementById('planilla-print-root'));
-                    assert.equal(fuente.classList.contains('planilla-export-document'), true);
+                    if (!fuente || fuente === document.getElementById('planilla-print-root') ||
+                        !fuente.classList.contains('planilla-export-document')) {
+                        throw new Error('No se capturó una copia aislada de la planilla');
+                    }
                 }
             });
             await descargarPlanillaPDF();

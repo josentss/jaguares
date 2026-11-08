@@ -87,7 +87,8 @@ test.before(async () => {
                 success: true, datos: [{
                     id_pago: 1, atl_nombres: atletaXss, atl_apellidos: 'Activo',
                     mes_pagado: 'Noviembre', monto: '25.50', moneda: 'USD',
-                    estado_pago: 'pendiente', fecha_pago: '2026-11-02'
+                    estado_pago: 'pendiente', fecha_pago: '2026-11-02',
+                    ruta_captura: '/api/pagos/captura/1'
                 }]
             });
             if (pathname === '/api/notificaciones/5') return json(res, { success: true, notificaciones: [] });
@@ -141,6 +142,11 @@ for (const dispositivo of [
                 document.querySelector('#table-my-pagos tbody')?.textContent.includes('Noviembre')
             );
             assert.equal(await page.locator('#table-my-pagos tbody img').count(), 0);
+            const enlaceComprobante = page.locator('#table-my-pagos tbody a.pago-comprobante-link');
+            assert.equal(await enlaceComprobante.count(), 1);
+            assert.equal(await enlaceComprobante.getAttribute('href'), '/api/pagos/captura/1?abrir=1');
+            assert.equal(await enlaceComprobante.getAttribute('rel'), 'noopener noreferrer');
+            assert.equal(await page.locator('#table-my-pagos thead th').count(), 6);
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), false);
             await page.locator('#table-my-atletas button[data-docs-atleta="11"]').click();
             await page.locator('#documentos-atleta-modal').waitFor({state:'visible'});

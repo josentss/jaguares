@@ -6,11 +6,11 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
-- `main` remoto verificado el 9 de noviembre de 2026: `1ca2bf3fc3d83a22a6a8552c4ff904c22dad1a2a` (merge PR #34).
-- PR #1 al #34 fusionados. El propietario probó PR #34 con 3 recursos sintéticos `authenticated`: foto PNG, PDF y comprobante; acceso sin firma bloqueado, con firma temporal permitido, vencido bloqueado. 3 eliminados y 0 pendientes. `url_original_reconocida=false` en los tres, `requiere_ajuste_de_url_web=true`. PR #35 en borrador normaliza nuevas referencias privadas antes de persistir.
+- `main` remoto verificado el 9 de noviembre de 2026: `74da372851c3127accfcbad31b750f102c760a5a` (merge PR #35). GitHub no muestra PR abiertos. Vercel registró un despliegue de Production `success` para ese SHA; no se verificó aquí la configuración del flag ni un recorrido web en Production.
+- PR #1 al #35 fusionados. El propietario probó PR #34 con 3 recursos sintéticos `authenticated`: foto PNG, PDF y comprobante; acceso sin firma bloqueado, con firma temporal permitido, vencido bloqueado. 3 eliminados y 0 pendientes. `url_original_reconocida=false` en los tres, `requiere_ajuste_de_url_web=true`. PR #35 normaliza nuevas referencias privadas antes de persistir; CI terminó en `success`, pero el proveedor estuvo simulado en las pruebas de integración.
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
-- El propietario confirmó despliegue en Vercel de PR #22 tras fusionarlo. No se ha comprobado independientemente el SHA exacto actualmente desplegado en Production; no equiparar Preview con Production.
-- En el SHA del PR #19 pasó el CI `Sintaxis y pruebas backend` y su Preview estuvo disponible. El propietario compartió capturas de calendario y panel funcionando tras la fusión; no se ha verificado aquí el SHA efectivo en Production.
+- El propietario confirmó despliegue en Vercel de PR #22 tras fusionarlo. GitHub/Vercel reportó después `success` en Production para el merge PR #35 (`74da372`); no se comprobó desde navegador el comportamiento efectivo de esa versión. No equiparar Preview con Production.
+- En el SHA del PR #19 pasó el CI `Sintaxis y pruebas backend` y su Preview estuvo disponible. El propietario compartió capturas de calendario y panel funcionando tras la fusión; falta una comprobación trazable en Production de que los nueve días históricos siguen iguales.
 - Tras añadir `hora_evento` en Supabase, el propietario confirmó `time without time zone` nullable. `GET /api/cms/public/eventos` pasó de HTTP 500 a 200 el 6 de noviembre de 2026.
 - El propietario confirmó manualmente en Production el comportamiento del PR #15.
 - CI usa Node.js 22. El entorno local habitual usa Node.js 24; no cambiar versiones sin necesidad.
@@ -123,7 +123,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - Eventos nuevos: desde hoy en Caracas hasta el 31 de diciembre del año siguiente.
 - Los históricos fuera del rango se conservan.
 - [PR #17](https://github.com/josentss/jaguares/pull/17) desplegó código que exige `HH:mm` para eventos nuevos y usa `hora_evento TIME WITHOUT TIME ZONE` nullable. La interfaz presenta la hora civil de Venezuela cuando existe; los históricos deben quedar sin hora.
-- Supabase ya contiene `hora_evento` nullable. El [PR #19](https://github.com/josentss/jaguares/pull/19) fue fusionado; el propietario verificó visualmente registro y presentación de evento con hora. Falta una confirmación trazable del SHA de Production.
+- Supabase ya contiene `hora_evento` nullable. El [PR #19](https://github.com/josentss/jaguares/pull/19) fue fusionado; el propietario verificó visualmente registro y presentación de evento con hora. Falta una comprobación trazable de fechas históricas en Production.
 - **PR #20 fusionado y probado visualmente por el propietario:** horas de 05:00 a 22:00 (cada cinco minutos; a las 22:00 solo minuto 00), estado «Completado» derivado al día civil siguiente sin reescribir históricos, aviso, Programados/Historial, DELETE confirmado autorizado y listado público compacto/filtrable. No hay cron ni eliminación automática.
 - **PR #21 fusionado:** introdujo el selector visual de hora a. m./p. m., manteniendo `HH:mm` en API, pero el propietario consideró su diálogo desplegable demasiado grande. Confirmó la funcionalidad y despliegue, sin validar aquí el SHA efectivo de Production.
 - **PR #22 fusionado, probado visualmente y desplegado según el propietario:** popover compacto con hora en formato 12h, a. m./p. m. y minutos rápidos. El valor legible aparece solo en el campo; API conserva `HH:mm`. El propietario registró y verificó eventos correctamente.
@@ -135,7 +135,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 ### Críticos ante evidencia concreta
 
 - Evitar publicación o registro de documentos, recibos y datos médicos reales.
-- Revisar archivos privados presentes en la historia Git y acordar remediación antes de reescribirla.
+- Revisar archivos privados presentes en la historia Git y acordar remediación antes de reescribirla. En `HEAD` del PR #35 se rastrean 4 PNG bajo `private_uploads/` y 2 logs; no se inspeccionó su contenido ni se determinó si contienen datos reales. No incluirlos en nuevas pruebas o PR por accidente.
 - Confirmar en PostgreSQL real restricciones, claves foráneas y duplicados antes de migrar.
 - Verificar en Production tras despliegue autorizado que se conserva la fecha civil del PR #19 y que los históricos no cambian; las pruebas temporales ya modelan `timestamptz`.
 - Auditar estados `NULL` de cuentas privilegiadas y alinear autenticación, `CHECK` y pruebas sin asumir su estado legítimo.
@@ -149,7 +149,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - **PR #26 fusionado:** el analizador restringe las URL al Cloudinary y carpetas permitidas y existe un inventario SQL de solo lectura con salida agregada. Se verificó en CI con PostgreSQL temporal, sin ejecutar todavía inventario de Supabase de Production.
 - **PR #27 y #31 fusionados:** el inventario carga `.env` desde terminal, hace solo lectura PostgreSQL y ofrece diagnóstico anónimo del tipo de conexión y fallos; el propietario lo ejecutó correctamente después de configurar sus variables locales.
 - **Inventario real reportado el 9 de noviembre de 2026:** 29 registros de atletas en cada columna de documentos, 19 sin archivo y 10 referencias públicas en fotos, 10 en cédulas y 10 en partidas. Comprobantes: 15 filas, 11 sin archivo y 4 referencias públicas. **Total 34 referencias públicas, 0 `authenticated`, 0 pendientes de revisión manual**. No implica 34 archivos únicos ni inventaría los recursos huérfanos que solo existen en Cloudinary.
-- **PR #32–#34 fusionados y preflight REAL aprobado:** tres archivos sintéticos authenticated, firma válida/vencida comprobadas y limpieza completa. La URL de subida no conserva el prefijo de `public_id`; PR #35 normaliza en Multer para nuevas cargas privadas usando `filename=public_id`, origen/tipo/extension MIME verificados antes de SQL. No activa el flag ni migra históricos.
+- **PR #32–#35 fusionados y preflight REAL aprobado:** tres archivos sintéticos authenticated, firma válida/vencida comprobadas y limpieza completa. La URL de subida no conserva el prefijo de `public_id`; PR #35 normaliza en Multer para nuevas cargas privadas usando `filename=public_id`, origen/tipo/extensión MIME verificados antes de SQL. El merge no prueba que el flag esté activado ni migra históricos. Falta el recorrido web real en Preview aislado.
 - Los enlaces temporales pueden reutilizarse hasta caducar; no garantizan revocación inmediata. Las imágenes incrustadas y exportación PDF de planillas deben verificarse en Preview con recursos sintéticos.
 - Cloudinary y SQL no forman una transacción única; pueden quedar archivos huérfanos. No borrar automáticamente documentos de terceros ni registros financieros por un fallo en SQL. Priorizar inventario y política de retención.
 - El limitador en memoria no es global entre instancias serverless.
@@ -205,6 +205,7 @@ No implementar por inferencia:
 
 - [README de documentación](README.md): índice y mantenimiento.
 - [PRUEBAS_MANUALES_WEB.md](PRUEBAS_MANUALES_WEB.md): checklist manual vigente.
+- [ENSAYO_PRIVACIDAD_PREVIEW.md](ENSAYO_PRIVACIDAD_PREVIEW.md): preparación del entorno aislado y criterios para la prueba real de archivos privados.
 - [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md): sesiones e inactividad.
 - [README_DEPLOY.md](../README_DEPLOY.md): Vercel y Supabase.
 
@@ -212,6 +213,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Revisar el [PR #35](https://github.com/josentss/jaguares/pull/35): normalizar referencias de foto, documentos PDF y comprobantes cuando `CLOUDINARY_AUTHENTICATED_UPLOADS=1`; conservar histórico y CMS público. CI con tests de middleware Multer real + proveedor simulado, PostgreSQL temporal, Playwright. **No activar en Production sin ensayo E2E de inscripción y pago sintéticos en Preview con base aislada**, validando propietario, staff/directiva, ajeno, PDF/planilla y comprobante. Luego inventario deduplicado y migración reversible de 34 referencias públicas, con respaldo/autorización separada. Pendiente compensar archivos huérfanos cuando formulario o SQL falla tras upload.
+Preparar y ejecutar el [ensayo de privacidad en Preview](ENSAYO_PRIVACIDAD_PREVIEW.md) con una base PostgreSQL/Supabase **distinta de Production** y archivos/cuentas sintéticos. El propietario confirmó que ese entorno aislado aún no existe. Este bloque amplía la prueba local de navegador + PostgreSQL para cargas authenticated con Cloudinary simulado: **18/18 pruebas pasaron** en Node 24, PostgreSQL 18 desechable y Chromium el 9 de noviembre de 2026. Comprobó URL canónica en SQL, firma generada, propietario/directiva, rechazo a ajeno y anónimo para foto/PDF/comprobante; **no equivale a la prueba real de Preview** ni comprobó allí la exportación PDF. Confirmar propietario, staff/directiva, representante ajeno, PDF/planilla y comprobante antes de activar privadas en Production. Luego abordar compensación de archivos huérfanos. La migración reversible de 34 referencias públicas requiere inventario deduplicado, respaldo y autorización separada.
 
-Evidencia actual: PR #1–#34 fusionados según GitHub y propietario. Inventario: 30 referencias públicas de atletas y 4 de comprobantes, 0 authenticated. Preflight Cloudinary real aprobado con 3 tipos y firmas; `requiere_ajuste_de_url_web=true`, limpieza 3/3. PR #35 en borrador corrige integración privada a nivel Multer, sin cambios de producción ni referencias históricas.
+Evidencia actual: PR #1–#35 fusionados; Production reportó `success` para `74da372`, sin comprobación del flag. Inventario: 30 referencias públicas de atletas y 4 de comprobantes, 0 authenticated. Preflight Cloudinary real aprobado con 3 tipos y firmas; `requiere_ajuste_de_url_web=true`, limpieza 3/3. La normalización del PR #35 está fusionada; el flujo web con proveedor real sigue pendiente.

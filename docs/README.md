@@ -4,6 +4,7 @@ La documentación activa se mantiene deliberadamente corta:
 
 - [CONTEXTO_MAESTRO_CODEX.md](CONTEXTO_MAESTRO_CODEX.md): estado, inventario del esquema SQL comunicado, diferencias con el código, riesgos y hoja de ruta.
 - [PRUEBAS_MANUALES_WEB.md](PRUEBAS_MANUALES_WEB.md): regresión manual por recorridos.
+- [ENSAYO_PRIVACIDAD_PREVIEW.md](ENSAYO_PRIVACIDAD_PREVIEW.md): preparación y criterios de la prueba web privada con base aislada.
 - [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md): contrato de autenticación e inactividad.
 - [README_DEPLOY.md](../README_DEPLOY.md): publicación en Vercel con PostgreSQL/Supabase.
 

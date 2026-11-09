@@ -59,6 +59,14 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Históricos:** los activos existentes de tipo `upload` siguen accesibles por URL antiguas si se conoce; inventariar y migrar después sin reescribir Supabase ni cambiar URLs sin autorización.
 - [ ] **Rollback:** `CLOUDINARY_AUTHENTICATED_UPLOADS=0` solo controla las cargas futuras; no desprotege los recursos ya guardados como `authenticated`.
 
+## Contrato de URL canónica y entrega privada (PR #34)
+
+- [ ] PR #33 fusionado: la prueba real detectó `CARPETA_URL_DIFERENTE` pero Cloudinary devolvió PNG, creó y eliminó el archivo sintético sin pendientes.
+- [ ] Tras revisar PR #34, repetir una sola vez `node scripts/probar-cloudinary-privado.js --ejecutar`, con 3 recursos sintéticos y limpieza por public_id de la ejecución.
+- [ ] Cada categoría debe demostrar metadata `authenticated`, URL canónica sin firma rechazada, firma temporal accesible y vencimiento rechazado. Compartir solo resumen anónimo.
+- [ ] Si aparece `requiere_ajuste_de_url_web:true`, no activar `CLOUDINARY_AUTHENTICATED_UPLOADS=1` en Production aunque el preflight haya aprobado: preparar normalización al guardar URL y probar rutas web con recursos sintéticos en Preview.
+- [ ] Confirmar `limpieza.pendientes=0` y no migrar los 34 enlaces públicos históricos sin plan reversible y autorización.
+
 ## Diagnóstico de URL de subida privada (PR #33)
 
 - [ ] El preflight #32 real terminó con `URL_INCOMPATIBLE` tras subir y borrar 1 PNG sintético, sin pendientes, antes de comprobar firmas.

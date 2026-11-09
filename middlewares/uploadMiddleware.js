@@ -3,7 +3,8 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { storageConValidacion } = require('../utils/archivosSeguros');
-const { esCargaPrivadaHabilitada } = require('../utils/cloudinaryPrivado');
+const { esCargaPrivadaHabilitada, normalizarUploadPrivado } = require('../utils/cloudinaryPrivado');
+const cargasPrivadas = esCargaPrivadaHabilitada();
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -16,14 +17,19 @@ const storage = new CloudinaryStorage({
     cloudinary,
     params: {
         folder: 'jaguares_comprobantes',
-        type: esCargaPrivadaHabilitada() ? 'authenticated' : 'upload',
+        type: cargasPrivadas ? 'authenticated' : 'upload',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
         transformation: [{ width: 1200, crop: 'limit' }]
     }
 });
 
 const upload = multer({
-    storage: storageConValidacion(storage, { captura: ['jpg', 'png', 'webp'] }),
+    storage: storageConValidacion(
+        storage,
+        { captura: ['jpg', 'png', 'webp'] },
+        cargasPrivadas ? (info, archivo) =>
+            normalizarUploadPrivado(info, archivo, 'jaguares_comprobantes') : null
+    ),
     limits: { fileSize: 5 * 1024 * 1024, files: 1 }
 });
 
@@ -52,7 +58,7 @@ const storageAtletas = new CloudinaryStorage({
     cloudinary,
     params: {
         folder: 'jaguares/atletas',
-        type: esCargaPrivadaHabilitada() ? 'authenticated' : 'upload',
+        type: cargasPrivadas ? 'authenticated' : 'upload',
         resource_type: 'auto',
         public_id: (req, file) =>
             `${Date.now()}-${file.fieldname}-${Math.random().toString(36).slice(2, 8)}`
@@ -64,7 +70,8 @@ const uploadAtleta = multer({
         foto: ['jpg', 'png', 'webp'],
         cedula_archivo: ['jpg', 'png', 'webp', 'pdf'],
         partida_nacimiento: ['jpg', 'png', 'webp', 'pdf']
-    }),
+    }, cargasPrivadas ? (info, archivo) =>
+        normalizarUploadPrivado(info, archivo, 'jaguares/atletas') : null),
     limits: { fileSize: 5 * 1024 * 1024, files: 3 },
     fileFilter: (req, file, cb) => {
         const okImage = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];

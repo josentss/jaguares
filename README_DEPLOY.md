@@ -45,6 +45,32 @@ Configurar en el proveedor apropiado, nunca en Git:
 - Antes de activarlo, verificar el plan Cloudinary y la opción de entrega de PDF (en cuentas Free puede estar deshabilitada), y probar con archivos **sintéticos** en un entorno aislado. Validar acceso propio/ajeno, staff y descarga/visualización de PDF y foto en planilla.
 - Al detectar problemas, revertir la variable para **futuras** cargas; esto no convierte automáticamente en públicos los archivos `authenticated` ya subidos. No ejecutar migraciones ni cambios sobre activos antiguos para deshacer una prueba.
 
+### Prueba sintética de entrega authenticated (PR #32)
+
+**No activar `CLOUDINARY_AUTHENTICATED_UPLOADS=1` en Production ni modificar documentos existentes para esta prueba.** El inventario local completado por el propietario encontró 30 referencias públicas en atletas (10 fotos, 10 cédulas, 10 partidas) y 4 comprobantes públicos. Son referencias SQL, no necesariamente 34 assets distintos, y no identifican archivos huérfanos.
+
+Desde el proyecto local, añade en el `.env` (protegido por `.gitignore`) `CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` correspondientes al **mismo** `CLOUDINARY_CLOUD_NAME`. Obtén las claves de la consola Cloudinary. No las copies al chat, GitHub, logs ni capturas. No necesitas `DATABASE_URL` para esta prueba.
+
+Primero ejecuta el modo seguro por defecto:
+
+```bash
+node scripts/probar-cloudinary-privado.js
+```
+
+Esto solo confirma la presencia de credenciales; **no realiza solicitudes a Cloudinary ni escribe archivos**.
+
+Cuando apruebes usar 3 recursos de prueba en tu cuenta, ejecuta explícitamente:
+
+```bash
+node scripts/probar-cloudinary-privado.js --ejecutar
+```
+
+La prueba crea **tres archivos sintéticos** (foto PNG, cédula PDF y comprobante PNG) con `type=authenticated` y nombres aleatorios en subcarpetas `_pruebas_privacidad` bajo las rutas de Jaguares. Comprueba metadata en la API de Cloudinary, que la URL sin firma sea rechazada, que una URL firmada temporal entregue el contenido correcto y que una ya vencida no lo entregue. En `finally` intenta borrar **únicamente los public_id confirmados de esta ejecución**, no las carpetas ni archivos anteriores. Esto consume algunas llamadas/banda de Cloudinary; las credenciales locales deben tener permisos de subir, leer metadata y borrar estos recursos.
+
+El resumen solo incluye estados por tipo y conteos de limpieza. **Comparte únicamente ese resumen**. Si aparece `limpieza.pendientes > 0`, comprueba en Media Library las carpetas `jaguares/atletas/_pruebas_privacidad` y `jaguares_comprobantes/_pruebas_privacidad`; no borres recursos ajenos ni ejecutes operaciones masivas. Un error de carga o firma no justifica activar privados en Production.
+
+Este comando es un preflight del proveedor, no una prueba end-to-end de sesiones, planillas o pagos. Después de aprobarlo, todavía hay que validar una nueva inscripción y comprobante sintéticos en Preview con `authenticated`, sin compartir los archivos con otros usuarios, **antes** de habilitar la opción para cargas reales. La migración de históricos requiere inventario deduplicado, respaldo y plan reversible aparte.
+
 ### Auditoría de enlaces históricos (PR #26; solo lectura)
 
 Las capturas del propietario muestran entrega PDF/ZIP **habilitada** y ejemplos de fotos/comprobantes con control de acceso **Público**. La API autorizada no revoca las URL antiguas. **No activar la variable en Production basándose únicamente en esas capturas**: un PDF real `authenticated` y su URL firmada deben probarse con un archivo sintético y el SHA de Preview.

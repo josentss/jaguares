@@ -12,7 +12,7 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
-const { analizarAssetAutenticado, analizarAssetGuardado, enlaceAutorizado, esCargaPrivadaHabilitada } =
+const { analizarAssetAutenticado, analizarAssetGuardado, enlaceAutorizado, normalizarUploadPrivado, esCargaPrivadaHabilitada } =
     require('../utils/cloudinaryPrivado');
 
 const prefijo = 'https://res.cloudinary.com/nube-sintetica';
@@ -267,4 +267,101 @@ test('inventario: error de conexión agrupado conserva diagnóstico seguro y lib
     }), err => err.categoria === 'RED_NO_ALCANZABLE' &&
         err.fase === 'conexion' && !String(err).includes('secreto'));
     assert.equal(cerrado,true);
+});
+
+
+test('uploads privados: Cloudinary devuelve carpeta distinta, pero filename permite URL canónica firmable', () => {
+    const original = {
+        filename: 'jaguares/atletas/atleta_sintetico',
+        path: prefijo + '/image/authenticated/v123/otra_carpeta/atleta_sintetico.png',
+        size: 1250
+    };
+    const file = {originalname:'foto.png', mimetype:'image/png', fieldname:'foto'};
+    const resultado = normalizarUploadPrivado(original,file,'jaguares/atletas');
+    assert.equal(resultado.path,
+        prefijo + '/image/authenticated/v123/jaguares/atletas/atleta_sintetico.png');
+    assert.equal(resultado.filename, original.filename);
+    assert.equal(resultado.size, original.size);
+    assert.equal(resultado.secure_url, resultado.path);
+    assert.equal(analizarAssetGuardado(resultado.path,'jaguares/atletas').public_id,
+        original.filename);
+    const firmado = enlaceAutorizado(resultado.path,'jaguares/atletas');
+    const consulta = new URL(firmado);
+    assert.equal(consulta.searchParams.get('public_id'),original.filename);
+    assert.equal(consulta.searchParams.get('format'),'png');
+    assert.equal(consulta.searchParams.get('signature')?.length > 5,true);
+    assert.equal(original.path.includes('/otra_carpeta/'),true);
+});
+
+test('uploads privados: PDF como image y raw, y comprobante usan identidades correctas', () => {
+    for(const [info,file,carpeta,publicId,recurso] of [
+        [
+            {filename:'jaguares/atletas/partida_abc',path:prefijo +
+                '/image/authenticated/v333/otra_carpeta/partida.pdf'},
+            {originalname:'partida.pdf',mimetype:'application/pdf',fieldname:'partida_nacimiento'},
+            'jaguares/atletas','jaguares/atletas/partida_abc','image'
+        ],
+        [
+            {filename:'jaguares/atletas/cedula_abc.pdf',path:prefijo +
+                '/raw/authenticated/v222/otra_carpeta/cedula_abc.pdf'},
+            {originalname:'cedula.pdf',mimetype:'application/pdf',fieldname:'cedula_archivo'},
+            'jaguares/atletas','jaguares/atletas/cedula_abc.pdf','raw'
+        ],
+        [
+            {filename:'jaguares_comprobantes/comprobante_abc',path:prefijo +
+                '/image/authenticated/v456/sin_carpeta/comprobante_abc.jpg'},
+            {originalname:'comprobante.jpeg',mimetype:'image/jpeg',fieldname:'captura'},
+            'jaguares_comprobantes','jaguares_comprobantes/comprobante_abc','image'
+        ]
+    ]) {
+        const ref = normalizarUploadPrivado(info,file,carpeta);
+        const asset=analizarAssetGuardado(ref.path,carpeta);
+        assert.equal(asset.public_id, publicId);
+        assert.equal(asset.resource_type,recurso);
+        assert.equal(asset.delivery_type,'authenticated');
+        assert.equal(new URL(enlaceAutorizado(ref.path,carpeta)).searchParams.get('public_id'),publicId);
+    }
+});
+
+test('uploads privados: omisión de versión genera marcador v1, sin perder firma', () => {
+    const info={
+        filename:'jaguares/atletas/test_456',
+        path:prefijo + '/image/authenticated/otra_carpeta/test_456.png'
+    };
+    const salida=normalizarUploadPrivado(info,{
+        originalname:'foto.png', mimetype:'image/png', fieldname:'foto'
+    },'jaguares/atletas');
+    assert.equal(salida.path,prefijo+'/image/authenticated/v1/jaguares/atletas/test_456.png');
+    assert.match(enlaceAutorizado(salida.path,'jaguares/atletas'),/signature=/);
+});
+
+test('uploads privados: rechaza público, host externo, carpeta e identidades engañosas', () => {
+    const correcto={
+        filename:'jaguares/atletas/foto_123',
+        path:prefijo+'/image/authenticated/v123/otra_carpeta/foto_123.png'
+    };
+    const archivo={originalname:'foto.png', mimetype:'image/png', fieldname:'foto'};
+    const cambios=[
+        {...correcto,filename:'jaguares_comprobantes/foto_123'},
+        {...correcto,filename:'jaguares/atletas/../foto_123'},
+        {...correcto,filename:'jaguares/atletas//foto_123'},
+        {...correcto,filename:'jaguares/atletas/otro.png'},
+        {...correcto,path:correcto.path.replace('/authenticated/','/upload/')},
+        {...correcto,path:correcto.path.replace('res.cloudinary.com','externo.test')},
+        {...correcto,path:correcto.path.replace('nube-sintetica','nube-ajena')},
+        {...correcto,path:correcto.path+'?firma=desconocida'},
+        {...correcto,path:correcto.path.replace('/image/','/video/')},
+        {...correcto,path:'javascript:alert(1)'},
+        {...correcto,filename:null}
+    ];
+    for(const info of cambios) {
+        assert.throws(() => normalizarUploadPrivado(info,archivo,'jaguares/atletas'),
+            /No se pudo validar la referencia del archivo privado/);
+    }
+    assert.throws(() => normalizarUploadPrivado(correcto,{
+        ...archivo,mimetype:'application/pdf'
+    },'jaguares/atletas'));
+    assert.throws(() => normalizarUploadPrivado(correcto,{
+        ...archivo,originalname:'foto.svg'
+    },'jaguares/atletas'));
 });

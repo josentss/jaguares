@@ -61,6 +61,8 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 
 ## Normalización de subida privada y pruebas de integración (PR #35)
 
+Para configurar el entorno aislado y registrar el resultado sin secretos, seguir [ENSAYO_PRIVACIDAD_PREVIEW.md](ENSAYO_PRIVACIDAD_PREVIEW.md). La prueba real de Preview sigue pendiente.
+
 - [ ] PR #34 aprobado en Cloudinary real: foto PNG/PDF/comprobante authenticated con firma válida, sin firma/vencida bloqueadas y 3 archivos eliminados sin pendientes.
 - [ ] PR #35: comprobar en CI que la URL canónica sale de public_id de CloudinaryStorage y MIME/extension; la URL nativa en otra carpeta no se guarda y la URL maliciosa se rechaza.
 - [ ] No activar privadas en Production solo porque el CI pase: habilitar temporalmente en entorno Preview aislado con Supabase de prueba, y realizar registro/pago con cuentas, atletas y documentos sintéticos.

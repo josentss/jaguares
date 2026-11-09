@@ -14,6 +14,7 @@ process.env.TRUST_PROXY = '0';
 process.env.CLOUDINARY_CLOUD_NAME = 'solo-pruebas';
 process.env.CLOUDINARY_API_KEY = 'solo-pruebas';
 process.env.CLOUDINARY_API_SECRET = 'solo-pruebas';
+process.env.CLOUDINARY_AUTHENTICATED_UPLOADS = '1';
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const { chromium } = require('playwright');
@@ -34,12 +35,23 @@ global.fetch = (url, options) => {
 };
 cloudinary.uploader.upload_stream = (options, callback) => {
     const id = `archivo-sintetico-${++numeroCarga}`;
+    const publicId = `${options.folder}/${id}`;
     let bytes = 0;
+    const partes = [];
     return new Writable({
-        write(chunk, encoding, next) { bytes += chunk.length; next(); },
+        write(chunk, encoding, next) { bytes += chunk.length; partes.push(chunk); next(); },
         final(next) {
             if (fallarCarga) callback(new Error('Proveedor de archivos de prueba no disponible'));
-            else callback(null, {secure_url:`https://example.org/${id}`,public_id:id,bytes});
+            else {
+                const formato = Buffer.concat(partes).subarray(0,5).toString('ascii') === '%PDF-'
+                    ? 'pdf' : 'png';
+                const recurso = options.resource_type === 'auto' ? 'image' : (options.resource_type || 'image');
+                callback(null, {
+                    secure_url:`https://res.cloudinary.com/solo-pruebas/${recurso}/authenticated/v123456/otra_carpeta/${id}.${formato}`,
+                    public_id:publicId,resource_type:recurso,type:'authenticated',format:formato,
+                    version:123456,bytes
+                });
+            }
             next();
         }
     });
@@ -368,8 +380,10 @@ test('flujo real: archivos suplantados se rechazan antes de Cloudinary y de SQL'
     }
 });
 
-test('flujo real: archivos pasan por Multer; error del proveedor permite corregir y reintentar', async () => {
+test('flujo privado: inscripción guarda URL canónica y protege foto y PDF por propietario', async () => {
     const page = await entrar('alfa@example.org');
+    const directiva = await entrar('directiva@example.org');
+    const ajeno = await entrar('beta@example.org');
     try {
         await page.waitForFunction(()=>document.querySelector('#perfil-cedula')?.value);
         await seccion(page,'sec-atletas');
@@ -383,10 +397,26 @@ test('flujo real: archivos pasan por Multer; error del proveedor permite corregi
         assert.equal((await db.pool.query("SELECT count(*)::int AS n FROM atletas WHERE nombres='Documentos Sintéticos'")).rows[0].n,0);
         const alta = await enviar(page,'#form-add-atleta','/api/atletas/registrar-atleta');
         const {rows} = await db.pool.query('SELECT foto_url,partida_nacimiento_url FROM atletas WHERE id_atleta=$1',[alta.id_atleta]);
-        assert.match(rows[0].foto_url,/^https:\/\/example.org\/archivo-sintetico-/);
-        assert.match(rows[0].partida_nacimiento_url,/^https:\/\/example.org\/archivo-sintetico-/);
+        assert.match(rows[0].foto_url,/^https:\/\/res\.cloudinary\.com\/solo-pruebas\/image\/authenticated\/v123456\/jaguares\/atletas\/archivo-sintetico-\d+\.png$/);
+        assert.match(rows[0].partida_nacimiento_url,/^https:\/\/res\.cloudinary\.com\/solo-pruebas\/image\/authenticated\/v123456\/jaguares\/atletas\/archivo-sintetico-\d+\.pdf$/);
         assert.notEqual(rows[0].foto_url,rows[0].partida_nacimiento_url);
-    } finally {await page.context().close();}
+        for (const [tipo,formato] of [['foto','png'],['partida_nacimiento','pdf']]) {
+            const ruta = `${base}/api/atletas/${alta.id_atleta}/documentos/${tipo}`;
+            for (const autorizado of [page,directiva]) {
+                const respuesta = await autorizado.request.get(ruta,{maxRedirects:0});
+                assert.equal(respuesta.status(),302);
+                const url = new URL(respuesta.headers().location);
+                assert.match(url.searchParams.get('public_id'),/^jaguares\/atletas\/archivo-sintetico-\d+$/);
+                assert.equal(url.searchParams.get('format'),formato);
+            }
+            assert.equal((await ajeno.request.get(ruta,{maxRedirects:0})).status(),403);
+            assert.equal((await fetch(ruta,{redirect:'manual'})).status,401);
+        }
+    } finally {
+        await page.context().close();
+        await directiva.context().close();
+        await ajeno.context().close();
+    }
 });
 
 test('flujo real: registro pendiente, aprobación, perfil, inscripción, activación, pago y permisos entre familias', async () => {
@@ -586,8 +616,25 @@ test('flujo real: transferencia exige captura y persiste el comprobante tras cam
         await page.locator('#pay-captura').setInputFiles({name:'comprobante-prueba.png',mimeType:'image/png',
             buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')});
         await enviar(page,'#form-report-pago','/api/pagos/reportar');
-        const pago = (await db.pool.query('SELECT moneda,ruta_captura FROM pagos WHERE referencia=$1',['REFERENCIA-SINTETICA'])).rows[0];
-        assert.equal(pago.moneda,'Bs');assert.match(pago.ruta_captura,/archivo-sintetico/);
+        const pago = (await db.pool.query('SELECT id_pago,moneda,ruta_captura FROM pagos WHERE referencia=$1',['REFERENCIA-SINTETICA'])).rows[0];
+        assert.equal(pago.moneda,'Bs');
+        assert.match(pago.ruta_captura,/^https:\/\/res\.cloudinary\.com\/solo-pruebas\/image\/authenticated\/v123456\/jaguares_comprobantes\/archivo-sintetico-\d+\.png$/);
+        const ruta = `${base}/api/pagos/captura/${pago.id_pago}?abrir=1`;
+        const propio = await page.request.get(ruta,{maxRedirects:0});
+        assert.equal(propio.status(),302);
+        const firmado = new URL(propio.headers().location);
+        assert.match(firmado.searchParams.get('public_id'),/^jaguares_comprobantes\/archivo-sintetico-\d+$/);
+        assert.equal(firmado.searchParams.get('format'),'png');
+        const directiva = await entrar('directiva@example.org');
+        const ajeno = await entrar('beta@example.org');
+        try {
+            assert.equal((await directiva.request.get(ruta,{maxRedirects:0})).status(),302);
+            assert.equal((await ajeno.request.get(ruta,{maxRedirects:0})).status(),403);
+            assert.equal((await fetch(ruta,{redirect:'manual'})).status,401);
+        } finally {
+            await directiva.context().close();
+            await ajeno.context().close();
+        }
         assert.equal(await page.locator('#pay-monto-trans').isDisabled(),true);
         assert.equal(await page.locator('#pay-monto-efec').isDisabled(),true);
     } finally {await page.context().close();}

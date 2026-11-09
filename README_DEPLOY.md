@@ -77,9 +77,9 @@ El primer preflight real de PR #32 subió y limpió un PNG sintético correctame
 
 ### Prueba de URL canónica en preflight (PR #34)
 
-El segundo preflight real confirmó `CARPETA_URL_DIFERENTE` y `formato_cloudinary=png`; el recurso sintético se limpió. La nueva prueba **no acepta libremente** la URL devuelta: verifica que Cloudinary devuelve el `public_id`, tipo, formato y versión solicitados, contrasta la Admin API, genera una URL canónica sin firma para esa identidad y prueba acceso denegado, firma temporal válida y firma vencida. Si la URL nativa es incompatible, el resumen incluye `url_original_reconocida:false` y `requiere_ajuste_de_url_web:true`, **aunque la prueba del proveedor resulte aprobada**. En ese caso, NO habilitar carga privada en Production: el backend actual guarda `file.path` y requiere una normalización segura y pruebas de Preview adicionales.
+El segundo preflight real confirmó `CARPETA_URL_DIFERENTE` y `formato_cloudinary=png`; el recurso sintético se limpió. La nueva prueba **no acepta libremente** la URL devuelta: verifica que Cloudinary devuelve el `public_id`, tipo, formato y versión solicitados, contrasta la Admin API, genera una URL canónica sin firma para esa identidad y prueba acceso denegado, firma temporal válida y firma vencida. Si la URL nativa es incompatible, el resumen incluye `url_original_reconocida:false` y `requiere_ajuste_de_url_web:true`, **aunque la prueba del proveedor resulte aprobada**. El PR #35 corrigió después la referencia que guarda el backend para nuevas cargas privadas; sigue pendiente la prueba real de Preview antes de habilitarlas en Production.
 
-Como siempre, ejecutar el script sin `--ejecutar` primero no hace escrituras. El modo explícito crea hasta 3 archivos sintéticos e intenta eliminar solo los creados. No compartir URLs, public IDs ni credenciales.
+Como siempre, ejecutar el script sin `--ejecutar` primero no hace escrituras. El modo explícito crea hasta 3 archivos sintéticos e intenta eliminar solo los creados. No compartir URLs, public IDs ni credenciales. El PR #35 ya corrigió la persistencia de nuevas URL privadas; todavía falta validar el flujo web real.
 
 ### Normalización de nuevas cargas authenticated (PR #35)
 
@@ -88,6 +88,8 @@ PR #34 ya se probó contra Cloudinary REAL y aprobó fotografía PNG, PDF y comp
 PR #35 usa `filename` (public_id retornado por CloudinaryStorage) y comprueba nube, origen HTTPS, tipo `authenticated`, recurso y formato MIME antes de construir una referencia canónica. Solo funciona cuando `CLOUDINARY_AUTHENTICATED_UPLOADS=1` esté configurado al iniciar el servidor. Si la identidad de subida es anómala, se rechaza antes de guardar SQL. Las cargas públicas y el CMS no cambian; los enlaces históricos tampoco.
 
 **NO activar la variable en Production todavía.** Antes, hacer ensayo de inscripción y pago sintéticos en Preview con base de datos aislada, comprobando documento propio/ajeno, staff/directiva, foto y PDF en planilla y comprobante. Los tests CI usan Cloudinary simulado, no prueban ese recorrido contra proveedor real. Mantener activos y credenciales históricos intactos.
+
+El propietario confirmó que el Preview con base aislada aún no está preparado. Seguir [el procedimiento específico](docs/ENSAYO_PRIVACIDAD_PREVIEW.md) antes de cualquier carga real desde la web.
 
 Pendiente técnico: un archivo subido antes de que fallen datos/SQL todavía puede quedar huérfano. Tratar compensación segura por separado, sin borrados masivos.
 

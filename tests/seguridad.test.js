@@ -278,3 +278,89 @@ test('login: cuenta inactiva o representante no aprobado no obtiene cookie', () 
         assert.equal(res.body.success, false);
     }
 });
+
+// CORS no es un control de autorización, pero la lista de sitios que pueden
+// leer respuestas con cookies y la protección de escritura deben ser exactas.
+test('orígenes: permite producción configurada y el propio Preview, no otros Vercel', () => {
+    const { crearPoliticaOrigen, origenCanonico } = require('../utils/origenesPermitidos');
+    const politica = crearPoliticaOrigen({
+        corsOrigin: 'https://jaguares-eta.vercel.app,https://otra-app.autorizada.example',
+        vercel: true
+    });
+    const req = { protocol: 'http', get: nombre =>
+        nombre.toLowerCase() === 'host' ? 'jaguares-git-preview-vercel.vercel.app' : undefined
+    };
+    for (const valido of [
+        'https://jaguares-eta.vercel.app',
+        'https://otra-app.autorizada.example',
+        'https://jaguares-git-preview-vercel.vercel.app'
+    ]) assert.equal(politica.permitido(req, valido), true, valido);
+
+    for (const malo of [
+        'https://atacante.vercel.app',
+        'https://evil-onrender.com',
+        'https://jaguares-eta.vercel.app.atacante.example',
+        'https://otra-app.autorizada.example.evil.test',
+        'https://jaguares-git-preview-vercel.vercel.app.evil.test',
+        'https://jaguares-git-preview-vercel.vercel.app/',
+        'http://jaguares-git-preview-vercel.vercel.app',
+        'null', 'https://jaguares-eta.vercel.app/path', '',
+        'https://atacante@jaguares-eta.vercel.app'
+    ]) assert.equal(politica.permitido(req, malo), false, malo);
+    assert.equal(origenCanonico('https://ejemplo.test/'), null);
+});
+
+test('orígenes: local solo acepta HTTP en host propio o CORS_ORIGIN explícito', () => {
+    const { crearPoliticaOrigen } = require('../utils/origenesPermitidos');
+    const politica = crearPoliticaOrigen({ corsOrigin: 'https://integracion.example', port: 3000 });
+    const req = { protocol: 'http', get: n => n === 'host' ? '127.0.0.1:34343' : null };
+    assert.equal(politica.permitido(req, 'http://127.0.0.1:34343'), true);
+    assert.equal(politica.permitido(req, 'https://integracion.example'), true);
+    assert.equal(politica.permitido(req, 'https://127.0.0.1:34343'), false);
+    assert.equal(politica.permitido(req, 'http://evil.vercel.app'), false);
+});
+
+test('orígenes: POST cross-site falla con 403 incluso sin necesidad de CORS', () => {
+    const { crearPoliticaOrigen } = require('../utils/origenesPermitidos');
+    const politica = crearPoliticaOrigen({ corsOrigin: 'https://club.example', vercel: true });
+    let siguientes = 0;
+    const req = {
+        method: 'POST', path: '/api/pagos/reportar',
+        protocol: 'http',
+        get: nombre => ({
+            host: 'club.example',
+            origin: 'https://atacante.vercel.app',
+            'sec-fetch-site': 'cross-site'
+        })[nombre]
+    };
+    const res = {codigo:200, payload:null,
+        status(n) {this.codigo=n;return this},
+        json(p) {this.payload=p;return this}
+    };
+    politica.protegerEscrituras(req,res,()=>siguientes++);
+    assert.equal(res.codigo,403);
+    assert.equal(res.payload.success,false);
+    assert.equal(siguientes,0);
+
+    req.get = nombre => ({
+        host: 'club.example',
+        origin: undefined,
+        'sec-fetch-site': 'cross-site'
+    })[nombre];
+    res.codigo=200;
+    politica.protegerEscrituras(req,res,()=>siguientes++);
+    assert.equal(res.codigo,403);
+    assert.equal(siguientes,0);
+
+    req.get = nombre => ({
+        host: 'club.example',
+        origin: 'https://club.example',
+        'sec-fetch-site': 'same-origin'
+    })[nombre];
+    politica.protegerEscrituras(req,res,()=>siguientes++);
+    assert.equal(siguientes,1);
+    req.method='GET';
+    req.get=nombre => ({host:'club.example',origin:'https://atacante.vercel.app'})[nombre];
+    politica.protegerEscrituras(req,res,()=>siguientes++);
+    assert.equal(siguientes,2);
+});

@@ -32,20 +32,18 @@ if (TRUST_PROXY) {
     });
 }
 
-// ── CORS ───────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.CORS_ORIGIN || `http://localhost:${PORT}`)
-    .split(',').map(s => s.trim()).filter(Boolean);
-
-app.use(cors({
-    origin(origin, cb) {
-        if (!origin || allowedOrigins.includes(origin) ||
-            origin.includes('vercel.app') || origin.includes('onrender.com')) {
-            return cb(null, true);
-        }
-        cb(new Error('Not allowed by CORS'));
-    },
-    credentials: true
-}));
+// ── Origenes autorizados / CORS y protección de escrituras ─────────────────
+const { crearPoliticaOrigen } = require('./utils/origenesPermitidos');
+const politicaOrigen = crearPoliticaOrigen({
+    corsOrigin: process.env.CORS_ORIGIN || '',
+    port: PORT,
+    vercel: process.env.VERCEL === '1'
+});
+// Verifica ORIGIN antes de que POST/PUT/PATCH/DELETE toquen login, registros,
+// pagos, archivos u otras rutas API. Las páginas en su propio dominio (incluido
+// Preview) siguen funcionando; solo CORS_ORIGIN autoriza otros dominios.
+app.use(politicaOrigen.protegerEscrituras);
+app.use(cors(politicaOrigen.opcionesCors));
 
 // Respuestas con sesión o datos personales y HTML de panel no deben quedar en cachés.
 const panelesProtegidos = new Set(['/admin/panel-directiva.html', '/admin/panel-representante.html']);

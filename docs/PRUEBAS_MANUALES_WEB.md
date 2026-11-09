@@ -86,6 +86,15 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **PDF móvil:** abrir el mismo PDF en móvil y PC y comprobar borde derecho y columnas. El zoom distinto del visor no demuestra contenido recortado.
 - [ ] **Retención:** borrar registro rechazado no borra archivo Cloudinary. Evaluar retención/auditoría financiera antes de cualquier borrado real; limpieza documental separada.
 
+## Restricción de orígenes API (PR #30)
+
+- [ ] **Producción/Preview:** abrir Jaguares en su propio dominio, iniciar sesión, registrar datos de prueba permitidos, consultar documentos y reportar un pago de prueba; las solicitudes JSON/multipart del mismo sitio no reciben 403 por Origin.
+- [ ] **Despliegue Vercel:** confirmar que el proyecto permite el mismo host HTTPS en Preview y Production aunque su dominio cambie. Un sitio ajeno en `vercel.app` no adquiere permisos por el sufijo.
+- [ ] **Origen ajeno:** un POST/PUT/DELETE a `/api/` con `Origin: https://sitio-ajeno.example` recibe 403, incluso si no hubo preflight. Un OPTIONS externo no recibe `Access-Control-Allow-Origin`.
+- [ ] **Lecturas:** un GET de API público sigue respondiendo desde el navegador legítimo; desde un navegador externo sin origen autorizado no se le permite leer respuesta CORS.
+- [ ] **Integraciones:** si hay frontend autorizado alojado en dominio *distinto*, comprobar que está enumerado de forma exacta en `CORS_ORIGIN`; no usar comodines.
+- [ ] **Regresión:** comprobar cookie y cierre de sesión, carga de los paneles y calendario. No migrar recursos Cloudinary ni modificar base de datos para esta prueba.
+
 ## Sesión
 
 - [ ] Entrar y recargar: vuelve al panel sin tarjeta blanca de verificación.

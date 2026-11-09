@@ -6,8 +6,8 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
-- `main` remoto verificado el 8 de noviembre de 2026: `5ca871f1d7d2559d065da05dde561d3cc4efaf17` (merge PR #28).
-- PR #1 al #28 fusionados. El propietario probó la versión desplegada tras [PR #28](https://github.com/josentss/jaguares/pull/28) y confirmó PDF descargable con foto en escritorio y móvil y comprobantes accesibles en ambos paneles. [PR #29](https://github.com/josentss/jaguares/pull/29) abierto como borrador para visor unificado, acciones SVG y eliminación restringida de pagos rechazados.
+- `main` remoto verificado el 8 de noviembre de 2026: `79bced77fca4fa953717ebe8dc1e36243bf91051` (merge PR #29).
+- PR #1 al #29 fusionados. El propietario comprobó que el [PR #29](https://github.com/josentss/jaguares/pull/29) está fusionado y sus funciones se comportan correctamente en Vercel: visor de comprobantes en ambos paneles, cambios de estado y borrado confirmado de rechazados. [PR #30](https://github.com/josentss/jaguares/pull/30) preparado en borrador para reforzar CORS y escritura de API según Origin.
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
 - El propietario confirmó despliegue en Vercel de PR #22 tras fusionarlo. No se ha comprobado independientemente el SHA exacto actualmente desplegado en Production; no equiparar Preview con Production.
 - En el SHA del PR #19 pasó el CI `Sintaxis y pruebas backend` y su Preview estuvo disponible. El propietario compartió capturas de calendario y panel funcionando tras la fusión; no se ha verificado aquí el SHA efectivo en Production.
@@ -151,7 +151,7 @@ Contrato y límites: [SESIONES_Y_ACCESO.md](SESIONES_Y_ACCESO.md).
 - Los enlaces temporales pueden reutilizarse hasta caducar; no garantizan revocación inmediata. Las imágenes incrustadas y exportación PDF de planillas deben verificarse en Preview con recursos sintéticos.
 - Cloudinary y SQL no forman una transacción única; pueden quedar archivos huérfanos.
 - El limitador en memoria no es global entre instancias serverless.
-- Falta revisión periódica de dependencias, CORS, `TRUST_PROXY`, CSRF y XSS.
+- Falta revisión periódica de dependencias, `TRUST_PROXY`, CSRF y XSS. El PR #30 mejora CORS y bloquea escrituras con Origin no permitido o Fetch Metadata cross-site, pero no equivale a una auditoría CSRF completa de clientes sin Origin.
 - El logout elimina cookies, pero no revoca centralmente un JWT copiado.
 - No hay esquema/migración canónico versionado que demuestre todas las restricciones de producción.
 - El DDL comunicado no declara unicidad de cédulas; comprobar índices reales y duplicados antes de proponer restricciones.
@@ -210,6 +210,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Validar el [PR #29](https://github.com/josentss/jaguares/pull/29): reemplazar columna de Comprobante por Acciones en ambas tablas, iconos SVG compartidos y visor modal accesible; eliminar solo pagos que continúen rechazados, con confirmación y rol directiva/admin. No borrar automáticamente comprobantes Cloudinary. Los logs de borrado no sustituyen una auditoría financiera permanente; verificar política de retención antes de borrados reales. Repetir CI y Preview responsive. PDF: contrastar el **mismo archivo** entre móvil y PC antes de modificar el exportador A4, porque la captura no demuestra recorte. Después: inventario Cloudinary y pruebas `authenticated` sintéticas; no activar en Production ni migrar históricos sin autorización.
+Revisar el [PR #30](https://github.com/josentss/jaguares/pull/30): restringir CORS al mismo origen de la instalación (incluido Preview) o a los orígenes exactos enumerados en `CORS_ORIGIN`, y responder HTTP 403 a escrituras de API provenientes de un Origin no permitido o `Sec-Fetch-Site: cross-site` sin Origin. Confirmar Preview, configuración de Production y la compatibilidad de login, registro, pagos y documentos; no modificar cookies ni credenciales. Después ejecutar inventario anónimo de referencias Cloudinary READ ONLY y pruebas de entrega `authenticated` sintética; no activar cargas privadas en Production ni migrar históricos sin aprobación.
 
-Evidencia previa: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; nueve eventos históricos a medianoche UTC, todos con fecha de Caracas del día anterior; una directiva aprobada y ninguna cuenta privilegiada `NULL`. El PR #19 pasó validaciones anteriores a su fusión; el propietario compartió capturas del funcionamiento posterior. PR #19–#28 fusionados según GitHub y el propietario; confirmó exportación PDF con foto en PC/móvil y comprobantes en ambos paneles. La diferencia de escala del visor PDF no demuestra corte del archivo. PR #29 en borrador: interfaz de pagos e iconos SVG, modal único y papelera solo para rechazados con protección SQL. Sin borrados reales ejecutados. Cloudinary históricos públicos todavía accesibles por URL antigua; inventario y prueba `authenticated` pendientes.
+Evidencia previa: `fecha_evento timestamptz NOT NULL`, `hora_evento time without time zone` nullable; los históricos se conservan. PR #19–#29 fusionados; el propietario validó PR #29 manualmente. PR #30 en borrador: CORS estricto y guardia de origen para escrituras. Los activos Cloudinary de tipo `upload` continúan accesibles mediante sus URL históricas, pendientes inventario y pruebas de `authenticated`.

@@ -6,8 +6,8 @@ Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalid
 
 - Repositorio: <https://github.com/josentss/jaguares>
 - Rama de producción: `main`.
-- `main` remoto verificado el 9 de noviembre de 2026: `581803bacc5cdf9c987b19d718c8fd1b44a7fddf` (merge PR #32).
-- PR #1 al #32 fusionados. Tras PR #32, el propietario ejecutó el preflight real con Cloudinary: primera foto PNG sintética subida y eliminada correctamente (1 eliminada, 0 pendientes), pero terminó en `subida_foto` / `URL_INCOMPATIBLE` antes de verificar firma o descarga. PR #33 en borrador diagnostica el motivo sin divulgar URLs ni cambiar permisos.
+- `main` remoto verificado el 9 de noviembre de 2026: `996580a781ad57ddb27d4a42321959dde6bd8a81` (merge PR #33).
+- PR #1 al #33 fusionados. El propietario repitió preflight sintético después de PR #33: `URL_INCOMPATIBLE`, `detalle_url=CARPETA_URL_DIFERENTE`, `formato_cloudinary=png`, 1 archivo creado/eliminado sin pendientes, antes de firma y entrega. PR #34 en borrador: construir y probar URL canónica desde metadata confiable sin relajar parser productivo.
 - PR #15 limita eventos nuevos desde el día actual en Caracas hasta el 31 de diciembre del año siguiente.
 - El propietario confirmó despliegue en Vercel de PR #22 tras fusionarlo. No se ha comprobado independientemente el SHA exacto actualmente desplegado en Production; no equiparar Preview con Production.
 - En el SHA del PR #19 pasó el CI `Sintaxis y pruebas backend` y su Preview estuvo disponible. El propietario compartió capturas de calendario y panel funcionando tras la fusión; no se ha verificado aquí el SHA efectivo en Production.
@@ -212,6 +212,6 @@ Los informes de PR anteriores se retiraron porque duplicaban este estado. Siguen
 
 ## 10. Próximo bloque recomendado
 
-Revisar el [PR #33](https://github.com/josentss/jaguares/pull/33): diagnóstico anónimo de incompatibilidad de URL (dominio, nube, tipo, carpeta, public_id o extensión). No alterar el parser de producción sin evidencia. CI con mocks, luego reejecutar solo el preflight sintético y compartir `detalle_url`, `formato_cloudinary`, etapa y limpieza, nunca URL ni secretos. Si se identifica y corrige la causa, verificar acceso sin firma, firmado y expirado para foto, PDF y comprobante antes de activar `CLOUDINARY_AUTHENTICATED_UPLOADS=1`. La migración de 34 referencias públicas históricas requiere inventario deduplicado, respaldo y aprobación aparte.
+Revisar el [PR #34](https://github.com/josentss/jaguares/pull/34): el preflight usará public_id completo generado, versión/tipo/formato verificados en upload/Admin API para construir URL canónica sin firma y probar acceso anónimo denegado, firma temporal permitida y firma vencida denegada. Reportará si `secure_url` nativa sigue siendo incompatible. No modifica almacenamiento web, Supabase, Vercel o assets históricos. Tras prueba sintética real, si `requiere_ajuste_de_url_web=true` preparar una normalización segura al guardar nuevas cargas privadas y comprobar foto/PDF/comprobantes en Preview; **no activar privadas en Production** mientras ese riesgo exista. Migración de 34 referencias públicas posterior y reversible.
 
-Evidencia actual: PR #1–#32 fusionados según GitHub. Inventario local: 30 referencias públicas de atletas y 4 de comprobantes, 0 authenticated. Vercel usa Transaction pooler con comprobación manual satisfactoria. Preflight #32: subida y limpieza sintéticas correctas; URL incompatible, sin prueba de firma. Archivos históricos sin migrar ni modificar. PR #33 de diagnóstico pendiente.
+Evidencia actual: PR #1–#33 fusionados según GitHub. Inventario local: 30 referencias públicas en atletas, 4 comprobantes, 0 authenticated. Prueba real Cloudinary falla al comparar ruta URL en `subida_foto` (CARPETA_URL_DIFERENTE) tras subida y limpieza correctas. No se han comprobado URLs firmadas. PR #34 pendiente, sin cambio a los históricos ni a la aplicación productiva.

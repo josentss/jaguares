@@ -158,6 +158,7 @@ for (const dispositivo of [
             );
             assert.equal(await page.locator('#table-my-pagos tbody img').count(), 0);
             assert.equal(await page.locator('#table-my-pagos thead th').count(), 6);
+            await page.evaluate(() => document.querySelector('[data-target="sec-historial"]').click());
             const botonComprobante = page.locator('#table-my-pagos tbody button.js-rep-pago-ver');
             assert.equal(await botonComprobante.count(), 1);
             assert.equal(await botonComprobante.getAttribute('data-id'), '1');
@@ -168,6 +169,7 @@ for (const dispositivo of [
             assert.equal(await page.locator('.comprobante-dialog-abrir').getAttribute('target'), '_blank');
             await page.locator('.comprobante-dialog-cerrar').click();
             assert.equal(await page.locator('.comprobante-dialog').isVisible(), false);
+            await page.evaluate(() => document.querySelector('[data-target="sec-atletas"]').click());
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), false);
             await page.locator('#table-my-atletas button[data-docs-atleta="11"]').click();
             await page.locator('#documentos-atleta-modal').waitFor({state:'visible'});
@@ -219,7 +221,8 @@ for (const dispositivo of [
             assert.equal(await page.locator('#body-pagos tr[data-estado="rechazado"] .js-pago-eliminar').count(), 1);
             assert.equal(await page.locator('#body-pagos tr[data-estado="aprobado"] .js-pago-eliminar').count(), 0);
             assert.equal(await page.locator('#body-pagos tr[data-estado="pendiente"] .js-pago-eliminar').count(), 0);
-            assert.equal(await page.locator('#body-pagos thead th').count(), 8);
+            assert.equal(await page.locator('#body-pagos').evaluate(tbody =>
+                tbody.closest('table').querySelectorAll('thead th').length), 8);
             assert.equal(await page.locator('#body-pagos button.js-pago-estado svg').count(), 4);
             await page.locator('#body-pagos button.js-pago-ver').first().click();
             await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});

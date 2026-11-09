@@ -59,6 +59,13 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Históricos:** los activos existentes de tipo `upload` siguen accesibles por URL antiguas si se conoce; inventariar y migrar después sin reescribir Supabase ni cambiar URLs sin autorización.
 - [ ] **Rollback:** `CLOUDINARY_AUTHENTICATED_UPLOADS=0` solo controla las cargas futuras; no desprotege los recursos ya guardados como `authenticated`.
 
+## Diagnóstico seguro de inventario local (PR #31)
+
+- [ ] Ejecutar `node scripts/auditar-cloudinary.js --diagnostico` desde la raíz del proyecto: muestra solo variables presentes/ausentes y modalidad de conexión; no intenta abrir una conexión.
+- [ ] Si es `directa_ipv6_habitual` y el equipo no tiene IPv6 funcional, consultar Supabase → Connect → **Session pooler** (5432) para el `.env` local únicamente. No copiar credenciales a chats, issues o capturas.
+- [ ] Ejecutar `node scripts/auditar-cloudinary.js`. En fallo compartir únicamente `etapa` y `categoria`; sin volcado de log, URL o `.env`. En éxito compartir solo el objeto `colecciones`.
+- [ ] En tests usar PostgreSQL simulado/local, verificar `BEGIN READ ONLY`, consultas SELECT, ROLLBACK y cierre de conexión tras error. No ejecutar contra producción automáticamente ni migrar archivos históricos.
+
 ## Inventario Cloudinary y rutas de documentos (PR #26)
 
 - [ ] **Origen permitido:** desde la ficha de un atleta propio y la planilla directiva, un JPG/PNG/PDF histórico con URL de la cuenta y carpeta de Jaguares sigue abriéndose.

@@ -169,7 +169,7 @@ for (const dispositivo of [
             assert.equal(await page.locator('.comprobante-dialog-abrir').getAttribute('target'), '_blank');
             await page.locator('.comprobante-dialog-cerrar').click();
             assert.equal(await page.locator('.comprobante-dialog').isVisible(), false);
-            await page.evaluate(() => document.querySelector('[data-target="sec-atletas"]').click());
+            await page.evaluate(() => document.querySelector('[data-target="sec-inicio"]').click());
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), false);
             await page.locator('#table-my-atletas button[data-docs-atleta="11"]').click();
             await page.locator('#documentos-atleta-modal').waitFor({state:'visible'});

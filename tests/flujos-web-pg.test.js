@@ -119,6 +119,48 @@ test.after(async () => {
     assert.deepEqual(errores,[],'No debe haber excepciones JavaScript en los flujos reales');
 });
 
+test('CORS real: preflight propio funciona, un dominio ajeno no recibe acceso ni ejecuta POST', async () => {
+    const propio = await fetch(base + '/api/auth/login', {
+        method: 'OPTIONS',
+        headers: { Origin: base, 'Access-Control-Request-Method': 'POST' }
+    });
+    assert.equal(propio.status, 204);
+    assert.equal(propio.headers.get('access-control-allow-origin'), base);
+    assert.equal(propio.headers.get('access-control-allow-credentials'), 'true');
+
+    const ajeno = 'https://atacante.vercel.app';
+    const preflight = await fetch(base + '/api/auth/login', {
+        method: 'OPTIONS',
+        headers: { Origin: ajeno, 'Access-Control-Request-Method': 'POST' }
+    });
+    assert.equal(preflight.headers.get('access-control-allow-origin'), null);
+
+    const rechazado = await fetch(base + '/api/auth/login', {
+        method: 'POST',
+        headers: { Origin: ajeno, 'Content-Type': 'application/json' },
+        body: '{}'
+    });
+    assert.equal(rechazado.status, 403);
+    assert.equal((await rechazado.json()).message, 'Origen de solicitud no autorizado');
+
+    const sinOrigin = await fetch(base + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Sec-Fetch-Site': 'cross-site', 'Content-Type': 'application/json' },
+        body: '{}'
+    });
+    assert.equal(sinOrigin.status, 403);
+
+    const mismoOrigen = await fetch(base + '/api/auth/login', {
+        method: 'POST',
+        headers: { Origin: base, 'Content-Type': 'application/json' },
+        body: '{}'
+    });
+    assert.notEqual(mismoOrigen.status, 403);
+
+    const lectura = await fetch(base + '/api/cms/public/eventos', { headers: {Origin:ajeno} });
+    assert.equal(lectura.headers.get('access-control-allow-origin'), null);
+});
+
 async function pagina(viewport = {width:1440,height:900}, sinValidador = false, timezoneId = 'America/Caracas') {
     const context = await browser.newContext({viewport,timezoneId});
     await context.route('**/*',route => {

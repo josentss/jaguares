@@ -75,6 +75,12 @@ Este comando es un preflight del proveedor, no una prueba end-to-end de sesiones
 
 El primer preflight real de PR #32 subió y limpió un PNG sintético correctamente, pero terminó en `subida_foto` / `URL_INCOMPATIBLE` antes de la entrega firmada. El PR #33 añade `detalle_url` con una **categoría cerrada** y `formato_cloudinary` limitado a formatos comunes, sin imprimir URLs, public IDs o credenciales. Con aprobación, repetir `node scripts/probar-cloudinary-privado.js --ejecutar` solo con recursos sintéticos y compartir únicamente los campos anónimos. No activar nuevas cargas privadas ni migrar históricos hasta comprender la discrepancia y probar toda la entrega.
 
+### Prueba de URL canónica en preflight (PR #34)
+
+El segundo preflight real confirmó `CARPETA_URL_DIFERENTE` y `formato_cloudinary=png`; el recurso sintético se limpió. La nueva prueba **no acepta libremente** la URL devuelta: verifica que Cloudinary devuelve el `public_id`, tipo, formato y versión solicitados, contrasta la Admin API, genera una URL canónica sin firma para esa identidad y prueba acceso denegado, firma temporal válida y firma vencida. Si la URL nativa es incompatible, el resumen incluye `url_original_reconocida:false` y `requiere_ajuste_de_url_web:true`, **aunque la prueba del proveedor resulte aprobada**. En ese caso, NO habilitar carga privada en Production: el backend actual guarda `file.path` y requiere una normalización segura y pruebas de Preview adicionales.
+
+Como siempre, ejecutar el script sin `--ejecutar` primero no hace escrituras. El modo explícito crea hasta 3 archivos sintéticos e intenta eliminar solo los creados. No compartir URLs, public IDs ni credenciales.
+
 ### Auditoría de enlaces históricos (PR #26; solo lectura)
 
 Las capturas del propietario muestran entrega PDF/ZIP **habilitada** y ejemplos de fotos/comprobantes con control de acceso **Público**. La API autorizada no revoca las URL antiguas. **No activar la variable en Production basándose únicamente en esas capturas**: un PDF real `authenticated` y su URL firmada deben probarse con un archivo sintético y el SHA de Preview.

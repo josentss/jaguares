@@ -921,8 +921,8 @@ tr:hover td { background-color: #f8fafc; }
     #body-pagos td:not([colspan]):nth-child(4)::before { content: 'Método'; }
     #body-pagos td:not([colspan]):nth-child(5)::before { content: 'Monto'; }
     #body-pagos td:not([colspan]):nth-child(6)::before { content: 'Referencia'; }
-    #body-pagos td:not([colspan]):nth-child(7)::before { content: 'Comprobante'; }
-    #body-pagos td:not([colspan]):nth-child(8)::before { content: 'Estado'; }
+    #body-pagos td:not([colspan]):nth-child(7)::before { content: 'Estado'; }
+    #body-pagos td:not([colspan]):nth-child(8)::before { content: 'Acciones'; }
     #body-eventos td:not([colspan]):nth-child(2)::before { content: 'Fecha'; }
     #body-eventos td:not([colspan]):nth-child(3)::before { content: 'Lugar'; }
     #body-eventos td:not([colspan]):nth-child(4)::before { content: 'Estado'; }
@@ -1246,4 +1246,53 @@ tr:hover td { background-color: #f8fafc; }
 @media (max-width: 768px) {
     #form-evento .evento-form-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
     #form-evento .evento-reloj-boton { min-height: 46px; }
+}
+
+/* Acciones compactas y reutilizables de pago. Se identifican por aria-label/title. */
+.pago-acciones { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.pago-icono {
+    width: 42px; height: 42px; display: inline-flex; align-items: center;
+    justify-content: center; border-radius: 10px; border: 1px solid #cbd5e1;
+    background: #f8fafc; color: #475569; cursor: pointer; padding: 0; margin: 0;
+    font: inherit; text-decoration: none; flex: 0 0 auto;
+}
+.pago-icono:hover { background: #eff6ff; border-color: #94a3b8; }
+.pago-icono--ver { background: #eef7ff; border-color: #b9daf8; color: #1767ac; }
+.pago-icono--aprobar { background: #eaf9ef; border-color: #aae1bc; color: #11783a; }
+.pago-icono--rechazar { background: #fff2ee; border-color: #f2c3b8; color: #b9382e; }
+.pago-icono--borrar { background: #fff1f1; border-color: #e8bdbd; color: #a52f30; }
+.pago-icono--borrar:hover { background: #c13333; color: white; border-color: #c13333; }
+.pago-icono svg { width: 19px; height: 19px; pointer-events: none; }
+.pago-icono:disabled { cursor: not-allowed; opacity: .5; }
+.pago-icono:focus-visible, .comprobante-dialog button:focus-visible,
+.comprobante-dialog a:focus-visible { outline: 3px solid #ff983f; outline-offset: 3px; }
+
+.comprobante-dialog {
+    width: min(540px, calc(100% - 24px)); max-height: 90dvh; margin: auto;
+    padding: 18px; border-radius: 15px; border: 1px solid #d8e1ea;
+    box-shadow: 0 22px 65px #0004; background: white; color: #243040;
+    overflow: auto;
+}
+.comprobante-dialog::backdrop { background: rgba(15, 23, 42, .68); }
+.comprobante-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.comprobante-dialog-header h3 { margin: 0; font-size: 1.05rem; }
+.comprobante-dialog-cerrar { display: inline-grid; place-items: center; border: 0; flex-shrink: 0;
+    width: 42px; height: 42px; border-radius: 50%; background: #edf2f7;
+    color: #334155; cursor: pointer; font-size: 1.5rem; }
+.comprobante-dialog-estado { text-align: center; font-size: .88rem; color: #64748b; margin: 12px 0; }
+.comprobante-dialog-estado:empty { display: none; }
+.comprobante-dialog-imagen { display: block; margin: 14px auto; max-width: 100%;
+    max-height: 62dvh; object-fit: contain; border-radius: 8px; }
+.comprobante-dialog-imagen[hidden], .comprobante-dialog-abrir[hidden] { display: none; }
+.comprobante-dialog-abrir { display: block; margin: 12px auto 0; padding: 9px 12px;
+    text-align: center; text-decoration: underline; color: #ad4704; font-weight: 600; font-size: .84rem; }
+@media (max-width: 768px) {
+    #body-pagos td:nth-child(8), #table-my-pagos tbody td:nth-child(6) {
+        grid-column: 1 / -1; border-top: 1px dashed #e2e8f0; padding-top: 10px;
+    }
+    #body-pagos td:nth-child(8)::before,
+    #table-my-pagos tbody td:nth-child(6)::before { content: 'Acciones'; }
+    #body-pagos td:nth-child(8) { display: block; }
+    #table-my-pagos tbody td:nth-child(6) { display: block; }
+    .pago-acciones { gap: 9px; }
 }

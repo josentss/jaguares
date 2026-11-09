@@ -76,6 +76,16 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Historial representante:** «Ver» abre comprobante propio; pagos sin comprobante muestran guion. Directiva mantiene su acción «Ver».
 - [ ] **Seguridad:** `/api/pagos/captura/:id_pago?abrir=1` exige sesión y propietario o staff/directiva/admin; representante ajeno recibe HTTP 403.
 
+## Acciones de pago y visor unificado (PR #29)
+
+- [ ] **Iconos:** en directiva, «Acciones» contiene los SVG de comprobante, aprobar, rechazar y papelera según estado. Los iconos tienen nombre accesible, tooltip y foco visible. La papelera de eventos usa el SVG compartido.
+- [ ] **Estados:** pago pendiente muestra aprobar/rechazar; aprobado muestra rechazar y comprobante si existe; rechazado muestra aprobar/papelera y comprobante si existe. Staff no ve papelera.
+- [ ] **Eliminación:** confirmar borrado de pago *sintético* rechazado lo retira de ambas tablas; cancelar no lo altera. El backend responde HTTP 409 para pendiente/aprobado, 403 para representante/staff, 401 sin sesión y 404 al repetir.
+- [ ] **Visor:** representante y directiva abren comprobantes en el mismo diálogo, con Escape, botón Cerrar, imagen responsive y enlace secundario para abrir el original. Ante archivo no disponible, mostrar error sin impedir cerrar.
+- [ ] **Sin archivo:** pago en efectivo sin comprobante muestra guion en Acciones; no hay botón ni URL de Cloudinary en HTML.
+- [ ] **PDF móvil:** abrir el mismo PDF en móvil y PC y comprobar borde derecho y columnas. El zoom distinto del visor no demuestra contenido recortado.
+- [ ] **Retención:** borrar registro rechazado no borra archivo Cloudinary. Evaluar retención/auditoría financiera antes de cualquier borrado real; limpieza documental separada.
+
 ## Sesión
 
 - [ ] Entrar y recargar: vuelve al panel sin tarjeta blanca de verificación.

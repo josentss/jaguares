@@ -14,7 +14,7 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=sesion-aviso-1">
+    <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -343,7 +343,7 @@
                                 <th>Mes</th>
                                 <th>Monto</th>
                                 <th>Estado</th>
-                                <th>Comprobante</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -397,6 +397,8 @@
 <script src="fechas.js?v=fechas-1"></script>
 <script src="validacion-formularios.js?v=fechas-1"></script>
 <script src="api-client.js?v=sesion-aviso-1"></script>
+<script src="iconos-acciones.js?v=1"></script>
+<script src="comprobantes-ui.js?v=1"></script>
 <script>
     if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
         typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {
@@ -882,6 +884,11 @@
                 }
             });
 
+            document.querySelector('#table-my-pagos tbody')?.addEventListener('click', e => {
+                const boton = e.target.closest('button.js-rep-pago-ver');
+                if (boton) window.JaguaresComprobantes.abrir(boton.dataset.id);
+            });
+
             // --- CARGAR HISTORIAL (CORREGIDO: Con Cabeceras de Seguridad) ---
             async function cargarHistorialPagos() {
                 try {
@@ -923,9 +930,9 @@
 
                             const idPago = Number(pago.id_pago);
                             const comprobante = pago.ruta_captura && Number.isSafeInteger(idPago) && idPago > 0
-                                ? `<a class="pago-comprobante-link"
-                                    href="/api/pagos/captura/${idPago}?abrir=1" target="_blank"
-                                    rel="noopener noreferrer" aria-label="Ver comprobante del pago ${idPago}">Ver</a>`
+                                ? `<button type="button" class="pago-icono pago-icono--ver js-rep-pago-ver"
+                                    data-id="${idPago}" title="Ver comprobante"
+                                    aria-label="Ver comprobante del pago ${idPago}">${window.JaguaresIconos.comprobante}</button>`
                                 : '<span aria-label="Sin comprobante">—</span>';
                             tbody.innerHTML += `<tr>
                                 <td>${fechaStr}</td>
@@ -933,7 +940,7 @@
                                 <td>${esc(pago.mes_pagado)}</td>
                                 <td>${esc(pago.monto)} ${esc(pago.moneda || 'Bs')}</td>
                                 <td><span class="status-badge ${badgeClass}" style="text-transform: capitalize;">${esc(pago.estado_pago)}</span></td>
-                                <td>${comprobante}</td>
+                                <td><div class="pago-acciones" role="group" aria-label="Acciones del pago">${comprobante}</div></td>
                             </tr>`;
                         });
                     }

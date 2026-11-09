@@ -50,6 +50,18 @@ test.before(async () => {
                     atl_apellidos: 'Activo', mes_pagado: 'Noviembre',
                     metodo_pago: 'Efectivo', fecha_pago: '2026-11-02',
                     monto: '25.50', moneda: 'USD', estado_pago: 'pendiente'
+                }, {
+                    id_pago: 2, id_representante: 5, atl_nombres: 'Atleta',
+                    atl_apellidos: 'Rechazado', mes_pagado: 'Octubre',
+                    metodo_pago: 'Transferencia Bancaria', fecha_pago: '2026-10-02',
+                    monto: '35.00', moneda: 'Bs', estado_pago: 'rechazado',
+                    ruta_captura: '/api/pagos/captura/2'
+                }, {
+                    id_pago: 3, id_representante: 5, atl_nombres: 'Atleta',
+                    atl_apellidos: 'Aprobado', mes_pagado: 'Septiembre',
+                    metodo_pago: 'Transferencia Bancaria', fecha_pago: '2026-09-02',
+                    monto: '45.00', moneda: 'Bs', estado_pago: 'aprobado',
+                    ruta_captura: '/api/pagos/captura/3'
                 }]
             });
             if (pathname === '/api/directiva/pendientes') return json(res, {
@@ -83,6 +95,9 @@ test.before(async () => {
                     partida_nacimiento_url:null
                 }}
             });
+            if (pathname === '/api/pagos/captura/1' || pathname === '/api/pagos/captura/2' || pathname === '/api/pagos/captura/3') {
+                return json(res, {success:true, url:'https://res.cloudinary.com/solo-pruebas/image/upload/v1/jaguares_comprobantes/sintetico.png'});
+            }
             if (pathname === '/api/pagos/historial/5') return json(res, {
                 success: true, datos: [{
                     id_pago: 1, atl_nombres: atletaXss, atl_apellidos: 'Activo',
@@ -142,11 +157,19 @@ for (const dispositivo of [
                 document.querySelector('#table-my-pagos tbody')?.textContent.includes('Noviembre')
             );
             assert.equal(await page.locator('#table-my-pagos tbody img').count(), 0);
-            const enlaceComprobante = page.locator('#table-my-pagos tbody a.pago-comprobante-link');
-            assert.equal(await enlaceComprobante.count(), 1);
-            assert.equal(await enlaceComprobante.getAttribute('href'), '/api/pagos/captura/1?abrir=1');
-            assert.equal(await enlaceComprobante.getAttribute('rel'), 'noopener noreferrer');
             assert.equal(await page.locator('#table-my-pagos thead th').count(), 6);
+            await page.evaluate(() => document.querySelector('[data-target="sec-historial"]').click());
+            const botonComprobante = page.locator('#table-my-pagos tbody button.js-rep-pago-ver');
+            assert.equal(await botonComprobante.count(), 1);
+            assert.equal(await botonComprobante.getAttribute('data-id'), '1');
+            assert.equal(await page.locator('#table-my-pagos tbody a[href*="cloudinary"]').count(), 0);
+            await botonComprobante.click();
+            await page.locator('.comprobante-dialog').waitFor({state:'visible'});
+            await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});
+            assert.equal(await page.locator('.comprobante-dialog-abrir').getAttribute('target'), '_blank');
+            await page.locator('.comprobante-dialog-cerrar').click();
+            assert.equal(await page.locator('.comprobante-dialog').isVisible(), false);
+            await page.evaluate(() => document.querySelector('[data-target="sec-inicio"]').click());
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), false);
             await page.locator('#table-my-atletas button[data-docs-atleta="11"]').click();
             await page.locator('#documentos-atleta-modal').waitFor({state:'visible'});
@@ -190,6 +213,24 @@ for (const dispositivo of [
             assert.equal(await page.locator('#body-atletas img').count(), 0);
             assert.equal(await page.locator('#body-solicitudes img').count(), 0);
             assert.equal(await page.locator('#body-pagos img').count(), 0);
+            // Iconos y reglas de estado: solo rechazado permite eliminar.
+            assert.equal(await page.locator('#body-pagos td').count(), 24);
+            assert.equal(await page.locator('#body-pagos button.js-pago-ver').count(), 2);
+            assert.equal(await page.locator('#body-pagos button.js-pago-estado').count(), 4);
+            assert.equal(await page.locator('#body-pagos button.js-pago-eliminar').count(), 1);
+            assert.equal(await page.locator('#body-pagos tr[data-estado="rechazado"] .js-pago-eliminar').count(), 1);
+            assert.equal(await page.locator('#body-pagos tr[data-estado="aprobado"] .js-pago-eliminar').count(), 0);
+            assert.equal(await page.locator('#body-pagos tr[data-estado="pendiente"] .js-pago-eliminar').count(), 0);
+            assert.equal(await page.locator('#body-pagos').evaluate(tbody =>
+                tbody.closest('table').querySelectorAll('thead th').length), 8);
+            assert.equal(await page.locator('#body-pagos button.js-pago-estado svg').count(), 4);
+            await page.evaluate(() => document.querySelector('[data-target="sec-pagos"]').click());
+            await page.selectOption('#filter-estado-pagos', 'todos');
+            await page.locator('#body-pagos button.js-pago-ver').first().click();
+            await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});
+            assert.equal(await page.locator('#body-pagos a[href*="cloudinary"]').count(), 0);
+            await page.locator('.comprobante-dialog-cerrar').click();
+            await page.evaluate(() => document.querySelector('[data-target="sec-atletas"]').click());
             assert.equal(await page.locator('.js-atleta-estado').first().getAttribute('onclick'), null);
             await page.evaluate(() => document.querySelector('.js-atleta-estado').click());
             await page.waitForFunction(() =>

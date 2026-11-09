@@ -551,6 +551,82 @@ test('flujo real: transferencia exige captura y persiste el comprobante tras cam
     } finally {await page.context().close();}
 });
 
+test('pagos rechazados: permisos, estados y eliminación SQL desde directiva', async () => {
+    const atleta = await db.pool.query(
+        "INSERT INTO atletas (id_representante, nombres, cedula, estado) VALUES (2,'Pago Sintético',$1,'activo') RETURNING id_atleta",
+        [cedulaLibre()]
+    );
+    const idAtleta = atleta.rows[0].id_atleta;
+    const ids = [];
+    for (const estado of ['rechazado', 'pendiente', 'aprobado']) {
+        const pago = await db.pool.query(
+            "INSERT INTO pagos (id_atleta,mes_pagado,metodo_pago,fecha_pago,monto,moneda,estado_pago,ruta_captura) " +
+            "VALUES ($1,'Noviembre','Efectivo','2026-11-08',12.50,'USD',$2,NULL) RETURNING id_pago",
+            [idAtleta, estado]
+        );
+        ids.push(pago.rows[0].id_pago);
+    }
+    const [rechazado, pendiente, aprobado] = ids;
+    const ruta = '/api/directiva/pago/' + rechazado;
+    assert.equal((await fetch(base + ruta, {method:'DELETE'})).status, 401);
+    const rep = await entrar('alfa@example.org');
+    try {
+        assert.equal((await rep.request.delete(base + ruta)).status(), 403);
+    } finally {await rep.context().close();}
+
+    const hash = await bcrypt.hash(clave, 10);
+    await db.pool.query(
+        "INSERT INTO usuarios (nombres, apellidos, correo, password_hash, rol, estado) " +
+        "VALUES ('Staff','Prueba','staff-pagos@example.org',$1,'staff','aprobado')", [hash]
+    );
+    const staff = await entrar('staff-pagos@example.org');
+    try {
+        assert.equal((await staff.request.delete(base + ruta)).status(), 403);
+    } finally {await staff.context().close();}
+
+    const dir = await entrar('directiva@example.org',{width:390,height:844});
+    try {
+        assert.equal((await dir.request.delete(base + '/api/directiva/pago/invalido')).status(), 400);
+        assert.equal((await dir.request.delete(base + '/api/directiva/pago/99999999')).status(), 404);
+        for(const id of [pendiente,aprobado]) {
+            assert.equal((await dir.request.delete(base + '/api/directiva/pago/' + id)).status(), 409);
+            assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM pagos WHERE id_pago=$1',[id])).rows[0].n,1);
+        }
+        await seccion(dir,'sec-pagos');
+        await dir.selectOption('#filter-estado-pagos','todos');
+        const borrar = dir.locator('#body-pagos button.js-pago-eliminar[data-id="' + rechazado + '"]');
+        await borrar.waitFor({state:'visible'});
+        assert.equal(await dir.locator('#body-pagos button.js-pago-eliminar[data-id="' + pendiente + '"]').count(),0);
+        assert.equal(await dir.locator('#body-pagos button.js-pago-eliminar[data-id="' + aprobado + '"]').count(),0);
+        const respuesta = dir.waitForResponse(r => r.url().endsWith(ruta) && r.request().method()==='DELETE');
+        await borrar.click();
+        assert.equal((await respuesta).status(), 200);
+        assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM pagos WHERE id_pago=$1',[rechazado])).rows[0].n,0);
+        assert.equal((await dir.request.delete(base + ruta)).status(), 404);
+        assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM pagos WHERE id_pago=ANY($1::int[])',
+            [[pendiente, aprobado]])).rows[0].n, 2);
+    } finally {await dir.context().close();}
+});
+
+test('pagos rechazados: si otro operador cambia el estado, no se elimina', async () => {
+    const a = await db.pool.query(
+        "INSERT INTO atletas (id_representante,nombres,cedula,estado) VALUES (2,'Atleta Conflicto',$1,'activo') RETURNING id_atleta",
+        [cedulaLibre()]
+    );
+    const p = await db.pool.query(
+        "INSERT INTO pagos (id_atleta,estado_pago) VALUES ($1,'rechazado') RETURNING id_pago",
+        [a.rows[0].id_atleta]
+    );
+    const id = p.rows[0].id_pago;
+    const dir = await entrar('directiva@example.org');
+    try {
+        await db.pool.query("UPDATE pagos SET estado_pago='aprobado' WHERE id_pago=$1",[id]);
+        const r = await dir.request.delete(base + '/api/directiva/pago/' + id);
+        assert.equal(r.status(),409);
+        assert.equal((await db.pool.query('SELECT estado_pago FROM pagos WHERE id_pago=$1',[id])).rows[0].estado_pago,'aprobado');
+    } finally {await dir.context().close();}
+});
+
 test('flujo real: si no carga el validador, ambos paneles envían y el backend valida los datos', async () => {
     for (const [correo,prefijo,seccionId,ruta] of [
         ['alfa@example.org','atl','sec-atletas','/api/atletas/registrar-atleta'],

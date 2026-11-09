@@ -59,6 +59,15 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Históricos:** los activos existentes de tipo `upload` siguen accesibles por URL antiguas si se conoce; inventariar y migrar después sin reescribir Supabase ni cambiar URLs sin autorización.
 - [ ] **Rollback:** `CLOUDINARY_AUTHENTICATED_UPLOADS=0` solo controla las cargas futuras; no desprotege los recursos ya guardados como `authenticated`.
 
+## Comprobación sintética de entrega privada Cloudinary (PR #32)
+
+- [ ] Comprobar que `node scripts/probar-cloudinary-privado.js` **no sube ni borra nada** y solo informa si existen las tres variables Cloudinary localmente.
+- [ ] Configurar en `.env` local `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` del mismo entorno, sin compartir valores ni publicarlos. Para esta prueba no hace falta `DATABASE_URL`.
+- [ ] Solo tras aprobar tres operaciones de prueba reales, ejecutar `node scripts/probar-cloudinary-privado.js --ejecutar`. Debe probar foto PNG, PDF y comprobante PNG **sintéticos** `authenticated`: metadata correcta, URL pública denegada, URL temporal firmada accesible y caducada denegada.
+- [ ] Revisar que `limpieza.pendientes` sea `0` y la eliminación se limite a los recursos sintéticos de la ejecución. Si no, revisar solo `_pruebas_privacidad` y no borrar otros assets.
+- [ ] No activar `CLOUDINARY_AUTHENTICATED_UPLOADS=1` en Production en este PR. Antes de hacerlo, probar inscripción sintética con foto/PDF y comprobante en Preview, permisos propietario/ajeno y exportación de planilla.
+- [ ] El resultado del inventario local ya reportado fue 30 referencias públicas de atletas y 4 de comprobantes, 0 `authenticated`; son referencias, no assets únicos, y los huérfanos no se incluyen. Migración histórica separada con respaldo y aprobación.
+
 ## Diagnóstico seguro de inventario local (PR #31)
 
 - [ ] Ejecutar `node scripts/auditar-cloudinary.js --diagnostico` desde la raíz del proyecto: muestra solo variables presentes/ausentes y modalidad de conexión; no intenta abrir una conexión.

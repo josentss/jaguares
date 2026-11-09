@@ -89,9 +89,13 @@ function esContenidoEsperado(bytes, extension) {
 }
 
 function categoriaError(error) {
-    if (error && typeof error.code === 'string' && /^[A-Z_]{2,32}$/.test(error.code)) {
-        return error.code;
+    const code = error && error.code;
+    if (['ETIMEDOUT', 'ECONNRESET', 'ENOTFOUND', 'EAI_AGAIN'].includes(code)) {
+        return 'RED_NO_DISPONIBLE';
     }
+    if (['ID_INVALIDO', 'METADATA_INCORRECTA', 'URL_INCOMPATIBLE',
+        'ENTREGA_INCORRECTA'].includes(code)) return code;
+    // No imprimir códigos o mensajes arbitrarios del proveedor.
     return 'PRUEBA_INCOMPLETA';
 }
 

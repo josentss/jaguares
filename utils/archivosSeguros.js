@@ -54,7 +54,7 @@ async function validarContenidoArchivo(buffer, archivo, extensiones) {
  * luego se verifica su firma y SOLO entonces se delega a CloudinaryStorage.
  * req.file recibe firmaValidada=true únicamente después de la verificación.
  */
-function storageConValidacion(storageCloudinary, tiposPorCampo) {
+function storageConValidacion(storageCloudinary, tiposPorCampo, normalizarResultado = null) {
     return {
         async _handleFile(req, file, callback) {
             let finalizado = false;
@@ -85,7 +85,15 @@ function storageConValidacion(storageCloudinary, tiposPorCampo) {
                 const archivoVerificado = { ...file, stream: Readable.from([buffer]) };
                 storageCloudinary._handleFile(req, archivoVerificado, (err, info) => {
                     if (err) return resolver(err);
-                    resolver(null, { ...info, firmaValidada: true });
+                    try {
+                        const salida = typeof normalizarResultado === 'function'
+                            ? normalizarResultado(info, file) : info;
+                        resolver(null, { ...salida, firmaValidada: true });
+                    } catch {
+                        // Fallar cerrado antes de entregar al controlador una URL
+                        // que no se pueda autorizar. No publicar URLs del proveedor.
+                        resolver(new Error('No se pudo verificar la referencia del archivo privado'));
+                    }
                 });
             } catch (err) {
                 resolver(err);

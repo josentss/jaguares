@@ -51,9 +51,22 @@ Las capturas del propietario muestran entrega PDF/ZIP **habilitada** y ejemplos 
 
 Con un entorno autorizado que tenga `DATABASE_URL` y `CLOUDINARY_CLOUD_NAME` configurados, ejecutar localmente:
 
+Antes de abrir una conexión, comprueba únicamente la **presencia** de variables y el **tipo de conexión** con:
+
+```bash
+node scripts/auditar-cloudinary.js --diagnostico
+```
+
+Este modo no se conecta a Supabase ni a Cloudinary y no muestra URL, host, usuario ni contraseña. La categoría `directa_ipv6_habitual` indica que la URL tiene formato de conexión directa; si la red local no ofrece IPv6, considera obtener desde **Supabase → Connect → Session pooler (puerto 5432)** una cadena nueva para uso **solo local**, sin cambiar la conexión de Vercel que ya funciona. El Session pooler es compatible con IPv4. No inventes la dirección de pooler ni copies credenciales al chat.
+
+Después ejecuta el inventario de solo lectura:
+
 ```bash
 node scripts/auditar-cloudinary.js
 ```
+
+Si falla, el programa muestra `etapa` y `categoria` (sin mensajes crudos ni secretos). Categorías como `RED_NO_ALCANZABLE`, `DNS` o `TIEMPO_AGOTADO` sugieren problema de conexión; `AUTENTICACION` sugiere revisar credenciales, y `TABLA_FALTANTE` / `COLUMNA_FALTANTE` / `PERMISOS` orientan a una revisión del esquema o usuario SQL. Puedes compartir **solo** esos dos códigos, el tipo de conexión anónimo y, si termina correctamente, `colecciones`. No compartas `.env`, `DATABASE_URL`, trazas, logs completos o documentos.
+
 
 El script carga el `.env` local mediante `dotenv` (PR #27), abre una **transacción PostgreSQL READ ONLY**, clasifica las referencias en fotos, cédulas, partidas y comprobantes y muestra únicamente recuentos agregados. No imprime URL, nombre de persona, `public_id` ni identificadores. No realiza llamadas de escritura a Cloudinary/Supabase; sí requiere lectura de las referencias históricas. No copiar credenciales al chat ni adjuntar resultados con datos personales.
 

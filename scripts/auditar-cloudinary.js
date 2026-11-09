@@ -34,17 +34,43 @@ function resumir(documentos) {
     return resultado;
 }
 
-async function auditar() {
-    if (!process.env.DATABASE_URL || !process.env.CLOUDINARY_CLOUD_NAME) {
-        throw new Error('Configura DATABASE_URL y CLOUDINARY_CLOUD_NAME sin publicarlos.');
+// Conexión única: config/db.js hace un ping al importarse, y enmascara
+// errores locales. Este script abre solo una sesión de lectura.
+const { diagnosticoEntorno, clasificarError, DESCRIPCIONES } = require('../utils/diagnosticoInventario');
+
+async function auditar({ entorno = process.env, crearCliente, escribir = texto => process.stdout.write(texto) } = {}) {
+    const estado = diagnosticoEntorno(entorno);
+    if (estado.database_url === 'ausente' || estado.cloudinary_cloud_name === 'ausente') {
+        throw Object.assign(new Error('Falta configuración'), {
+            fase: 'configuracion', categoria: 'CONFIG_FALTANTE'
+        });
     }
-    const db = require('../config/db');
-    const cliente = await db.pool.connect();
+    if (estado.tipo_conexion === 'configuracion_invalida') {
+        throw Object.assign(new Error('URL de configuración inválida'), {
+            fase: 'configuracion', categoria: 'CONFIG_INVALIDA'
+        });
+    }
+
+    let cliente;
+    let transaccion = false;
+    let fase = 'conexion';
     try {
+        const fabrica = crearCliente || (opciones => new (require('pg').Client)(opciones));
+        cliente = fabrica({
+            connectionString: entorno.DATABASE_URL.trim(),
+            // Mantiene la configuración TLS de config/db.js.
+            ssl: { rejectUnauthorized: false },
+            connectionTimeoutMillis: 20000
+        });
+        await cliente.connect();
         await cliente.query('BEGIN READ ONLY');
+        transaccion = true;
+
+        fase = 'consulta_atletas';
         const atletas = await cliente.query(
             'SELECT foto_url, cedula_archivo_url, partida_nacimiento_url FROM atletas'
         );
+        fase = 'consulta_pagos';
         const pagos = await cliente.query('SELECT ruta_captura FROM pagos');
         const resultado = resumir([
             ['fotos', 'jaguares/atletas', atletas.rows.map(row => row.foto_url)],
@@ -52,29 +78,45 @@ async function auditar() {
             ['partidas', 'jaguares/atletas', atletas.rows.map(row => row.partida_nacimiento_url)],
             ['comprobantes', 'jaguares_comprobantes', pagos.rows.map(row => row.ruta_captura)]
         ]);
+        fase = 'cierre_lectura';
         await cliente.query('ROLLBACK');
-        // El inventario SOLO clasifica cadenas almacenadas. No confirma el
-        // delivery type real en Cloudinary y no comprueba la caché CDN.
-        process.stdout.write(JSON.stringify({
+        transaccion = false;
+        escribir(JSON.stringify({
             descripcion: 'Resumen anonimizado de URLs guardadas. Solo lectura; SIN migracion.',
             advertencia: 'Verificar metadata real y CDN antes de cambiar assets.',
             colecciones: resultado
         }, null, 2) + '\n');
-    } catch (error) {
-        try { await cliente.query('ROLLBACK'); } catch {}
-        throw error;
+        return resultado;
+    } catch (original) {
+        // Nunca incluir error.message/stack ni URL/hostname/credenciales en
+        // el diagnóstico. Solo una categoría de un catálogo finito.
+        const diagnostico = clasificarError(original, fase);
+        throw Object.assign(new Error('Inventario no completado'), diagnostico);
     } finally {
-        cliente.release();
-        await db.pool.end();
+        if (cliente) {
+            if (transaccion) {
+                try { await cliente.query('ROLLBACK'); } catch {}
+            }
+            try { await cliente.end(); } catch {}
+        }
     }
 }
 
 if (require.main === module) {
-    auditar().catch(error => {
-        // No imprimir SQL ni enlaces potencialmente sensibles en errores.
-        console.error('No se pudo completar el inventario de solo lectura:', error.code || 'INTERNAL');
-        process.exitCode = 1;
-    });
+    if (process.argv.includes('--diagnostico')) {
+        // No conecta con Supabase ni imprime hostname o contraseñas.
+        process.stdout.write(JSON.stringify(diagnosticoEntorno(), null, 2) + '\n');
+    } else {
+        auditar().catch(error => {
+            const fase = typeof error.fase === 'string' &&
+                /^[a-z_]{1,40}$/.test(error.fase) ? error.fase : 'configuracion';
+            const categoria = Object.hasOwn(DESCRIPCIONES, error.categoria)
+                ? error.categoria : 'CONFIG_INVALIDA';
+            console.error('Inventario no completado: etapa=' + fase +
+                ' categoria=' + categoria + '. ' + DESCRIPCIONES[categoria]);
+            process.exitCode = 1;
+        });
+    }
 }
 
-module.exports = { clasificar, resumir };
+module.exports = { clasificar, resumir, auditar };

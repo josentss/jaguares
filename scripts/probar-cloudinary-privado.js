@@ -117,6 +117,19 @@ function diagnosticarUrlSubida(url, carpeta, idEsperado, formatoEsperado, cloudE
     return 'SIN_DISCREPANCIA_DETECTADA';
 }
 
+// Para una subida que confirma la identidad solicitada, construir la URL
+// canónica desde campos tipados, NO desde secure_url (cuya estructura puede
+// depender de la cuenta). Esta URL no contiene firma de entrega.
+function urlCanonicaSubida({ cloud, publicId, version, formato }) {
+    if (typeof cloud !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(cloud)) return null;
+    if (typeof publicId !== 'string' || !/^jaguares(?:\/atletas|_comprobantes)\/[a-zA-Z0-9_./-]+$/.test(publicId) ||
+        publicId.includes('..') || publicId.split('/').some(parte => !parte)) return null;
+    if (!Number.isSafeInteger(version) || version < 1) return null;
+    if (!['png', 'jpg', 'jpeg', 'webp', 'pdf'].includes(formato)) return null;
+    return 'https://res.cloudinary.com/' + cloud + '/image/authenticated/v' +
+        version + '/' + publicId + '.' + formato;
+}
+
 function categoriaError(error) {
     const code = error && error.code;
     if (['ETIMEDOUT', 'ECONNRESET', 'ENOTFOUND', 'EAI_AGAIN'].includes(code)) {
@@ -202,43 +215,64 @@ async function pruebaSintetica({
                 });
             }
             if (!subido || subido.public_id !== publicId ||
-                subido.type !== 'authenticated' || subido.resource_type !== 'image') {
+                subido.type !== 'authenticated' || subido.resource_type !== 'image' ||
+                subido.format !== prueba.extension) {
                 throw Object.assign(new Error('Metadata inesperada'), { code: 'METADATA_INCORRECTA' });
             }
 
-            const asset = analizarAssetGuardado(subido.secure_url, prueba.carpeta);
-            if (!asset || asset.delivery_type !== 'authenticated' ||
+            const urlCanonica = urlCanonicaSubida({
+                cloud, publicId, version: subido.version, formato: prueba.extension
+            });
+            const asset = analizarAssetGuardado(urlCanonica, prueba.carpeta);
+            if (!urlCanonica || !asset || asset.delivery_type !== 'authenticated' ||
                 asset.public_id !== publicId || asset.format !== prueba.extension) {
+                throw Object.assign(new Error('No se pudo construir una URL canónica segura'), {
+                    code: 'URL_INCOMPATIBLE'
+                });
+            }
+
+            // Conservar una señal anónima sobre la diferencia de secure_url:
+            // los controladores web actuales almacenan precisamente ese valor.
+            const assetOriginal = analizarAssetGuardado(subido.secure_url, prueba.carpeta);
+            const urlOriginalReconocida = Boolean(assetOriginal &&
+                assetOriginal.public_id === publicId &&
+                assetOriginal.format === prueba.extension &&
+                assetOriginal.delivery_type === 'authenticated');
+            if (!urlOriginalReconocida) {
                 resultado.detalle_url = diagnosticarUrlSubida(
                     subido.secure_url, prueba.carpeta, publicId, prueba.extension, cloud
                 );
-                // Metadatos de formato sin valores arbitrarios del proveedor.
-                const formato = subido.format;
-                resultado.formato_cloudinary = ['png', 'jpg', 'jpeg', 'webp', 'pdf'].includes(formato)
-                    ? formato : 'otro_o_ausente';
-                throw Object.assign(new Error('URL del asset no reconocida'), { code: 'URL_INCOMPATIBLE' });
             }
+
             etapa = 'metadata_' + prueba.nombre;
             const metadata = await client.api.resource(publicId, {
                 resource_type: 'image', type: 'authenticated'
             });
-            if (metadata.type !== 'authenticated' || metadata.public_id !== publicId) {
-                throw Object.assign(new Error('Metadata de Admin API distinta'), { code: 'METADATA_INCORRECTA' });
+            if (!metadata || metadata.type !== 'authenticated' ||
+                metadata.public_id !== publicId || metadata.resource_type !== 'image' ||
+                metadata.format !== prueba.extension ||
+                metadata.version !== subido.version) {
+                throw Object.assign(new Error('Metadata de Admin API distinta'), {
+                    code: 'METADATA_INCORRECTA'
+                });
             }
 
             etapa = 'entrega_' + prueba.nombre;
-            const sinFirma = await comprobarRespuesta(subido.secure_url, fetcher, prueba.extension, false);
+            // Nunca intentar entregar la URL nativa desconocida: probar solo
+            // una URL canónica sin firma validada con metadata de Cloudinary.
+            const sinFirma = await comprobarRespuesta(urlCanonica, fetcher, prueba.extension, false);
             const firmado = await comprobarRespuesta(
-                firmar(subido.secure_url, prueba.carpeta, Date.now()),
+                firmar(urlCanonica, prueba.carpeta, Date.now()),
                 fetcher, prueba.extension, true
             );
             const vencido = await comprobarRespuesta(
-                firmar(subido.secure_url, prueba.carpeta, Date.now() - 360000),
+                firmar(urlCanonica, prueba.carpeta, Date.now() - 360000),
                 fetcher, prueba.extension, false
             );
             resultado.pruebas.push({
                 tipo: prueba.nombre,
                 metadata: 'authenticated',
+                url_original_reconocida: urlOriginalReconocida,
                 sin_firma_bloqueado: sinFirma,
                 firmado_descargable: firmado,
                 vencido_bloqueado: vencido
@@ -248,6 +282,9 @@ async function pruebaSintetica({
             }
         }
         resultado.aprobada = true;
+        resultado.requiere_ajuste_de_url_web = resultado.pruebas.some(
+            prueba => !prueba.url_original_reconocida
+        );
     } catch (error) {
         fallo = categoriaError(error);
         resultado.etapa = etapa;
@@ -298,5 +335,5 @@ if (require.main === module) {
 
 module.exports = {
     pngSintetico, pdfSintetico, pruebaSintetica, configPresente,
-    esContenidoEsperado, diagnosticarUrlSubida
+    esContenidoEsperado, diagnosticarUrlSubida, urlCanonicaSubida
 };

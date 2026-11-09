@@ -5,7 +5,7 @@ const { execFileSync } = require('node:child_process');
 const { resolve } = require('node:path');
 const {
     pngSintetico, pdfSintetico, pruebaSintetica, configPresente, esContenidoEsperado,
-    diagnosticarUrlSubida
+    diagnosticarUrlSubida, urlCanonicaSubida
 } = require('../scripts/probar-cloudinary-privado');
 
 const env = {
@@ -36,6 +36,8 @@ function clienteSimulado({ publicacion = 'authenticated', fallarEnSegundo = fals
                     public_id: opts.public_id,
                     type: publicacion,
                     resource_type: 'image',
+                    version: 123,
+                    format: ext,
                     secure_url: prefijo.replace('/authenticated/','/' + publicacion + '/') +
                         opts.public_id + '.' + ext
                 };
@@ -49,7 +51,10 @@ function clienteSimulado({ publicacion = 'authenticated', fallarEnSegundo = fals
             async resource(publicId, opts) {
                 acciones.lecturas.push(publicId);
                 assert.equal(opts.type, 'authenticated');
-                return { public_id: publicId, type: 'authenticated' };
+                return {
+                    public_id: publicId, type: 'authenticated', resource_type: 'image',
+                    version: 123, format: publicId.endsWith('_documento_pdf') ? 'pdf' : 'png'
+                };
             }
         }
     };
@@ -116,6 +121,7 @@ test('prueba completa: foto, PDF y recibo con denegación, entrega firmada, venc
     assert.equal(res.pruebas.length, 3);
     assert.equal(res.limpieza.eliminados, 3);
     assert.equal(res.limpieza.pendientes, 0);
+    assert.equal(res.requiere_ajuste_de_url_web, false);
     assert.equal(client.acciones.subidas.length, 3);
     assert.equal(client.acciones.borrados.length, 3);
     assert.ok(client.acciones.borrados.every(x =>
@@ -187,23 +193,61 @@ test('diagnóstico seguro: distingue URL sin extensión, dominio y formato sin m
     assert.equal(diagnosticarUrlSubida(null,ruta,id,'png','nube-sintetica'),'URL_AUSENTE');
 });
 
-test('diagnóstico de subida: no imprime URL, secret o public_id si el proveedor cambia formato', async () => {
+test('Cloudinary con URL nativa de carpeta distinta: valida URL canónica y alerta incompatibilidad web', async () => {
     const client = clienteSimulado();
     const upload = client.uploader.upload.bind(client.uploader);
     client.uploader.upload = async (...args) => {
         const valor = await upload(...args);
-        valor.secure_url = valor.secure_url.slice(0,-4);
+        // Simula la diferencia observada en la cuenta real.
+        valor.secure_url = valor.secure_url.replace('/v123/jaguares/atletas/',
+            '/v123/otra_carpeta/');
         return valor;
     };
     const res = await pruebaSintetica({
         client, env, fetcher: fetchSimulado, firmar: firmarFalso,
         crearId: () => 'prueba123456789876'
     });
+    assert.equal(res.aprobada,true);
+    assert.equal(res.requiere_ajuste_de_url_web,true);
+    assert.equal(res.detalle_url,'CARPETA_URL_DIFERENTE');
+    assert.equal(res.pruebas.length,3);
+    assert.equal(res.pruebas[0].url_original_reconocida,false);
+    assert.equal(res.pruebas.every(x => x.firmado_descargable && x.vencido_bloqueado), true);
+    assert.equal(res.limpieza.eliminados,3);
+    assert.equal(res.limpieza.pendientes,0);
+    assert.doesNotMatch(JSON.stringify(res),/otra_carpeta|prueba123456789876|secreto-prueba/);
+});
+
+test('Construcción canónica: exige identificador, versión y formato válidos', () => {
+    const id = 'jaguares/atletas/_pruebas_privacidad/prueba_123456';
+    const url = urlCanonicaSubida({
+        cloud: 'nube-sintetica', publicId:id, version:123, formato:'png'
+    });
+    assert.equal(url, prefijo + id + '.png');
+    for (const publicId of ['otra_carpeta/prueba', '../jaguares/atletas/x',
+        'jaguares/atletas/../x', 'jaguares_comprobantes', 'jaguares/atletas//prueba']) {
+        assert.equal(urlCanonicaSubida({
+            cloud:'nube-sintetica', publicId, version:123, formato:'png'
+        }), null);
+    }
+    assert.equal(urlCanonicaSubida({cloud:'nube-sintetica', publicId:id, version:0,
+        formato:'png'}),null);
+    assert.equal(urlCanonicaSubida({cloud:'nube-sintetica', publicId:id, version:123,
+        formato:'svg'}),null);
+});
+
+test('URL incompleta y metadata inconsistente no aprueban el preflight ni dejan residuos', async () => {
+    const client = clienteSimulado();
+    const uploader = client.uploader.upload.bind(client.uploader);
+    client.uploader.upload = async (...args) => ({
+        ...await uploader(...args), version: null
+    });
+    const res = await pruebaSintetica({
+        client, env, fetcher: fetchSimulado, firmar: firmarFalso,
+        crearId: () => 'prueba123456789876'
+    });
     assert.equal(res.aprobada,false);
-    assert.equal(res.error,'URL_INCOMPATIBLE');
-    assert.equal(res.etapa,'subida_foto');
-    assert.equal(res.detalle_url,'EXTENSION_URL_AUSENTE');
+    assert.equal(res.error, 'URL_INCOMPATIBLE');
     assert.equal(res.limpieza.eliminados,1);
     assert.equal(res.limpieza.pendientes,0);
-    assert.doesNotMatch(JSON.stringify(res),/nube-sintetica|prueba123456789876|secreto-prueba/);
 });

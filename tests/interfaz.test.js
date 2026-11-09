@@ -224,10 +224,13 @@ for (const dispositivo of [
             assert.equal(await page.locator('#body-pagos').evaluate(tbody =>
                 tbody.closest('table').querySelectorAll('thead th').length), 8);
             assert.equal(await page.locator('#body-pagos button.js-pago-estado svg').count(), 4);
+            await page.evaluate(() => document.querySelector('[data-target="sec-pagos"]').click());
+            await page.selectOption('#filter-estado-pagos', 'todos');
             await page.locator('#body-pagos button.js-pago-ver').first().click();
             await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});
             assert.equal(await page.locator('#body-pagos a[href*="cloudinary"]').count(), 0);
             await page.locator('.comprobante-dialog-cerrar').click();
+            await page.evaluate(() => document.querySelector('[data-target="sec-atletas"]').click());
             assert.equal(await page.locator('.js-atleta-estado').first().getAttribute('onclick'), null);
             await page.evaluate(() => document.querySelector('.js-atleta-estado').click());
             await page.waitForFunction(() =>

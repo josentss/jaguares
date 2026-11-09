@@ -81,6 +81,16 @@ El segundo preflight real confirmó `CARPETA_URL_DIFERENTE` y `formato_cloudinar
 
 Como siempre, ejecutar el script sin `--ejecutar` primero no hace escrituras. El modo explícito crea hasta 3 archivos sintéticos e intenta eliminar solo los creados. No compartir URLs, public IDs ni credenciales.
 
+### Normalización de nuevas cargas authenticated (PR #35)
+
+PR #34 ya se probó contra Cloudinary REAL y aprobó fotografía PNG, PDF y comprobante PNG, con acceso sin firma bloqueado, firma temporal válida y vencida bloqueada, limpieza completa. La `secure_url` de subida no conserva necesariamente la misma ruta que el `public_id` en la configuración actual.
+
+PR #35 usa `filename` (public_id retornado por CloudinaryStorage) y comprueba nube, origen HTTPS, tipo `authenticated`, recurso y formato MIME antes de construir una referencia canónica. Solo funciona cuando `CLOUDINARY_AUTHENTICATED_UPLOADS=1` esté configurado al iniciar el servidor. Si la identidad de subida es anómala, se rechaza antes de guardar SQL. Las cargas públicas y el CMS no cambian; los enlaces históricos tampoco.
+
+**NO activar la variable en Production todavía.** Antes, hacer ensayo de inscripción y pago sintéticos en Preview con base de datos aislada, comprobando documento propio/ajeno, staff/directiva, foto y PDF en planilla y comprobante. Los tests CI usan Cloudinary simulado, no prueban ese recorrido contra proveedor real. Mantener activos y credenciales históricos intactos.
+
+Pendiente técnico: un archivo subido antes de que fallen datos/SQL todavía puede quedar huérfano. Tratar compensación segura por separado, sin borrados masivos.
+
 ### Auditoría de enlaces históricos (PR #26; solo lectura)
 
 Las capturas del propietario muestran entrega PDF/ZIP **habilitada** y ejemplos de fotos/comprobantes con control de acceso **Público**. La API autorizada no revoca las URL antiguas. **No activar la variable en Production basándose únicamente en esas capturas**: un PDF real `authenticated` y su URL firmada deben probarse con un archivo sintético y el SHA de Preview.

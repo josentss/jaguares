@@ -103,3 +103,75 @@ test('Multer/Cloudinary: límites y flujos truncados se rechazan antes del uploa
     assert.equal(truncado.error.code,'LIMIT_FILE_SIZE');
     assert.equal(enviados.length,0);
 });
+
+
+test('Multer: subidas privadas retornan la URL canónica a los controladores', async () => {
+    const anterior = process.env.CLOUDINARY_CLOUD_NAME;
+    process.env.CLOUDINARY_CLOUD_NAME = 'nube-sintetica';
+    try {
+        const { normalizarUploadPrivado, analizarAssetGuardado } =
+            require('../utils/cloudinaryPrivado');
+        const guardar = {
+            _handleFile(req,file,cb) {
+                (async () => {
+                    for await (const _ of file.stream) { /* consumir el archivo de prueba */ }
+                    cb(null,{
+                        filename:'jaguares/atletas/foto_sintetica_1',
+                        path:'https://res.cloudinary.com/nube-sintetica/image/authenticated/v456/' +
+                            'otra_carpeta/foto_sintetica_1.png'
+                    });
+                })().catch(cb);
+            }
+        };
+        const almacen = storageConValidacion(guardar, {foto:['png']},
+            (info,file) => normalizarUploadPrivado(info,file,'jaguares/atletas'));
+        const {error,info} = await intentarSubida(almacen, PNG, 'foto.png','image/png');
+        assert.equal(error,null);
+        assert.equal(info.firmaValidada,true);
+        assert.equal(info.filename,'jaguares/atletas/foto_sintetica_1');
+        assert.equal(info.path,'https://res.cloudinary.com/nube-sintetica/' +
+            'image/authenticated/v456/jaguares/atletas/foto_sintetica_1.png');
+        assert.equal(analizarAssetGuardado(info.path,'jaguares/atletas').delivery_type,'authenticated');
+    } finally {
+        if (anterior === undefined) delete process.env.CLOUDINARY_CLOUD_NAME;
+        else process.env.CLOUDINARY_CLOUD_NAME = anterior;
+    }
+});
+
+test('Multer: un upload privado sin public_id válido falla cerrado, sin guardar URL', async () => {
+    const anterior=process.env.CLOUDINARY_CLOUD_NAME;
+    process.env.CLOUDINARY_CLOUD_NAME='nube-sintetica';
+    try {
+        const {normalizarUploadPrivado}=require('../utils/cloudinaryPrivado');
+        const guardar={
+            _handleFile(req,file,cb) {
+                (async()=>{
+                    for await(const _ of file.stream) {}
+                    cb(null,{
+                        filename:'carpeta_ajena/foto_sintetica',
+                        path:'https://res.cloudinary.com/nube-sintetica/image/authenticated/v456/' +
+                            'otra_carpeta/foto_sintetica.png'
+                    });
+                })().catch(cb);
+            }
+        };
+        const almacen=storageConValidacion(guardar,{foto:['png']},
+            (info,file)=>normalizarUploadPrivado(info,file,'jaguares/atletas'));
+        const {error,info}=await intentarSubida(almacen,PNG,'foto.png','image/png');
+        assert.equal(error.message,'No se pudo verificar la referencia del archivo privado');
+        assert.equal(info,undefined);
+        assert.doesNotMatch(error.message,/carpeta_ajena|foto_sintetica|cloudinary/);
+    } finally {
+        if(anterior===undefined)delete process.env.CLOUDINARY_CLOUD_NAME;
+        else process.env.CLOUDINARY_CLOUD_NAME=anterior;
+    }
+});
+
+test('Multer: sin normalizador mantiene las URL públicas históricas', async () => {
+    const {storage}=crearStorageDePrueba();
+    const {error,info}=await intentarSubida(storage,PNG,'foto.png','image/png');
+    assert.equal(error,null);
+    assert.equal(info.path,'https://example.invalid/prueba');
+    assert.equal(info.filename,'verificado');
+    assert.equal(info.firmaValidada,true);
+});

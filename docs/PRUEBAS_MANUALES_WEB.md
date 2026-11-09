@@ -59,6 +59,15 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Históricos:** los activos existentes de tipo `upload` siguen accesibles por URL antiguas si se conoce; inventariar y migrar después sin reescribir Supabase ni cambiar URLs sin autorización.
 - [ ] **Rollback:** `CLOUDINARY_AUTHENTICATED_UPLOADS=0` solo controla las cargas futuras; no desprotege los recursos ya guardados como `authenticated`.
 
+## Normalización de subida privada y pruebas de integración (PR #35)
+
+- [ ] PR #34 aprobado en Cloudinary real: foto PNG/PDF/comprobante authenticated con firma válida, sin firma/vencida bloqueadas y 3 archivos eliminados sin pendientes.
+- [ ] PR #35: comprobar en CI que la URL canónica sale de public_id de CloudinaryStorage y MIME/extension; la URL nativa en otra carpeta no se guarda y la URL maliciosa se rechaza.
+- [ ] No activar privadas en Production solo porque el CI pase: habilitar temporalmente en entorno Preview aislado con Supabase de prueba, y realizar registro/pago con cuentas, atletas y documentos sintéticos.
+- [ ] Verificar en Preview que representante propio y directiva/staff pueden ver foto/PDF y comprobante, un representante ajeno no, y la planilla PDF se exporta. Confirmar que los registros nuevos guardan URL reconocida y que los históricos se mantienen accesibles.
+- [ ] Con fallo, desactivar futuras cargas en el entorno de prueba, conservar evidencias anónimas y no convertir ni borrar activos históricos.
+- [ ] Migrar solo después 34 referencias públicas con inventario deduplicado, respaldo y aprobación explícita.
+
 ## Contrato de URL canónica y entrega privada (PR #34)
 
 - [ ] PR #33 fusionado: la prueba real detectó `CARPETA_URL_DIFERENTE` pero Cloudinary devolvió PNG, creó y eliminó el archivo sintético sin pendientes.

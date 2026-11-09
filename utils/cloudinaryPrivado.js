@@ -76,6 +76,82 @@ function enlaceAutorizado(valor, carpeta, fecha = Date.now()) {
     });
 }
 
+/**
+ * Normaliza SOLO las nuevas subidas autenticadas desde metadatos del servidor.
+ *
+ * multer-storage-cloudinary entrega filename = public_id y path = secure_url.
+ * En cuentas con carpetas dinámicas la ruta dentro de secure_url puede ser
+ * distinta de filename. No almacenar esa ruta como referencia privada:
+ * construir la identidad canónica con el public_id retornado por la subida.
+ *
+ * La versión /v1/ es el marcador documentado por Cloudinary para IDs con
+ * subcarpetas cuando el adaptador no proporciona version. No se usa como
+ * autorización: los GET privados se firman con private_download_url.
+ */
+function normalizarUploadPrivado(info, archivo, carpeta) {
+    const fallo = () => { throw new Error('No se pudo validar la referencia del archivo privado'); };
+    if (!info || typeof info !== 'object' || !archivo ||
+        !['jaguares/atletas', 'jaguares_comprobantes'].includes(carpeta) ||
+        typeof info.filename !== 'string' || typeof info.path !== 'string') return fallo();
+
+    const cloud = process.env.CLOUDINARY_CLOUD_NAME;
+    if (!cloud || !/^[a-zA-Z0-9_-]+$/.test(cloud)) return fallo();
+
+    let original;
+    try { original = new URL(info.path); } catch { return fallo(); }
+    if (original.protocol !== 'https:' || original.hostname !== 'res.cloudinary.com' ||
+        original.port || original.username || original.password || original.search ||
+        original.hash || original.pathname.includes('%')) return fallo();
+
+    const segmentos = original.pathname.split('/').slice(1);
+    if (segmentos[0] !== cloud || !RECURSOS.has(segmentos[1]) ||
+        segmentos[2] !== 'authenticated' || segmentos.length < 5) return fallo();
+
+    const recurso = segmentos[1];
+    const nombreEntrega = segmentos[segmentos.length - 1];
+    const extensionEntrega = /\.([a-zA-Z0-9]{2,5})$/.exec(nombreEntrega)?.[1]?.toLowerCase();
+    const mime = archivo.mimetype;
+    const formatosMime = {
+        'image/jpeg': ['jpg', 'jpeg'],
+        'image/jpg': ['jpg', 'jpeg'],
+        'image/png': ['png'],
+        'image/webp': ['webp'],
+        'application/pdf': ['pdf'],
+        'application/x-pdf': ['pdf']
+    };
+    const permitidos = formatosMime[mime];
+    const extensionNombre = /\.([a-zA-Z0-9]{2,5})$/.exec(archivo.originalname || '')?.[1]?.toLowerCase();
+    if (!permitidos || !permitidos.includes(extensionNombre) ||
+        !permitidos.includes(extensionEntrega) || !FORMATOS.has(extensionEntrega)) return fallo();
+    if (recurso === 'raw' && extensionEntrega !== 'pdf') return fallo();
+    if (carpeta === 'jaguares_comprobantes' && (recurso !== 'image' || extensionEntrega === 'pdf')) return fallo();
+    if (archivo.fieldname === 'foto' && (recurso !== 'image' || extensionEntrega === 'pdf')) return fallo();
+
+    const publicId = info.filename;
+    if (!publicId.startsWith(carpeta + '/') || publicId.length > 220) return fallo();
+    const resto = publicId.slice(carpeta.length + 1).split('/');
+    if (resto.some(part => !part || part === '.' || part === '..' ||
+        !/^[A-Za-z0-9_.-]+$/.test(part))) return fallo();
+    if (recurso === 'raw') {
+        if (!publicId.endsWith('.pdf')) return fallo();
+    } else if (/\.(?:png|jpg|jpeg|webp|pdf)$/i.test(publicId)) {
+        // Las subidas image de Jaguares usan public_id SIN la extensión.
+        return fallo();
+    }
+
+    // La versión es opcional en el adaptador de Multer. Si no viene, /v1/
+    // separa de forma segura las subcarpetas de cualquier transformación.
+    const version = /^v[1-9]\d*$/.test(segmentos[3] || '') ? segmentos[3] : 'v1';
+    const nombreCanonico = recurso === 'raw' ? publicId : publicId + '.' + extensionEntrega;
+    const url = 'https://res.cloudinary.com/' + cloud + '/' + recurso +
+        '/authenticated/' + version + '/' + nombreCanonico;
+    const validado = analizarAssetAutenticado(url, carpeta);
+    if (!validado || validado.public_id !== publicId ||
+        validado.resource_type !== recurso || validado.format !== extensionEntrega) return fallo();
+
+    return { ...info, path: url, secure_url: url };
+}
+
 function esCargaPrivadaHabilitada() {
     return process.env.CLOUDINARY_AUTHENTICATED_UPLOADS === '1';
 }
@@ -84,5 +160,6 @@ module.exports = {
     analizarAssetGuardado,
     analizarAssetAutenticado,
     enlaceAutorizado,
+    normalizarUploadPrivado,
     esCargaPrivadaHabilitada
 };

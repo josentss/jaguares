@@ -139,9 +139,11 @@ async function pruebaSintetica({
     });
     const creados = [];
     let fallo = null;
+    let etapa = 'preparacion';
 
     try {
         for (const prueba of PRUEBAS) {
+            etapa = 'subida_' + prueba.nombre;
             const id = String(crearId()).replace(/[^a-zA-Z0-9_-]/g, '');
             if (id.length < 10 || id.length > 90) throw Object.assign(new Error('ID inválido'), { code: 'ID_INVALIDO' });
             const publicId = prueba.carpeta + '/_pruebas_privacidad/jaguares_test_' + id + '_' + prueba.nombre;
@@ -176,6 +178,7 @@ async function pruebaSintetica({
                 asset.public_id !== publicId || asset.format !== prueba.extension) {
                 throw Object.assign(new Error('URL del asset no reconocida'), { code: 'URL_INCOMPATIBLE' });
             }
+            etapa = 'metadata_' + prueba.nombre;
             const metadata = await client.api.resource(publicId, {
                 resource_type: 'image', type: 'authenticated'
             });
@@ -183,6 +186,7 @@ async function pruebaSintetica({
                 throw Object.assign(new Error('Metadata de Admin API distinta'), { code: 'METADATA_INCORRECTA' });
             }
 
+            etapa = 'entrega_' + prueba.nombre;
             const sinFirma = await comprobarRespuesta(subido.secure_url, fetcher, prueba.extension, false);
             const firmado = await comprobarRespuesta(
                 firmar(subido.secure_url, prueba.carpeta, Date.now()),
@@ -206,6 +210,7 @@ async function pruebaSintetica({
         resultado.aprobada = true;
     } catch (error) {
         fallo = categoriaError(error);
+        resultado.etapa = etapa;
     } finally {
         // Nunca borrar por carpeta, tag ni prefijo general: solo public_id
         // de uploads confirmados en la ejecución actual.

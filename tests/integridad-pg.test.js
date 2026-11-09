@@ -287,7 +287,9 @@ test('API: sesiones, roles y propiedad protegen planilla, documentos, perfil e h
 
         // Los archivos se resuelven por ID y propiedad en PostgreSQL, no por
         // URL/Cloudinary public_id aportado por el cliente.
-        await db.pool.query('UPDATE atletas SET foto_url=$1, cedula_archivo_url=$2 WHERE id_atleta=$3',
+        // Aislar el registro elegido: pruebas anteriores pueden haber
+        // rellenado la partida. Aquí se comprueba explícitamente el caso sin ella.
+        await db.pool.query('UPDATE atletas SET foto_url=$1, cedula_archivo_url=$2, partida_nacimiento_url=NULL WHERE id_atleta=$3',
             ['https://res.cloudinary.com/nube-sintetica/image/upload/v1/jaguares/atletas/foto-sintetica.png', 'https://res.cloudinary.com/nube-sintetica/image/upload/v1/jaguares/atletas/cedula-sintetica.pdf', id]);
         // Historial de representante: la opción ?abrir=1 permite una pestaña
         // normal, pero mantiene los mismos permisos que la respuesta JSON.

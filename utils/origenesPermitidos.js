@@ -25,7 +25,7 @@ function crearPoliticaOrigen({ corsOrigin = '', port = 3000, vercel = false } = 
 
     function mismoOrigen(req, origin) {
         const host = req.get('host');
-        if (typeof host !== 'string' || !host || /[\\/\\\\\\s@?#]/.test(host)) return false;
+        if (typeof host !== 'string' || !host || !/^[a-zA-Z0-9.:\\[\\]-]+$/.test(host)) return false;
         const protocolo = vercel ? 'https:' : req.protocol + ':';
         if (!['https:', 'http:'].includes(protocolo)) return false;
         // Normaliza host, IPv6 y puerto sin confiar en un patrón *.vercel.app.

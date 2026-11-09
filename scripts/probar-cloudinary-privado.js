@@ -154,12 +154,22 @@ async function pruebaSintetica({
                 type: 'authenticated',
                 tags: ['jaguares_pruebas_privacidad']
             });
-            // Se marca para limpieza únicamente lo creado por esta ejecución.
+            // Solo un public_id exactamente igual al generado se registra
+            // para limpieza. Si el proveedor devolvió otro delivery type,
+            // se usa el reportado para no dejar una prueba pública huérfana.
+            if (subido && subido.public_id === publicId &&
+                ['authenticated', 'upload', 'private'].includes(subido.type) &&
+                ['image', 'raw'].includes(subido.resource_type)) {
+                creados.push({
+                    publicId,
+                    resource_type: subido.resource_type,
+                    delivery_type: subido.type
+                });
+            }
             if (!subido || subido.public_id !== publicId ||
                 subido.type !== 'authenticated' || subido.resource_type !== 'image') {
                 throw Object.assign(new Error('Metadata inesperada'), { code: 'METADATA_INCORRECTA' });
             }
-            creados.push({ publicId, resource_type: 'image' });
 
             const asset = analizarAssetGuardado(subido.secure_url, prueba.carpeta);
             if (!asset || asset.delivery_type !== 'authenticated' ||
@@ -202,7 +212,7 @@ async function pruebaSintetica({
         for (const asset of creados.reverse()) {
             try {
                 const borrado = await client.uploader.destroy(asset.publicId, {
-                    type: 'authenticated', resource_type: asset.resource_type, invalidate: true
+                    type: asset.delivery_type, resource_type: asset.resource_type, invalidate: true
                 });
                 if (borrado.result === 'ok') resultado.limpieza.eliminados++;
                 else resultado.limpieza.pendientes++;

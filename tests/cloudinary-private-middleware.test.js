@@ -21,12 +21,15 @@ cloudinary.uploader.upload_stream = (opciones, callback) => {
     const indice = ++contador;
     const carpeta = opciones.folder;
     const recurso = opciones.resource_type === 'auto' ? 'image' : (opciones.resource_type || 'image');
-    const extension = opciones.folder === 'jaguares_comprobantes' ? 'png' :
-        indice === 3 ? 'pdf' : 'png';
     const publicId = carpeta + '/archivo_sintetico_' + indice;
+    const partes = [];
     return new Writable({
-        write(chunk, encoding, done) {done();},
+        write(chunk, encoding, done) {partes.push(chunk); done();},
         final(done) {
+            // El tipo depende del contenido recibido; Multer puede procesar
+            // varios campos en orden distinto del que aparece en FormData.
+            const extension = Buffer.concat(partes).subarray(0,5).toString('ascii') === '%PDF-'
+                ? 'pdf' : 'png';
             callback(null, {
                 bytes: 100,
                 public_id: publicId,

@@ -88,6 +88,35 @@ function esContenidoEsperado(bytes, extension) {
     return buffer.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'));
 }
 
+// Diagnóstico acotado, sin imprimir URLs ni public_id. No flexibiliza
+// el parser usado por la API: esa decisión requiere ver la causa real.
+function diagnosticarUrlSubida(url, carpeta, idEsperado, formatoEsperado, cloudEsperada) {
+    if (typeof url !== 'string' || !url) return 'URL_AUSENTE';
+    let parsed;
+    try { parsed = new URL(url); } catch { return 'URL_MALFORMADA'; }
+    if (parsed.protocol !== 'https:') return 'PROTOCOLO_INESPERADO';
+    if (parsed.hostname !== 'res.cloudinary.com') return 'DOMINIO_INESPERADO';
+    if (parsed.port || parsed.username || parsed.password ||
+        parsed.search || parsed.hash) return 'PARAMETROS_URL_INESPERADOS';
+    if (parsed.pathname.includes('%')) return 'RUTA_CODIFICADA';
+    const segmentos = parsed.pathname.split('/').slice(1);
+    if (segmentos[0] !== cloudEsperada) return 'CLOUD_NAME_DIFERENTE';
+    if (segmentos[1] !== 'image') return 'RECURSO_URL_DIFERENTE';
+    if (segmentos[2] !== 'authenticated') return 'TIPO_URL_DIFERENTE';
+    const resto = segmentos.slice(3);
+    if (/^v\d+$/.test(resto[0] || '')) resto.shift();
+    const ultimo = resto.at(-1) || '';
+    if (!/\.[a-zA-Z0-9]{2,5}$/.test(ultimo)) return 'EXTENSION_URL_AUSENTE';
+    if (!resto.join('/').startsWith(carpeta + '/')) return 'CARPETA_URL_DIFERENTE';
+    if (resto.some(x => !x || x === '.' || x === '..' ||
+        !/^[a-zA-Z0-9_.-]+$/.test(x))) return 'SEGMENTO_URL_INESPERADO';
+    const asset = analizarAssetGuardado(url, carpeta);
+    if (!asset) return 'ANALIZADOR_NO_RECONOCE_URL';
+    if (asset.public_id !== idEsperado) return 'PUBLIC_ID_URL_DIFERENTE';
+    if (asset.format !== formatoEsperado) return 'FORMATO_URL_DIFERENTE';
+    return 'SIN_DISCREPANCIA_DETECTADA';
+}
+
 function categoriaError(error) {
     const code = error && error.code;
     if (['ETIMEDOUT', 'ECONNRESET', 'ENOTFOUND', 'EAI_AGAIN'].includes(code)) {
@@ -180,6 +209,13 @@ async function pruebaSintetica({
             const asset = analizarAssetGuardado(subido.secure_url, prueba.carpeta);
             if (!asset || asset.delivery_type !== 'authenticated' ||
                 asset.public_id !== publicId || asset.format !== prueba.extension) {
+                resultado.detalle_url = diagnosticarUrlSubida(
+                    subido.secure_url, prueba.carpeta, publicId, prueba.extension, cloud
+                );
+                // Metadatos de formato sin valores arbitrarios del proveedor.
+                const formato = subido.format;
+                resultado.formato_cloudinary = ['png', 'jpg', 'jpeg', 'webp', 'pdf'].includes(formato)
+                    ? formato : 'otro_o_ausente';
                 throw Object.assign(new Error('URL del asset no reconocida'), { code: 'URL_INCOMPATIBLE' });
             }
             etapa = 'metadata_' + prueba.nombre;
@@ -260,4 +296,7 @@ if (require.main === module) {
     });
 }
 
-module.exports = { pngSintetico, pdfSintetico, pruebaSintetica, configPresente, esContenidoEsperado };
+module.exports = {
+    pngSintetico, pdfSintetico, pruebaSintetica, configPresente,
+    esContenidoEsperado, diagnosticarUrlSubida
+};

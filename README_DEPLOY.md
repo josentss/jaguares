@@ -71,6 +71,10 @@ El resumen solo incluye estados por tipo y conteos de limpieza. **Comparte únic
 
 Este comando es un preflight del proveedor, no una prueba end-to-end de sesiones, planillas o pagos. Después de aprobarlo, todavía hay que validar una nueva inscripción y comprobante sintéticos en Preview con `authenticated`, sin compartir los archivos con otros usuarios, **antes** de habilitar la opción para cargas reales. La migración de históricos requiere inventario deduplicado, respaldo y plan reversible aparte.
 
+### Diagnóstico de incompatibilidad URL (PR #33)
+
+El primer preflight real de PR #32 subió y limpió un PNG sintético correctamente, pero terminó en `subida_foto` / `URL_INCOMPATIBLE` antes de la entrega firmada. El PR #33 añade `detalle_url` con una **categoría cerrada** y `formato_cloudinary` limitado a formatos comunes, sin imprimir URLs, public IDs o credenciales. Con aprobación, repetir `node scripts/probar-cloudinary-privado.js --ejecutar` solo con recursos sintéticos y compartir únicamente los campos anónimos. No activar nuevas cargas privadas ni migrar históricos hasta comprender la discrepancia y probar toda la entrega.
+
 ### Auditoría de enlaces históricos (PR #26; solo lectura)
 
 Las capturas del propietario muestran entrega PDF/ZIP **habilitada** y ejemplos de fotos/comprobantes con control de acceso **Público**. La API autorizada no revoca las URL antiguas. **No activar la variable en Production basándose únicamente en esas capturas**: un PDF real `authenticated` y su URL firmada deben probarse con un archivo sintético y el SHA de Preview.

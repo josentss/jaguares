@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const { resolve } = require('node:path');
 const {
-    pngSintetico, pdfSintetico, pruebaSintetica, configPresente, esContenidoEsperado
+    pngSintetico, pdfSintetico, pruebaSintetica, configPresente, esContenidoEsperado,
+    diagnosticarUrlSubida
 } = require('../scripts/probar-cloudinary-privado');
 
 const env = {
@@ -162,4 +163,47 @@ test('sin credenciales no se llama a Cloudinary', async () => {
     assert.equal(res.aprobada, false);
     assert.equal(res.error, 'CONFIG_FALTANTE');
     assert.equal(llamado, false);
+});
+
+
+test('diagnóstico seguro: distingue URL sin extensión, dominio y formato sin mostrar valores', () => {
+    const ruta = 'jaguares/atletas';
+    const id = ruta + '/_pruebas_privacidad/jaguares_test_123456789_foto';
+    const url = 'https://res.cloudinary.com/nube-sintetica/image/authenticated/v123/' + id + '.png';
+    assert.equal(diagnosticarUrlSubida(url,ruta,id,'png','nube-sintetica'),
+        'SIN_DISCREPANCIA_DETECTADA');
+    assert.equal(diagnosticarUrlSubida(url.slice(0,-4),ruta,id,'png','nube-sintetica'),
+        'EXTENSION_URL_AUSENTE');
+    assert.equal(diagnosticarUrlSubida(url,ruta,id,'jpg','nube-sintetica'),
+        'FORMATO_URL_DIFERENTE');
+    assert.equal(diagnosticarUrlSubida(url,ruta,id + '-distinto','png','nube-sintetica'),
+        'PUBLIC_ID_URL_DIFERENTE');
+    assert.equal(diagnosticarUrlSubida(url.replace('res.cloudinary.com','cdn.example.test'),
+        ruta,id,'png','nube-sintetica'),'DOMINIO_INESPERADO');
+    assert.equal(diagnosticarUrlSubida(url.replace('nube-sintetica','nube-ajena'),
+        ruta,id,'png','nube-sintetica'),'CLOUD_NAME_DIFERENTE');
+    assert.equal(diagnosticarUrlSubida(url.replace('/image/authenticated/','/image/upload/'),
+        ruta,id,'png','nube-sintetica'),'TIPO_URL_DIFERENTE');
+    assert.equal(diagnosticarUrlSubida(null,ruta,id,'png','nube-sintetica'),'URL_AUSENTE');
+});
+
+test('diagnóstico de subida: no imprime URL, secret o public_id si el proveedor cambia formato', async () => {
+    const client = clienteSimulado();
+    const upload = client.uploader.upload.bind(client.uploader);
+    client.uploader.upload = async (...args) => {
+        const valor = await upload(...args);
+        valor.secure_url = valor.secure_url.slice(0,-4);
+        return valor;
+    };
+    const res = await pruebaSintetica({
+        client, env, fetcher: fetchSimulado, firmar: firmarFalso,
+        crearId: () => 'prueba123456789876'
+    });
+    assert.equal(res.aprobada,false);
+    assert.equal(res.error,'URL_INCOMPATIBLE');
+    assert.equal(res.etapa,'subida_foto');
+    assert.equal(res.detalle_url,'EXTENSION_URL_AUSENTE');
+    assert.equal(res.limpieza.eliminados,1);
+    assert.equal(res.limpieza.pendientes,0);
+    assert.doesNotMatch(JSON.stringify(res),/nube-sintetica|prueba123456789876|secreto-prueba/);
 });

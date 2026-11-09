@@ -59,6 +59,12 @@ Guía vigente desde el 5 de noviembre de 2026. Las casillas son instrucciones; n
 - [ ] **Históricos:** los activos existentes de tipo `upload` siguen accesibles por URL antiguas si se conoce; inventariar y migrar después sin reescribir Supabase ni cambiar URLs sin autorización.
 - [ ] **Rollback:** `CLOUDINARY_AUTHENTICATED_UPLOADS=0` solo controla las cargas futuras; no desprotege los recursos ya guardados como `authenticated`.
 
+## Diagnóstico de URL de subida privada (PR #33)
+
+- [ ] El preflight #32 real terminó con `URL_INCOMPATIBLE` tras subir y borrar 1 PNG sintético, sin pendientes, antes de comprobar firmas.
+- [ ] Tras revisar y fusionar PR #33, repetir el preflight solo con archivos sintéticos y autorización. Compartir solo `detalle_url`, `formato_cloudinary`, etapa y limpieza; nunca URLs ni credenciales.
+- [ ] Resolver el formato real de Cloudinary antes de modificar `analizarAssetGuardado` o activar privadas en Production.
+
 ## Comprobación sintética de entrega privada Cloudinary (PR #32)
 
 - [ ] Comprobar que `node scripts/probar-cloudinary-privado.js` **no sube ni borra nada** y solo informa si existen las tres variables Cloudinary localmente.

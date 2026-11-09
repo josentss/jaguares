@@ -27,6 +27,14 @@ Configurar en el proveedor apropiado, nunca en Git:
 - `EXCHANGERATE_API_KEY` si la función que la usa está habilitada
 - `TRUST_PROXY`, `PGOPTIONS`, `PURGE_RETENTION_DAYS` y `PURGE_BATCH_SIZE` solo según la configuración operativa acordada
 
+## Orígenes autorizados y protección de escrituras (PR #30)
+
+- La web usa peticiones **mismo origen**; funciona en Vercel Production y en Preview sin dar acceso CORS a terceros. En Vercel, el origen propio usa el esquema HTTPS y el host exacto de la petición.
+- `CORS_ORIGIN` configura **solo** orígenes adicionales que necesiten llamar a la API desde otro dominio. Si no se necesita integración entre dominios, puede dejarse sin valor; en local se conserva `http://localhost:PORT`.
+- Si hay integración legítima, enumerar orígenes completos separados por comas, por ejemplo `https://panel.autorizado.example,https://otro.autorizado.example`. Nunca usar `*` ni permitir todos los proyectos `vercel.app`/`onrender.com`; no añadir ruta final ni slash.
+- Las escrituras de API (`POST`, `PUT`, `PATCH`, `DELETE`) con cabecera `Origin` fuera de esa lista y del mismo host se rechazan con HTTP 403; también cuando el navegador indica `Sec-Fetch-Site: cross-site` sin `Origin`.
+- Esto **no** reemplaza autenticación, propiedad y roles ni la futura revisión CSRF integral. Antes del merge, comprobar login, registros y pagos desde el dominio de Vercel y cualquier integración declarada.
+
 ## Entrega privada de documentos en Cloudinary (fase gradual)
 
 - La variable opcional `CLOUDINARY_AUTHENTICATED_UPLOADS` **no se activa automáticamente**. Sin valor o con `0`, se conserva el tipo de carga anterior (`upload`).

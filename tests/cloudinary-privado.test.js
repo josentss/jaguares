@@ -147,3 +147,124 @@ test('inventario de terminal carga .env local sin abrir conexión ni imprimir se
         rmSync(carpeta, { recursive: true, force: true });
     }
 });
+
+
+test('inventario: clasifica red, credenciales y esquema sin revelar errores de PostgreSQL', () => {
+    const { clasificarError, tipoConexion, diagnosticoEntorno } = require('../utils/diagnosticoInventario');
+    assert.equal(clasificarError({ code: '28P01', message:'contraseña privada' }).categoria, 'AUTENTICACION');
+    assert.equal(clasificarError({ code: '42P01', detail:'dato personal' }, 'consulta_atletas').categoria, 'TABLA_FALTANTE');
+    assert.equal(clasificarError({ code: '42501' }, 'consulta_pagos').categoria, 'PERMISOS');
+    assert.equal(clasificarError({ code: 'ENOTFOUND' }).categoria, 'DNS');
+    assert.equal(clasificarError({ code: 'ETIMEDOUT' }).categoria, 'TIEMPO_AGOTADO');
+    const compuesto = new AggregateError([Object.assign(new Error('URL secreta'), {
+        code: 'ENETUNREACH'
+    })], 'falló con credenciales');
+    const diagnostico = clasificarError(compuesto);
+    assert.equal(diagnostico.categoria, 'RED_NO_ALCANZABLE');
+    assert.doesNotMatch(JSON.stringify(diagnostico), /URL secreta|credenciales/);
+
+    assert.equal(tipoConexion('postgresql://u:secreto@db.ejemplo.supabase.co:5432/postgres'),
+        'directa_ipv6_habitual');
+    assert.equal(tipoConexion('postgresql://u:secreto@aws-0-us-east-1.pooler.supabase.com:5432/postgres'),
+        'pooler_sesion_ipv4');
+    assert.equal(tipoConexion('postgresql://u:secreto@aws-0-us-east-1.pooler.supabase.com:6543/postgres'),
+        'pooler_transaccion_ipv4');
+    assert.equal(tipoConexion('no-es-postgres'), 'configuracion_invalida');
+    const entorno = diagnosticoEntorno({
+        DATABASE_URL:'postgresql://u:CLAVE_SINTETICA@db.ejemplo.supabase.co:5432/postgres',
+        CLOUDINARY_CLOUD_NAME:'nube-sintetica'
+    });
+    assert.equal(entorno.database_url, 'presente');
+    assert.equal(entorno.tipo_conexion, 'directa_ipv6_habitual');
+    assert.doesNotMatch(JSON.stringify(entorno), /CLAVE_SINTETICA|db\.ejemplo/);
+});
+
+test('inventario: solo lectura, una conexión y resultado agregado sin URL ni identificadores', async () => {
+    const { auditar } = require('../scripts/auditar-cloudinary');
+    const operaciones = [];
+    const cliente = {
+        async connect() { operaciones.push('connect'); },
+        async query(sql) {
+            operaciones.push(sql);
+            if (sql.includes('FROM atletas')) {
+                return {rows: [{
+                    foto_url: prefijo + '/image/upload/v1/jaguares/atletas/sintetica.jpg',
+                    cedula_archivo_url: null, partida_nacimiento_url: null
+                }]};
+            }
+            if (sql.includes('FROM pagos')) {
+                return {rows:[{ruta_captura:prefijo + '/image/authenticated/v1/jaguares_comprobantes/recibo.jpg'}]};
+            }
+            return {rows:[]};
+        },
+        async end() { operaciones.push('end'); }
+    };
+    let salida = '';
+    const colecciones = await auditar({
+        entorno:{
+            DATABASE_URL:'postgresql://prueba:SECRETO_INVENTADO@db.ejemplo.supabase.co:5432/postgres',
+            CLOUDINARY_CLOUD_NAME:'nube-sintetica'
+        },
+        crearCliente: () => cliente,
+        escribir: t => { salida += t; }
+    });
+    assert.equal(colecciones.fotos.publico, 1);
+    assert.equal(colecciones.comprobantes.autenticado, 1);
+    assert.deepEqual(operaciones, [
+        'connect', 'BEGIN READ ONLY',
+        'SELECT foto_url, cedula_archivo_url, partida_nacimiento_url FROM atletas',
+        'SELECT ruta_captura FROM pagos', 'ROLLBACK', 'end'
+    ]);
+    assert.doesNotMatch(salida,/SECRETO_INVENTADO|res\.cloudinary\.com|sintetica\.jpg|recibo\.jpg/);
+});
+
+test('inventario: cierra la sesión y vuelve atrás al fallar consulta sin revelar SQL ni secretos', async () => {
+    const { auditar } = require('../scripts/auditar-cloudinary');
+    const operaciones = [];
+    const cliente = {
+        async connect() { operaciones.push('connect'); },
+        async query(sql) {
+            operaciones.push(sql);
+            if (sql.startsWith('SELECT')) {
+                throw Object.assign(new Error('Credenciales/URLs privadas en mensaje'), {code:'42P01'});
+            }
+            return {rows:[]};
+        },
+        async end() { operaciones.push('end'); }
+    };
+    await assert.rejects(() => auditar({
+        entorno:{
+            DATABASE_URL:'postgresql://prueba:CLAVE_SECRETA@db.ejemplo.supabase.co:5432/postgres',
+            CLOUDINARY_CLOUD_NAME:'nube-sintetica'
+        },
+        crearCliente: () => cliente
+    }), error => {
+        assert.equal(error.categoria,'TABLA_FALTANTE');
+        assert.equal(error.fase,'consulta_atletas');
+        assert.doesNotMatch(String(error), /Credenciales|CLAVE_SECRETA|SQL/);
+        return true;
+    });
+    assert.equal(operaciones.filter(op => op === 'ROLLBACK').length, 1);
+    assert.equal(operaciones.at(-1), 'end');
+});
+
+test('inventario: error de conexión agrupado conserva diagnóstico seguro y libera cliente', async () => {
+    const { auditar } = require('../scripts/auditar-cloudinary');
+    let cerrado = false;
+    await assert.rejects(() => auditar({
+        entorno:{
+            DATABASE_URL:'postgresql://prueba:CLAVE_SECRETA@db.ejemplo.supabase.co:5432/postgres',
+            CLOUDINARY_CLOUD_NAME:'nube-sintetica'
+        },
+        crearCliente:()=>({
+            async connect() {
+                throw new AggregateError([
+                    Object.assign(new Error('no mostrar url'),{code:'ENETUNREACH'})
+                ],'secreto');
+            },
+            async end() { cerrado = true; }
+        })
+    }), err => err.categoria === 'RED_NO_ALCANZABLE' &&
+        err.fase === 'conexion' && !String(err).includes('secreto'));
+    assert.equal(cerrado,true);
+});

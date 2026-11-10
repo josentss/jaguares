@@ -1,5 +1,17 @@
 # Jaguares — contexto maestro
 
+> **Actualización prioritaria — 10 de noviembre de 2026.** Los párrafos históricos más abajo sobre PR #35 o sobre el ensayo pendiente describen estados anteriores; consultar GitHub y esta sección antes de actuar.
+
+### Evidencia actual y trabajo en curso
+
+- PR #36 y **PR #37 fusionados en main** (GitHub revisado); el visor de comprobantes utiliza `/api/pagos/captura/:id?abrir=1`.
+- El propietario confirmó en **Vercel Preview con Cloudinary y Supabase reales**: atletas sintéticos 30 (referencias públicas, subida desde rama sin flag) y 31 (foto PNG + PDF `authenticated`); propietario/directiva acceden y representante ajeno/no autenticado reciben 403/401; planilla PDF conserva fotografía en escritorio y móvil.
+- Pagos sintéticos 20 (`upload` por solicitud dirigida a Production) y 21 (`authenticated` desde Preview). Con PR #37, ambos abren desde el visor; 403/401 en comprobante 21; URL temporal vencida rechazada por Cloudinary y renovación autorizada satisfactoria.
+- **Advertencia:** el ensayo web real se hizo con la **misma base Supabase de Production** por decisión del propietario, aunque con datos sintéticos. NO fue un entorno aislado y no debe tomarse como evidencia de aislamiento. Production mantuvo flag privado apagado. Pendientes: respaldos comprobados, limpieza puntual de pruebas, migración reversible de referencias públicas y pruebas bajo separación real.
+- **PR de este bloque (rama `fix/cloudinary-compensacion-fallos-20261110`)**: compensación conservadora de nuevas cargas de inscripción y pagos ante rechazo de formulario, error multipart, rollback PostgreSQL confirmado y pago con `INSERT ... SELECT` sin filas. Solo tras confirmar que PostgreSQL no referencia el `public_id` se solicita `destroy` con `resource_type` y `type` correctos. Ante estado SQL ambiguo, consulta fallida o borrado Cloudinary fallido se conserva el recurso y se registra advertencia anónima para revisión; **no se garantiza cero huérfanos bajo fallos de red/commit**. No modifica esquema, filas históricas ni variable Production.
+- **Estado de este PR:** código y pruebas propuestas, pendientes de CI completo y validación humana en Preview. No fusionar hasta verificar. La limpieza de archivos históricos y sintéticos NO está automatizada en este bloque.
+
+
 Documento vivo para continuar el sistema sin reconstruir ni duplicar funcionalidades. El código actual es la fuente de verdad.
 
 ## 1. Estado comprobado

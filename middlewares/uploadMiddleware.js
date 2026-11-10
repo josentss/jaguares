@@ -5,6 +5,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { storageConValidacion } = require('../utils/archivosSeguros');
 const { esCargaPrivadaHabilitada, normalizarUploadPrivado } = require('../utils/cloudinaryPrivado');
 const cargasPrivadas = esCargaPrivadaHabilitada();
+const { compensarCargas } = require('../utils/compensacionCloudinary');
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -28,7 +29,8 @@ const upload = multer({
         storage,
         { captura: ['jpg', 'png', 'webp'] },
         cargasPrivadas ? (info, archivo) =>
-            normalizarUploadPrivado(info, archivo, 'jaguares_comprobantes') : null
+            normalizarUploadPrivado(info, archivo, 'jaguares_comprobantes') : null,
+        'jaguares_comprobantes'
     ),
     limits: { fileSize: 5 * 1024 * 1024, files: 1 }
 });
@@ -71,7 +73,8 @@ const uploadAtleta = multer({
         cedula_archivo: ['jpg', 'png', 'webp', 'pdf'],
         partida_nacimiento: ['jpg', 'png', 'webp', 'pdf']
     }, cargasPrivadas ? (info, archivo) =>
-        normalizarUploadPrivado(info, archivo, 'jaguares/atletas') : null),
+        normalizarUploadPrivado(info, archivo, 'jaguares/atletas') : null,
+    'jaguares/atletas'),
     limits: { fileSize: 5 * 1024 * 1024, files: 3 },
     fileFilter: (req, file, cb) => {
         const okImage = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -95,7 +98,10 @@ const uploadAtletaFields = uploadAtleta.fields([
     { name: 'partida_nacimiento', maxCount: 1 }
 ]);
 
-const handleUploadError = (err, req, res, next) => {
+const handleUploadError = async (err, req, res, next) => {
+    // Incluso en fallos intermedios de multipart, Cloudinary puede haber
+    // recibido otros archivos antes de que Multer entregue el error.
+    await compensarCargas(req, 'error_multipart_atleta');
     console.error('UPLOAD ERROR:', err?.code || '', err?.message || err);
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {

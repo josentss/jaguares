@@ -136,7 +136,7 @@ test('perfil válido: normaliza teléfono y devuelve éxito; duplicado devuelve 
     assert.equal(duplicate.statusCode,409);
 });
 
-test('inscripción: no admite datos inválidos, sin ejecutar INSERT', () => {
+test('inscripción: no admite datos inválidos, sin ejecutar INSERT', async () => {
     let consultas=0;
     const atleta=cargar('../controllers/atletaController', {
         '../config/db':{query(){consultas++;}},
@@ -157,7 +157,7 @@ test('inscripción: no admite datos inválidos, sin ejecutar INSERT', () => {
     ];
     for(const cambio of cambios) {
         const res=respuesta();
-        atleta.registrarAtleta({body:{...base,...cambio},usuarioId:5,files:{}},res);
+        await atleta.registrarAtleta({body:{...base,...cambio},usuarioId:5,files:{}},res);
         assert.equal(res.statusCode,400,JSON.stringify(cambio).slice(0,90));
     }
     assert.equal(consultas,0);

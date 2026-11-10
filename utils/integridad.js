@@ -13,16 +13,27 @@ class ErrorIntegridad extends Error {
 async function conIdentidades(operacion) {
     const client = await db.pool.connect();
     let descartar;
+    let commitIniciado = false;
     try {
         await client.query('BEGIN ISOLATION LEVEL READ COMMITTED');
         await client.query("SET LOCAL lock_timeout = '5s'");
         await client.query('SELECT pg_advisory_xact_lock(74219, 1)');
         const resultado = await operacion(client);
+        commitIniciado = true;
         await client.query('COMMIT');
         return resultado;
     } catch (error) {
-        try { await client.query('ROLLBACK'); }
-        catch (rollbackError) { descartar = rollbackError; }
+        let rollbackConfirmado = false;
+        try {
+            await client.query('ROLLBACK');
+            rollbackConfirmado = true;
+        } catch (rollbackError) { descartar = rollbackError; }
+        // El estado tras iniciar COMMIT es potencialmente ambiguo si se
+        // perdió la conexión. Solo autorizar compensación antes de COMMIT
+        // y cuando PostgreSQL haya confirmado el ROLLBACK.
+        if (error && typeof error === 'object') {
+            error.compensacionConfirmada = !commitIniciado && rollbackConfirmado;
+        }
         throw error;
     } finally {
         client.release(descartar);

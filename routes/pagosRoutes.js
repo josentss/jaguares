@@ -4,10 +4,12 @@ const pagosController = require('../controllers/pagosController');
 const { verificarSesion } = require('../middlewares/authMiddleware');
 const { upload, validarMagicBytes } = require('../middlewares/uploadMiddleware');
 const { logUploadEvent } = require('../utils/auditLogger');
+const { compensarCargas } = require('../utils/compensacionCloudinary');
 
 function manejarUpload(req, res, next) {
     upload.single('captura')(req, res, async (err) => {
         if (err) {
+            await compensarCargas(req, 'multipart_comprobante');
             try {
                 logUploadEvent({
                     success: false,
@@ -30,6 +32,7 @@ function manejarUpload(req, res, next) {
         try {
             const valido = await validarMagicBytes(req.file);
             if (!valido) {
+                await compensarCargas(req, 'firma_comprobante_invalida');
                 try {
                     logUploadEvent({
                         success: false,
@@ -44,6 +47,7 @@ function manejarUpload(req, res, next) {
                 return res.status(400).json({ success: false, message: 'Archivo inválido o contenido no permitido' });
             }
         } catch (errVal) {
+            await compensarCargas(req, 'error_validacion_comprobante');
             console.error('Error validando archivo:', errVal);
             try {
                 logUploadEvent({

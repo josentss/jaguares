@@ -5,16 +5,20 @@ const { responderError } = require('../utils/integridad');
 const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esEdadAtletaValida, esDireccionValida, esCondicionMedicaValida, esIndicadorFormularioValido } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
 const { enlaceAutorizado } = require('../utils/cloudinaryPrivado');
+const { compensarCargas, confirmarCargas, avisarEstadoIncierto } = require('../utils/compensacionCloudinary');
+
+async function rechazarInscripcion(req, res, status, message) {
+    await compensarCargas(req, 'validacion_inscripcion');
+    return res.status(status).json({ success: false, message });
+}
 
 function urlDeArchivo(file) {
     if (!file) return null;
     return file.path || file.secure_url || null;
 }
 
-function validarCuerpo(req, res) {
-    if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) return true;
-    res.status(400).json({ success: false, message: 'Envía los datos del formulario de inscripción' });
-    return false;
+function validarCuerpo(req) {
+    return !!(req.body && typeof req.body === 'object' && !Array.isArray(req.body));
 }
 
 exports.obtenerAtletasPorRepresentante = (req, res) => {
@@ -53,7 +57,9 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
 };
 
 async function registrarAtletaBase(req, res, { id_representante, estado, mensaje, representanteNuevo }) {
-    if (!validarCuerpo(req, res)) return;
+    if (!validarCuerpo(req)) {
+        return rechazarInscripcion(req, res, 400, 'Envía los datos del formulario de inscripción');
+    }
     const nombres   = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
     const fecha_nac = typeof req.body.fecha_nac === 'string' ? req.body.fecha_nac.trim() : '';
@@ -63,45 +69,39 @@ async function registrarAtletaBase(req, res, { id_representante, estado, mensaje
     const alergias = normalizarTexto(notaMedica, 500);
 
     if (!esIndicadorFormularioValido(req.body.hereda_cedula)) {
-        return res.status(400).json({ success: false, message: 'Selecciona si el atleta tiene cédula propia o heredada' });
+        return rechazarInscripcion(req, res, 400, 'Selecciona si el atleta tiene cédula propia o heredada');
     }
     // Ambos nombres son compatibles; nunca validar uno y persistir el otro.
     if (req.body.allergies_medicas != null && req.body.alergias_medicas != null &&
         (typeof req.body.allergies_medicas !== 'string' || typeof req.body.alergias_medicas !== 'string' ||
          req.body.allergies_medicas.trim() !== req.body.alergias_medicas.trim())) {
-        return res.status(400).json({ success: false, message: 'Envía una sola observación médica, sin valores contradictorios' });
+        return rechazarInscripcion(req, res, 400, 'Envía una sola observación médica, sin valores contradictorios');
     }
 
     const heredaCedula = ['1', 'true', true, 'on'].includes(req.body.hereda_cedula);
 
     if (!esNombreValido(req.body.nombres) || !esNombreValido(req.body.apellidos)) {
-        return res.status(400).json({ success: false, message: 'Nombres y apellidos inválidos: usa letras y separadores habituales (2–80 caracteres)' });
+        return rechazarInscripcion(req, res, 400, 'Nombres y apellidos inválidos: usa letras y separadores habituales (2–80 caracteres)');
     }
     if (!esDireccionValida(req.body.direccion)) {
-        return res.status(400).json({ success: false, message: 'Dirección incompleta: incluye calle, sector o referencia; no se admite solo números' });
+        return rechazarInscripcion(req, res, 400, 'Dirección incompleta: incluye calle, sector o referencia; no se admite solo números');
     }
     if (!esCondicionMedicaValida(notaMedica)) {
-        return res.status(400).json({ success: false, message: 'Condiciones médicas inválidas: describe la condición con palabras; puedes incluir números clínicos' });
+        return rechazarInscripcion(req, res, 400, 'Condiciones médicas inválidas: describe la condición con palabras; puedes incluir números clínicos');
     }
     if (req.body.telefono != null && req.body.telefono !== '' && !esTelefonoValido(req.body.telefono)) {
-        return res.status(400).json({ success: false, message: 'Teléfono de contacto inválido' });
+        return rechazarInscripcion(req, res, 400, 'Teléfono de contacto inválido');
     }
     if (!heredaCedula && !esCedulaValida(req.body.cedula)) {
-        return res.status(400).json({ success: false, message: 'Cédula incompleta o incorrecta: utiliza V- o E- seguido de 7 a 9 dígitos' });
+        return rechazarInscripcion(req, res, 400, 'Cédula incompleta o incorrecta: utiliza V- o E- seguido de 7 a 9 dígitos');
     }
 
     if ((!id_representante && !representanteNuevo) || !nombres || !apellidos || !fecha_nac || !direccion) {
-        return res.status(400).json({
-            success: false,
-            message: 'Faltan campos obligatorios (nombres, apellidos, fecha de nacimiento, dirección)'
-        });
+        return rechazarInscripcion(req, res, 400, 'Faltan campos obligatorios (nombres, apellidos, fecha de nacimiento, dirección)');
     }
 
     if (!esEdadAtletaValida(fecha_nac)) {
-        return res.status(400).json({
-            success: false,
-            message: 'Fecha de nacimiento fuera del rango: el atleta debe tener entre 5 y 18 años cumplidos'
-        });
+        return rechazarInscripcion(req, res, 400, 'Fecha de nacimiento fuera del rango: el atleta debe tener entre 5 y 18 años cumplidos');
     }
 
     const files = req.files || {};
@@ -116,6 +116,8 @@ async function registrarAtletaBase(req, res, { id_representante, estado, mensaje
                 cedula: heredaCedula ? null : req.body.cedula.trim().toUpperCase(),
                 heredada: heredaCedula, foto: fotoUrl, documento: cedulaUrl, partida: partidaUrl
             } });
+        // Solo el COMMIT exitoso marca las cargas como persistidas.
+        confirmarCargas(req);
         if (estado === 'activo') {
             // Best effort, only after commit. A notification cannot undo an enrollment.
             try {
@@ -134,6 +136,11 @@ async function registrarAtletaBase(req, res, { id_representante, estado, mensaje
             } } : {})
         });
     } catch (error) {
+        if (error.compensacionConfirmada === true) {
+            await compensarCargas(req, 'rollback_confirmado_inscripcion');
+        } else {
+            avisarEstadoIncierto(req, 'inscripcion_sql');
+        }
         return responderError(res, error);
     }
 }
@@ -144,17 +151,19 @@ exports.registrarAtleta = (req, res) => registrarAtletaBase(req, res, {
 });
 
 exports.registrarAtletaDirectiva = async (req, res) => {
-    if (!validarCuerpo(req, res)) return;
+    if (!validarCuerpo(req)) {
+        return rechazarInscripcion(req, res, 400, 'Envía los datos del formulario de inscripción');
+    }
     let representanteNuevo;
     if (!esIndicadorFormularioValido(req.body.representante_nuevo)) {
-        return res.status(400).json({ success: false, message: 'Selecciona un representante existente o nuevo' });
+        return rechazarInscripcion(req, res, 400, 'Selecciona un representante existente o nuevo');
     }
     if (['1', 'true', true, 'on'].includes(req.body.representante_nuevo)) {
         if (!esNombreValido(req.body.rep_nombres) || !esNombreValido(req.body.rep_apellidos) ||
             !esCedulaValida(req.body.rep_cedula) || !esTelefonoValido(req.body.rep_telefono) ||
             !esEmailValido(req.body.rep_correo) || req.body.rep_correo.length > 120 ||
             !esPasswordValida(req.body.rep_password)) {
-            return res.status(400).json({ success: false, message: 'Datos del representante inválidos: verifica nombres, cédula, teléfono, correo y contraseña' });
+            return rechazarInscripcion(req, res, 400, 'Datos del representante inválidos: verifica nombres, cédula, teléfono, correo y contraseña');
         }
         try {
             representanteNuevo = {
@@ -164,9 +173,12 @@ exports.registrarAtletaDirectiva = async (req, res) => {
                 telefono: normalizarTelefono(req.body.rep_telefono),
                 hash: await bcrypt.hash(req.body.rep_password, 10)
             };
-        } catch (error) { return responderError(res, error); }
+        } catch (error) {
+            await compensarCargas(req, 'error_hash_representante');
+            return responderError(res, error);
+        }
     } else if (!esEnteroPositivo(req.body.id_representante)) {
-        return res.status(400).json({ success: false, message: 'Selecciona un representante' });
+        return rechazarInscripcion(req, res, 400, 'Selecciona un representante');
     }
     return registrarAtletaBase(req, res, {
         id_representante: representanteNuevo ? null : req.body.id_representante,

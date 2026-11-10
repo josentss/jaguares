@@ -17,10 +17,8 @@ function urlDeArchivo(file) {
     return file.path || file.secure_url || null;
 }
 
-function validarCuerpo(req, res) {
-    if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) return true;
-    res.status(400).json({ success: false, message: 'Envía los datos del formulario de inscripción' });
-    return false;
+function validarCuerpo(req) {
+    return !!(req.body && typeof req.body === 'object' && !Array.isArray(req.body));
 }
 
 exports.obtenerAtletasPorRepresentante = (req, res) => {
@@ -59,9 +57,8 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
 };
 
 async function registrarAtletaBase(req, res, { id_representante, estado, mensaje, representanteNuevo }) {
-    if (!validarCuerpo(req, res)) {
-        await compensarCargas(req, 'cuerpo_inscripcion_invalido');
-        return;
+    if (!validarCuerpo(req)) {
+        return rechazarInscripcion(req, res, 400, 'Envía los datos del formulario de inscripción');
     }
     const nombres   = normalizarTexto(req.body.nombres, 80);
     const apellidos = normalizarTexto(req.body.apellidos, 80);
@@ -154,9 +151,8 @@ exports.registrarAtleta = (req, res) => registrarAtletaBase(req, res, {
 });
 
 exports.registrarAtletaDirectiva = async (req, res) => {
-    if (!validarCuerpo(req, res)) {
-        await compensarCargas(req, 'cuerpo_directiva_invalido');
-        return;
+    if (!validarCuerpo(req)) {
+        return rechazarInscripcion(req, res, 400, 'Envía los datos del formulario de inscripción');
     }
     let representanteNuevo;
     if (!esIndicadorFormularioValido(req.body.representante_nuevo)) {

@@ -43,15 +43,18 @@
         estado.textContent = 'Cargando comprobante…';
         modal.showModal();
         try {
-            const res = await window.apiFetch('/api/pagos/captura/' + id);
+            const rutaApi = '/api/pagos/captura/' + id;
+            const res = await window.apiFetch(rutaApi);
             const datos = await res.json();
             if (!res.ok || datos.success !== true) throw new Error(datos.message || 'No se pudo consultar el comprobante');
-            const url = new URL(datos.url);
-            if (url.protocol !== 'https:' || url.hostname !== 'res.cloudinary.com' ||
-                url.username || url.password || url.port) throw new Error('Origen de comprobante no permitido');
             if (turno !== solicitud || !modal.open) return;
 
-            enlace.href = url.href;
+            // La API verifica sesión/propiedad. El mismo origen redirige al
+            // enlace autorizado de Cloudinary, sea un asset histórico upload
+            // o un authenticated con descarga temporal firmada.
+            // Nunca asumir el host de la URL final ni exponerla en el DOM.
+            const rutaAbrir = rutaApi + '?abrir=1';
+            enlace.href = rutaAbrir;
             enlace.hidden = false;
             imagen.onload = () => {
                 if (turno !== solicitud || !modal.open) return;
@@ -64,7 +67,7 @@
                 estado.textContent = 'No se pudo mostrar la imagen. Puedes abrir el archivo original.';
             };
             imagen.referrerPolicy = 'no-referrer';
-            imagen.src = url.href;
+            imagen.src = rutaAbrir;
         } catch (err) {
             if (turno !== solicitud || !modal.open) return;
             estado.textContent = err?.message || 'No se pudo cargar el comprobante.';

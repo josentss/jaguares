@@ -3,7 +3,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const cloudinary = require('cloudinary').v2;
+// Evitar incluso el ping SELECT 1 de arranque contra la DATABASE_URL del
+// operador: estas pruebas son 100% unitarias y sustituyen pool.query.
+const urlAnterior = process.env.DATABASE_URL;
+process.env.DATABASE_URL = '';
 const db = require('../config/db');
+if (urlAnterior === undefined) delete process.env.DATABASE_URL;
+else process.env.DATABASE_URL = urlAnterior;
 const {
     registrarCarga, confirmarCargas, compensarCargas, avisarEstadoIncierto
 } = require('../utils/compensacionCloudinary');

@@ -4,6 +4,12 @@ const directivaController = require('../controllers/directivaController');
 const atletaController = require('../controllers/atletaController');
 const { verificarSesion, esDirectiva, verificarSesionRole } = require('../middlewares/authMiddleware');
 const { uploadAtletaFields, handleUploadError } = require('../middlewares/uploadMiddleware');
+const catalogosDeportivos = require('../controllers/catalogosDeportivosController');
+
+// El prefijo /api/directiva ya comprueba sesión y rol en index.js.
+router.get('/deportes/catalogo', catalogosDeportivos.listar);
+router.post('/deportes/:tipo', catalogosDeportivos.crear);
+router.put('/deportes/:tipo/:id', catalogosDeportivos.renombrar);
 
 router.get('/auditoria', verificarSesion, esDirectiva, directivaController.obtenerAuditoria);
 router.put('/atleta/estado', verificarSesion, esDirectiva, directivaController.actualizarEstadoAtleta);

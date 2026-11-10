@@ -205,7 +205,7 @@ test('pago no elegible: ninguna fila insertada devuelve 409', async () => {
         '../config/db': db, '../utils/auditLogger': { logUploadEvent() {} }
     });
     const res = respuesta();
-    pagos.reportarPago({ body: datosPago(), usuarioId: 5 }, res);
+    await pagos.reportarPago({ body: datosPago(), usuarioId: 5 }, res);
     assert.equal(res.statusCode, 409);
     assert.equal(res.body.success, false);
 });

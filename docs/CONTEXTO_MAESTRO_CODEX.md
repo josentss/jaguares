@@ -1,5 +1,12 @@
 # Jaguares — contexto maestro
 
+> **Actualización funcional — 10 de noviembre de 2026.** GitHub confirma PR #38 fusionado con CI y ensayo de regresión real de archivos en Preview aprobados por el propietario. El texto histórico que menciona PR #35 o el ensayo pendiente ya no describe el estado actual.
+>
+> **Primer bloque de producto tras Cloudinary:** rama `feat/catalogos-deportivos-20261110` (PR de catálogos deportivos). Añade tres tablas **nuevas** mediante una migración manual, API con alta/renombrado protegidos, nueva sección «Organización Deportiva» y pruebas PostgreSQL/Chromium. No define edades ni reglas deportivas, no asigna atletas y no toca tablas históricas. Consulta [guía de catálogos](CATALOGOS_DEPORTIVOS.md). **Pendiente:** CI y ensayo humano del Preview; no confundir con funcionalidad desplegada en Production.
+>
+> **Norma de pulcritud:** en cada PR limpiar solo código redundante/residual del módulo que se toca, siempre con pruebas, sin refactorizaciones masivas de archivos estables. Entregar PR de alcance acotado, CI aprobado y una prueba humana breve.
+
+
 > **Actualización prioritaria — 10 de noviembre de 2026.** Los párrafos históricos más abajo sobre PR #35 o sobre el ensayo pendiente describen estados anteriores; consultar GitHub y esta sección antes de actuar.
 
 ### Evidencia actual y trabajo en curso

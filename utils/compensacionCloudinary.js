@@ -90,19 +90,27 @@ SELECT (
 
 function destruir(recurso) {
     return new Promise((resolve, reject) => {
+        let terminado = false;
+        const finalizar = (error, resultado) => {
+            if (terminado) return;
+            terminado = true;
+            clearTimeout(limite);
+            if (error) return reject(error);
+            if (resultado?.result === 'ok' || resultado?.result === 'not found') {
+                return resolve();
+            }
+            reject(new Error('Proveedor no confirmó la eliminación'));
+        };
+        // En serverless no bloquear indefinidamente la respuesta al usuario.
+        // Un timeout NO prueba que el borrado se haya completado.
+        const limite = setTimeout(() => finalizar(new Error('Tiempo de eliminación agotado')), 7000);
         try {
             cloudinary.uploader.destroy(recurso.publicId, {
                 resource_type: recurso.recurso,
                 type: recurso.tipo,
                 invalidate: true
-            }, (error, resultado) => {
-                if (error) return reject(error);
-                if (resultado?.result === 'ok' || resultado?.result === 'not found') {
-                    return resolve();
-                }
-                reject(new Error('Proveedor no confirmó la eliminación'));
-            });
-        } catch (error) { reject(error); }
+            }, finalizar);
+        } catch (error) { finalizar(error); }
     });
 }
 

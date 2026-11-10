@@ -3,13 +3,19 @@ const path = require('path');
 const { esEnteroPositivo, esMontoValido, esFechaISOValida } = require('../utils/validators');
 const { logUploadEvent } = require('../utils/auditLogger');
 const { enlaceAutorizado } = require('../utils/cloudinaryPrivado');
+const { compensarCargas, confirmarCargas, avisarEstadoIncierto } = require('../utils/compensacionCloudinary');
+
+async function rechazarPago(req, res, status, message) {
+    await compensarCargas(req, 'validacion_pago');
+    return res.status(status).json({ success: false, message });
+}
 
 const METODOS_PAGO = ['Transferencia Bancaria', 'Efectivo'];
 const MESES_PAGO = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const MONEDAS_EFECTIVO = ['Bs', 'USD', 'COP'];
 
-function insertarPago(res, datos) {
+async function insertarPago(req, res, datos) {
     const { id_atleta, id_representante, mes, metodo, monto, moneda, referencia, fecha_pago, ruta_captura } = datos;
 
     // FOR SHARE espera cambios concurrentes y conserva la elegibilidad hasta
@@ -30,50 +36,54 @@ function insertarPago(res, datos) {
     const valores = [mes, metodo, fecha_pago, monto, moneda, referencia,
         ruta_captura, id_atleta, id_representante];
 
-    db.query(query, valores, (err, resultado) => {
-        if (err) {
-            console.error('Error al reportar pago:', err.code || 'INTERNAL');
-            return res.status(500).json({ success: false, message: 'Error en la base de datos' });
-        }
+    try {
+        const [resultado] = await db.promise().query(query, valores);
         if (!resultado || resultado.affectedRows !== 1) {
-            return res.status(409).json({
-                success: false,
-                message: 'Solo se admiten pagos de atletas activos con representante aprobado'
-            });
+            // INSERT ... SELECT confirmó cero filas: no existe pago persistido.
+            return rechazarPago(req, res, 409,
+                'Solo se admiten pagos de atletas activos con representante aprobado');
         }
-        res.json({ success: true });
-    });
+        // Solo marcar persistencia tras respuesta SQL confirmada.
+        confirmarCargas(req);
+        return res.json({ success: true });
+    } catch (err) {
+        // Un error de red/SQL durante INSERT puede dejar resultado ambiguo.
+        // Evitar un borrado automático que pueda invalidar un pago confirmado.
+        avisarEstadoIncierto(req, 'insert_pago_sql');
+        console.error('Error al reportar pago:', err.code || 'INTERNAL');
+        return res.status(500).json({ success: false, message: 'Error en la base de datos' });
+    }
 }
 
 // 1. REPORTAR UN PAGO (Transferencia o Efectivo)
-exports.reportarPago = (req, res) => {
+exports.reportarPago = async (req, res) => {
     const { id_atleta, mes, metodo, monto, moneda, referencia, fecha_pago } = req.body;
 
     if (!id_atleta || !monto || !mes || !metodo || !fecha_pago) {
-        return res.status(400).json({ success: false, message: 'Faltan datos requeridos para reportar el pago' });
+        return rechazarPago(req, res, 400, 'Faltan datos requeridos para reportar el pago');
     }
 
     if (!esEnteroPositivo(id_atleta)) {
-        return res.status(400).json({ success: false, message: 'Atleta no válido' });
+        return rechazarPago(req, res, 400, 'Atleta no válido');
     }
 
     if (!esMontoValido(monto)) {
-        return res.status(400).json({ success: false, message: 'Monto no válido' });
+        return rechazarPago(req, res, 400, 'Monto no válido');
     }
 
     if (!METODOS_PAGO.includes(metodo)) {
-        return res.status(400).json({ success: false, message: 'Método de pago no válido' });
+        return rechazarPago(req, res, 400, 'Método de pago no válido');
     }
 
     if (!MESES_PAGO.includes(mes) || !esFechaISOValida(fecha_pago)) {
-        return res.status(400).json({ success: false, message: 'Mes o fecha de pago no válidos' });
+        return rechazarPago(req, res, 400, 'Mes o fecha de pago no válidos');
     }
     if ((metodo === 'Transferencia Bancaria' && moneda !== 'Bs') ||
         (metodo === 'Efectivo' && !MONEDAS_EFECTIVO.includes(moneda))) {
-        return res.status(400).json({ success: false, message: 'Moneda no válida para el método de pago' });
+        return rechazarPago(req, res, 400, 'Moneda no válida para el método de pago');
     }
     if (referencia != null && (typeof referencia !== 'string' || referencia.trim().length > 80)) {
-        return res.status(400).json({ success: false, message: 'Referencia no válida' });
+        return rechazarPago(req, res, 400, 'Referencia no válida');
     }
 
     if (metodo === 'Transferencia Bancaria' && !req.file) {
@@ -87,13 +97,13 @@ exports.reportarPago = (req, res) => {
                 ip: req.ip
             });
         } catch (e) { /* ignore logging errors */ }
-        return res.status(400).json({ success: false, message: 'Debe adjuntar la captura de la transferencia' });
+        return rechazarPago(req, res, 400, 'Debe adjuntar la captura de la transferencia');
     }
 
     // Guardar la URL completa de Cloudinary (req.file.path)
     const ruta_captura = req.file ? (req.file.path || req.file.filename) : null;
 
-    insertarPago(res, {
+    return insertarPago(req, res, {
         id_atleta,
         id_representante: req.usuarioId,
         mes,

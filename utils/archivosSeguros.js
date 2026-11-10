@@ -3,6 +3,7 @@
 const { Readable } = require('node:stream');
 const { extname } = require('node:path');
 const multer = require('multer');
+const { registrarCarga, compensarCargas } = require('./compensacionCloudinary');
 
 const LIMITE_ARCHIVO = 5 * 1024 * 1024;
 const EXTENSIONES = Object.freeze({
@@ -54,7 +55,7 @@ async function validarContenidoArchivo(buffer, archivo, extensiones) {
  * luego se verifica su firma y SOLO entonces se delega a CloudinaryStorage.
  * req.file recibe firmaValidada=true únicamente después de la verificación.
  */
-function storageConValidacion(storageCloudinary, tiposPorCampo, normalizarResultado = null) {
+function storageConValidacion(storageCloudinary, tiposPorCampo, normalizarResultado = null, carpetaCompensacion = null) {
     return {
         async _handleFile(req, file, callback) {
             let finalizado = false;
@@ -86,6 +87,13 @@ function storageConValidacion(storageCloudinary, tiposPorCampo, normalizarResult
                 storageCloudinary._handleFile(req, archivoVerificado, (err, info) => {
                     if (err) return resolver(err);
                     try {
+                        // Registrar inmediatamente la identidad acreditada por
+                        // Cloudinary. Si la normalización posterior falla, la
+                        // solicitud aún podrá compensar este archivo.
+                        if (carpetaCompensacion &&
+                            !registrarCarga(req, info, carpetaCompensacion)) {
+                            throw new Error('Identidad de carga no verificable');
+                        }
                         const salida = typeof normalizarResultado === 'function'
                             ? normalizarResultado(info, file) : info;
                         resolver(null, { ...salida, firmaValidada: true });
@@ -100,6 +108,14 @@ function storageConValidacion(storageCloudinary, tiposPorCampo, normalizarResult
             }
         },
         _removeFile(req, file, callback) {
+            if (carpetaCompensacion) {
+                // Multer invoca _removeFile al fallar otra parte del multipart.
+                // Nunca delegar una eliminación sin validar delivery_type
+                // (CloudinaryStorage puede asumir 'upload' por defecto).
+                compensarCargas(req, 'rollback_multer')
+                    .then(() => callback(null), callback);
+                return;
+            }
             if (typeof storageCloudinary._removeFile === 'function') {
                 return storageCloudinary._removeFile(req, file, callback);
             }

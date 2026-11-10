@@ -1,0 +1,23 @@
+/* Catálogos deportivos: módulo autónomo del panel, sin afectar otros formularios. */
+.deportes-intro { margin: 0 0 20px; color: #475569; line-height: 1.6; }
+.deportes-estado { min-height: 1.5em; margin-bottom: 14px; color: #475569; }
+.deportes-estado[data-error="true"] { color: #b42318; }
+.deportes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; align-items: start; }
+.deportes-card { padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; min-width: 0; box-shadow: 0 2px 8px rgba(15, 23, 42, .04); }
+.deportes-card h3 { margin: 0 0 8px; font-size: 1.12rem; color: #1e293b; }
+.deportes-card p { margin: 0 0 16px; font-size: .86rem; color: #64748b; }
+.deportes-form { display: grid; gap: 12px; margin-bottom: 20px; }
+.deportes-form label { display: grid; gap: 6px; font-weight: 600; font-size: .87rem; color: #334155; }
+.deportes-form input, .deportes-form select { width: 100%; padding: 10px 12px; font: inherit; font-weight: 400; background: #fff; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; }
+.deportes-form input:focus-visible, .deportes-form select:focus-visible { outline: 2px solid var(--naranja); outline-offset: 1px; }
+.deportes-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.deportes-actions button { border: 0; border-radius: 8px; padding: 10px 13px; cursor: pointer; font: inherit; font-size: .85rem; font-weight: 600; }
+.deportes-guardar { background: var(--naranja); color: #fff; }
+.deportes-cancelar { background: #e2e8f0; color: #334155; }
+.deportes-actions button:disabled { opacity: .55; cursor: not-allowed; }
+.deportes-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.deportes-lista li { border-top: 1px solid #edf2f7; padding: 11px 0 3px; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.deportes-lista .deportes-item-texto { min-width: 0; overflow-wrap: anywhere; font-size: .89rem; }
+.deportes-lista .deportes-contexto { display: block; font-size: .77rem; color: #64748b; margin-top: 3px; }
+.deportes-lista .deportes-editar { border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; border-radius: 7px; padding: 6px 9px; font: inherit; font-size: .8rem; cursor: pointer; flex-shrink: 0; }
+.deportes-lista .deportes-vacio { color: #64748b; justify-content: start; font-size: .86rem; }

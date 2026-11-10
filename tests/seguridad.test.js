@@ -173,18 +173,18 @@ test('eventos: el panel calcula estados vencidos sin alterar datos SQL', async (
     assert.deepEqual(consulta.params, [hoyCaracasISO()]);
 });
 
-test('pago válido: consulta restringida por propietario y ambos estados', () => {
+test('pago válido: consulta restringida por propietario y ambos estados', async () => {
     const consultas = [];
-    const db = { query(sql, params, cb) {
+    const db = { promise() { return { query: async (sql, params) => {
         consultas.push({sql, params});
-        cb(null, { affectedRows: 1, insertId: 77 });
-    }};
+        return [{ affectedRows: 1, insertId: 77 }];
+    }}; }};
     const pagos = cargarConMocks('../controllers/pagosController', {
         '../config/db': db,
         '../utils/auditLogger': { logUploadEvent() {} }
     });
     const res = respuesta();
-    pagos.reportarPago({ body: datosPago(), usuarioId: 5, ip: '127.0.0.1' }, res);
+    await pagos.reportarPago({ body: datosPago(), usuarioId: 5, ip: '127.0.0.1' }, res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.success, true);
     assert.equal(consultas.length, 1);
@@ -199,8 +199,8 @@ test('pago válido: consulta restringida por propietario y ambos estados', () =>
     assert.equal(params.at(-1), 5);
 });
 
-test('pago no elegible: ninguna fila insertada devuelve 409', () => {
-    const db = { query(sql, params, cb) { cb(null, { affectedRows: 0 }); } };
+test('pago no elegible: ninguna fila insertada devuelve 409', async () => {
+    const db = { promise() { return { query: async () => [{ affectedRows: 0 }] }; } };
     const pagos = cargarConMocks('../controllers/pagosController', {
         '../config/db': db, '../utils/auditLogger': { logUploadEvent() {} }
     });
@@ -210,9 +210,9 @@ test('pago no elegible: ninguna fila insertada devuelve 409', () => {
     assert.equal(res.body.success, false);
 });
 
-test('reporte: entradas inválidas devuelven 400 sin consulta SQL', () => {
+test('reporte: entradas inválidas devuelven 400 sin consulta SQL', async () => {
     let consultas = 0;
-    const db = { query() { consultas++; } };
+    const db = { promise() { consultas++; throw new Error('No debe consultar SQL'); } };
     const pagos = cargarConMocks('../controllers/pagosController', {
         '../config/db': db, '../utils/auditLogger': { logUploadEvent() {} }
     });
@@ -224,15 +224,15 @@ test('reporte: entradas inválidas devuelven 400 sin consulta SQL', () => {
     ];
     for (const cambio of casos) {
         const res = respuesta();
-        pagos.reportarPago({ body: datosPago(cambio), usuarioId: 5 }, res);
+        await pagos.reportarPago({ body: datosPago(cambio), usuarioId: 5 }, res);
         assert.equal(res.statusCode, 400, JSON.stringify(cambio));
     }
     assert.equal(consultas, 0);
 });
 
-test('transferencia exige comprobante; el método controla la moneda', () => {
+test('transferencia exige comprobante; el método controla la moneda', async () => {
     const pagos = cargarConMocks('../controllers/pagosController', {
-        '../config/db': { query() { throw new Error('No debe consultar'); } },
+        '../config/db': { promise() { throw new Error('No debe consultar'); } },
         '../utils/auditLogger': { logUploadEvent() {} }
     });
     for (const cambio of [
@@ -241,19 +241,19 @@ test('transferencia exige comprobante; el método controla la moneda', () => {
         { metodo: 'Efectivo', moneda: 'EUR' }
     ]) {
         const res = respuesta();
-        pagos.reportarPago({ body: datosPago(cambio), usuarioId: 5 }, res);
+        await pagos.reportarPago({ body: datosPago(cambio), usuarioId: 5 }, res);
         assert.equal(res.statusCode, 400);
     }
 });
 
-test('fallo SQL de inserción devuelve 500 sin éxito falso', () => {
-    const db = { query(sql, params, cb) { cb(new Error('simulado')); } };
+test('fallo SQL de inserción devuelve 500 sin éxito falso', async () => {
+    const db = { promise() { return { query: async () => { throw new Error('simulado'); } }; } };
     const pagos = cargarConMocks('../controllers/pagosController', {
         '../config/db': db, '../utils/auditLogger': { logUploadEvent() {} }
     });
     const res = respuesta();
     const oldError = console.error; console.error = () => {};
-    try { pagos.reportarPago({ body: datosPago(), usuarioId: 5 }, res); }
+    try { await pagos.reportarPago({ body: datosPago(), usuarioId: 5 }, res); }
     finally { console.error = oldError; }
     assert.equal(res.statusCode, 500);
     assert.equal(res.body.success, false);

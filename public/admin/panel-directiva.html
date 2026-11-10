@@ -15,6 +15,7 @@
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
+    <link rel="stylesheet" href="catalogos-deportivos.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -360,6 +361,7 @@
             <li data-target="sec-solicitudes" data-title="Solicitudes de Registro"><i class="fas fa-user-plus"></i> Solicitudes</li>
             <li data-target="sec-registrar"><i class="fas fa-id-card"></i> Registrar Atleta</li>
             <li data-target="sec-atletas"><i class="fas fa-running"></i> Gestión Atletas</li>
+            <li data-target="sec-deportes"><i class="fas fa-volleyball-ball"></i> Organización Deportiva</li>
             <li data-target="sec-pagos"><i class="fas fa-file-invoice-dollar"></i> Auditoría de Pagos</li>
             <li data-target="sec-cms"><i class="fas fa-globe"></i> Gestión Web</li>
             <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
@@ -608,6 +610,65 @@
             </div>
         </section>
 
+        <!-- ORGANIZACIÓN DEPORTIVA: CATÁLOGOS CONFIGURABLES -->
+        <section id="sec-deportes" class="panel-section">
+            <h2>Organización deportiva</h2>
+            <p class="deportes-intro">Configura las temporadas, sus categorías y los equipos del club. No se asignan atletas ni se calculan categorías automáticamente: esas decisiones dependen de las reglas deportivas que apruebe la directiva.</p>
+            <p id="deportes-estado" class="deportes-estado" role="status" aria-live="polite">Selecciona esta sección para cargar los catálogos.</p>
+            <div class="deportes-grid">
+                <div class="deportes-card">
+                    <h3>Temporadas</h3>
+                    <p>Define el nombre de cada ciclo deportivo, sin imponer fechas.</p>
+                    <form class="deportes-form" id="deportes-form-temporadas">
+                        <label>Nombre de la temporada
+                            <input name="nombre" type="text" required minlength="2" maxlength="80" placeholder="Ej.: Temporada 2026–2027" autocomplete="off">
+                        </label>
+                        <div class="deportes-actions">
+                            <button class="deportes-guardar" data-guardar type="submit">Agregar</button>
+                            <button class="deportes-cancelar" data-cancelar type="button" hidden>Cancelar</button>
+                        </div>
+                    </form>
+                    <ul class="deportes-lista" id="deportes-lista-temporadas"></ul>
+                </div>
+                <div class="deportes-card">
+                    <h3>Categorías</h3>
+                    <p>Registra las categorías que utilizarás dentro de cada temporada.</p>
+                    <form class="deportes-form" id="deportes-form-categorias">
+                        <label>Temporada
+                            <select name="id_temporada" required aria-label="Temporada de la categoría"></select>
+                        </label>
+                        <label>Nombre de la categoría
+                            <input name="nombre" type="text" required minlength="2" maxlength="80" placeholder="Ej.: Sub-14" autocomplete="off">
+                        </label>
+                        <small data-aviso-padre hidden>Primero registra una temporada.</small>
+                        <div class="deportes-actions">
+                            <button class="deportes-guardar" data-guardar type="submit" disabled>Agregar</button>
+                            <button class="deportes-cancelar" data-cancelar type="button" hidden>Cancelar</button>
+                        </div>
+                    </form>
+                    <ul class="deportes-lista" id="deportes-lista-categorias"></ul>
+                </div>
+                <div class="deportes-card">
+                    <h3>Equipos</h3>
+                    <p>Crea equipos asociados a una categoría. Las plantillas se gestionarán en el próximo bloque.</p>
+                    <form class="deportes-form" id="deportes-form-equipos">
+                        <label>Categoría
+                            <select name="id_categoria" required aria-label="Categoría del equipo"></select>
+                        </label>
+                        <label>Nombre del equipo
+                            <input name="nombre" type="text" required minlength="2" maxlength="80" placeholder="Ej.: Jaguares A" autocomplete="off">
+                        </label>
+                        <small data-aviso-padre hidden>Primero registra una categoría.</small>
+                        <div class="deportes-actions">
+                            <button class="deportes-guardar" data-guardar type="submit" disabled>Agregar</button>
+                            <button class="deportes-cancelar" data-cancelar type="button" hidden>Cancelar</button>
+                        </div>
+                    </form>
+                    <ul class="deportes-lista" id="deportes-lista-equipos"></ul>
+                </div>
+            </div>
+        </section>
+
         <!-- SECCIÓN AUDITORÍA DE PAGOS -->
         <section id="sec-pagos" class="panel-section">
             <div class="table-container">
@@ -738,6 +799,7 @@
     <script src="api-client.js?v=sesion-aviso-1"></script>
     <script src="iconos-acciones.js?v=1"></script>
     <script src="comprobantes-ui.js?v=2"></script>
+    <script src="catalogos-deportivos.js?v=1"></script>
     <script>
         if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
             typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {
@@ -1899,6 +1961,7 @@
                 document.getElementById(item.getAttribute('data-target')).classList.add('active');
                 document.getElementById('panel-title').textContent = item.dataset.title || item.textContent.trim();
                 if (item.getAttribute('data-target') === 'sec-registrar') cargarRepresentantes();
+                if (item.getAttribute('data-target') === 'sec-deportes') window.JaguaresCatalogos?.cargar();
 
                 if (window.innerWidth <= 992) cerrarSidebarMovil();
             });

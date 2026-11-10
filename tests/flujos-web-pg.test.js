@@ -27,6 +27,7 @@ const uploadOriginal = cloudinary.uploader.upload_stream;
 const destroyOriginal = cloudinary.uploader.destroy;
 let fallarCarga = false;
 let numeroCarga = 0;
+const eliminacionesCompensadas = [];
 global.fetch = (url, options) => {
     if (String(url).startsWith('https://v6.exchangerate-api.com/')) {
         return Promise.resolve(new Response(JSON.stringify({result:'success',conversion_rates:{VES:1}})));
@@ -56,7 +57,10 @@ cloudinary.uploader.upload_stream = (options, callback) => {
         }
     });
 };
-cloudinary.uploader.destroy = (id, options, callback) => callback(null, {result:'ok'});
+cloudinary.uploader.destroy = (id, options, callback) => {
+    eliminacionesCompensadas.push({ id, tipo: options.type, recurso: options.resource_type });
+    callback(null, {result:'ok'});
+};
 
 const clave = 'ClaveSintetica123';
 let browser, server, base, creado = false;
@@ -417,6 +421,57 @@ test('flujo privado: inscripción guarda URL canónica y protege foto y PDF por 
         await directiva.context().close();
         await ajeno.context().close();
     }
+});
+
+test('compensación real: rechazo de atleta duplicado elimina SOLO documentos nuevos', async () => {
+    const page = await entrar('alfa@example.org');
+    try {
+        const actual = (await db.pool.query(
+            "SELECT nombres,apellidos,fecha_nacimiento,direccion FROM atletas WHERE nombres='Documentos Sintéticos' AND id_representante=2 LIMIT 1"
+        )).rows[0];
+        assert.ok(actual, 'El ensayo de foto/PDF debe existir');
+        const comienzo = eliminacionesCompensadas.length;
+        const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64');
+        const respuesta = await page.request.post(base+'/api/atletas/registrar-atleta', {
+            multipart: {
+                nombres: actual.nombres, apellidos: actual.apellidos,
+                fecha_nac: actual.fecha_nacimiento, direccion: actual.direccion,
+                hereda_cedula: '1', allergies_medicas: '',
+                foto: { name:'foto-compensacion.png', mimeType:'image/png', buffer: PNG },
+                partida_nacimiento: { name:'partida-compensacion.pdf',
+                    mimeType:'application/pdf', buffer: Buffer.from('%PDF-1.4\nSINTETICO\n%%EOF') }
+            }
+        });
+        assert.equal(respuesta.status(),409);
+        const nuevos = eliminacionesCompensadas.slice(comienzo);
+        assert.equal(nuevos.length,2, 'Las dos cargas temporales son eliminadas');
+        assert.ok(nuevos.every(x => x.tipo === 'authenticated' && x.id.startsWith('jaguares/atletas/')));
+        assert.equal((await db.pool.query("SELECT count(*)::int AS n FROM atletas WHERE nombres='Documentos Sintéticos' AND id_representante=2")).rows[0].n,1);
+    } finally { await page.context().close(); }
+});
+
+test('compensación real: pago de atleta en espera revierte captura y no crea pago', async () => {
+    const page = await entrar('alfa@example.org');
+    try {
+        const {rows} = await db.pool.query("SELECT id_atleta FROM atletas WHERE nombres='Documentos Sintéticos' AND id_representante=2 AND estado='espera' LIMIT 1");
+        assert.equal(rows.length,1);
+        const comienzo = eliminacionesCompensadas.length;
+        const respuesta = await page.request.post(base+'/api/pagos/reportar', {
+            multipart: {
+                id_atleta: String(rows[0].id_atleta), mes: 'Enero',
+                metodo: 'Transferencia Bancaria', fecha_pago: '2026-11-09',
+                monto: '12.50', moneda: 'Bs', referencia: 'SOLO-ENSAYO-COMPENSACION',
+                captura: { name:'comprobante-compensacion.png', mimeType:'image/png',
+                    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64') }
+            }
+        });
+        assert.equal(respuesta.status(),409);
+        const nuevos = eliminacionesCompensadas.slice(comienzo);
+        assert.equal(nuevos.length,1);
+        assert.equal(nuevos[0].tipo,'authenticated');
+        assert.ok(nuevos[0].id.startsWith('jaguares_comprobantes/'));
+        assert.equal((await db.pool.query("SELECT count(*)::int AS n FROM pagos WHERE referencia='SOLO-ENSAYO-COMPENSACION'")).rows[0].n,0);
+    } finally { await page.context().close(); }
 });
 
 test('flujo real: registro pendiente, aprobación, perfil, inscripción, activación, pago y permisos entre familias', async () => {

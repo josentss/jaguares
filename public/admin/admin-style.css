@@ -1,7 +1,7 @@
 /* 1. Variables */
 :root {
-    --naranja: #ff6600;
-    --naranja-dark: #e05500;
+    --naranja: #FF4500;
+    --naranja-dark: #d83800;
     --primary: var(--naranja);
     --bg-dark: #121212;
     --card-bg-light: #ffffff;

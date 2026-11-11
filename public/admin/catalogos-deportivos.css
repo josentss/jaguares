@@ -34,7 +34,7 @@
    botón de Temporadas quedaría varios centímetros más arriba. */
 .deportes-form {
     display: flex; flex-direction: column; gap: 12px; margin: 0;
-    flex: 1 0 auto; min-height: 245px;
+    flex: 0 0 auto; min-height: 245px;
 }
 .deportes-actions { margin-top: auto; }
 .deportes-form label { display: grid; gap: 6px; color: #334155; font-size: .85rem; font-weight: 600; }

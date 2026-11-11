@@ -272,3 +272,57 @@ test('directiva móvil: navegación de grupos y tarjetas de catálogos sin desbo
         assert.equal(await grupos.count(),2);
     }finally{await context.close();}
 });
+
+test('Organización Deportiva: acciones Agregar alineadas sin perder Edición', async () => {
+    const context = await browser.newContext({viewport:{width:1440,height:900}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page = await context.newPage();
+    page.on('pageerror', e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page, 'sec-deportes');
+        await page.locator('#deportes-form-equipos [data-guardar]').waitFor({state:'visible'});
+        const posiciones = await page.locator('.deportes-form [data-guardar]').evaluateAll(botones =>
+            botones.map(b => {
+                const r=b.getBoundingClientRect();
+                return { y:r.top, alto:r.height };
+            }));
+        assert.equal(posiciones.length,3);
+        assert.ok(Math.max(...posiciones.map(p=>p.y))-Math.min(...posiciones.map(p=>p.y)) < 4,
+            'Agregar debe estar en la misma línea en las tres tarjetas');
+        assert.equal(await page.locator('#deportes-lista-equipos .deportes-editar').count(),1);
+    } finally { await context.close(); }
+});
+
+test('Gestión de atletas: reutilizar SVG de pagos y respetar acciones según estado', async () => {
+    const crear = (id, estado) => ({
+        id_atleta:id, id_representante:2, nombres:'Atleta '+id, apellidos:'Sintético',
+        rep_nombres:'Familia', rep_apellidos:'Prueba', rep_telefono1:'04141234567',
+        fecha_nac:'2018-02-10', estado,
+        clasificacion:{estado:'orientativa',categoria:{codigo:'u9',nombre:'U-9 Iniciación'}}
+    });
+    atletasFixture = [crear(51,'espera'),crear(52,'activo'),crear(53,'inactivo')];
+    const context = await browser.newContext({viewport:{width:1400,height:900}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page = await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page,'sec-atletas');
+        await page.waitForFunction(() => document.querySelectorAll('#body-atletas tr').length === 3);
+        const filas = page.locator('#body-atletas tr');
+        assert.equal(await filas.nth(0).locator('.acciones-atletas .pago-icono').count(),4);
+        assert.equal(await filas.nth(1).locator('.acciones-atletas .pago-icono').count(),3);
+        assert.equal(await filas.nth(2).locator('.acciones-atletas .pago-icono').count(),3);
+        assert.equal(await filas.nth(0).locator('button[aria-label^="Aprobar"]').count(),1);
+        assert.equal(await filas.nth(1).locator('button[aria-label^="Aprobar"]').count(),0);
+        assert.equal(await filas.nth(2).locator('button[aria-label^="Inactivar"]').count(),0);
+        assert.equal(await filas.nth(0).locator('.pago-icono svg').count(),3);
+        assert.equal(await filas.nth(0).locator('a.pago-icono--whatsapp').count(),1);
+        assert.equal(await filas.nth(0).locator('button[title="Ver planilla"]').count(),1);
+        assert.equal(await filas.nth(0).locator('button[title="Ver planilla"]').innerText(),'');
+    } finally {
+        atletasFixture = [];
+        await context.close();
+    }
+});

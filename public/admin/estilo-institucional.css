@@ -1,0 +1,96 @@
+/* Refinamiento institucional: mismos tokens del homepage, sin nuevos banners ni iconografía. */
+:root {
+    --club-naranja: #FF4500;
+    --club-texto: #2b2b2b;
+    --club-superficie: #ffffff;
+    --club-borde: #dce2e9;
+    --club-fondo: #f3f5f9;
+}
+.sidebar-menu--agrupado .sidebar-group__toggle { font-size: .9rem; font-weight: 600; }
+.sidebar-menu--agrupado .sidebar-submenu li {
+    padding-block: 10px;
+    font-size: .86rem;
+}
+.sidebar-menu--agrupado .sidebar-submenu li.active {
+    background: rgba(255,69,0,.11);
+    border-left-color: var(--club-naranja);
+    color: #ff996e;
+}
+.sidebar-menu--agrupado .sidebar-group__toggle:focus-visible,
+.sidebar-menu--agrupado .sidebar-submenu li:focus-visible {
+    outline: 2px solid var(--club-naranja);
+    outline-offset: -2px;
+}
+/* Los catálogos conservan 3 columnas, pero el botón queda alineado abajo
+   independientemente de que un catálogo tenga uno o dos controles. */
+.deportes-card { box-shadow: none; border-color: var(--club-borde); }
+.deportes-card__paso { background: #fff3ed; color: #ae3500; }
+.deportes-card p { margin-bottom: 12px; }
+.deportes-form {
+    display: flex; flex-direction: column;
+    flex: 1 1 auto; gap: 11px;
+}
+.deportes-form .deportes-actions {
+    margin-top: auto;
+    padding-top: 10px;
+}
+.deportes-form .deportes-guardar {
+    background: var(--club-naranja);
+    min-width: 110px;
+}
+.deportes-form .deportes-guardar:hover { background: #d83800; }
+.deportes-form .deportes-cancelar { border: 1px solid #cbd5e1; }
+.deportes-lista { margin-top: 14px; }
+.deportes-cabecera { margin-bottom: 14px; }
+.deportes-cabecera p { font-size: .88rem; }
+/* Reutilizar la estética del icono de pago sin alterar eventos ni estados.
+   Los cuatro comandos siguen siendo distintos y tienen etiquetas accesibles. */
+.atleta-acciones { flex-wrap: nowrap; gap: 5px; }
+.atleta-acciones .pago-icono {
+    width: 38px; height: 38px;
+    border-radius: 7px;
+    flex: 0 0 38px;
+}
+.atleta-acciones .pago-icono svg { width: 18px; height: 18px; }
+.atleta-icono--whatsapp { color: #116c38; background: #eff9f1; border-color: #b7dcc2; }
+.atleta-icono--whatsapp .fab { font-size: 18px; }
+.atleta-icono--whatsapp:hover { background: #e0f3e5; border-color: #7db999; }
+#body-atletas td:last-child { min-width: 175px; }
+#body-atletas .atleta-acciones a { text-decoration: none; }
+#body-atletas .atleta-acciones .pago-icono:focus-visible { outline: 2px solid var(--club-naranja); }
+/* Formularios: el nombre, apellido y documento ocupan la primera fila,
+   fecha, dirección y teléfono la segunda; alergias permanece completo. */
+#form-dir-atleta > .form-grid,
+#form-add-atleta > .form-grid { column-gap: 18px; row-gap: 15px; }
+#form-dir-atleta .categoria-automatica--compacta,
+#form-add-atleta .categoria-automatica--compacta {
+    padding: 6px 9px; margin-top: 6px;
+    border-radius: 3px;
+    background: #fff6f0;
+    box-shadow: none;
+    max-width: 100%;
+}
+#form-dir-atleta .categoria-automatica--compacta .categoria-automatica__nombre,
+#form-add-atleta .categoria-automatica--compacta .categoria-automatica__nombre { font-size: .84rem; }
+#form-dir-atleta .categoria-automatica--compacta .categoria-automatica__detalle,
+#form-add-atleta .categoria-automatica--compacta .categoria-automatica__detalle { font-size: .73rem; }
+#form-dir-atleta .form-grid > .form-group-panel.full-width,
+#form-add-atleta .form-grid > .form-group-panel.full-width { grid-column: 1 / -1; }
+#form-dir-atleta .form-docs,
+#form-add-atleta > .form-grid:last-of-type {
+    max-width: 1050px;
+}
+@media (max-width: 1199px) {
+    .deportes-grid { grid-template-columns: 1fr; }
+    .deportes-card p { min-height: 0; }
+    .deportes-form .deportes-actions { margin-top: 2px; }
+    .atleta-acciones { flex-wrap: wrap; }
+}
+@media (max-width: 768px) {
+    .atleta-acciones { flex-wrap: wrap; }
+    .atleta-acciones .pago-icono { width: 44px; height: 44px; flex-basis: 44px; }
+    #body-atletas td:last-child { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-group__chevron { transition: none; }
+}

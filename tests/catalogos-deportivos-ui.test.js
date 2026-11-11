@@ -179,7 +179,7 @@ test('panel deportivo: diseño actualizado muestra resúmenes y estructura sin p
     } finally { await context.close(); }
 });
 
-test('directiva: filtrar categorías, estado y búsqueda sin alterar el catálogo ni exportar datos', async () => {
+test('directiva: filtrar categorías, estado y búsqueda; exportación disponible solo para categoría publicada', async () => {
     const entrada = (id, nombre, estado, codigo, titulo) => ({
         id_atleta: id, id_representante: 2, nombres: nombre, apellidos: 'Sintético',
         rep_nombres: 'Representante', rep_apellidos: 'Sintético',
@@ -202,6 +202,7 @@ test('directiva: filtrar categorías, estado y búsqueda sin alterar el catálog
         await abrirApartado(page, 'sec-atletas');
         await page.waitForFunction(() => document.querySelectorAll('#body-atletas tr').length === 3);
         await page.locator('#filter-categoria-atletas').selectOption('u9');
+        assert.equal(await page.locator('#generar-planilla-general').isVisible(),true);
         await page.waitForFunction(() => document.getElementById('atletas-resultado-filtro').textContent.includes('1 de 3'));
         assert.equal(await page.locator('#body-atletas tr:visible').count(),1);
         assert.match(await page.locator('#body-atletas tr:visible').innerText(), /Ana/);
@@ -216,7 +217,7 @@ test('directiva: filtrar categorías, estado y búsqueda sin alterar el catálog
         await page.locator('#filter-categoria-atletas').selectOption('sin_categoria');
         assert.equal(await page.locator('#body-atletas tr:visible').count(),1);
         assert.match(await page.locator('#body-atletas tr:visible').innerText(), /Eva/);
-        assert.equal(await page.locator('button').filter({hasText:'Planilla general'}).count(),0);
+        assert.equal(await page.locator('#generar-planilla-general').isVisible(),false);
     } finally {
         atletasFixture = [];
         await context.close();

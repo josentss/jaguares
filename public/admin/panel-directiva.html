@@ -619,6 +619,8 @@
                             <option value="espera">En Espera</option>
                             <option value="inactivo">Inactivos</option>
                         </select>
+                        <button type="button" id="generar-planilla-general" class="btn-action"
+                            title="Incluye solo atletas activos de la categoría seleccionada" hidden>Generar planilla general</button>
                     </div>
                 </div>
                 <p id="atletas-resultado-filtro" class="atletas-resultado-filtro" aria-live="polite"></p>
@@ -838,6 +840,7 @@
     <script src="catalogos-deportivos.js?v=2"></script>
     <script src="categorias-formativas.js?v=1"></script>
     <script src="categorias-formativas-ui.js?v=1"></script>
+    <script src="planilla-general.js?v=1"></script>
     <script>
         if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
             typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {
@@ -1507,6 +1510,9 @@
         document.getElementById('search-atletas').addEventListener('input', aplicarFiltrosAtletas);
         document.getElementById('filter-estado-atletas').addEventListener('change', aplicarFiltrosAtletas);
         document.getElementById('filter-categoria-atletas').addEventListener('change', aplicarFiltrosAtletas);
+        if (typeof apiFetch === 'function' && window.JaguaresPlanillaGeneral) {
+            window.JaguaresPlanillaGeneral.inicializar({ apiFetch, showToast });
+        }
         inicializarFiltroCategorias();
         document.getElementById('search-pagos').addEventListener('input', aplicarFiltrosPagos);
         document.getElementById('filter-estado-pagos').addEventListener('change', aplicarFiltrosPagos);

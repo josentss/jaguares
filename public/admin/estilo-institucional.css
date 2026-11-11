@@ -28,7 +28,7 @@
 .deportes-card p { margin-bottom: 12px; }
 .deportes-form {
     display: flex; flex-direction: column;
-    flex: 1 1 auto; gap: 11px;
+    flex: 0 0 236px; min-height: 236px; gap: 11px;
 }
 .deportes-form .deportes-actions {
     margin-top: auto;
@@ -83,6 +83,7 @@
 @media (max-width: 1199px) {
     .deportes-grid { grid-template-columns: 1fr; }
     .deportes-card p { min-height: 0; }
+    .deportes-form { flex: 0 1 auto; min-height: 0; }
     .deportes-form .deportes-actions { margin-top: 2px; }
     .atleta-acciones { flex-wrap: wrap; }
 }

@@ -12,7 +12,8 @@
 > El propietario acordó separar la gestión de roles; asignar atletas a equipos
 > requiere reglas deportivas y migración aditiva posterior. Ver
 > [alcance y validación](AJUSTES_PANELES_20261111.md). Pruebas locales de
-> interfaz y PDF: 31/31; CI y Preview de este PR pendientes.
+> interfaz y PDF: 31/31; CI del commit `14cf442` aprobada. El Preview está
+> desplegado, pero su revisión visual por el propietario sigue pendiente.
 
 > **Planilla general por categoría — 11 de noviembre de 2026:** GitHub confirma
 > `main` en `5464cf9` (PR #43 fusionado), PR #42 aún abierto como borrador y

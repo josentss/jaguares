@@ -5,7 +5,9 @@
 > confirmó visualmente los ajustes. La rama local anterior recibió un
 > `git pull --ff-only origin main` exitoso, pero la rama local llamada `main`
 > permanece atrasada; crear nuevas ramas desde `origin/main` evita ese desfase.
-> Rama `feat/asignaciones-equipos-20261111`: un equipo activo por atleta y
+> Rama `feat/asignaciones-equipos-20261111`
+> ([PR #46, borrador](https://github.com/josentss/jaguares/pull/46)):
+> un equipo activo por atleta y
 > temporada, solo atletas activos asignables, cambios por directiva/admin con
 > historial, aviso de edad sin bloqueo. Migración aditiva separada y manual;
 > **no se ha aplicado a Supabase**. Ver [contrato y ensayo](ASIGNACIONES_EQUIPOS.md).

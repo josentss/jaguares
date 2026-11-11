@@ -1,5 +1,7 @@
 # Asignación manual de atletas a equipos
 
+Implementación propuesta en [PR #46](https://github.com/josentss/jaguares/pull/46).
+
 ## Reglas aprobadas el 11 de noviembre de 2026
 
 - Un atleta puede tener **un equipo activo por temporada**. Puede figurar en

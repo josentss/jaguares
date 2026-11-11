@@ -359,7 +359,7 @@
             <h3>Jaguares</h3>
         </div>
         <ul class="sidebar-menu sidebar-menu--agrupado">
-            <li class="active" data-target="sec-dashboard" role="button" tabindex="0"><i class="fas fa-chart-pie" aria-hidden="true"></i> Inicio</li>
+            <li class="active" data-target="sec-dashboard" role="button" tabindex="0"><i class="fas fa-home" aria-hidden="true"></i> Inicio</li>
             <li class="sidebar-group">
                 <button type="button" class="sidebar-group__toggle" aria-expanded="false" aria-controls="nav-club-secciones">
                     <span><i class="fas fa-users" aria-hidden="true"></i> Club y atletas</span>
@@ -1641,11 +1641,10 @@
                     const textoWaLista = 'Hola ' + nombreRep +
                         ', le escribimos de Club Jaguares respecto al atleta ' + nombreCompleto + '.';
                     const btnWa = waRep
-                        ? `<a class="btn-action" href="${urlWhatsApp(waRep, textoWaLista)}"
+                        ? `<a class="pago-icono atleta-icono--whatsapp" href="${urlWhatsApp(waRep, textoWaLista)}"
                               target="_blank" rel="noopener noreferrer"
-                              style="background:#25D366;color:#fff;text-decoration:none;"
-                              aria-label="Escribir por WhatsApp" title="WhatsApp">
-                              <i class="fab fa-whatsapp"></i>
+                              aria-label="Escribir por WhatsApp a representante de ${esc(nombreCompleto)}" title="Escribir por WhatsApp">
+                              <i class="fab fa-whatsapp" aria-hidden="true"></i>
                            </a>`
                         : '';
 
@@ -1656,12 +1655,13 @@
                         <td><span class="categoria-etaria-inline${a.clasificacion?.estado !== 'orientativa' ? ' categoria-etaria-inline--pendiente' : ''}" title="Clasificación por edad, no asignación deportiva">${esc(a.clasificacion?.categoria?.nombre || 'Por definir')}</span></td>
                         <td><span class="badge ${getBadgeClase(a.estado)}">${esc(a.estado)}</span></td>
                         <td>
-                            <button class="btn-action btn-view" onclick="verPlanilla(${a.id_atleta})">
-                                Planilla
-                            </button>
-                            ${btnWa}
-                            ${a.estado !== 'activo' ? `<button class="btn-action btn-aprob js-atleta-estado" data-id="${Number(a.id_atleta)}" data-estado="activo" data-rep="${Number(a.id_representante)}" data-nombre="${esc(nombreCompleto)}">Aprobar</button>` : ''}
-                            ${a.estado !== 'inactivo' ? `<button class="btn-action btn-rech js-atleta-estado" data-id="${Number(a.id_atleta)}" data-estado="inactivo" data-rep="${Number(a.id_representante)}" data-nombre="${esc(nombreCompleto)}">Inactivo</button>` : ''}
+                            <div class="pago-acciones atleta-acciones" role="group" aria-label="Acciones de ${esc(nombreCompleto)}">
+                                <button type="button" class="pago-icono pago-icono--ver" onclick="verPlanilla(${Number(a.id_atleta)})"
+                                    title="Ver planilla" aria-label="Ver planilla de ${esc(nombreCompleto)}">${window.JaguaresIconos.comprobante}</button>
+                                ${btnWa}
+                                ${a.estado !== 'activo' ? `<button type="button" class="pago-icono pago-icono--aprobar js-atleta-estado" data-id="${Number(a.id_atleta)}" data-estado="activo" data-rep="${Number(a.id_representante)}" data-nombre="${esc(nombreCompleto)}" title="Aprobar atleta" aria-label="Aprobar a ${esc(nombreCompleto)}">${window.JaguaresIconos.aprobar}</button>` : ''}
+                                ${a.estado !== 'inactivo' ? `<button type="button" class="pago-icono pago-icono--rechazar js-atleta-estado" data-id="${Number(a.id_atleta)}" data-estado="inactivo" data-rep="${Number(a.id_representante)}" data-nombre="${esc(nombreCompleto)}" title="Inactivar atleta" aria-label="Inactivar a ${esc(nombreCompleto)}">${window.JaguaresIconos.rechazar}</button>` : ''}
+                            </div>
                         </td>
                     </tr>`;
                 });

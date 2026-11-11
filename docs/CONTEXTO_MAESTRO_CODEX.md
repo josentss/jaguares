@@ -1,5 +1,9 @@
 # Jaguares — contexto maestro
 
+> **UX operativa — 11 de noviembre de 2026:** la directiva reportó que PR #40 funciona en Preview pero el banner deportivo ocupa demasiado espacio, las tarjetas y formularios no están bien proporcionados, la navegación sin grupos crece excesivamente y falta filtro de categoría. Rama `fix/ux-deportiva-filtros-navegacion-20261111` corrige solo esos puntos: cabecera discreta sin hero, tarjetas alineadas, inscripción compacta, grupos de menú accesibles y filtro combinado por categoría etaria calculada. No cambia SQL, permisos, pagos ni Cloudinary. **Próximo PR:** planilla general PDF por categoría a partir de resultados filtrados, no la ficha individual; pendiente acordar criterios de estado/búsqueda. Especificación: [UX_OPERATIVA_Y_PLANILLA_GENERAL.md](UX_OPERATIVA_Y_PLANILLA_GENERAL.md).
+> Mantener alcance acotado, CI, prueba breve móvil/escritorio y limpieza incremental de CSS/JS residual.
+
+
 > **Bloque funcional — 10 de noviembre de 2026:** PR #39 fusionado en `main` y módulo Organización Deportiva probado manualmente en Preview por el propietario (alta y renombrado persistente).
 > Rama nueva `feat/clasificacion-edad-ux-deportiva-20261110`: categoría **orientativa** por edad cumplida de Caracas al registrar atleta (no selector), resultados en listados/planilla y rediseño del panel deportivo. Ver [especificación y guía de pruebas](CLASIFICACION_FORMATIVA.md). U-15 indica modalidad masculina y exige validación; edades 16–18 no poseen categoría pública. No se asigna a temporadas/equipos ni se cambia SQL.
 > Mantener PR acotados y limpiar código residual solo en los módulos modificados, con regresión automatizada y prueba humana breve.

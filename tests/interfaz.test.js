@@ -812,3 +812,58 @@ for (const dispositivo of [
         } finally { await browser.close(); }
     });
 }
+
+test('representante: grupos de navegación funcionan en escritorio y teléfono', async () => {
+    for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {
+        const {browser,page,errores} = await abrirPanel(viewport);
+        try {
+            if (viewport.width < 993) await page.locator('#menu-toggle').click();
+            const gestion = page.locator('[aria-controls="nav-rep-gestiones"]');
+            const cuenta = page.locator('[aria-controls="nav-rep-cuenta"]');
+            assert.equal(await gestion.getAttribute('aria-expanded'),'false');
+            await gestion.click();
+            assert.equal(await gestion.getAttribute('aria-expanded'),'true');
+            await page.locator('[data-target="sec-atletas"]').click();
+            assert.equal(await page.locator('#sec-atletas').isVisible(),true);
+            if (viewport.width < 993) await page.locator('#menu-toggle').click();
+            await cuenta.click();
+            assert.equal(await cuenta.getAttribute('aria-expanded'),'true');
+            assert.equal(await gestion.getAttribute('aria-expanded'),'false');
+            await page.locator('[data-target="sec-perfil"]').click();
+            assert.equal(await page.locator('#sec-perfil').isVisible(),true);
+            assert.deepEqual(errores,[]);
+        } finally { await browser.close(); }
+    }
+});
+
+test('representante: datos personales en dos filas de tres y apilado móvil', async () => {
+    const campos = ['atl-nombres','atl-apellidos','atl-cedula',
+        'atl-fecha-nac','atl-direccion','atl-telefono'];
+    for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
+        const {browser,page,errores} = await abrirPanel(viewport);
+        try {
+            if(viewport.width < 993) await page.locator('#menu-toggle').click();
+            await page.locator('[aria-controls="nav-rep-gestiones"]').click();
+            await page.locator('[data-target="sec-atletas"]').click();
+            const cajas = await page.evaluate(ids=>ids.map(id=>{
+                const el=document.getElementById(id).closest('.form-group-panel');
+                const r=el.getBoundingClientRect();
+                return {x:r.x,y:r.y,right:r.right};
+            }),campos);
+            if(viewport.width > 1000){
+                assert.ok(cajas[0].x < cajas[1].x && cajas[1].x < cajas[2].x);
+                assert.ok(cajas[3].x < cajas[4].x && cajas[4].x < cajas[5].x);
+                assert.ok(Math.abs(cajas[0].y-cajas[2].y)<5);
+                assert.ok(Math.abs(cajas[3].y-cajas[5].y)<5);
+                assert.ok(cajas[3].y>cajas[0].y);
+            } else {
+                assert.ok(cajas.every(c=>c.x>=-1 && c.right<=viewport.width+1));
+                for(let i=1;i<cajas.length;i++) assert.ok(cajas[i].y>cajas[i-1].y);
+            }
+            await page.locator('#atl-fecha-nac').fill('2021-11-10');
+            await page.waitForFunction(()=>document.getElementById('atl-categoria-nombre').textContent.includes('U-7'));
+            assert.ok((await page.locator('#atl-categoria-automatica').boundingBox()).height<85);
+            assert.deepEqual(errores,[]);
+        }finally{await browser.close();}
+    }
+});

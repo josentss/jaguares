@@ -135,14 +135,30 @@
             <img src="../img/logo-sinfondo.png" alt="Logo Jaguares">
             <h3>Jaguares</h3>
         </div>
-        <ul class="sidebar-menu">
-            <li class="active" data-target="sec-inicio"><i class="fas fa-home"></i> Inicio</li>
-            <li data-target="sec-atletas"><i class="fas fa-user-plus"></i> Registrar Atleta</li>
-            <li data-target="sec-pagos"><i class="fas fa-money-bill-wave"></i> Reportar Pago</li>
-            <li data-target="sec-historial" data-title="Historial de Pagos"><i class="fas fa-history"></i> Mi Historial</li>
-            <li data-target="sec-eventos"><i class="fas fa-calendar-alt"></i> Eventos</li>
-            <li data-target="sec-perfil"><i class="fas fa-user-gear"></i> Mi Perfil</li>
-            <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
+        <ul class="sidebar-menu sidebar-menu--agrupado">
+            <li class="active" data-target="sec-inicio" role="button" tabindex="0"><i class="fas fa-home" aria-hidden="true"></i> Inicio</li>
+            <li class="sidebar-group">
+                <button type="button" class="sidebar-group__toggle" aria-expanded="false" aria-controls="nav-rep-gestiones">
+                    <span><i class="fas fa-users" aria-hidden="true"></i> Atletas y pagos</span>
+                    <i class="fas fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
+                </button>
+                <ul id="nav-rep-gestiones" class="sidebar-submenu" hidden>
+                    <li data-target="sec-atletas" role="button" tabindex="0">Registrar atleta</li>
+                    <li data-target="sec-pagos" role="button" tabindex="0">Reportar pago</li>
+                    <li data-target="sec-historial" data-title="Historial de Pagos" role="button" tabindex="0">Mi historial</li>
+                </ul>
+            </li>
+            <li class="sidebar-group">
+                <button type="button" class="sidebar-group__toggle" aria-expanded="false" aria-controls="nav-rep-cuenta">
+                    <span><i class="fas fa-user-circle" aria-hidden="true"></i> Información</span>
+                    <i class="fas fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
+                </button>
+                <ul id="nav-rep-cuenta" class="sidebar-submenu" hidden>
+                    <li data-target="sec-eventos" role="button" tabindex="0">Eventos</li>
+                    <li data-target="sec-perfil" role="button" tabindex="0">Mi perfil</li>
+                </ul>
+            </li>
+            <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión</li>
         </ul>
     </div>
 
@@ -547,15 +563,39 @@
 
             const menuItems = document.querySelectorAll('.sidebar-menu li[data-target]');
             const sections = document.querySelectorAll('.panel-section');
+            const gruposMenu = [...document.querySelectorAll('.sidebar-group')];
+
+            function mostrarGrupo(grupo, abierto) {
+                const boton = grupo.querySelector('.sidebar-group__toggle');
+                boton.setAttribute('aria-expanded', String(abierto));
+                grupo.querySelector('.sidebar-submenu').hidden = !abierto;
+            }
+
+            gruposMenu.forEach(grupo => {
+                const boton = grupo.querySelector('.sidebar-group__toggle');
+                boton.addEventListener('click', () => {
+                    const abrir = boton.getAttribute('aria-expanded') !== 'true';
+                    gruposMenu.forEach(g => mostrarGrupo(g, g === grupo && abrir));
+                });
+            });
+
             menuItems.forEach(item => {
-                item.addEventListener('click', () => {
+                const navegar = () => {
                     menuItems.forEach(i => i.classList.remove('active'));
                     sections.forEach(s => s.classList.remove('active'));
                     item.classList.add('active');
-                    const targetSec = document.getElementById(item.getAttribute('data-target'));
+                    gruposMenu.forEach(grupo => mostrarGrupo(grupo, grupo === item.closest('.sidebar-group')));
+                    const targetSec = document.getElementById(item.dataset.target);
                     if (targetSec) targetSec.classList.add('active');
                     actualizarTitulo();
                     if (window.innerWidth <= 992) cerrarSidebarMovil();
+                };
+                item.addEventListener('click', navegar);
+                item.addEventListener('keydown', evento => {
+                    if (evento.key === 'Enter' || evento.key === ' ') {
+                        evento.preventDefault();
+                        navegar();
+                    }
                 });
             });
 

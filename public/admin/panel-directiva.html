@@ -437,7 +437,7 @@
                             <tr>
                                 <th>Nombre Completo</th>
                                 <th>Correo Electrónico</th>
-                                <th>Estado</th>
+                                <th>Rol</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -550,11 +550,6 @@
                         <div class="form-group-panel">
                             <label for="dir-fecha-nac">Fecha de Nacimiento</label>
                             <input type="date" id="dir-fecha-nac" required>
-                            <div class="categoria-automatica categoria-automatica--compacta" id="dir-categoria-automatica" data-estado="vacio" role="status" aria-live="polite">
-                                <span class="categoria-automatica__etiqueta">Categoría por edad</span>
-                                <strong class="categoria-automatica__nombre" id="dir-categoria-nombre">Por calcular</strong>
-                                <small class="categoria-automatica__detalle" id="dir-categoria-detalle">Se calcula con la fecha de nacimiento.</small>
-                            </div>
                         </div>
 
                         <div class="form-group-panel">
@@ -575,7 +570,14 @@
                                    placeholder="Usará el teléfono del representante">
                         </div>
 
-                        <div class="form-group-panel full-width">
+                        <div class="form-group-panel form-categoria-resumen">
+                            <div class="categoria-automatica categoria-automatica--compacta" id="dir-categoria-automatica" data-estado="vacio" role="status" aria-live="polite">
+                                <span class="categoria-automatica__etiqueta">Categoría por edad</span>
+                                <strong class="categoria-automatica__nombre" id="dir-categoria-nombre">Por calcular</strong>
+                                <small class="categoria-automatica__detalle" id="dir-categoria-detalle">Se calcula con la fecha de nacimiento.</small>
+                            </div>
+                        </div>
+                        <div class="form-group-panel form-medico-resumen">
                             <label for="dir-alergias">Alergias o Condiciones Médicas</label>
                             <textarea id="dir-alergias" rows="2" placeholder="Opcional" maxlength="500"></textarea>
                         </div>
@@ -1016,10 +1018,10 @@
                         <tr><th>Nombre completo</th><td><strong>${esc(nombre)}</strong></td></tr>
                         <tr><th>Estado en el club</th><td>${esc(a.estado || '—')}</td></tr>
                         <tr><th>Cédula de identidad</th>
-                            <td>${esc(a.cedula || '—')}${a.cedula_heredada ? ' <em>(heredada)</em>' : ''}</td>
+                            <td>${esc(a.cedula || '—')}</td>
                         </tr>
                         <tr><th>Fecha de nacimiento</th><td>${esc(formatFecha(a.fecha_nacimiento))}</td></tr>
-                        <tr><th>Categoría por edad</th><td>${esc(a.clasificacion?.categoria?.nombre || 'Por definir')} <small>(orientativa, sin equipo asignado)</small></td></tr>
+                        <tr><th>Categoría por edad</th><td>${esc(a.clasificacion?.categoria?.nombre || 'Por definir')}</td></tr>
                         <tr><th>Teléfono</th><td>${esc(a.telefono || '—')}</td></tr>
                         <tr><th>Dirección</th><td>${esc(a.direccion || '—')}</td></tr>
                         <tr><th>Alergias / condiciones</th><td>${esc(a.alergias_medicas || 'Ninguna registrada')}</td></tr>
@@ -1545,10 +1547,12 @@
                         <tr>
                             <td><strong>${esc(usr.nombres)} ${esc(usr.apellidos)}</strong></td>
                             <td>${esc(usr.correo)}</td>
-                            <td><span class="badge badge-espera">Pendiente</span></td>
+                            <td>${esc(({ representante: 'Representante', staff: 'Staff', directiva: 'Directiva', admin: 'Administrador' })[usr.rol] || '—')}</td>
                             <td>
-                                <button class="btn-action btn-aprob" onclick="procesarUsuario(${usr.id_usuario}, 'aprobar')">Aprobar</button>
-                                <button class="btn-action btn-rech" onclick="procesarUsuario(${usr.id_usuario}, 'rechazar')">Rechazar</button>
+                                <div class="pago-acciones solicitud-acciones" role="group" aria-label="Acciones de la solicitud">
+                                    <button type="button" class="pago-icono pago-icono--aprobar" onclick="procesarUsuario(${Number(usr.id_usuario)}, 'aprobar')" title="Aprobar solicitud" aria-label="Aprobar">${window.JaguaresIconos.aprobar}</button>
+                                    <button type="button" class="pago-icono pago-icono--rechazar" onclick="procesarUsuario(${Number(usr.id_usuario)}, 'rechazar')" title="Rechazar solicitud" aria-label="Rechazar">${window.JaguaresIconos.rechazar}</button>
+                                </div>
                             </td>
                         </tr>
                     `;

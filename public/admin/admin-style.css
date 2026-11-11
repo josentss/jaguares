@@ -912,7 +912,7 @@ tr:hover td { background-color: #f8fafc; }
 
     /* Etiquetas por tabla */
     #body-solicitudes td:not([colspan]):nth-child(2)::before { content: 'Correo'; }
-    #body-solicitudes td:not([colspan]):nth-child(3)::before { content: 'Estado'; }
+    #body-solicitudes td:not([colspan]):nth-child(3)::before { content: 'Rol'; }
     #body-atletas td:not([colspan]):nth-child(2)::before { content: 'Representante'; }
     #body-atletas td:not([colspan]):nth-child(3)::before { content: 'Fecha nac.'; }
     #body-atletas td:not([colspan]):nth-child(4)::before { content: 'Categoría'; }

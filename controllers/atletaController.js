@@ -5,6 +5,7 @@ const { responderError } = require('../utils/integridad');
 const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esEdadAtletaValida, esDireccionValida, esCondicionMedicaValida, esIndicadorFormularioValido } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
 const { enlaceAutorizado } = require('../utils/cloudinaryPrivado');
+const { clasificar } = require('../public/admin/categorias-formativas');
 const { compensarCargas, confirmarCargas, avisarEstadoIncierto } = require('../utils/compensacionCloudinary');
 
 async function rechazarInscripcion(req, res, status, message) {
@@ -51,6 +52,7 @@ exports.obtenerAtletasPorRepresentante = (req, res) => {
         }
         res.json({ success: true, atletas: results.map(a => ({
             ...a,
+            clasificacion: clasificar(a.fecha_nacimiento),
             foto_url: a.foto_url ? `/api/atletas/${a.id_atleta}/documentos/foto` : null
         })) });
     });
@@ -129,6 +131,7 @@ async function registrarAtletaBase(req, res, { id_representante, estado, mensaje
         }
         return res.json({ success: true, message: mensaje,
             id_atleta: resultado.idAtleta, cedula: resultado.cedula,
+            clasificacion: clasificar(fecha_nac),
             cedula_heredada: heredaCedula,
             documentos: { foto: !!fotoUrl, cedula_archivo: !!cedulaUrl, partida_nacimiento: !!partidaUrl },
             ...(representanteNuevo ? { representante: {
@@ -255,6 +258,7 @@ exports.obtenerAtletaPorId = (req, res) => {
                 telefono: a.telefono,
                 alergias_medicas: a.alergias_medicas,
                 estado: a.estado,
+                clasificacion: clasificar(a.fecha_nacimiento),
                 documentos: {
                     foto_url: a.foto_url ? `/api/atletas/${a.id_atleta}/documentos/foto` : null,
                     cedula_archivo_url: a.cedula_archivo_url ? `/api/atletas/${a.id_atleta}/documentos/cedula_archivo` : null,

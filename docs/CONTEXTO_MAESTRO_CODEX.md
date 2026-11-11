@@ -3,7 +3,7 @@
 > **Planilla general por categoría — 11 de noviembre de 2026:** GitHub confirma
 > `main` en `5464cf9` (PR #43 fusionado), PR #42 aún abierto como borrador y
 > despliegue Production `success` para `5464cf9`. Rama
-> `feat/planilla-general-atletas-20261111` prepara el siguiente PR: botón visible
+> `feat/planilla-general-atletas-20261111` ([PR #44](https://github.com/josentss/jaguares/pull/44)) propone: botón visible
 > solo al elegir U-7/U-9/U-11/U-13/U-15, API protegida que vuelve a consultar
 > atletas **activos** de la categoría y PDF A4 con logotipo, nombre, cédula y
 > nacimiento. Búsqueda y estado de la tabla no afectan el PDF, por decisión del

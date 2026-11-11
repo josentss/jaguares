@@ -59,6 +59,8 @@ El PR de UX original no la implementó. Requisito funcional recibido del propiet
 
 ### Contrato acordado el 11 de noviembre de 2026
 
+Implementación propuesta en [PR #44](https://github.com/josentss/jaguares/pull/44).
+
 - Se usa la categoría por edad publicada en la portada y codificada en
   `categorias-formativas.js`: U-7, U-9, U-11, U-13 o U-15. «U8» fue un ejemplo,
   no una categoría nueva. «Todas» y «Sin categoría publicada» no habilitan exportación.

@@ -1,5 +1,8 @@
 # Jaguares — contexto maestro
 
+> **Ajustes operativos (noviembre 2026):** PR #41 fusionado con filtros y navegación directiva confirmados por el propietario. Rama `fix/ux-sobria-formularios-acciones-20261110` aplica la guía visual sobria: botones «Agregar» alineados, alta de atleta en dos filas de tres campos, acciones con SVG existentes, sidebar desplegable también para representante e indicador de edad conciso. Sin SQL, seguridad ni cambios en reglas de edad. [Guía de alcance](UX_SOBRIA_PANELES.md). La planilla general PDF filtrada sigue como funcionalidad pendiente separada. Mantener tests y regresión humana breve antes de fusionar.
+
+
 > **UX operativa — 11 de noviembre de 2026:** la directiva reportó que PR #40 funciona en Preview pero el banner deportivo ocupa demasiado espacio, las tarjetas y formularios no están bien proporcionados, la navegación sin grupos crece excesivamente y falta filtro de categoría. Rama `fix/ux-deportiva-filtros-navegacion-20261111` corrige solo esos puntos: cabecera discreta sin hero, tarjetas alineadas, inscripción compacta, grupos de menú accesibles y filtro combinado por categoría etaria calculada. No cambia SQL, permisos, pagos ni Cloudinary. **Próximo PR:** planilla general PDF por categoría a partir de resultados filtrados, no la ficha individual; pendiente acordar criterios de estado/búsqueda. Especificación: [UX_OPERATIVA_Y_PLANILLA_GENERAL.md](UX_OPERATIVA_Y_PLANILLA_GENERAL.md).
 > Mantener alcance acotado, CI, prueba breve móvil/escritorio y limpieza incremental de CSS/JS residual.
 

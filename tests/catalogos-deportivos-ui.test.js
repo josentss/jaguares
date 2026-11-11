@@ -119,3 +119,43 @@ test('panel móvil: organización deportiva se puede abrir desde el menú',async
         assert.equal(await page.locator('#sec-deportes').evaluate(el=>el.classList.contains('active')),true);
     }finally{await context.close();}
 });
+
+test('inscripción directiva: edad muestra la categoría sin selector y señala elegibilidad pendiente', async () => {
+    const context=await browser.newContext({viewport:{width:1366,height:850}});
+    await context.route('**/*', r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await page.locator('[data-target="sec-registrar"]').click();
+        const anio=await page.evaluate(() => Number(window.JaguaresCategoriasFormativas.hoyCaracasISO().slice(0,4)));
+        await page.locator('#dir-fecha-nac').fill((anio-10)+'-01-01');
+        await page.waitForFunction(() => document.getElementById('dir-categoria-nombre').textContent === 'U-11 Formación');
+        assert.equal(await page.locator('#dir-categoria-automatica').getAttribute('data-estado'),'orientativa');
+        await page.locator('#dir-fecha-nac').fill((anio-14)+'-01-01');
+        await page.waitForFunction(() => document.getElementById('dir-categoria-nombre').textContent === 'U-15 Infantil (M)');
+        assert.equal(await page.locator('#dir-categoria-automatica').getAttribute('data-estado'),'requiere_validacion');
+        await page.locator('#dir-fecha-nac').fill((anio-17)+'-01-01');
+        await page.waitForFunction(() => document.getElementById('dir-categoria-nombre').textContent === 'Pendiente de clasificación');
+        assert.equal(await page.locator('#dir-categoria-automatica').getAttribute('data-estado'),'sin_categoria_publicada');
+        assert.equal(await page.locator('#form-dir-atleta [name="categoria"]').count(),0);
+    } finally { await context.close(); }
+});
+
+test('panel deportivo: diseño actualizado muestra resúmenes y estructura sin perder nombres', async () => {
+    const context=await browser.newContext({viewport:{width:390,height:820}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await page.locator('#mobile-menu-btn').click();
+        await page.locator('[data-target="sec-deportes"]').click();
+        await page.waitForFunction(() => document.getElementById('deportes-total-equipos').textContent === '1');
+        assert.equal(await page.locator('.deportes-hero').count(),1);
+        assert.equal(await page.locator('#deportes-total-temporadas').innerText(),'1');
+        assert.equal(await page.locator('#deportes-total-categorias').innerText(),'1');
+        assert.equal(await page.locator('#deportes-total-equipos').innerText(),'1');
+        assert.equal(await page.locator('#deportes-lista-equipos strong').innerText(),'Jaguares Principal');
+    } finally { await context.close(); }
+});

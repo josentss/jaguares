@@ -1,0 +1,66 @@
+/* Clasificación por edad: UI de solo lectura, sin campo editable ni selector. */
+.categoria-automatica {
+    display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px;
+    border: 1px solid #fed7aa; border-radius: 15px;
+    background: linear-gradient(112deg, #fff7ed, #fffefb 74%);
+    box-shadow: 0 6px 20px rgba(194, 65, 12, .055);
+    margin-block: 4px 12px; color: #334155;
+}
+.categoria-automatica__icono {
+    width: 42px; height: 42px; border-radius: 12px; flex: 0 0 42px;
+    display: grid; place-items: center; font-size: 1.12rem;
+    background: #ffedd5; color: #c2410c;
+}
+.categoria-automatica__cuerpo { min-width: 0; flex: 1; }
+.categoria-automatica__etiqueta {
+    display: block; margin-bottom: 2px; color: #9a3412;
+    font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+}
+.categoria-automatica__nombre {
+    display: block; font-weight: 700; font-size: 1.08rem; line-height: 1.4;
+    color: #7c2d12; overflow-wrap: anywhere;
+}
+.categoria-automatica__detalle { display: block; margin-top: 5px; font-size: .83rem; line-height: 1.5; color: #64748b; }
+.categoria-automatica[data-estado="requiere_validacion"],
+.categoria-automatica[data-estado="sin_categoria_publicada"] { background: #fffbeb; border-color: #fde68a; }
+.categoria-automatica[data-estado="fecha_invalida"],
+.categoria-automatica[data-estado="fuera_rango_inscripcion"] { background: #fff1f2; border-color: #fecdd3; }
+.categoria-etaria-inline { display: inline-flex; align-items: center; border: 1px solid #fed7aa;
+    border-radius: 999px; padding: 4px 9px; font-weight: 600; font-size: .77rem;
+    background: #fff7ed; color: #9a3412; max-width: 100%; white-space: normal; }
+.categoria-etaria-inline--pendiente { border-color: #e2e8f0; background: #f8fafc; color: #64748b; }
+
+/* Apariencia refinada del módulo deportivo creado en el PR #39. */
+.deportes-hero {
+    margin-bottom: 22px; padding: clamp(19px, 3vw, 30px);
+    border-radius: 19px; background: linear-gradient(116deg, #182c35 0%, #234343 61%, #335d4d 100%);
+    color: #fff; position: relative; overflow: hidden;
+}
+.deportes-hero::after {
+    content: ''; position: absolute; width: 220px; height: 220px;
+    top: -120px; right: -75px; border: 25px solid rgba(255, 255, 255, .055);
+    border-radius: 50%; pointer-events: none;
+}
+.deportes-hero__kicker { display: block; color: #ffbf80; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; font-size: .73rem; margin-bottom: 8px; }
+.deportes-hero h2 { color: #fff; font-size: clamp(1.28rem, 3vw, 1.7rem); margin: 0 0 8px; }
+.deportes-hero p { margin: 0; color: #e0eae5; line-height: 1.55; max-width: 63ch; font-size: .91rem; }
+.deportes-resumen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
+.deportes-resumen__item { display: flex; gap: 7px; align-items: center; padding: 12px;
+    background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; }
+.deportes-resumen__numero { font-size: 1.32rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.deportes-resumen__nombre { font-size: .74rem; color: #f0f4f2; }
+.deportes-card { position: relative; border-top: 3px solid #fb923c; transition: box-shadow .18s ease, transform .18s ease; }
+.deportes-card:nth-child(2) { border-top-color: #f97316; }
+.deportes-card:nth-child(3) { border-top-color: #3f806f; }
+.deportes-card:hover { box-shadow: 0 8px 25px rgba(15,23,42,.09); }
+.deportes-card h3 { display: flex; align-items: center; gap: 8px; }
+.deportes-card__paso { display: inline-grid; place-items: center;
+    width: 28px; height: 28px; border-radius: 9px; background: #fff3e8; color: #9a3412; font-size: .8rem; }
+.deportes-actions button:focus-visible, .deportes-editar:focus-visible { outline: 3px solid #fb923c; outline-offset: 2px; }
+@media (max-width: 540px) {
+    .deportes-resumen { grid-template-columns: 1fr; }
+    .deportes-resumen__item { justify-content: space-between; padding: 9px 12px; }
+    .deportes-resumen__numero { order: 2; }
+    .categoria-automatica { padding: 14px; }
+}

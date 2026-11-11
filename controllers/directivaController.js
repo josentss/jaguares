@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { clasificar } = require('../public/admin/categorias-formativas');
 const { crearNotificacion } = require('./notificacionesController');
 const { esEnteroPositivo, esEstadoAtletaValido, esEstadoPagoValido } = require('../utils/validators');
 
@@ -108,7 +109,7 @@ exports.obtenerAuditoria = async (req, res) => {
                             },
                             tasa_bcv,
                             tasa_fecha,
-                            atletas: listaAtletas,
+                            atletas: listaAtletas.map(a => ({ ...a, clasificacion: clasificar(a.fecha_nac) })),
                             pagos: listaPagos.map(p => ({
                                 ...p,
                                 ruta_captura: p.ruta_captura ? `/api/pagos/captura/${p.id_pago}` : null

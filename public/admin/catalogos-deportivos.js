@@ -106,7 +106,11 @@
     function render() {
         opciones('categorias');
         opciones('equipos');
-        for (const tipo of Object.keys(TIPOS)) renderTipo(tipo);
+        for (const tipo of Object.keys(TIPOS)) {
+            renderTipo(tipo);
+            const contador = porId('deportes-total-' + tipo);
+            if (contador) contador.textContent = String(datos[tipo].length);
+        }
     }
 
     async function cargar() {

@@ -15,6 +15,7 @@
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
+    <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -183,8 +184,8 @@
                 </div>
                 <div style="overflow-x: auto;">
                     <table id="table-my-atletas">
-                        <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Estado</th><th>Documentos</th></tr></thead>
-                        <tbody><tr><td colspan="4" style="text-align: center;">Cargando...</td></tr></tbody>
+                        <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Categoría por edad</th><th>Estado</th><th>Documentos</th></tr></thead>
+                        <tbody><tr><td colspan="5" style="text-align: center;">Cargando...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -226,6 +227,16 @@
                         <div class="form-group-panel">
                             <label>Fecha Nacimiento</label>
                             <input type="date" id="atl-fecha-nac" name="fecha_nac" required>
+                        </div>
+                        <div class="form-group-panel full-width">
+                            <div class="categoria-automatica" id="atl-categoria-automatica" data-estado="vacio" role="status" aria-live="polite">
+                                <span class="categoria-automatica__icono" aria-hidden="true"><i class="fas fa-volleyball-ball"></i></span>
+                                <div class="categoria-automatica__cuerpo">
+                                    <span class="categoria-automatica__etiqueta">Categoría por edad · cálculo automático</span>
+                                    <strong class="categoria-automatica__nombre" id="atl-categoria-nombre">Por calcular</strong>
+                                    <small class="categoria-automatica__detalle" id="atl-categoria-detalle">Selecciona la fecha de nacimiento para ver la categoría por edad.</small>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-group-panel full-width">
@@ -399,6 +410,8 @@
 <script src="api-client.js?v=sesion-aviso-1"></script>
 <script src="iconos-acciones.js?v=1"></script>
 <script src="comprobantes-ui.js?v=2"></script>
+<script src="categorias-formativas.js?v=1"></script>
+<script src="categorias-formativas-ui.js?v=1"></script>
 <script>
     if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
         typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {
@@ -806,7 +819,7 @@
                         if (botonReportar) botonReportar.disabled = !data.atletas.some(a => a.estado === 'activo');
 
                         if (data.atletas.length === 0) {
-                          tbody.innerHTML = `<tr><td colspan="4">
+                          tbody.innerHTML = `<tr><td colspan="5">
                               <div class="empty-state">
 
                                   <p>Aún no tienes atletas registrados</p>
@@ -826,6 +839,7 @@
                             htmlContenido += `<tr>
                                 <td><strong>${esc(atleta.nombres)} ${esc(atleta.apellidos)}</strong></td>
                                 <td>${esc(atleta.cedula || 'N/A')}</td>
+                                <td><span class="categoria-etaria-inline${atleta.clasificacion?.estado !== 'orientativa' ? ' categoria-etaria-inline--pendiente' : ''}" title="Clasificación orientativa por edad, sin asignación de temporada">${esc(atleta.clasificacion?.categoria?.nombre || 'Por definir')}</span></td>
                                 <td><span class="status-badge ${badgeClass}">${estadoTexto}</span></td>
                                 <td><button type="button" class="docs-atleta-btn" data-docs-atleta="${Number(atleta.id_atleta)}"
                                     aria-label="Ver documentos de ${esc(atleta.nombres)} ${esc(atleta.apellidos)}">Documentos</button></td>

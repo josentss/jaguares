@@ -1,5 +1,10 @@
 # Jaguares — contexto maestro
 
+> **Bloque funcional — 10 de noviembre de 2026:** PR #39 fusionado en `main` y módulo Organización Deportiva probado manualmente en Preview por el propietario (alta y renombrado persistente).
+> Rama nueva `feat/clasificacion-edad-ux-deportiva-20261110`: categoría **orientativa** por edad cumplida de Caracas al registrar atleta (no selector), resultados en listados/planilla y rediseño del panel deportivo. Ver [especificación y guía de pruebas](CLASIFICACION_FORMATIVA.md). U-15 indica modalidad masculina y exige validación; edades 16–18 no poseen categoría pública. No se asigna a temporadas/equipos ni se cambia SQL.
+> Mantener PR acotados y limpiar código residual solo en los módulos modificados, con regresión automatizada y prueba humana breve.
+
+
 > **Actualización funcional — 10 de noviembre de 2026.** GitHub confirma PR #38 fusionado con CI y ensayo de regresión real de archivos en Preview aprobados por el propietario. El texto histórico que menciona PR #35 o el ensayo pendiente ya no describe el estado actual.
 >
 > **Primer bloque de producto tras Cloudinary:** rama `feat/catalogos-deportivos-20261110` (PR de catálogos deportivos). Añade tres tablas **nuevas** mediante una migración manual, API con alta/renombrado protegidos, nueva sección «Organización Deportiva» y pruebas PostgreSQL/Chromium. No define edades ni reglas deportivas, no asigna atletas y no toca tablas históricas. Consulta [guía de catálogos](CATALOGOS_DEPORTIVOS.md). **Pendiente:** CI y ensayo humano del Preview; no confundir con funcionalidad desplegada en Production.

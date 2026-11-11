@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=1">
+    <link rel="stylesheet" href="estilo-institucional.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -135,14 +136,30 @@
             <img src="../img/logo-sinfondo.png" alt="Logo Jaguares">
             <h3>Jaguares</h3>
         </div>
-        <ul class="sidebar-menu">
-            <li class="active" data-target="sec-inicio"><i class="fas fa-home"></i> Inicio</li>
-            <li data-target="sec-atletas"><i class="fas fa-user-plus"></i> Registrar Atleta</li>
-            <li data-target="sec-pagos"><i class="fas fa-money-bill-wave"></i> Reportar Pago</li>
-            <li data-target="sec-historial" data-title="Historial de Pagos"><i class="fas fa-history"></i> Mi Historial</li>
-            <li data-target="sec-eventos"><i class="fas fa-calendar-alt"></i> Eventos</li>
-            <li data-target="sec-perfil"><i class="fas fa-user-gear"></i> Mi Perfil</li>
-            <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
+        <ul class="sidebar-menu sidebar-menu--agrupado">
+            <li class="active" data-target="sec-inicio" role="button" tabindex="0"><i class="fas fa-home" aria-hidden="true"></i> Inicio</li>
+            <li class="sidebar-group">
+                <button type="button" class="sidebar-group__toggle" aria-expanded="false" aria-controls="nav-rep-club">
+                    <span><i class="fas fa-users" aria-hidden="true"></i> Club y atletas</span>
+                    <i class="fas fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
+                </button>
+                <ul class="sidebar-submenu" id="nav-rep-club" hidden>
+                    <li data-target="sec-atletas" role="button" tabindex="0">Registrar atleta</li>
+                    <li data-target="sec-eventos" role="button" tabindex="0">Eventos</li>
+                </ul>
+            </li>
+            <li class="sidebar-group">
+                <button type="button" class="sidebar-group__toggle" aria-expanded="false" aria-controls="nav-rep-pagos">
+                    <span><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Mis pagos</span>
+                    <i class="fas fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
+                </button>
+                <ul class="sidebar-submenu" id="nav-rep-pagos" hidden>
+                    <li data-target="sec-pagos" role="button" tabindex="0">Reportar pago</li>
+                    <li data-target="sec-historial" data-title="Historial de Pagos" role="button" tabindex="0">Historial de pagos</li>
+                </ul>
+            </li>
+            <li data-target="sec-perfil" role="button" tabindex="0"><i class="fas fa-user" aria-hidden="true"></i> Mi perfil</li>
+            <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión</li>
         </ul>
     </div>
 
@@ -235,12 +252,12 @@
                             </div>
                         </div>
 
-                        <div class="form-group-panel full-width">
+                        <div class="form-group-panel">
                             <label>Dirección</label>
                             <input type="text" id="atl-direccion" name="direccion" required maxlength="255">
                         </div>
 
-                        <div class="form-group-panel full-width">
+                        <div class="form-group-panel">
                             <label style="display:flex; justify-content:space-between; align-items:center;">
                                 Teléfono de Contacto
                                 <span style="font-size:0.8rem; color:#ff6600;">
@@ -547,15 +564,37 @@
 
             const menuItems = document.querySelectorAll('.sidebar-menu li[data-target]');
             const sections = document.querySelectorAll('.panel-section');
+            const grupos = [...document.querySelectorAll('.sidebar-group')];
+            function desplegarGrupo(grupo, abrir) {
+                const toggle = grupo.querySelector('.sidebar-group__toggle');
+                toggle.setAttribute('aria-expanded', String(abrir));
+                grupo.querySelector('.sidebar-submenu').hidden = !abrir;
+            }
+            grupos.forEach(grupo => {
+                const toggle = grupo.querySelector('.sidebar-group__toggle');
+                toggle.addEventListener('click', () => {
+                    const abrir = toggle.getAttribute('aria-expanded') !== 'true';
+                    grupos.forEach(g => desplegarGrupo(g, abrir && g === grupo));
+                });
+            });
             menuItems.forEach(item => {
-                item.addEventListener('click', () => {
+                function navegar() {
                     menuItems.forEach(i => i.classList.remove('active'));
-                    sections.forEach(s => s.classList.remove('active'));
+                    sections.forEach(seccion => seccion.classList.remove('active'));
                     item.classList.add('active');
+                    const padre = item.closest('.sidebar-group');
+                    grupos.forEach(grupo => desplegarGrupo(grupo, padre === grupo));
                     const targetSec = document.getElementById(item.getAttribute('data-target'));
                     if (targetSec) targetSec.classList.add('active');
                     actualizarTitulo();
                     if (window.innerWidth <= 992) cerrarSidebarMovil();
+                }
+                item.addEventListener('click', navegar);
+                item.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        navegar();
+                    }
                 });
             });
 

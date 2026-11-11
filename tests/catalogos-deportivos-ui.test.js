@@ -272,3 +272,57 @@ test('directiva móvil: navegación de grupos y tarjetas de catálogos sin desbo
         assert.equal(await grupos.count(),2);
     }finally{await context.close();}
 });
+
+test('panel institucional: botones de catálogos alineados y marca coherente con homepage', async () => {
+    const context=await browser.newContext({viewport:{width:1440,height:900}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page,'sec-deportes');
+        await page.locator('.deportes-guardar').first().waitFor({state:'visible'});
+        const coords=await page.locator('.deportes-guardar').evaluateAll(botones =>
+            botones.map(b=>Math.round(b.getBoundingClientRect().top)));
+        assert.equal(coords.length,3);
+        assert.ok(Math.max(...coords)-Math.min(...coords)<=2,
+            'Botones Agregar deben coincidir en altura sin mover campos');
+        const naranja=await page.evaluate(()=>getComputedStyle(document.documentElement)
+            .getPropertyValue('--naranja').trim().toLowerCase());
+        assert.equal(naranja,'#ff4500','El panel usa el token de naranja del homepage');
+        assert.equal(await page.locator('.deportes-hero').count(),0);
+    } finally { await context.close(); }
+});
+
+test('gestión de atletas: compartir iconos SVG con auditoría y mantener acciones por estado', async () => {
+    atletasFixture=[
+        {id_atleta:30,id_representante:2,nombres:'Prueba',apellidos:'Activa',
+            estado:'activo',fecha_nac:'2016-01-01',rep_nombres:'Familia',rep_apellidos:'Demo',
+            rep_telefono1:'04141234567',
+            clasificacion:{estado:'orientativa',categoria:{codigo:'u11',nombre:'U-11 Formación'}}},
+        {id_atleta:31,id_representante:2,nombres:'Prueba',apellidos:'Espera',
+            estado:'espera',fecha_nac:'2016-01-01',rep_nombres:'Familia',rep_apellidos:'Demo',
+            rep_telefono1:'04141234567',
+            clasificacion:{estado:'orientativa',categoria:{codigo:'u11',nombre:'U-11 Formación'}}}
+    ];
+    const context=await browser.newContext({viewport:{width:1440,height:900}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page,'sec-atletas');
+        await page.waitForFunction(()=>document.querySelectorAll('#body-atletas .atleta-acciones').length===2);
+        const activa=page.locator('#body-atletas tr').filter({hasText:'Prueba Activa'});
+        const espera=page.locator('#body-atletas tr').filter({hasText:'Prueba Espera'});
+        assert.equal(await activa.locator('.pago-icono--ver svg').count(),1);
+        assert.equal(await activa.locator('.atleta-icono--whatsapp').count(),1);
+        assert.equal(await activa.locator('.js-atleta-estado[data-estado="activo"]').count(),0);
+        assert.equal(await activa.locator('.js-atleta-estado[data-estado="inactivo"]').count(),1);
+        assert.equal(await espera.locator('.js-atleta-estado[data-estado="activo"] svg').count(),1);
+        assert.equal(await espera.locator('.js-atleta-estado[data-estado="inactivo"] svg').count(),1);
+        for(const boton of await espera.locator('.pago-icono').all()) {
+            assert.ok(await boton.getAttribute('aria-label'),'Cada acción debe describir su función');
+        }
+    } finally { atletasFixture=[]; await context.close(); }
+});

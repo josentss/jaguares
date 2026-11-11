@@ -23,7 +23,7 @@
     border-left: 3px solid transparent; font-weight: 500; line-height: 1.35;
 }
 .sidebar-menu--agrupado .sidebar-submenu li.active {
-    border-left-color: var(--naranja); background: #ff66001b; color: #ff9a55;
+    border-left-color: var(--naranja); background: rgba(255,69,0,.13); color: #ff9a65;
 }
 .sidebar-menu--agrupado li[data-target]:focus-visible { outline: 2px solid var(--naranja); outline-offset: -2px; }
 

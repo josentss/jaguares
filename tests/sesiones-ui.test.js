@@ -226,9 +226,9 @@ for (const role of ['directiva', 'representante']) {
             liberar();
             await page.locator('.main-content').waitFor({ state: 'visible' });
             await menu.click();
-            if (role === 'directiva') {
-                await page.locator('[aria-controls="nav-gestion-secciones"]').click();
-            }
+            await page.locator(role === 'directiva'
+                ? '[aria-controls="nav-gestion-secciones"]'
+                : '[aria-controls="nav-rep-gestiones"]').click();
             await page.locator('[data-target="sec-pagos"]').click();
             assert.equal(await page.locator('#sec-pagos').isVisible(), true);
         } finally {
@@ -386,6 +386,7 @@ test('login, perfil y reporte de pago funcionan si no se puede guardar usuario e
         await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
         await page.locator('#pay-atleta option[value="77"]').waitFor({ state: 'attached' });
 
+        await page.locator('[aria-controls="nav-rep-cuenta"]').click();
         await page.locator('[data-target="sec-perfil"]').click();
         const perfilActualizado = page.waitForResponse(response =>
             new URL(response.url()).pathname === '/api/usuarios/perfil' && response.request().method() === 'PUT');
@@ -393,6 +394,7 @@ test('login, perfil y reporte de pago funcionan si no se puede guardar usuario e
         assert.equal((await perfilActualizado).status(), 200);
         await page.getByText('¡Perfil actualizado!').waitFor({ state: 'visible' });
 
+        await page.locator('[aria-controls="nav-rep-gestiones"]').click();
         await page.locator('[data-target="sec-pagos"]').click();
         await page.locator('#pay-atleta').selectOption('77');
         await page.locator('#pay-mes').selectOption('Enero');

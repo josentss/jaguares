@@ -1,5 +1,7 @@
 # Ajustes de paneles y planilla individual
 
+Implementación propuesta en [PR #45](https://github.com/josentss/jaguares/pull/45).
+
 El propietario confirmó visualmente la planilla general del PR #44 y pidió
 estos ajustes de presentación en directiva y representante.
 

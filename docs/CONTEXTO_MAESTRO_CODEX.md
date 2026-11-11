@@ -7,7 +7,8 @@
 > con indicador de categoría junto a observaciones médicas en ambos roles;
 > Solicitudes con rol informativo e iconos SVG; planilla individual sin los
 > paréntesis redundantes de cédula/categoría. Rama
-> `fix/ux-paneles-planilla-solicitudes-20261111`. Sin SQL ni cambio de permisos.
+> `fix/ux-paneles-planilla-solicitudes-20261111`
+> ([PR #45](https://github.com/josentss/jaguares/pull/45)). Sin SQL ni cambio de permisos.
 > El propietario acordó separar la gestión de roles; asignar atletas a equipos
 > requiere reglas deportivas y migración aditiva posterior. Ver
 > [alcance y validación](AJUSTES_PANELES_20261111.md). Pruebas locales de

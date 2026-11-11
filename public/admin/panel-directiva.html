@@ -16,6 +16,7 @@
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=1">
+    <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -532,6 +533,16 @@
                             <label for="dir-fecha-nac">Fecha de Nacimiento</label>
                             <input type="date" id="dir-fecha-nac" required>
                         </div>
+                        <div class="form-group-panel full-width">
+                            <div class="categoria-automatica" id="dir-categoria-automatica" data-estado="vacio" role="status" aria-live="polite">
+                                <span class="categoria-automatica__icono" aria-hidden="true"><i class="fas fa-volleyball-ball"></i></span>
+                                <div class="categoria-automatica__cuerpo">
+                                    <span class="categoria-automatica__etiqueta">Categoría por edad · cálculo automático</span>
+                                    <strong class="categoria-automatica__nombre" id="dir-categoria-nombre">Por calcular</strong>
+                                    <small class="categoria-automatica__detalle" id="dir-categoria-detalle">Selecciona la fecha de nacimiento para ver la categoría por edad.</small>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="form-group-panel full-width">
                             <label for="dir-direccion">Dirección</label>
@@ -600,6 +611,7 @@
                                 <th>Atleta</th>
                                 <th>Representante</th>
                                 <th>Fecha Nac.</th>
+                                <th>Categoría por edad</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -612,12 +624,21 @@
 
         <!-- ORGANIZACIÓN DEPORTIVA: CATÁLOGOS CONFIGURABLES -->
         <section id="sec-deportes" class="panel-section">
-            <h2>Organización deportiva</h2>
-            <p class="deportes-intro">Configura las temporadas, sus categorías y los equipos del club. No se asignan atletas ni se calculan categorías automáticamente: esas decisiones dependen de las reglas deportivas que apruebe la directiva.</p>
+            <div class="deportes-hero">
+                <span class="deportes-hero__kicker">Club Jaguares · Administración</span>
+                <h2>Organización deportiva</h2>
+                <p>Prepara tus temporadas, organiza las categorías y construye la estructura de equipos del club. La clasificación orientativa por edad se mostrará en las inscripciones; la asignación a plantillas se hará más adelante.</p>
+                <div class="deportes-resumen" aria-label="Resumen de la organización">
+                    <div class="deportes-resumen__item"><span class="deportes-resumen__numero" id="deportes-total-temporadas">0</span><span class="deportes-resumen__nombre">Temporadas</span></div>
+                    <div class="deportes-resumen__item"><span class="deportes-resumen__numero" id="deportes-total-categorias">0</span><span class="deportes-resumen__nombre">Categorías</span></div>
+                    <div class="deportes-resumen__item"><span class="deportes-resumen__numero" id="deportes-total-equipos">0</span><span class="deportes-resumen__nombre">Equipos</span></div>
+                </div>
+            </div>
+            <p class="deportes-intro">Sigue el orden: temporada → categoría → equipo. Los nombres son configurables y puedes editarlos sin perder sus relaciones.</p>
             <p id="deportes-estado" class="deportes-estado" role="status" aria-live="polite">Selecciona esta sección para cargar los catálogos.</p>
             <div class="deportes-grid">
                 <div class="deportes-card">
-                    <h3>Temporadas</h3>
+                    <h3><span class="deportes-card__paso">01</span> Temporadas</h3>
                     <p>Define el nombre de cada ciclo deportivo, sin imponer fechas.</p>
                     <form class="deportes-form" id="deportes-form-temporadas">
                         <label>Nombre de la temporada
@@ -631,7 +652,7 @@
                     <ul class="deportes-lista" id="deportes-lista-temporadas"></ul>
                 </div>
                 <div class="deportes-card">
-                    <h3>Categorías</h3>
+                    <h3><span class="deportes-card__paso">02</span> Categorías</h3>
                     <p>Registra las categorías que utilizarás dentro de cada temporada.</p>
                     <form class="deportes-form" id="deportes-form-categorias">
                         <label>Temporada
@@ -649,7 +670,7 @@
                     <ul class="deportes-lista" id="deportes-lista-categorias"></ul>
                 </div>
                 <div class="deportes-card">
-                    <h3>Equipos</h3>
+                    <h3><span class="deportes-card__paso">03</span> Equipos</h3>
                     <p>Crea equipos asociados a una categoría. Las plantillas se gestionarán en el próximo bloque.</p>
                     <form class="deportes-form" id="deportes-form-equipos">
                         <label>Categoría
@@ -799,7 +820,9 @@
     <script src="api-client.js?v=sesion-aviso-1"></script>
     <script src="iconos-acciones.js?v=1"></script>
     <script src="comprobantes-ui.js?v=2"></script>
-    <script src="catalogos-deportivos.js?v=1"></script>
+    <script src="catalogos-deportivos.js?v=2"></script>
+    <script src="categorias-formativas.js?v=1"></script>
+    <script src="categorias-formativas-ui.js?v=1"></script>
     <script>
         if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
             typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {
@@ -978,6 +1001,7 @@
                             <td>${esc(a.cedula || '—')}${a.cedula_heredada ? ' <em>(heredada)</em>' : ''}</td>
                         </tr>
                         <tr><th>Fecha de nacimiento</th><td>${esc(formatFecha(a.fecha_nacimiento))}</td></tr>
+                        <tr><th>Categoría por edad</th><td>${esc(a.clasificacion?.categoria?.nombre || 'Por definir')} <small>(orientativa, sin equipo asignado)</small></td></tr>
                         <tr><th>Teléfono</th><td>${esc(a.telefono || '—')}</td></tr>
                         <tr><th>Dirección</th><td>${esc(a.direccion || '—')}</td></tr>
                         <tr><th>Alergias / condiciones</th><td>${esc(a.alergias_medicas || 'Ninguna registrada')}</td></tr>
@@ -1594,6 +1618,7 @@
                         <td><strong>${esc(nombreCompleto)}</strong></td>
                         <td>${esc(a.rep_nombres || '')} ${esc(a.rep_apellidos || '')}</td>
                         <td>${formatFecha(a.fecha_nac)}</td>
+                        <td><span class="categoria-etaria-inline${a.clasificacion?.estado !== 'orientativa' ? ' categoria-etaria-inline--pendiente' : ''}" title="Clasificación por edad, no asignación deportiva">${esc(a.clasificacion?.categoria?.nombre || 'Por definir')}</span></td>
                         <td><span class="badge ${getBadgeClase(a.estado)}">${esc(a.estado)}</span></td>
                         <td>
                             <button class="btn-action btn-view" onclick="verPlanilla(${a.id_atleta})">

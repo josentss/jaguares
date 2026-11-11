@@ -249,3 +249,26 @@ test('UX operativa: menú agrupado accesible, nombre proporcionado y categoría 
         assert.equal(Math.max(...alturas)-Math.min(...alturas),0,'Tarjetas no alineadas en desktop');
     }finally {await context.close();}
 });
+
+test('directiva móvil: navegación de grupos y tarjetas de catálogos sin desbordamiento', async () => {
+    const context=await browser.newContext({viewport:{width:390,height:844}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page, 'sec-atletas');
+        assert.equal(await page.locator('#filter-categoria-atletas').isVisible(),true);
+        assert.ok((await page.locator('#filter-categoria-atletas option').count()) >= 7);
+        await abrirApartado(page, 'sec-deportes');
+        await page.locator('.deportes-card').first().waitFor({state:'visible'});
+        const visibles = await page.locator('.deportes-card').evaluateAll(cards => cards.map(c => {
+            const rect=c.getBoundingClientRect();
+            return {izquierda:rect.left,derecha:rect.right,ancho:rect.width};
+        }));
+        assert.equal(visibles.length,3);
+        assert.ok(visibles.every(r=>r.izquierda >= -1 && r.derecha <= 392),'Tarjetas deben caber en teléfono');
+        const grupos=page.locator('.sidebar-group__toggle');
+        assert.equal(await grupos.count(),2);
+    }finally{await context.close();}
+});

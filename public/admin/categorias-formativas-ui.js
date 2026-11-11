@@ -24,9 +24,13 @@
                 : (clasificacion.estado === 'sin_categoria_publicada'
                     ? 'Pendiente de clasificación' : 'Fecha por revisar');
             const edad = Number.isInteger(clasificacion.edad)
-                ? clasificacion.edad + (clasificacion.edad === 1 ? ' año' : ' años') + ' · '
+                ? clasificacion.edad + (clasificacion.edad === 1 ? ' año' : ' años')
                 : '';
-            detalle.textContent = edad + clasificacion.mensaje;
+            // El rango normal no necesita un párrafo junto al campo.
+            // Conservar íntegramente los avisos de elegibilidad o fecha inválida.
+            detalle.textContent = clasificacion.estado === 'orientativa'
+                ? edad
+                : [edad, clasificacion.mensaje].filter(Boolean).join(' · ');
         }
         campo.addEventListener('input', actualizar);
         campo.addEventListener('change', actualizar);

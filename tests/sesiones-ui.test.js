@@ -395,6 +395,7 @@ test('login, perfil y reporte de pago funcionan si no se puede guardar usuario e
         assert.equal((await perfilActualizado).status(), 200);
         await page.getByText('¡Perfil actualizado!').waitFor({ state: 'visible' });
 
+        await page.locator('[aria-controls="nav-rep-pagos"]').click();
         await page.locator('[data-target="sec-pagos"]').click();
         await page.locator('#pay-atleta').selectOption('77');
         await page.locator('#pay-mes').selectOption('Enero');
@@ -689,6 +690,7 @@ test('continuar sesión tras el aviso renueva y conserva el formulario', async (
     try {
         const {page} = await abrirPanel(context,'representante',p=>p.clock.install({time:new Date(inicio)}));
         await page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        await page.locator('[aria-controls="nav-rep-club"]').click();
         await page.locator('[data-target="sec-atletas"]').click();
         await page.locator('#atl-nombres').fill('Borrador Sintético');
         // Confirmar la última interacción inicial, después dejar de interactuar.

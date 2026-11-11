@@ -689,6 +689,7 @@ test('continuar sesión tras el aviso renueva y conserva el formulario', async (
     try {
         const {page} = await abrirPanel(context,'representante',p=>p.clock.install({time:new Date(inicio)}));
         await page.waitForFunction(()=>document.body.dataset.sessionState === 'ready');
+        await page.locator('[aria-controls="nav-rep-gestiones"]').click();
         await page.locator('[data-target="sec-atletas"]').click();
         await page.locator('#atl-nombres').fill('Borrador Sintético');
         // Confirmar la última interacción inicial, después dejar de interactuar.

@@ -30,9 +30,9 @@ Pidió navegación agrupada y un filtro de categoría formativa para la tabla de
   adición de la columna Categoría del PR #40.
 - No se alteran endpoints, SQL, cuotas, Cloudinary, cálculos de edad ni permisos.
 
-## Futuro PR: planilla general de atletas por categoría
+## PR siguiente: planilla general de atletas por categoría
 
-**No se implementa aquí**. Requisito funcional recibido del propietario:
+El PR de UX original no la implementó. Requisito funcional recibido del propietario:
 
 1. En **Gestión de Atletas**, la directiva selecciona una categoría por edad.
    El resultado incluye solamente los atletas que coinciden con esa categoría;
@@ -57,10 +57,22 @@ Pidió navegación agrupada y un filtro de categoría formativa para la tabla de
    caracteres, coincidencia de registros con filtros, 401/403, ausencia de datos
    personales adicionales y límite de filas/páginas.
 
-**Decisiones a confirmar antes del PR de exportación:** ¿la planilla incluye estados
-`espera` e `inactivo` o solo `activo`? ¿Buscar y estado filtran exactamente
-el PDF o únicamente la categoría seleccionada? ¿Formato institucional
-de encabezado/logotipo? Hasta decidirlo no inventar un contrato de exportación.
+### Contrato acordado el 11 de noviembre de 2026
+
+- Se usa la categoría por edad publicada en la portada y codificada en
+  `categorias-formativas.js`: U-7, U-9, U-11, U-13 o U-15. «U8» fue un ejemplo,
+  no una categoría nueva. «Todas» y «Sin categoría publicada» no habilitan exportación.
+- Al seleccionar una categoría se muestra «Generar planilla general». La exportación
+  consulta nuevamente el servidor e incluye **solo atletas activos** de esa categoría.
+  Búsqueda y filtro de estado de la tabla no modifican el PDF.
+- Encabezado con el logotipo actual del sitio y nombre de la categoría seleccionada.
+  Columnas: nombre completo, cédula y fecha de nacimiento. Fecha civil de Caracas,
+  total y páginas. Si no hay atletas activos, se avisa y no se descarga un PDF vacío.
+- El endpoint requiere sesión de staff/directiva/admin, acepta solo códigos publicados,
+  devuelve únicamente las cuatro columnas necesarias y rechaza planillas mayores
+  de 1000 atletas con error explícito. No se consultan documentos ni datos médicos.
+- La clasificación sigue siendo orientativa, especialmente U-15: el PDF no acredita
+  elegibilidad competitiva ni asigna atleta a equipo o temporada.
 
 **Diferencia importante:** `categorias_deportivas` creadas por directiva son
 catálogos por temporada, no la categoría etaria orientativa calculada por fecha

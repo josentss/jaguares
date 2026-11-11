@@ -520,6 +520,7 @@ test('inscripción válida de directiva: el clic envía el formulario', async ()
 test('inscripción: recalcula errores anteriores cuando el navegador completa valores sin evento input', async () => {
     const {browser,page}=await abrirPanel({width:1440,height:900});
     try {
+        await page.locator('[aria-controls="nav-rep-gestiones"]').click();
         await page.locator('[data-target="sec-atletas"]').click();
         for(const [id,valor] of Object.entries({'atl-nombres':'Atleta Autocompletada','atl-apellidos':'Sintético',
             'atl-fecha-nac':'2014-05-10','atl-direccion':'Calle de pruebas 12','atl-cedula':'123','atl-telefono':'123'})) {

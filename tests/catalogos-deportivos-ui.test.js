@@ -72,6 +72,20 @@ test.after(async()=>{
     assert.deepEqual(errores,[]);
 });
 
+async function abrirApartado(page, id) {
+    const toggleMovil = page.locator('#mobile-menu-btn');
+    if (await toggleMovil.isVisible() && !(await page.locator('#sidebar').evaluate(x => x.classList.contains('open')))) {
+        await toggleMovil.click();
+    }
+    const item = page.locator('[data-target="' + id + '"]');
+    const grupo = item.locator('xpath=ancestor::li[contains(concat(" ", normalize-space(@class), " "), " sidebar-group ")]');
+    if (await grupo.count()) {
+        const boton = grupo.locator('.sidebar-group__toggle');
+        if (await boton.getAttribute('aria-expanded') !== 'true') await boton.click();
+    }
+    await item.click();
+}
+
 test('panel: crear y renombrar los tres catálogos sin usar innerHTML para nombres',async()=>{
     const context=await browser.newContext({viewport:{width:1366,height:850}});
     await context.route('**/*', r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
@@ -79,7 +93,7 @@ test('panel: crear y renombrar los tres catálogos sin usar innerHTML para nombr
     page.on('pageerror',e=>errores.push(e.message));
     try {
         await page.goto(base+'/admin/panel-directiva.html');
-        await page.locator('[data-target="sec-deportes"]').click();
+        await abrirApartado(page, 'sec-deportes');
         await page.locator('#deportes-form-temporadas input[name=nombre]').fill('2026–2027');
         await page.locator('#deportes-form-temporadas [data-guardar]').click();
         await page.locator('#deportes-lista-temporadas strong').filter({hasText:'2026–2027'}).waitFor();
@@ -113,8 +127,7 @@ test('panel móvil: organización deportiva se puede abrir desde el menú',async
     page.on('pageerror',e=>errores.push(e.message));
     try{
         await page.goto(base+'/admin/panel-directiva.html');
-        await page.locator('#mobile-menu-btn').click();
-        await page.locator('[data-target="sec-deportes"]').click();
+        await abrirApartado(page, 'sec-deportes');
         await page.locator('#deportes-lista-equipos').waitFor({state:'visible'});
         assert.equal(await page.locator('#sec-deportes').evaluate(el=>el.classList.contains('active')),true);
     }finally{await context.close();}
@@ -127,7 +140,7 @@ test('inscripción directiva: edad muestra la categoría sin selector y señala 
     page.on('pageerror',e=>errores.push(e.message));
     try {
         await page.goto(base+'/admin/panel-directiva.html');
-        await page.locator('[data-target="sec-registrar"]').click();
+        await abrirApartado(page, 'sec-registrar');
         const anio=await page.evaluate(() => Number(window.JaguaresCategoriasFormativas.hoyCaracasISO().slice(0,4)));
         await page.locator('#dir-fecha-nac').fill((anio-10)+'-01-01');
         await page.waitForFunction(() => document.getElementById('dir-categoria-nombre').textContent === 'U-11 Formación');
@@ -150,9 +163,10 @@ test('panel deportivo: diseño actualizado muestra resúmenes y estructura sin p
     try {
         await page.goto(base+'/admin/panel-directiva.html');
         await page.locator('#mobile-menu-btn').click();
-        await page.locator('[data-target="sec-deportes"]').click();
+        await abrirApartado(page, 'sec-deportes');
         await page.waitForFunction(() => document.getElementById('deportes-total-equipos').textContent === '1');
-        assert.equal(await page.locator('.deportes-hero').count(),1);
+        assert.equal(await page.locator('.deportes-hero').count(),0);
+        assert.equal(await page.locator('.deportes-cabecera').count(),1);
         assert.equal(await page.locator('#deportes-total-temporadas').innerText(),'1');
         assert.equal(await page.locator('#deportes-total-categorias').innerText(),'1');
         assert.equal(await page.locator('#deportes-total-equipos').innerText(),'1');

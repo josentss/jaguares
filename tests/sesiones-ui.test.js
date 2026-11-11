@@ -226,6 +226,9 @@ for (const role of ['directiva', 'representante']) {
             liberar();
             await page.locator('.main-content').waitFor({ state: 'visible' });
             await menu.click();
+            if (role === 'directiva') {
+                await page.locator('[aria-controls="nav-gestion-secciones"]').click();
+            }
             await page.locator('[data-target="sec-pagos"]').click();
             assert.equal(await page.locator('#sec-pagos').isVisible(), true);
         } finally {

@@ -501,6 +501,7 @@ test('inscripción válida de directiva: el clic envía el formulario', async ()
     await page.route('https://**/*',route=>route.abort());
     try {
         await page.goto(baseUrl+'/admin/panel-directiva.html');
+        await page.locator('[aria-controls="nav-club-secciones"]').click();
         await page.locator('[data-target="sec-registrar"]').click();
         await page.selectOption('#dir-rep','5');
         for(const [id,valor] of Object.entries({'dir-nombres':'Atleta Directiva','dir-apellidos':'Sintético',

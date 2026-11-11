@@ -10,6 +10,7 @@ const { chromium } = require('playwright');
 const raiz = path.join(__dirname, '../public');
 const colecciones = { temporadas:[], categorias:[], equipos:[] };
 const pk = { temporadas:'id_temporada', categorias:'id_categoria', equipos:'id_equipo' };
+let atletasFixture = [];
 let server, base, browser;
 const errores = [];
 
@@ -26,6 +27,10 @@ test.before(async () => {
                 usuario:{id_usuario:5,rol:'directiva',nombres:'Directiva',apellidos:'Prueba'},
                 sesion:{id:'fixture-deportivo',servidor:Date.now(),
                     vence:Date.now()+900000,limite:Date.now()+43200000}});
+        }
+        if (url.pathname === '/api/directiva/auditoria') {
+            return responder(res, 200, { success: true, atletas: atletasFixture, pagos: [],
+                metricas: { activos: 0, espera: 0, pagos_pendientes: 0 }, tasa_bcv: 36.5 });
         }
         if (url.pathname === '/api/directiva/deportes/catalogo') {
             return responder(res,200,{success:true,...colecciones});
@@ -72,6 +77,20 @@ test.after(async()=>{
     assert.deepEqual(errores,[]);
 });
 
+async function abrirApartado(page, id) {
+    const toggleMovil = page.locator('#mobile-menu-btn');
+    if (await toggleMovil.isVisible() && !(await page.locator('#sidebar').evaluate(x => x.classList.contains('open')))) {
+        await toggleMovil.click();
+    }
+    const item = page.locator('[data-target="' + id + '"]');
+    const grupo = item.locator('xpath=ancestor::li[contains(concat(" ", normalize-space(@class), " "), " sidebar-group ")]');
+    if (await grupo.count()) {
+        const boton = grupo.locator('.sidebar-group__toggle');
+        if (await boton.getAttribute('aria-expanded') !== 'true') await boton.click();
+    }
+    await item.click();
+}
+
 test('panel: crear y renombrar los tres catálogos sin usar innerHTML para nombres',async()=>{
     const context=await browser.newContext({viewport:{width:1366,height:850}});
     await context.route('**/*', r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
@@ -79,7 +98,7 @@ test('panel: crear y renombrar los tres catálogos sin usar innerHTML para nombr
     page.on('pageerror',e=>errores.push(e.message));
     try {
         await page.goto(base+'/admin/panel-directiva.html');
-        await page.locator('[data-target="sec-deportes"]').click();
+        await abrirApartado(page, 'sec-deportes');
         await page.locator('#deportes-form-temporadas input[name=nombre]').fill('2026–2027');
         await page.locator('#deportes-form-temporadas [data-guardar]').click();
         await page.locator('#deportes-lista-temporadas strong').filter({hasText:'2026–2027'}).waitFor();
@@ -113,8 +132,7 @@ test('panel móvil: organización deportiva se puede abrir desde el menú',async
     page.on('pageerror',e=>errores.push(e.message));
     try{
         await page.goto(base+'/admin/panel-directiva.html');
-        await page.locator('#mobile-menu-btn').click();
-        await page.locator('[data-target="sec-deportes"]').click();
+        await abrirApartado(page, 'sec-deportes');
         await page.locator('#deportes-lista-equipos').waitFor({state:'visible'});
         assert.equal(await page.locator('#sec-deportes').evaluate(el=>el.classList.contains('active')),true);
     }finally{await context.close();}
@@ -127,7 +145,7 @@ test('inscripción directiva: edad muestra la categoría sin selector y señala 
     page.on('pageerror',e=>errores.push(e.message));
     try {
         await page.goto(base+'/admin/panel-directiva.html');
-        await page.locator('[data-target="sec-registrar"]').click();
+        await abrirApartado(page, 'sec-registrar');
         const anio=await page.evaluate(() => Number(window.JaguaresCategoriasFormativas.hoyCaracasISO().slice(0,4)));
         await page.locator('#dir-fecha-nac').fill((anio-10)+'-01-01');
         await page.waitForFunction(() => document.getElementById('dir-categoria-nombre').textContent === 'U-11 Formación');
@@ -150,12 +168,107 @@ test('panel deportivo: diseño actualizado muestra resúmenes y estructura sin p
     try {
         await page.goto(base+'/admin/panel-directiva.html');
         await page.locator('#mobile-menu-btn').click();
-        await page.locator('[data-target="sec-deportes"]').click();
+        await abrirApartado(page, 'sec-deportes');
         await page.waitForFunction(() => document.getElementById('deportes-total-equipos').textContent === '1');
-        assert.equal(await page.locator('.deportes-hero').count(),1);
+        assert.equal(await page.locator('.deportes-hero').count(),0);
+        assert.equal(await page.locator('.deportes-cabecera').count(),1);
         assert.equal(await page.locator('#deportes-total-temporadas').innerText(),'1');
         assert.equal(await page.locator('#deportes-total-categorias').innerText(),'1');
         assert.equal(await page.locator('#deportes-total-equipos').innerText(),'1');
         assert.equal(await page.locator('#deportes-lista-equipos strong').innerText(),'Jaguares Principal');
     } finally { await context.close(); }
+});
+
+test('directiva: filtrar categorías, estado y búsqueda sin alterar el catálogo ni exportar datos', async () => {
+    const entrada = (id, nombre, estado, codigo, titulo) => ({
+        id_atleta: id, id_representante: 2, nombres: nombre, apellidos: 'Sintético',
+        rep_nombres: 'Representante', rep_apellidos: 'Sintético',
+        fecha_nac: '2018-06-10', estado,
+        clasificacion: codigo === 'sin_categoria'
+            ? {estado:'sin_categoria_publicada', categoria:null}
+            : {estado:'orientativa', categoria:{codigo, nombre:titulo}}
+    });
+    atletasFixture = [
+        entrada(11, 'Ana', 'activo', 'u9', 'U-9 Iniciación'),
+        entrada(12, 'Luis', 'espera', 'u13', 'U-13 Mini Voleibol'),
+        entrada(13, 'Eva', 'activo', 'sin_categoria', '')
+    ];
+    const context = await browser.newContext({viewport:{width:1280,height:820}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page = await context.newPage();
+    page.on('pageerror', e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page, 'sec-atletas');
+        await page.waitForFunction(() => document.querySelectorAll('#body-atletas tr').length === 3);
+        await page.locator('#filter-categoria-atletas').selectOption('u9');
+        await page.waitForFunction(() => document.getElementById('atletas-resultado-filtro').textContent.includes('1 de 3'));
+        assert.equal(await page.locator('#body-atletas tr:visible').count(),1);
+        assert.match(await page.locator('#body-atletas tr:visible').innerText(), /Ana/);
+        await page.locator('#filter-estado-atletas').selectOption('espera');
+        assert.equal(await page.locator('#body-atletas tr:visible').count(),0);
+        await page.locator('#filter-estado-atletas').selectOption('activo');
+        await page.locator('#search-atletas').fill('Ana');
+        assert.equal(await page.locator('#body-atletas tr:visible').count(),1);
+        await page.locator('#search-atletas').fill('Luis');
+        assert.equal(await page.locator('#body-atletas tr:visible').count(),0);
+        await page.locator('#search-atletas').fill('');
+        await page.locator('#filter-categoria-atletas').selectOption('sin_categoria');
+        assert.equal(await page.locator('#body-atletas tr:visible').count(),1);
+        assert.match(await page.locator('#body-atletas tr:visible').innerText(), /Eva/);
+        assert.equal(await page.locator('button').filter({hasText:'Planilla general'}).count(),0);
+    } finally {
+        atletasFixture = [];
+        await context.close();
+    }
+});
+
+test('UX operativa: menú agrupado accesible, nombre proporcionado y categoría compacta', async () => {
+    const context=await browser.newContext({viewport:{width:1440,height:900}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        const grupo=page.locator('[aria-controls="nav-club-secciones"]');
+        assert.equal(await grupo.getAttribute('aria-expanded'),'false');
+        await grupo.click();
+        assert.equal(await grupo.getAttribute('aria-expanded'),'true');
+        await page.locator('[data-target="sec-registrar"]').click();
+        assert.equal(await page.locator('#sec-registrar').isVisible(),true);
+        const nombre = await page.locator('#dir-nombres').boundingBox();
+        const contenedor = await page.locator('#form-dir-atleta').boundingBox();
+        assert.ok(nombre.width < contenedor.width * .45, 'Nombre no debe ocupar media hoja');
+        await page.locator('#dir-fecha-nac').fill('2016-02-01');
+        await page.waitForFunction(() => document.getElementById('dir-categoria-nombre').textContent === 'U-11 Formación');
+        const insignia = await page.locator('#dir-categoria-automatica').boundingBox();
+        assert.ok(insignia.height < 100, 'Categoría ocupa demasiado espacio');
+        await abrirApartado(page, 'sec-deportes');
+        assert.equal(await page.locator('.deportes-hero').count(),0);
+        const alturas = await page.locator('.deportes-card').evaluateAll(cards=>cards.map(c=>Math.round(c.getBoundingClientRect().height)));
+        assert.equal(Math.max(...alturas)-Math.min(...alturas),0,'Tarjetas no alineadas en desktop');
+    }finally {await context.close();}
+});
+
+test('directiva móvil: navegación de grupos y tarjetas de catálogos sin desbordamiento', async () => {
+    const context=await browser.newContext({viewport:{width:390,height:844}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page, 'sec-atletas');
+        assert.equal(await page.locator('#filter-categoria-atletas').isVisible(),true);
+        assert.ok((await page.locator('#filter-categoria-atletas option').count()) >= 7);
+        await abrirApartado(page, 'sec-deportes');
+        await page.locator('.deportes-card').first().waitFor({state:'visible'});
+        const visibles = await page.locator('.deportes-card').evaluateAll(cards => cards.map(c => {
+            const rect=c.getBoundingClientRect();
+            return {izquierda:rect.left,derecha:rect.right,ancho:rect.width};
+        }));
+        assert.equal(visibles.length,3);
+        assert.ok(visibles.every(r=>r.izquierda >= -1 && r.derecha <= 392),'Tarjetas deben caber en teléfono');
+        const grupos=page.locator('.sidebar-group__toggle');
+        assert.equal(await grupos.count(),2);
+    }finally{await context.close();}
 });

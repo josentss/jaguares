@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
+    <link rel="stylesheet" href="ux-panel-operativo.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -357,15 +358,31 @@
             <img src="../img/logo-sinfondo.png" alt="Logo Jaguares">
             <h3>Jaguares</h3>
         </div>
-        <ul class="sidebar-menu">
-            <li class="active" data-target="sec-dashboard"><i class="fas fa-chart-pie"></i>Inicio</li>
-            <li data-target="sec-solicitudes" data-title="Solicitudes de Registro"><i class="fas fa-user-plus"></i> Solicitudes</li>
-            <li data-target="sec-registrar"><i class="fas fa-id-card"></i> Registrar Atleta</li>
-            <li data-target="sec-atletas"><i class="fas fa-running"></i> Gestión Atletas</li>
-            <li data-target="sec-deportes"><i class="fas fa-volleyball-ball"></i> Organización Deportiva</li>
-            <li data-target="sec-pagos"><i class="fas fa-file-invoice-dollar"></i> Auditoría de Pagos</li>
-            <li data-target="sec-cms"><i class="fas fa-globe"></i> Gestión Web</li>
-            <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</li>
+        <ul class="sidebar-menu sidebar-menu--agrupado">
+            <li class="active" data-target="sec-dashboard" role="button" tabindex="0"><i class="fas fa-chart-pie" aria-hidden="true"></i> Inicio</li>
+            <li class="sidebar-group">
+                <button type="button" class="sidebar-group__toggle" aria-expanded="false" aria-controls="nav-club-secciones">
+                    <span><i class="fas fa-users" aria-hidden="true"></i> Club y atletas</span>
+                    <i class="fas fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
+                </button>
+                <ul id="nav-club-secciones" class="sidebar-submenu" hidden>
+                    <li data-target="sec-solicitudes" data-title="Solicitudes de Registro" role="button" tabindex="0">Solicitudes</li>
+                    <li data-target="sec-registrar" role="button" tabindex="0">Registrar atleta</li>
+                    <li data-target="sec-atletas" role="button" tabindex="0">Gestión de atletas</li>
+                    <li data-target="sec-deportes" role="button" tabindex="0">Organización deportiva</li>
+                </ul>
+            </li>
+            <li class="sidebar-group">
+                <button type="button" class="sidebar-group__toggle" aria-expanded="false" aria-controls="nav-gestion-secciones">
+                    <span><i class="fas fa-sliders-h" aria-hidden="true"></i> Administración</span>
+                    <i class="fas fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
+                </button>
+                <ul id="nav-gestion-secciones" class="sidebar-submenu" hidden>
+                    <li data-target="sec-pagos" role="button" tabindex="0">Auditoría de pagos</li>
+                    <li data-target="sec-cms" role="button" tabindex="0">Gestión web y eventos</li>
+                </ul>
+            </li>
+            <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión</li>
         </ul>
     </div>
 
@@ -532,15 +549,10 @@
                         <div class="form-group-panel">
                             <label for="dir-fecha-nac">Fecha de Nacimiento</label>
                             <input type="date" id="dir-fecha-nac" required>
-                        </div>
-                        <div class="form-group-panel full-width">
-                            <div class="categoria-automatica" id="dir-categoria-automatica" data-estado="vacio" role="status" aria-live="polite">
-                                <span class="categoria-automatica__icono" aria-hidden="true"><i class="fas fa-volleyball-ball"></i></span>
-                                <div class="categoria-automatica__cuerpo">
-                                    <span class="categoria-automatica__etiqueta">Categoría por edad · cálculo automático</span>
-                                    <strong class="categoria-automatica__nombre" id="dir-categoria-nombre">Por calcular</strong>
-                                    <small class="categoria-automatica__detalle" id="dir-categoria-detalle">Selecciona la fecha de nacimiento para ver la categoría por edad.</small>
-                                </div>
+                            <div class="categoria-automatica categoria-automatica--compacta" id="dir-categoria-automatica" data-estado="vacio" role="status" aria-live="polite">
+                                <span class="categoria-automatica__etiqueta">Categoría por edad</span>
+                                <strong class="categoria-automatica__nombre" id="dir-categoria-nombre">Por calcular</strong>
+                                <small class="categoria-automatica__detalle" id="dir-categoria-detalle">Se calcula con la fecha de nacimiento.</small>
                             </div>
                         </div>
 
@@ -596,7 +608,11 @@
             <div class="table-container">
                 <div class="table-toolbar"><div class="table-filters">
                         <input type="text" id="search-atletas" class="search-box" placeholder="Buscar atleta o representante...">
-                        <select id="filter-estado-atletas" class="search-box">
+                        <select id="filter-categoria-atletas" class="search-box" aria-label="Filtrar atletas por categoría">
+                            <option value="todos">Todas las categorías</option>
+                            <option value="sin_categoria">Sin categoría publicada</option>
+                        </select>
+                        <select id="filter-estado-atletas" class="search-box" aria-label="Filtrar atletas por estado">
                             <option value="todos">Todos los estados</option>
                             <option value="activo">Solo Activos</option>
                             <option value="espera">En Espera</option>
@@ -604,6 +620,7 @@
                         </select>
                     </div>
                 </div>
+                <p id="atletas-resultado-filtro" class="atletas-resultado-filtro" aria-live="polite"></p>
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
@@ -624,22 +641,19 @@
 
         <!-- ORGANIZACIÓN DEPORTIVA: CATÁLOGOS CONFIGURABLES -->
         <section id="sec-deportes" class="panel-section">
-            <div class="deportes-hero">
-                <span class="deportes-hero__kicker">Club Jaguares · Administración</span>
-                <h2>Organización deportiva</h2>
-                <p>Prepara tus temporadas, organiza las categorías y construye la estructura de equipos del club. La clasificación orientativa por edad se mostrará en las inscripciones; la asignación a plantillas se hará más adelante.</p>
-                <div class="deportes-resumen" aria-label="Resumen de la organización">
-                    <div class="deportes-resumen__item"><span class="deportes-resumen__numero" id="deportes-total-temporadas">0</span><span class="deportes-resumen__nombre">Temporadas</span></div>
-                    <div class="deportes-resumen__item"><span class="deportes-resumen__numero" id="deportes-total-categorias">0</span><span class="deportes-resumen__nombre">Categorías</span></div>
-                    <div class="deportes-resumen__item"><span class="deportes-resumen__numero" id="deportes-total-equipos">0</span><span class="deportes-resumen__nombre">Equipos</span></div>
+            <div class="deportes-cabecera">
+                <p>Gestiona temporadas, categorías y equipos.</p>
+                <div class="deportes-resumen" aria-label="Resumen de catálogos">
+                    <span><strong id="deportes-total-temporadas">0</strong> temporadas</span>
+                    <span><strong id="deportes-total-categorias">0</strong> categorías</span>
+                    <span><strong id="deportes-total-equipos">0</strong> equipos</span>
                 </div>
             </div>
-            <p class="deportes-intro">Sigue el orden: temporada → categoría → equipo. Los nombres son configurables y puedes editarlos sin perder sus relaciones.</p>
             <p id="deportes-estado" class="deportes-estado" role="status" aria-live="polite">Selecciona esta sección para cargar los catálogos.</p>
             <div class="deportes-grid">
                 <div class="deportes-card">
                     <h3><span class="deportes-card__paso">01</span> Temporadas</h3>
-                    <p>Define el nombre de cada ciclo deportivo, sin imponer fechas.</p>
+                    <p>Identifica cada ciclo deportivo.</p>
                     <form class="deportes-form" id="deportes-form-temporadas">
                         <label>Nombre de la temporada
                             <input name="nombre" type="text" required minlength="2" maxlength="80" placeholder="Ej.: Temporada 2026–2027" autocomplete="off">
@@ -653,7 +667,7 @@
                 </div>
                 <div class="deportes-card">
                     <h3><span class="deportes-card__paso">02</span> Categorías</h3>
-                    <p>Registra las categorías que utilizarás dentro de cada temporada.</p>
+                    <p>Organiza las categorías por temporada.</p>
                     <form class="deportes-form" id="deportes-form-categorias">
                         <label>Temporada
                             <select name="id_temporada" required aria-label="Temporada de la categoría"></select>
@@ -671,7 +685,7 @@
                 </div>
                 <div class="deportes-card">
                     <h3><span class="deportes-card__paso">03</span> Equipos</h3>
-                    <p>Crea equipos asociados a una categoría. Las plantillas se gestionarán en el próximo bloque.</p>
+                    <p>Crea equipos dentro de una categoría.</p>
                     <form class="deportes-form" id="deportes-form-equipos">
                         <label>Categoría
                             <select name="id_categoria" required aria-label="Categoría del equipo"></select>
@@ -1444,17 +1458,36 @@
             }
         }
 
+        function inicializarFiltroCategorias() {
+            const select = document.getElementById('filter-categoria-atletas');
+            // La clasificación formativa que entrega el servidor comparte el
+            // mismo contrato con la web pública y los formularios.
+            for (const categoria of window.JaguaresCategoriasFormativas?.CATEGORIAS || []) {
+                select.add(new Option(categoria.nombre, categoria.codigo));
+            }
+        }
+
         function aplicarFiltrosAtletas() {
-            const term = document.getElementById('search-atletas').value.toLowerCase();
+            const term = document.getElementById('search-atletas').value.trim().toLocaleLowerCase('es');
             const estado = document.getElementById('filter-estado-atletas').value;
+            const categoria = document.getElementById('filter-categoria-atletas').value;
+            let visibles = 0;
+            let total = 0;
 
             document.querySelectorAll('#body-atletas tr').forEach(row => {
                 if (row.cells.length === 1) return;
-                const textoMatch = row.textContent.toLowerCase().includes(term);
-                const estadoFila = row.getAttribute('data-estado');
-                const estadoMatch = (estado === 'todos') || (estadoFila === estado);
-                row.style.display = (textoMatch && estadoMatch) ? '' : 'none';
+                total++;
+                const textoMatch = row.textContent.toLocaleLowerCase('es').includes(term);
+                const estadoMatch = estado === 'todos' || row.dataset.estado === estado;
+                const categoriaMatch = categoria === 'todos' || row.dataset.categoria === categoria;
+                const mostrar = textoMatch && estadoMatch && categoriaMatch;
+                row.hidden = !mostrar;
+                row.style.display = mostrar ? '' : 'none';
+                if (mostrar) visibles++;
             });
+            document.getElementById('atletas-resultado-filtro').textContent =
+                total ? `Mostrando ${visibles} de ${total} atletas`
+                    : 'Todavía no hay atletas registrados.';
         }
 
         function aplicarFiltrosPagos() {
@@ -1472,6 +1505,8 @@
 
         document.getElementById('search-atletas').addEventListener('input', aplicarFiltrosAtletas);
         document.getElementById('filter-estado-atletas').addEventListener('change', aplicarFiltrosAtletas);
+        document.getElementById('filter-categoria-atletas').addEventListener('change', aplicarFiltrosAtletas);
+        inicializarFiltroCategorias();
         document.getElementById('search-pagos').addEventListener('input', aplicarFiltrosPagos);
         document.getElementById('filter-estado-pagos').addEventListener('change', aplicarFiltrosPagos);
 
@@ -1614,7 +1649,7 @@
                            </a>`
                         : '';
 
-                    bodyAtletas.innerHTML += `<tr data-estado="${(a.estado || '').toLowerCase()}">
+                    bodyAtletas.innerHTML += `<tr data-estado="${(a.estado || '').toLowerCase()}" data-categoria="${esc(a.clasificacion?.categoria?.codigo || 'sin_categoria')}">
                         <td><strong>${esc(nombreCompleto)}</strong></td>
                         <td>${esc(a.rep_nombres || '')} ${esc(a.rep_apellidos || '')}</td>
                         <td>${formatFecha(a.fecha_nac)}</td>
@@ -1689,7 +1724,9 @@
                         (acciones.join('') || '<span aria-label="Sin acciones disponibles">—</span>') +
                         '</div></td></tr>';
                 });
-                // Mantener el filtro elegido al aprobar, rechazar o eliminar.
+                // Mantener los filtros al actualizar las listas, sin eliminar
+                // la selección de categoría del usuario.
+                aplicarFiltrosAtletas();
                 aplicarFiltrosPagos();
             } catch (err) {
                 showToast('Error al cargar datos', 'error');
@@ -1978,17 +2015,48 @@
             }
         });
 
+        const gruposMenu = [...document.querySelectorAll('.sidebar-group')];
+
+        function mostrarGrupo(grupo, expandido) {
+            const boton = grupo.querySelector('.sidebar-group__toggle');
+            const submenu = grupo.querySelector('.sidebar-submenu');
+            boton.setAttribute('aria-expanded', String(expandido));
+            submenu.hidden = !expandido;
+        }
+
+        gruposMenu.forEach(grupo => {
+            const boton = grupo.querySelector('.sidebar-group__toggle');
+            boton.addEventListener('click', () => {
+                const abrir = boton.getAttribute('aria-expanded') !== 'true';
+                gruposMenu.forEach(g => mostrarGrupo(g, g === grupo && abrir));
+            });
+        });
+
         document.querySelectorAll('.sidebar-menu li[data-target]').forEach(item => {
-            item.addEventListener('click', () => {
-                document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+            const navegar = () => {
+                document.querySelectorAll('.sidebar-menu li[data-target]')
+                    .forEach(li => li.classList.remove('active'));
                 item.classList.add('active');
-                document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
-                document.getElementById(item.getAttribute('data-target')).classList.add('active');
+
+                const grupoActivo = item.closest('.sidebar-group');
+                gruposMenu.forEach(grupo => mostrarGrupo(grupo, grupo === grupoActivo));
+
+                document.querySelectorAll('.panel-section').forEach(seccion => seccion.classList.remove('active'));
+                document.getElementById(item.dataset.target).classList.add('active');
                 document.getElementById('panel-title').textContent = item.dataset.title || item.textContent.trim();
-                if (item.getAttribute('data-target') === 'sec-registrar') cargarRepresentantes();
-                if (item.getAttribute('data-target') === 'sec-deportes') window.JaguaresCatalogos?.cargar();
+                if (item.dataset.target === 'sec-registrar') cargarRepresentantes();
+                if (item.dataset.target === 'sec-deportes') window.JaguaresCatalogos?.cargar();
 
                 if (window.innerWidth <= 992) cerrarSidebarMovil();
+            };
+            item.addEventListener('click', navegar);
+            // Los ítems existentes son LI: permitir teclado sin refactorizar
+            // sus selectores y enlaces programáticos de otros módulos.
+            item.addEventListener('keydown', evento => {
+                if (evento.key === 'Enter' || evento.key === ' ') {
+                    evento.preventDefault();
+                    navegar();
+                }
             });
         });
 

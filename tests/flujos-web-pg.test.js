@@ -211,6 +211,13 @@ async function seccion(page, id) {
     if (await menu.isVisible() && !(await page.locator('#sidebar').evaluate(e=>e.classList.contains('open')))) {
         await menu.click();
     }
+    // En directiva, la navegación está agrupada y cada grupo se abre
+    // antes de elegir una sección. Representante conserva el menú anterior.
+    const grupo = item.locator('xpath=ancestor::li[contains(concat(" ", normalize-space(@class), " "), " sidebar-group ")]');
+    if (await grupo.count()) {
+        const boton = grupo.locator('.sidebar-group__toggle');
+        if (await boton.getAttribute('aria-expanded') !== 'true') await boton.click();
+    }
     await item.click();
 }
 

@@ -123,7 +123,7 @@
             if (!response.ok || json.success !== true) throw new Error(json.message || 'No se pudo cargar el catálogo');
             for (const tipo of Object.keys(TIPOS)) datos[tipo] = Array.isArray(json[tipo]) ? json[tipo] : [];
             render();
-            mensaje('Catálogos actualizados.');
+            mensaje('');
         } catch (error) {
             mensaje(error.message || 'No se pudieron cargar los catálogos.', true);
         } finally {

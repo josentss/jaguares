@@ -1,23 +1,73 @@
-/* Catálogos deportivos: módulo autónomo del panel, sin afectar otros formularios. */
-.deportes-intro { margin: 0 0 20px; color: #475569; line-height: 1.6; }
-.deportes-estado { min-height: 1.5em; margin-bottom: 14px; color: #475569; }
+/* Catálogos deportivos: herramienta de trabajo, no landing publicitaria. */
+.deportes-cabecera {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px 22px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.deportes-cabecera p { color: #475569; font-size: .91rem; margin: 0; line-height: 1.5; }
+.deportes-resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.deportes-resumen span {
+    color: #475569; font-size: .8rem; white-space: nowrap; padding: 7px 11px;
+    border: 1px solid #dbe3eb; border-radius: 7px; background: #fff;
+}
+.deportes-resumen strong { color: #172554; font-variant-numeric: tabular-nums; margin-right: 3px; }
+.deportes-estado { min-height: 0; color: #475569; font-size: .85rem; margin-bottom: 10px; }
+.deportes-estado:empty { display: none; }
 .deportes-estado[data-error="true"] { color: #b42318; }
-.deportes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; align-items: start; }
-.deportes-card { padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; min-width: 0; box-shadow: 0 2px 8px rgba(15, 23, 42, .04); }
-.deportes-card h3 { margin: 0 0 8px; font-size: 1.12rem; color: #1e293b; }
-.deportes-card p { margin: 0 0 16px; font-size: .86rem; color: #64748b; }
-.deportes-form { display: grid; gap: 12px; margin-bottom: 20px; }
-.deportes-form label { display: grid; gap: 6px; font-weight: 600; font-size: .87rem; color: #334155; }
-.deportes-form input, .deportes-form select { width: 100%; padding: 10px 12px; font: inherit; font-weight: 400; background: #fff; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; }
+.deportes-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px; align-items: stretch;
+}
+.deportes-card {
+    display: flex; flex-direction: column; min-width: 0; padding: 18px;
+    border-radius: 11px; border: 1px solid #e2e8f0; background: #fff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, .035);
+}
+.deportes-card h3 { display: flex; align-items: center; gap: 9px; font-size: 1rem; margin: 0 0 8px; color: #18232e; }
+.deportes-card__paso {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 6px; background: #fff3e8;
+    color: #a13e06; font-size: .73rem; flex-shrink: 0;
+}
+.deportes-card p { margin: 0 0 16px; color: #64748b; font-size: .83rem; line-height: 1.45; min-height: 2.8em; }
+.deportes-form { display: grid; gap: 12px; margin: 0; align-content: start; flex: 1 0 auto; }
+.deportes-form label { display: grid; gap: 6px; color: #334155; font-size: .85rem; font-weight: 600; }
+.deportes-form input, .deportes-form select {
+    width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #cbd5e1;
+    border-radius: 7px; background: #fff; font: inherit; font-size: .86rem; font-weight: 400;
+}
 .deportes-form input:focus-visible, .deportes-form select:focus-visible { outline: 2px solid var(--naranja); outline-offset: 1px; }
-.deportes-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.deportes-actions button { border: 0; border-radius: 8px; padding: 10px 13px; cursor: pointer; font: inherit; font-size: .85rem; font-weight: 600; }
-.deportes-guardar { background: var(--naranja); color: #fff; }
+.deportes-form small { color: #9a3412; font-size: .76rem; }
+.deportes-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.deportes-actions button { border: 0; border-radius: 7px; padding: 9px 14px; cursor: pointer; font: inherit; font-size: .84rem; font-weight: 600; }
+.deportes-guardar { background: var(--naranja); color: white; }
 .deportes-cancelar { background: #e2e8f0; color: #334155; }
 .deportes-actions button:disabled { opacity: .55; cursor: not-allowed; }
-.deportes-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.deportes-lista li { border-top: 1px solid #edf2f7; padding: 11px 0 3px; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
-.deportes-lista .deportes-item-texto { min-width: 0; overflow-wrap: anywhere; font-size: .89rem; }
-.deportes-lista .deportes-contexto { display: block; font-size: .77rem; color: #64748b; margin-top: 3px; }
-.deportes-lista .deportes-editar { border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; border-radius: 7px; padding: 6px 9px; font: inherit; font-size: .8rem; cursor: pointer; flex-shrink: 0; }
-.deportes-lista .deportes-vacio { color: #64748b; justify-content: start; font-size: .86rem; }
+.deportes-actions button:focus-visible, .deportes-editar:focus-visible { outline: 3px solid #fb923c; outline-offset: 2px; }
+.deportes-lista {
+    display: grid; align-content: start; gap: 6px; list-style: none;
+    margin: 17px 0 0; padding: 10px 0 0; border-top: 1px solid #e2e8f0;
+}
+.deportes-lista li { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 6px 0; }
+.deportes-lista .deportes-item-texto { min-width: 0; overflow-wrap: anywhere; font-size: .84rem; }
+.deportes-lista .deportes-contexto { display: block; font-size: .75rem; color: #64748b; margin-top: 3px; }
+.deportes-lista .deportes-editar {
+    flex-shrink: 0; padding: 6px 10px; border-radius: 7px;
+    border: 1px solid #cbd5e1; background: #f8fafc; color: #334155;
+    font: inherit; font-size: .8rem; cursor: pointer;
+}
+.deportes-lista .deportes-vacio { color: #64748b; justify-content: start; font-size: .82rem; }
+
+@media (max-width: 1199px) {
+    .deportes-grid { grid-template-columns: minmax(0, 1fr); }
+    .deportes-card { width: 100%; }
+    .deportes-card p { min-height: 0; }
+    .deportes-form { flex: none; }
+}
+@media (max-width: 700px) {
+    .deportes-cabecera { align-items: flex-start; }
+    .deportes-resumen { gap: 5px; }
+    .deportes-resumen span { padding: 6px 9px; font-size: .75rem; }
+    .deportes-card { padding: 15px; }
+    .deportes-form input, .deportes-form select { min-height: 44px; font-size: 16px; }
+    .deportes-actions button { min-height: 43px; }
+}

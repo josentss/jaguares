@@ -64,3 +64,36 @@
     #sec-atletas .table-filters #filter-categoria-atletas { width: 100%; max-width: none; }
     .sidebar-group__toggle { min-height: 48px; }
 }
+
+
+/* Alta de atleta: seis datos en dos filas equivalentes, no campos
+   de dirección/teléfono de ancho completo. Las alertas y documentos
+   conservan el ancho necesario. */
+#form-dir-atleta > .form-grid,
+#form-add-atleta > .form-grid { align-items: start; }
+#form-dir-atleta > .form-grid > .form-group-panel:not(.full-width),
+#form-add-atleta > .form-grid > .form-group-panel:not(.full-width) { min-width: 0; }
+#form-dir-atleta #dir-direccion,
+#form-add-atleta #atl-direccion { width: 100%; }
+#form-dir-atleta #dir-telefono,
+#form-add-atleta #atl-telefono { width: 100%; }
+
+/* Misma familia de iconos/colores que Auditoría de Pagos; sin introducir
+   iconos decorativos nuevos ni cambiar las operaciones disponibles. */
+.acciones-atletas { gap: 5px; flex-wrap: nowrap; }
+.acciones-atletas .pago-icono {
+    width: 40px; height: 40px; border-radius: 8px; min-width: 40px;
+}
+.pago-icono--whatsapp {
+    background: #edf9f0; border-color: #b9dfc2; color: #16733e;
+}
+.pago-icono--whatsapp:hover { background: #dff4e6; border-color: #8ccba0; }
+.acciones-atletas .pago-icono .fab { font-size: 1.16rem; }
+.acciones-atletas .pago-icono:focus-visible { outline: 3px solid var(--naranja); outline-offset: 2px; }
+
+@media (max-width: 900px) {
+    .acciones-atletas { flex-wrap: wrap; }
+}
+@media (max-width: 700px) {
+    .acciones-atletas .pago-icono { width: 44px; height: 44px; min-width: 44px; }
+}

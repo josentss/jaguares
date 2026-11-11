@@ -915,7 +915,9 @@ tr:hover td { background-color: #f8fafc; }
     #body-solicitudes td:not([colspan]):nth-child(3)::before { content: 'Estado'; }
     #body-atletas td:not([colspan]):nth-child(2)::before { content: 'Representante'; }
     #body-atletas td:not([colspan]):nth-child(3)::before { content: 'Fecha nac.'; }
-    #body-atletas td:not([colspan]):nth-child(4)::before { content: 'Estado'; }
+    #body-atletas td:not([colspan]):nth-child(4)::before { content: 'Categoría'; }
+    #body-atletas td:not([colspan]):nth-child(5)::before { content: 'Estado'; }
+    #body-atletas td:not([colspan]):nth-child(6)::before { content: 'Acciones'; }
     #body-pagos td:not([colspan]):nth-child(2)::before { content: 'Mes'; }
     #body-pagos td:not([colspan]):nth-child(3)::before { content: 'Fecha'; }
     #body-pagos td:not([colspan]):nth-child(4)::before { content: 'Método'; }
@@ -929,7 +931,9 @@ tr:hover td { background-color: #f8fafc; }
     #table-eventos-representante td:not([colspan]):nth-child(2)::before { content: 'Fecha y hora'; }
     #table-eventos-representante td:not([colspan]):nth-child(3)::before { content: 'Lugar'; }
     #table-my-atletas tbody td:not([colspan]):nth-child(2)::before { content: 'Cédula'; }
-    #table-my-atletas tbody td:not([colspan]):nth-child(3)::before { content: 'Estado'; }
+    #table-my-atletas tbody td:not([colspan]):nth-child(3)::before { content: 'Categoría'; }
+    #table-my-atletas tbody td:not([colspan]):nth-child(4)::before { content: 'Estado'; }
+    #table-my-atletas tbody td:not([colspan]):nth-child(5)::before { content: 'Documentos'; }
     #table-my-pagos tbody td:not([colspan]):nth-child(1)::before { content: 'Fecha reporte'; }
     #table-my-pagos tbody td:not([colspan]):nth-child(3)::before { content: 'Mes'; }
     #table-my-pagos tbody td:not([colspan]):nth-child(4)::before { content: 'Monto'; }

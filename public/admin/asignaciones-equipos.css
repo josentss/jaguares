@@ -4,6 +4,11 @@
     border-radius: 11px; background: #fff;
 }
 .asignaciones-panel h3 { margin: 0 0 8px; font-size: 1rem; color: #18232e; }
+.asignaciones-cabecera { display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; flex-wrap: wrap; }
+.asignaciones-cabecera button { border: 1px solid #cbd5e1; border-radius: 7px;
+    background: #f8fafc; padding: 7px 10px; color: #334155; font: inherit;
+    font-size: .8rem; cursor: pointer; }
 .asignaciones-panel h4 { margin: 0 0 9px; font-size: .9rem; }
 .asignaciones-ayuda { margin: 0 0 12px; color: #52616d; font-size: .82rem; line-height: 1.5; }
 #asignaciones-estado { color: #475569; font-size: .82rem; margin: 0 0 8px; }

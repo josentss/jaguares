@@ -121,6 +121,7 @@
     }
 
     porId('asignaciones-temporada').addEventListener('change', actualizarEquipos);
+    porId('asignaciones-actualizar').addEventListener('click', cargar);
     porId('asignaciones-atleta').addEventListener('change', actualizarVista);
     porId('asignaciones-equipo').addEventListener('change', actualizarVista);
     porId('asignaciones-form').addEventListener('submit', async evento => {
@@ -140,7 +141,8 @@
         try {
             const respuesta = await raiz.apiFetch('/api/directiva/deportes/asignaciones', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_atleta: idAtleta, id_equipo: idEquipo })
+                body: JSON.stringify({ id_atleta: idAtleta, id_equipo: idEquipo,
+                    id_asignacion_actual: actual?.id_asignacion ?? null })
             });
             const datos = await respuesta.json();
             if (!respuesta.ok || !datos.success) throw new Error(datos.message || 'No se pudo asignar el equipo');

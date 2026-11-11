@@ -45,9 +45,12 @@ continúan disponibles.
 - `GET /api/directiva/deportes/asignaciones`: atletas con nombre, nacimiento y
   estado, más asignaciones vigentes e históricas. No devuelve contacto,
   documentos, datos médicos ni pagos.
-- `POST /api/directiva/deportes/asignaciones` con `{id_atleta,id_equipo}`:
+- `POST /api/directiva/deportes/asignaciones` con
+  `{id_atleta,id_equipo,id_asignacion_actual}` (ID visto o `null`):
   vuelve a validar rol, estado, equipo y temporada en una transacción. Bloquea
-  la fila del atleta para serializar cambios y conserva la asignación anterior.
+  la fila del atleta para serializar cambios, rechaza vistas desactualizadas
+  con HTTP 409 y conserva la asignación anterior. El panel ofrece «Actualizar
+  lista» para recuperar el estado vigente.
 - Organización Deportiva incorpora temporada, atleta y equipo; muestra la
   plantilla vigente de la temporada y el historial del atleta seleccionado.
   Los atletas inactivos pueden consultarse, pero el botón se deshabilita.

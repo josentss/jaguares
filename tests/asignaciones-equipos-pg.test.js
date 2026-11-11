@@ -82,31 +82,35 @@ test('solo directiva y admin consultan y modifican asignaciones', async () => {
 test('valida atleta activo, equipo existente y campos sin crear filas', async () => {
     const credencial = cookie(1, 'directiva');
     for (const body of [
-        {id_atleta:0,id_equipo:1}, {id_atleta:'1x',id_equipo:1},
-        {id_atleta:1,id_equipo:0}, {id_atleta:1,id_equipo:[]}
+        {id_atleta:0,id_equipo:1,id_asignacion_actual:null},
+        {id_atleta:'1x',id_equipo:1,id_asignacion_actual:null},
+        {id_atleta:1,id_equipo:0,id_asignacion_actual:null},
+        {id_atleta:1,id_equipo:[],id_asignacion_actual:null},
+        {id_atleta:1,id_equipo:1}
     ]) assert.equal((await solicitar(ruta,{metodo:'POST',credencial,body})).status,400);
     assert.equal((await solicitar(ruta,{metodo:'POST',credencial,
-        body:{id_atleta:99,id_equipo:1}})).status,404);
+        body:{id_atleta:99,id_equipo:1,id_asignacion_actual:null}})).status,404);
     assert.equal((await solicitar(ruta,{metodo:'POST',credencial,
-        body:{id_atleta:2,id_equipo:1}})).status,409);
+        body:{id_atleta:2,id_equipo:1,id_asignacion_actual:null}})).status,409);
     assert.equal((await solicitar(ruta,{metodo:'POST',credencial,
-        body:{id_atleta:1,id_equipo:99}})).status,404);
+        body:{id_atleta:1,id_equipo:99,id_asignacion_actual:null}})).status,404);
     assert.equal((await db.pool.query('SELECT count(*)::int AS total FROM asignaciones_equipos')).rows[0].total,0);
 });
 
 test('asignación manual, cambio con historial y segunda temporada independiente', async () => {
     const credencial = cookie(1, 'directiva');
-    const primera = await solicitar(ruta,{metodo:'POST',credencial,body:{id_atleta:1,id_equipo:1}});
+    const primera = await solicitar(ruta,{metodo:'POST',credencial,
+        body:{id_atleta:1,id_equipo:1,id_asignacion_actual:null}});
     assert.equal(primera.status,201);
     assert.equal(primera.data.movimiento,false);
     assert.equal((await solicitar(ruta,{metodo:'POST',credencial,
-        body:{id_atleta:1,id_equipo:1}})).status,409);
+        body:{id_atleta:1,id_equipo:1,id_asignacion_actual:primera.data.id_asignacion}})).status,409);
     const cambio = await solicitar(ruta,{metodo:'POST',credencial:cookie(2,'admin'),
-        body:{id_atleta:1,id_equipo:2}});
+        body:{id_atleta:1,id_equipo:2,id_asignacion_actual:primera.data.id_asignacion}});
     assert.equal(cambio.status,201);
     assert.equal(cambio.data.movimiento,true);
     const otraTemporada = await solicitar(ruta,{metodo:'POST',credencial,
-        body:{id_atleta:1,id_equipo:3}});
+        body:{id_atleta:1,id_equipo:3,id_asignacion_actual:null}});
     assert.equal(otraTemporada.status,201);
     const lista = await solicitar(ruta,{credencial});
     assert.equal(lista.data.movimientos.length,3);
@@ -121,13 +125,15 @@ test('asignación manual, cambio con historial y segunda temporada independiente
     assert.ok(sql.rows[0].fin_en >= sql.rows[0].inicio_en);
     assert.equal(sql.rows[1].asignado_por,2);
     assert.equal(sql.rows[1].fin_en,null);
+    assert.equal((await solicitar(ruta,{metodo:'POST',credencial,
+        body:{id_atleta:1,id_equipo:1,id_asignacion_actual:primera.data.id_asignacion}})).status,409);
 });
 
 test('cambios concurrentes dejan una sola asignación activa por temporada', async () => {
     const credencial = cookie(1,'directiva');
     const resultados = await Promise.all([1,2].map(id_equipo => solicitar(ruta,
-        {metodo:'POST',credencial,body:{id_atleta:3,id_equipo}})));
-    assert.ok(resultados.every(r=>[201,409].includes(r.status)));
+        {metodo:'POST',credencial,body:{id_atleta:3,id_equipo,id_asignacion_actual:null}})));
+    assert.deepEqual(resultados.map(r=>r.status).sort(),[201,409]);
     const sql = await db.pool.query(`SELECT count(*)::int AS total FROM asignaciones_equipos
         WHERE id_atleta = 3 AND id_temporada = 1 AND fin_en IS NULL`);
     assert.equal(sql.rows[0].total,1);

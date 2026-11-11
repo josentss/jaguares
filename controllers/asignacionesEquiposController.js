@@ -35,9 +35,11 @@ exports.listar = async (_req, res) => {
 };
 
 exports.asignar = async (req, res) => {
-    const { id_atleta: idAtleta, id_equipo: idEquipo } = req.body || {};
-    if (!esEnteroPositivo(idAtleta) || !esEnteroPositivo(idEquipo)) {
-        return res.status(400).json({ success: false, message: 'Selecciona un atleta y equipo válidos' });
+    const { id_atleta: idAtleta, id_equipo: idEquipo, id_asignacion_actual: idEsperada } = req.body || {};
+    if (!esEnteroPositivo(idAtleta) || !esEnteroPositivo(idEquipo) ||
+        !Object.hasOwn(req.body || {}, 'id_asignacion_actual') ||
+        (idEsperada !== null && !esEnteroPositivo(idEsperada))) {
+        return res.status(400).json({ success: false, message: 'Selecciona un atleta, equipo y asignación actual válidos' });
     }
     const cliente = await db.pool.connect().catch(error => {
         console.error('ASIGNACIONES_EQUIPOS_CONEXION', error.code || 'INTERNAL');
@@ -60,6 +62,10 @@ exports.asignar = async (req, res) => {
         const anterior = await cliente.query(`SELECT id_asignacion, id_equipo FROM asignaciones_equipos
             WHERE id_atleta = $1 AND id_temporada = $2 AND fin_en IS NULL FOR UPDATE`,
         [Number(idAtleta), idTemporada]);
+        if ((anterior.rows[0]?.id_asignacion ?? null) !== (idEsperada === null ? null : Number(idEsperada))) {
+            return res.status(409).json({ success: false,
+                message: 'La asignación cambió; actualiza la lista antes de guardar' });
+        }
         if (anterior.rows[0]?.id_equipo === Number(idEquipo)) return res.status(409).json({ success: false,
             message: 'El atleta ya pertenece a ese equipo en la temporada' });
         const instante = new Date().toISOString();

@@ -1,0 +1,36 @@
+.asignaciones-panel[hidden] { display: none !important; }
+.asignaciones-panel {
+    margin-top: 22px; padding: 18px; border: 1px solid #dce2e9;
+    border-radius: 11px; background: #fff;
+}
+.asignaciones-panel h3 { margin: 0 0 8px; font-size: 1rem; color: #18232e; }
+.asignaciones-cabecera { display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; flex-wrap: wrap; }
+.asignaciones-cabecera button { border: 1px solid #cbd5e1; border-radius: 7px;
+    background: #f8fafc; padding: 7px 10px; color: #334155; font: inherit;
+    font-size: .8rem; cursor: pointer; }
+.asignaciones-panel h4 { margin: 0 0 9px; font-size: .9rem; }
+.asignaciones-ayuda { margin: 0 0 12px; color: #52616d; font-size: .82rem; line-height: 1.5; }
+#asignaciones-estado { color: #475569; font-size: .82rem; margin: 0 0 8px; }
+#asignaciones-estado:empty { display: none; }
+#asignaciones-estado[data-error="true"] { color: #b42318; }
+.asignaciones-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    align-items: end; gap: 12px; margin-bottom: 12px; }
+.asignaciones-form label { display: grid; gap: 5px; color: #334155; font-size: .82rem; font-weight: 600; }
+.asignaciones-form select { width: 100%; min-width: 0; min-height: 42px; padding: 8px;
+    border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; font: inherit; }
+.asignaciones-form button { min-height: 42px; padding: 8px 13px; border: 0; border-radius: 7px;
+    color: #fff; background: var(--naranja); font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
+.asignaciones-form button:disabled { opacity: .55; cursor: not-allowed; }
+.asignaciones-form :is(select,button):focus-visible { outline: 2px solid var(--naranja); outline-offset: 2px; }
+.asignaciones-actual { font-size: .84rem; font-weight: 600; margin: 8px 0 14px; }
+.asignaciones-listas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.asignaciones-listas > div { min-width: 0; padding: 13px; border: 1px solid #e2e8f0; border-radius: 8px; }
+.asignaciones-listas ul { margin: 0; padding-left: 18px; font-size: .81rem; line-height: 1.55; }
+.asignaciones-listas li { overflow-wrap: anywhere; margin-bottom: 5px; }
+@media (max-width: 1100px) { .asignaciones-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+    .asignaciones-panel { padding: 14px; }
+    .asignaciones-form, .asignaciones-listas { grid-template-columns: minmax(0, 1fr); }
+    .asignaciones-form select { font-size: 16px; }
+}

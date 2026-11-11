@@ -1,5 +1,18 @@
 # Jaguares — contexto maestro
 
+> **Ajustes de paneles — 11 de noviembre de 2026:** GitHub confirma PR #44
+> fusionado en `main` (`64be09b`) y Vercel Production `success` para ese SHA.
+> El propietario mostró una planilla general generada correctamente y pidió
+> un PR de presentación: acciones de pagos en una fila; formularios de atleta
+> con indicador de categoría junto a observaciones médicas en ambos roles;
+> Solicitudes con rol informativo e iconos SVG; planilla individual sin los
+> paréntesis redundantes de cédula/categoría. Rama
+> `fix/ux-paneles-planilla-solicitudes-20261111`. Sin SQL ni cambio de permisos.
+> El propietario acordó separar la gestión de roles; asignar atletas a equipos
+> requiere reglas deportivas y migración aditiva posterior. Ver
+> [alcance y validación](AJUSTES_PANELES_20261111.md). Pruebas locales de
+> interfaz y PDF: 31/31; CI y Preview de este PR pendientes.
+
 > **Planilla general por categoría — 11 de noviembre de 2026:** GitHub confirma
 > `main` en `5464cf9` (PR #43 fusionado), PR #42 aún abierto como borrador y
 > despliegue Production `success` para `5464cf9`. Rama

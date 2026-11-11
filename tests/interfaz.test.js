@@ -66,7 +66,7 @@ test.before(async () => {
             });
             if (pathname === '/api/directiva/pendientes') return json(res, {
                 success: true, datos: [{id_usuario: 21, nombres: atletaXss,
-                    apellidos: 'Pendiente', correo: 'rep@example.org'}]
+                    apellidos: 'Pendiente', correo: 'rep@example.org', rol: 'representante'}]
             });
             if (pathname === '/api/cms/admin/eventos') return json(res, {
                 success: true, eventos: []
@@ -196,6 +196,43 @@ test('sin atletas activos: deshabilitar reporte en pantalla', async () => {
     } finally { await browser.close(); }
 });
 
+for (const rol of ['directiva', 'representante']) {
+    test(`registro de atleta: tres columnas y resumen médico junto a categoría en ${rol}`, async () => {
+        const browser = await chromium.launch({headless: true});
+        const page = await browser.newPage({viewport: {width: 1440, height: 900}});
+        await page.route('https://**/*', route => route.abort());
+        try {
+            await page.goto(baseUrl + '/admin/panel-' + rol + '.html');
+            await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
+            await page.evaluate(rolActual => document.querySelector(
+                rolActual === 'directiva' ? '[data-target="sec-registrar"]' : '[data-target="sec-atletas"]'
+            ).click(), rol);
+            const prefijo = rol === 'directiva' ? 'dir' : 'atl';
+            const posiciones = await page.evaluate(pref => {
+                const posicion = id => {
+                    const rect = document.getElementById(pref + '-' + id).getBoundingClientRect();
+                    return {top: Math.round(rect.top), left: Math.round(rect.left), right: Math.round(rect.right)};
+                };
+                return {
+                    nombres: posicion('nombres'), apellidos: posicion('apellidos'),
+                    cedula: posicion('cedula'), fecha: posicion('fecha-nac'),
+                    direccion: posicion('direccion'), telefono: posicion('telefono'),
+                    categoria: posicion('categoria-automatica'), alergias: posicion('alergias')
+                };
+            }, prefijo);
+            assert.ok(posiciones.nombres.left < posiciones.apellidos.left &&
+                posiciones.apellidos.left < posiciones.cedula.left);
+            assert.ok(posiciones.fecha.left < posiciones.direccion.left &&
+                posiciones.direccion.left < posiciones.telefono.left);
+            assert.ok(posiciones.categoria.top > posiciones.fecha.top);
+            assert.ok(Math.abs(posiciones.categoria.top - posiciones.alergias.top) < 40,
+                'Categoría y observación médica deben compartir la tercera fila');
+            assert.ok(posiciones.alergias.right > posiciones.direccion.right,
+                'Observación médica ocupa dos columnas');
+        } finally { await browser.close(); }
+    });
+}
+
 for (const dispositivo of [
     {nombre: 'escritorio', viewport: {width: 1440, height: 900}},
     {nombre: 'movil', viewport: {width: 390, height: 844}}
@@ -212,6 +249,10 @@ for (const dispositivo of [
             await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
             assert.equal(await page.locator('#body-atletas img').count(), 0);
             assert.equal(await page.locator('#body-solicitudes img').count(), 0);
+            assert.equal(await page.locator('#body-solicitudes td').nth(2).innerText(), 'Representante');
+            assert.equal(await page.locator('#body-solicitudes .solicitud-acciones svg').count(), 2);
+            assert.equal(await page.locator('#body-solicitudes button[aria-label="Aprobar"]').count(), 1);
+            assert.equal(await page.locator('#body-solicitudes button[aria-label="Rechazar"]').count(), 1);
             assert.equal(await page.locator('#body-pagos img').count(), 0);
             // Iconos y reglas de estado: solo rechazado permite eliminar.
             assert.equal(await page.locator('#body-pagos td').count(), 24);
@@ -226,6 +267,18 @@ for (const dispositivo of [
             assert.equal(await page.locator('#body-pagos button.js-pago-estado svg').count(), 4);
             await page.evaluate(() => document.querySelector('[data-target="sec-pagos"]').click());
             await page.selectOption('#filter-estado-pagos', 'todos');
+            const filasAcciones = await page.locator('#body-pagos .pago-acciones').evaluateAll(grupos =>
+                grupos.filter(grupo => grupo.children.length > 1).map(grupo => {
+                    const botones = [...grupo.children];
+                    const alturas = botones.map(boton => Math.round(boton.getBoundingClientRect().top));
+                    return { alturas, wrap: getComputedStyle(grupo).flexWrap,
+                        ancho: grupo.getBoundingClientRect().width,
+                        derecha: Math.max(...botones.map(boton => boton.getBoundingClientRect().right)) - grupo.getBoundingClientRect().left };
+                }));
+            assert.ok(filasAcciones.length > 0);
+            assert.ok(filasAcciones.every(fila => fila.wrap === 'nowrap' &&
+                Math.max(...fila.alturas) === Math.min(...fila.alturas) && fila.derecha <= fila.ancho + 1),
+                'Las acciones de pagos deben caber en una sola línea');
             await page.locator('#body-pagos button.js-pago-ver').first().click();
             await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});
             assert.equal(await page.locator('#body-pagos a[href*="cloudinary"]').count(), 0);

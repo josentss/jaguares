@@ -245,11 +245,6 @@
                         <div class="form-group-panel">
                             <label>Fecha Nacimiento</label>
                             <input type="date" id="atl-fecha-nac" name="fecha_nac" required>
-                            <div class="categoria-automatica categoria-automatica--compacta" id="atl-categoria-automatica" data-estado="vacio" role="status" aria-live="polite">
-                                <span class="categoria-automatica__etiqueta">Categoría por edad</span>
-                                <strong class="categoria-automatica__nombre" id="atl-categoria-nombre">Por calcular</strong>
-                                <small class="categoria-automatica__detalle" id="atl-categoria-detalle">Se calcula con la fecha de nacimiento.</small>
-                            </div>
                         </div>
 
                         <div class="form-group-panel">
@@ -270,11 +265,17 @@
                                    style="display:none;" disabled
                                    placeholder="Heredará el teléfono del representante">
                         </div>
-                    </div>
-
-                    <div class="form-group-panel full-width" style="margin-top:15px; margin-bottom:15px;">
-                        <label>Alergias o Condiciones Médicas</label>
-                        <textarea id="atl-alergias" name="allergies_medicas" rows="2" placeholder="Opcional..." maxlength="500"></textarea>
+                        <div class="form-group-panel form-categoria-resumen">
+                            <div class="categoria-automatica categoria-automatica--compacta" id="atl-categoria-automatica" data-estado="vacio" role="status" aria-live="polite">
+                                <span class="categoria-automatica__etiqueta">Categoría por edad</span>
+                                <strong class="categoria-automatica__nombre" id="atl-categoria-nombre">Por calcular</strong>
+                                <small class="categoria-automatica__detalle" id="atl-categoria-detalle">Se calcula con la fecha de nacimiento.</small>
+                            </div>
+                        </div>
+                        <div class="form-group-panel form-medico-resumen">
+                            <label for="atl-alergias">Alergias o Condiciones Médicas</label>
+                            <textarea id="atl-alergias" name="allergies_medicas" rows="2" placeholder="Opcional..." maxlength="500"></textarea>
+                        </div>
                     </div>
 
                     <!-- Documentos -->

@@ -15,7 +15,8 @@ const fixtureAtleta = {
     apellidos: 'PDF completo 9001',
     estado: 'activo',
     cedula: 'V-99000001',
-    cedula_heredada: false,
+    cedula_heredada: true,
+    clasificacion: { categoria: { codigo: 'u13', nombre: 'U-13 Mini Voleibol' } },
     fecha_nacimiento: '2013-05-11',
     telefono: '04140000001',
     direccion: 'Dirección sintética de prueba',
@@ -198,6 +199,9 @@ for (const device of [
     test('la planilla PDF conserva todo el contenido y pagina en ' + device.name, async () => {
         const { browser, context, page } = await openDirectiva(device.viewport);
         try {
+            const textoPlanilla = await page.locator('#planilla-print-root').innerText();
+            assert.match(textoPlanilla, /U-13 Mini Voleibol/);
+            assert.doesNotMatch(textoPlanilla, /\(heredada\)|orientativa, sin equipo asignado/);
             await agregarContenidoLargoSintetico(page);
             const button = page.locator('#planillaModal .planilla-toolbar button[onclick="descargarPlanillaPDF()"]');
             const downloadPromise = page.waitForEvent('download');

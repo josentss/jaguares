@@ -326,3 +326,29 @@ test('Gestión de atletas: reutilizar SVG de pagos y respetar acciones según es
         await context.close();
     }
 });
+
+test('directiva: nombre, apellido, cédula y segunda fila de datos alineados',async()=>{
+    const context=await browser.newContext({viewport:{width:1440,height:900}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try{
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page,'sec-registrar');
+        const grupos=await page.evaluate(()=>{
+            const ids=['dir-nombres','dir-apellidos','dir-cedula',
+                'dir-fecha-nac','dir-direccion','dir-telefono'];
+            return ids.map(id=>{
+                const rect=document.getElementById(id).closest('.form-group-panel').getBoundingClientRect();
+                return {x:rect.left,y:rect.top};
+            });
+        });
+        assert.ok(grupos[0].x<grupos[1].x && grupos[1].x<grupos[2].x);
+        assert.ok(grupos[3].x<grupos[4].x && grupos[4].x<grupos[5].x);
+        assert.ok(Math.abs(grupos[0].y-grupos[2].y)<5);
+        assert.ok(Math.abs(grupos[3].y-grupos[5].y)<5);
+        await page.locator('#dir-fecha-nac').fill('2021-11-10');
+        await page.waitForFunction(()=>document.getElementById('dir-categoria-nombre').textContent.includes('U-7'));
+        assert.ok((await page.locator('#dir-categoria-automatica').boundingBox()).height<85);
+    }finally{await context.close();}
+});

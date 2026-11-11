@@ -16,6 +16,7 @@
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=1">
+    <link rel="stylesheet" href="asignaciones-equipos.css?v=1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=1">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
@@ -707,6 +708,35 @@
                     <ul class="deportes-lista" id="deportes-lista-equipos"></ul>
                 </div>
             </div>
+            <div class="asignaciones-panel" id="asignaciones-panel" hidden>
+                <h3>Plantilla y movimientos de equipos</h3>
+                <p class="asignaciones-ayuda">Elige un atleta activo y un equipo de la temporada. La categoría por edad ayuda a revisar la elección, pero no la decide automáticamente.</p>
+                <p id="asignaciones-estado" role="status" aria-live="polite"></p>
+                <form id="asignaciones-form" class="asignaciones-form">
+                    <label>Temporada
+                        <select id="asignaciones-temporada" required></select>
+                    </label>
+                    <label>Atleta
+                        <select id="asignaciones-atleta" required></select>
+                    </label>
+                    <label>Equipo
+                        <select id="asignaciones-equipo" required></select>
+                    </label>
+                    <button type="submit" id="asignaciones-guardar">Asignar equipo</button>
+                </form>
+                <p id="asignaciones-aviso" class="asignaciones-ayuda" aria-live="polite"></p>
+                <p id="asignaciones-actual" class="asignaciones-actual"></p>
+                <div class="asignaciones-listas">
+                    <div>
+                        <h4>Plantilla de la temporada</h4>
+                        <ul id="asignaciones-plantilla"></ul>
+                    </div>
+                    <div>
+                        <h4>Historial del atleta</h4>
+                        <ul id="asignaciones-historial"></ul>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- SECCIÓN AUDITORÍA DE PAGOS -->
@@ -840,6 +870,7 @@
     <script src="iconos-acciones.js?v=1"></script>
     <script src="comprobantes-ui.js?v=2"></script>
     <script src="catalogos-deportivos.js?v=2"></script>
+    <script src="asignaciones-equipos.js?v=1"></script>
     <script src="categorias-formativas.js?v=1"></script>
     <script src="categorias-formativas-ui.js?v=1"></script>
     <script src="planilla-general.js?v=1"></script>
@@ -2056,7 +2087,10 @@
                 document.getElementById(item.dataset.target).classList.add('active');
                 document.getElementById('panel-title').textContent = item.dataset.title || item.textContent.trim();
                 if (item.dataset.target === 'sec-registrar') cargarRepresentantes();
-                if (item.dataset.target === 'sec-deportes') window.JaguaresCatalogos?.cargar();
+                if (item.dataset.target === 'sec-deportes') {
+                    window.JaguaresCatalogos?.cargar();
+                    window.JaguaresAsignaciones?.cargar();
+                }
 
                 if (window.innerWidth <= 992) cerrarSidebarMovil();
             };
@@ -2117,6 +2151,7 @@
                 if (!user) return;
                 protegerSesionPanel(rolesPermitidos, user);
                 currentUser = user;
+                window.JaguaresAsignaciones?.inicializar(user.rol);
                 const rolEtiqueta = { directiva: 'Directiva', staff: 'Staff', admin: 'Administrador' }[user.rol] || user.rol;
                 document.getElementById('user-info').innerHTML = `<strong>${esc(user.nombres)} ${esc(user.apellidos)}</strong><span class="user-role">${esc(rolEtiqueta)}</span>`;
 

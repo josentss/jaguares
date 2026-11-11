@@ -6,9 +6,12 @@ const { verificarSesion, esDirectiva, verificarSesionRole } = require('../middle
 const { uploadAtletaFields, handleUploadError } = require('../middlewares/uploadMiddleware');
 const catalogosDeportivos = require('../controllers/catalogosDeportivosController');
 const planillaGeneral = require('../controllers/planillaGeneralController');
+const asignacionesEquipos = require('../controllers/asignacionesEquiposController');
 
 // El prefijo /api/directiva ya comprueba sesión y rol en index.js.
 router.get('/deportes/catalogo', catalogosDeportivos.listar);
+router.get('/deportes/asignaciones', verificarSesionRole(['directiva', 'admin']), asignacionesEquipos.listar);
+router.post('/deportes/asignaciones', verificarSesionRole(['directiva', 'admin']), asignacionesEquipos.asignar);
 router.get('/atletas/planilla-general', planillaGeneral.obtener);
 router.post('/deportes/:tipo', catalogosDeportivos.crear);
 router.put('/deportes/:tipo/:id', catalogosDeportivos.renombrar);

@@ -151,6 +151,7 @@
             if (!response.ok || json.success !== true) throw new Error(json.message || 'No se pudo guardar');
             limpiarEdicion(tipo);
             await cargar();
+            window.JaguaresAsignaciones?.cargar();
             if (typeof window.showToast === 'function') window.showToast('Catálogo actualizado', 'success');
         } catch (error) {
             mensaje(error.message || 'No se pudo guardar el registro.', true);

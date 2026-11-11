@@ -1,5 +1,17 @@
 # Jaguares — contexto maestro
 
+> **Asignación manual de equipos — 11 de noviembre de 2026:** PR #45 fusionado
+> en `main` (`cefb7c8`) y Vercel Production `success` para ese SHA; el propietario
+> confirmó visualmente los ajustes. La rama local anterior recibió un
+> `git pull --ff-only origin main` exitoso, pero la rama local llamada `main`
+> permanece atrasada; crear nuevas ramas desde `origin/main` evita ese desfase.
+> Rama `feat/asignaciones-equipos-20261111`: un equipo activo por atleta y
+> temporada, solo atletas activos asignables, cambios por directiva/admin con
+> historial, aviso de edad sin bloqueo. Migración aditiva separada y manual;
+> **no se ha aplicado a Supabase**. Ver [contrato y ensayo](ASIGNACIONES_EQUIPOS.md).
+> Próximo bloque tras validar este PR: reporte de pagos del representante,
+> sin inferir tarifa, deuda ni política de cobro.
+
 > **Ajustes de paneles — 11 de noviembre de 2026:** GitHub confirma PR #44
 > fusionado en `main` (`64be09b`) y Vercel Production `success` para ese SHA.
 > El propietario mostró una planilla general generada correctamente y pidió

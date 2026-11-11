@@ -1460,17 +1460,36 @@
             }
         }
 
+        function inicializarFiltroCategorias() {
+            const select = document.getElementById('filter-categoria-atletas');
+            // La clasificación formativa que entrega el servidor comparte el
+            // mismo contrato con la web pública y los formularios.
+            for (const categoria of window.JaguaresCategoriasFormativas?.CATEGORIAS || []) {
+                select.add(new Option(categoria.nombre, categoria.codigo));
+            }
+        }
+
         function aplicarFiltrosAtletas() {
-            const term = document.getElementById('search-atletas').value.toLowerCase();
+            const term = document.getElementById('search-atletas').value.trim().toLocaleLowerCase('es');
             const estado = document.getElementById('filter-estado-atletas').value;
+            const categoria = document.getElementById('filter-categoria-atletas').value;
+            let visibles = 0;
+            let total = 0;
 
             document.querySelectorAll('#body-atletas tr').forEach(row => {
                 if (row.cells.length === 1) return;
-                const textoMatch = row.textContent.toLowerCase().includes(term);
-                const estadoFila = row.getAttribute('data-estado');
-                const estadoMatch = (estado === 'todos') || (estadoFila === estado);
-                row.style.display = (textoMatch && estadoMatch) ? '' : 'none';
+                total++;
+                const textoMatch = row.textContent.toLocaleLowerCase('es').includes(term);
+                const estadoMatch = estado === 'todos' || row.dataset.estado === estado;
+                const categoriaMatch = categoria === 'todos' || row.dataset.categoria === categoria;
+                const mostrar = textoMatch && estadoMatch && categoriaMatch;
+                row.hidden = !mostrar;
+                row.style.display = mostrar ? '' : 'none';
+                if (mostrar) visibles++;
             });
+            document.getElementById('atletas-resultado-filtro').textContent =
+                total ? `Mostrando ${visibles} de ${total} atletas`
+                    : 'Todavía no hay atletas registrados.';
         }
 
         function aplicarFiltrosPagos() {
@@ -1488,6 +1507,8 @@
 
         document.getElementById('search-atletas').addEventListener('input', aplicarFiltrosAtletas);
         document.getElementById('filter-estado-atletas').addEventListener('change', aplicarFiltrosAtletas);
+        document.getElementById('filter-categoria-atletas').addEventListener('change', aplicarFiltrosAtletas);
+        inicializarFiltroCategorias();
         document.getElementById('search-pagos').addEventListener('input', aplicarFiltrosPagos);
         document.getElementById('filter-estado-pagos').addEventListener('change', aplicarFiltrosPagos);
 
@@ -1705,7 +1726,9 @@
                         (acciones.join('') || '<span aria-label="Sin acciones disponibles">—</span>') +
                         '</div></td></tr>';
                 });
-                // Mantener el filtro elegido al aprobar, rechazar o eliminar.
+                // Mantener los filtros al actualizar las listas, sin eliminar
+                // la selección de categoría del usuario.
+                aplicarFiltrosAtletas();
                 aplicarFiltrosPagos();
             } catch (err) {
                 showToast('Error al cargar datos', 'error');
@@ -1994,17 +2017,48 @@
             }
         });
 
+        const gruposMenu = [...document.querySelectorAll('.sidebar-group')];
+
+        function mostrarGrupo(grupo, expandido) {
+            const boton = grupo.querySelector('.sidebar-group__toggle');
+            const submenu = grupo.querySelector('.sidebar-submenu');
+            boton.setAttribute('aria-expanded', String(expandido));
+            submenu.hidden = !expandido;
+        }
+
+        gruposMenu.forEach(grupo => {
+            const boton = grupo.querySelector('.sidebar-group__toggle');
+            boton.addEventListener('click', () => {
+                const abrir = boton.getAttribute('aria-expanded') !== 'true';
+                gruposMenu.forEach(g => mostrarGrupo(g, g === grupo && abrir));
+            });
+        });
+
         document.querySelectorAll('.sidebar-menu li[data-target]').forEach(item => {
-            item.addEventListener('click', () => {
-                document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+            const navegar = () => {
+                document.querySelectorAll('.sidebar-menu li[data-target]')
+                    .forEach(li => li.classList.remove('active'));
                 item.classList.add('active');
-                document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
-                document.getElementById(item.getAttribute('data-target')).classList.add('active');
+
+                const grupoActivo = item.closest('.sidebar-group');
+                gruposMenu.forEach(grupo => mostrarGrupo(grupo, grupo === grupoActivo));
+
+                document.querySelectorAll('.panel-section').forEach(seccion => seccion.classList.remove('active'));
+                document.getElementById(item.dataset.target).classList.add('active');
                 document.getElementById('panel-title').textContent = item.dataset.title || item.textContent.trim();
-                if (item.getAttribute('data-target') === 'sec-registrar') cargarRepresentantes();
-                if (item.getAttribute('data-target') === 'sec-deportes') window.JaguaresCatalogos?.cargar();
+                if (item.dataset.target === 'sec-registrar') cargarRepresentantes();
+                if (item.dataset.target === 'sec-deportes') window.JaguaresCatalogos?.cargar();
 
                 if (window.innerWidth <= 992) cerrarSidebarMovil();
+            };
+            item.addEventListener('click', navegar);
+            // Los ítems existentes son LI: permitir teclado sin refactorizar
+            // sus selectores y enlaces programáticos de otros módulos.
+            item.addEventListener('keydown', evento => {
+                if (evento.key === 'Enter' || evento.key === ' ') {
+                    evento.preventDefault();
+                    navegar();
+                }
             });
         });
 

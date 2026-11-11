@@ -837,7 +837,7 @@ for (const [nombre,viewport,timezoneId] of [
             const filaAtleta = dir.locator('#body-atletas tr').filter({hasText:nombres+' Núñez'});
             await filaAtleta.waitFor({state:'visible'});
             assert.equal((await filaAtleta.locator('td').nth(2).innerText()).trim(),'10/5/2014');
-            await filaAtleta.getByRole('button',{name:'Planilla',exact:true}).click();
+            await filaAtleta.getByRole('button',{name:/^Ver planilla de /}).click();
             const fechaPlanilla = dir.locator('#planillaModal .planilla-table tr').filter({hasText:'Fecha de nacimiento'}).locator('td');
             await fechaPlanilla.waitFor({state:'visible'});
             assert.equal((await fechaPlanilla.innerText()).trim(),'10/5/2014');

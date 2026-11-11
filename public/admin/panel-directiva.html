@@ -1510,7 +1510,9 @@
         document.getElementById('search-atletas').addEventListener('input', aplicarFiltrosAtletas);
         document.getElementById('filter-estado-atletas').addEventListener('change', aplicarFiltrosAtletas);
         document.getElementById('filter-categoria-atletas').addEventListener('change', aplicarFiltrosAtletas);
-        window.JaguaresPlanillaGeneral.inicializar({ apiFetch, showToast });
+        if (typeof apiFetch === 'function' && window.JaguaresPlanillaGeneral) {
+            window.JaguaresPlanillaGeneral.inicializar({ apiFetch, showToast });
+        }
         inicializarFiltroCategorias();
         document.getElementById('search-pagos').addEventListener('input', aplicarFiltrosPagos);
         document.getElementById('filter-estado-pagos').addEventListener('change', aplicarFiltrosPagos);

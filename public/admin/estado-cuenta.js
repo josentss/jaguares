@@ -73,7 +73,7 @@
         resumen.textContent = `${porAtender} por atender · ${revision} en revisión · ${pagadas} ${pagadas === 1 ? 'pagada' : 'pagadas'}`;
         for (const obligacion of obligaciones) {
             const tr = document.createElement('tr');
-            celda(tr, concepto[obligacion.codigo_concepto] || 'Otro cargo');
+            celda(tr, obligacion.nombre_concepto || concepto[obligacion.codigo_concepto] || 'Otro cargo');
             celda(tr, obligacion.codigo_concepto === 'mensualidad' ?
                 mes(obligacion.periodo_mes) : (obligacion.detalle || '—'));
             const monto = Number(obligacion.monto_usd);

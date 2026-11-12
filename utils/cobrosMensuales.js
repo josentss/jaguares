@@ -1,12 +1,7 @@
 'use strict';
 
-// Fechas civiles del club: no usar el huso horario del servidor ni Date.parse
-// para decidir meses y vencimientos.
-function fechaCivilValida(valor) {
-    if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
-    const fecha = new Date(valor + 'T00:00:00.000Z');
-    return !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === valor;
-}
+// Reutilizar la validación ISO y el reloj civil compartidos de Jaguares.
+const { esFechaISOValida: fechaCivilValida, hoyCaracasISO } = require('./validators');
 
 function periodoValido(valor) {
     return fechaCivilValida(valor) && valor.endsWith('-01');
@@ -41,11 +36,7 @@ function planMensual(periodo, diaAncla) {
 }
 
 function hoyCaracas(instante = new Date()) {
-    const partes = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit'
-    }).formatToParts(instante);
-    const dato = nombre => partes.find(p => p.type === nombre)?.value;
-    return `${dato('year')}-${dato('month')}-${dato('day')}`;
+    return hoyCaracasISO(instante);
 }
 
 // Periodos previos solo podrán generarse mediante una conciliación histórica

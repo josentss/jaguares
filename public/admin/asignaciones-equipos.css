@@ -14,6 +14,17 @@
 #asignaciones-estado { color: #475569; font-size: .82rem; margin: 0 0 8px; }
 #asignaciones-estado:empty { display: none; }
 #asignaciones-estado[data-error="true"] { color: #b42318; }
+.asignaciones-filtro {
+    display: grid; grid-template-columns: auto minmax(220px, 360px) auto;
+    align-items: center; gap: 8px; margin: 0 0 12px;
+}
+.asignaciones-filtro label { color: #334155; font-size: .82rem; font-weight: 600; }
+.asignaciones-filtro input {
+    width: 100%; min-width: 0; min-height: 38px; padding: 7px 10px;
+    border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; font: inherit;
+}
+.asignaciones-filtro span { color: #64748b; font-size: .78rem; white-space: nowrap; }
+.asignaciones-filtro input:focus-visible { outline: 2px solid var(--naranja); outline-offset: 2px; }
 .asignaciones-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
     align-items: end; gap: 12px; margin-bottom: 12px; }
 .asignaciones-form label { display: grid; gap: 5px; color: #334155; font-size: .82rem; font-weight: 600; }
@@ -32,5 +43,7 @@
 @media (max-width: 700px) {
     .asignaciones-panel { padding: 14px; }
     .asignaciones-form, .asignaciones-listas { grid-template-columns: minmax(0, 1fr); }
-    .asignaciones-form select { font-size: 16px; }
+    .asignaciones-filtro { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+    .asignaciones-filtro span { white-space: normal; }
+    .asignaciones-form select, .asignaciones-filtro input { font-size: 16px; }
 }

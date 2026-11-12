@@ -16,7 +16,7 @@
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=1">
-    <link rel="stylesheet" href="asignaciones-equipos.css?v=1">
+    <link rel="stylesheet" href="asignaciones-equipos.css?v=2">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=1">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
@@ -648,7 +648,7 @@
         <!-- ORGANIZACIÓN DEPORTIVA: CATÁLOGOS CONFIGURABLES -->
         <section id="sec-deportes" class="panel-section">
             <div class="deportes-cabecera">
-                <p>Gestiona temporadas, categorías y equipos.</p>
+                <p>Temporadas, categorías y equipos.</p>
                 <div class="deportes-resumen" aria-label="Resumen de catálogos">
                     <span><strong id="deportes-total-temporadas">0</strong> temporadas</span>
                     <span><strong id="deportes-total-categorias">0</strong> categorías</span>
@@ -659,7 +659,6 @@
             <div class="deportes-grid">
                 <div class="deportes-card">
                     <h3><span class="deportes-card__paso">01</span> Temporadas</h3>
-                    <p>Identifica cada ciclo deportivo.</p>
                     <form class="deportes-form" id="deportes-form-temporadas">
                         <label>Nombre de la temporada
                             <input name="nombre" type="text" required minlength="2" maxlength="80" placeholder="Ej.: Temporada 2026–2027" autocomplete="off">
@@ -673,7 +672,6 @@
                 </div>
                 <div class="deportes-card">
                     <h3><span class="deportes-card__paso">02</span> Categorías</h3>
-                    <p>Organiza las categorías por temporada.</p>
                     <form class="deportes-form" id="deportes-form-categorias">
                         <label>Temporada
                             <select name="id_temporada" required aria-label="Temporada de la categoría"></select>
@@ -691,7 +689,6 @@
                 </div>
                 <div class="deportes-card">
                     <h3><span class="deportes-card__paso">03</span> Equipos</h3>
-                    <p>Crea equipos dentro de una categoría.</p>
                     <form class="deportes-form" id="deportes-form-equipos">
                         <label>Categoría
                             <select name="id_categoria" required aria-label="Categoría del equipo"></select>
@@ -713,8 +710,14 @@
                     <h3>Plantilla y movimientos de equipos</h3>
                     <button type="button" id="asignaciones-actualizar">Actualizar lista</button>
                 </div>
-                <p class="asignaciones-ayuda">Elige un atleta activo y un equipo de la temporada. La categoría por edad ayuda a revisar la elección, pero no la decide automáticamente.</p>
+                <p class="asignaciones-ayuda">Solo atletas activos. La categoría por edad es orientativa.</p>
                 <p id="asignaciones-estado" role="status" aria-live="polite"></p>
+                <div class="asignaciones-filtro">
+                    <label for="asignaciones-buscar-atleta">Buscar atleta</label>
+                    <input type="search" id="asignaciones-buscar-atleta"
+                        placeholder="Nombre o apellido" autocomplete="off">
+                    <span id="asignaciones-total-atletas" aria-live="polite"></span>
+                </div>
                 <form id="asignaciones-form" class="asignaciones-form">
                     <label>Temporada
                         <select id="asignaciones-temporada" required></select>
@@ -872,8 +875,8 @@
     <script src="api-client.js?v=sesion-aviso-1"></script>
     <script src="iconos-acciones.js?v=1"></script>
     <script src="comprobantes-ui.js?v=2"></script>
-    <script src="catalogos-deportivos.js?v=2"></script>
-    <script src="asignaciones-equipos.js?v=1"></script>
+    <script src="catalogos-deportivos.js?v=3"></script>
+    <script src="asignaciones-equipos.js?v=2"></script>
     <script src="categorias-formativas.js?v=1"></script>
     <script src="categorias-formativas-ui.js?v=1"></script>
     <script src="planilla-general.js?v=1"></script>

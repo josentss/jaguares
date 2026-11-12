@@ -16,7 +16,8 @@ exports.listar = async (_req, res) => {
     try {
         const [atletas, movimientos] = await Promise.all([
             db.pool.query(`SELECT id_atleta, nombres, apellidos, fecha_nacimiento, estado
-                FROM atletas ORDER BY apellidos, nombres, id_atleta`),
+                FROM atletas WHERE estado = 'activo'
+                ORDER BY apellidos, nombres, id_atleta`),
             db.pool.query(`SELECT ae.id_asignacion, ae.id_atleta, ae.id_equipo, ae.id_temporada,
                     ae.inicio_en, ae.fin_en, a.nombres AS atleta_nombres,
                     a.apellidos AS atleta_apellidos, a.estado AS atleta_estado,

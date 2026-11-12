@@ -12,7 +12,7 @@ const TIPOS = Object.freeze({
 
 function nombreValido(valor) {
     if (typeof valor !== 'string' || /[\u0000-\u001f\u007f<>]/.test(valor)) return null;
-    const nombre = valor.trim().replace(/ +/g, ' ');
+    const nombre = valor.normalize('NFC').trim().replace(/ +/g, ' ');
     if (nombre.length < 2 || nombre.length > 80 ||
         !/^[\p{L}\p{N}][\p{L}\p{N} .,'’_/()+&–-]*$/u.test(nombre)) return null;
     return nombre;
@@ -52,7 +52,8 @@ exports.crear = async (req, res) => {
     const tipo = TIPOS[req.params.tipo];
     if (!tipo) return res.status(404).json({ success: false, message: 'Catálogo no encontrado' });
     const nombre = nombreValido(req.body?.nombre);
-    if (!nombre) return res.status(400).json({ success: false, message: 'Nombre inválido: 2–80 caracteres, sin etiquetas ni caracteres de control' });
+    if (!nombre) return res.status(400).json({ success: false,
+        message: 'Nombre inválido: usa de 2 a 80 caracteres y comienza con una letra o número' });
 
     const valores = [nombre];
     let columnas = 'nombre';
@@ -81,7 +82,8 @@ exports.renombrar = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Identificador no válido' });
     }
     const nombre = nombreValido(req.body?.nombre);
-    if (!nombre) return res.status(400).json({ success: false, message: 'Nombre inválido: 2–80 caracteres, sin etiquetas ni caracteres de control' });
+    if (!nombre) return res.status(400).json({ success: false,
+        message: 'Nombre inválido: usa de 2 a 80 caracteres y comienza con una letra o número' });
     try {
         const { rows } = await db.pool.query(
             `UPDATE ${tipo.tabla} SET nombre = $1 WHERE ${tipo.pk} = $2 RETURNING ${tipo.pk}, nombre`,

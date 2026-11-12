@@ -26,6 +26,31 @@
         return categoria?.id_temporada;
     }
 
+    function textoComparable(valor) {
+        return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    function asignacionActual(idAtleta, idTemporada) {
+        return movimientos.find(fila => Number(fila.id_atleta) === Number(idAtleta) &&
+            Number(fila.id_temporada) === Number(idTemporada) && !fila.fin_en);
+    }
+
+    function actualizarAtletas() {
+        const idTemporada = Number(porId('asignaciones-temporada').value);
+        const busqueda = textoComparable(porId('asignaciones-buscar-atleta').value.trim());
+        const filtrados = atletas.filter(atleta =>
+            !busqueda || textoComparable(`${atleta.apellidos} ${atleta.nombres}`).includes(busqueda));
+        poblar(porId('asignaciones-atleta'), filtrados, 'id_atleta', atleta => {
+            const actual = idTemporada && asignacionActual(atleta.id_atleta, idTemporada);
+            const equipo = idTemporada ? (actual?.equipo_nombre || 'sin equipo') : '';
+            return `${atleta.apellidos} ${atleta.nombres}${equipo ? ` · ${equipo}` : ''}`;
+        }, filtrados.length ? 'Seleccionar atleta' : 'Sin coincidencias');
+        porId('asignaciones-total-atletas').textContent = busqueda
+            ? `${filtrados.length} de ${atletas.length} atletas activos`
+            : `${atletas.length} atletas activos`;
+        actualizarVista();
+    }
+
     function actualizarEquipos() {
         const temporada = Number(porId('asignaciones-temporada').value);
         const equipos = catalogo.equipos.filter(equipo => temporadaEquipo(equipo) === temporada);
@@ -33,7 +58,7 @@
             const categoria = catalogo.categorias.find(fila => fila.id_categoria === equipo.id_categoria);
             return `${equipo.nombre} · ${categoria?.nombre || 'Categoría no disponible'}`;
         }, 'Seleccionar equipo');
-        actualizarVista();
+        actualizarAtletas();
     }
 
     function fechaCaracas(valor) {
@@ -52,8 +77,7 @@
         const idAtleta = Number(porId('asignaciones-atleta').value);
         const idTemporada = Number(porId('asignaciones-temporada').value);
         const atleta = atletas.find(fila => fila.id_atleta === idAtleta);
-        const actual = movimientos.find(fila => fila.id_atleta === idAtleta &&
-            fila.id_temporada === idTemporada && !fila.fin_en);
+        const actual = asignacionActual(idAtleta, idTemporada);
         const idEquipo = Number(porId('asignaciones-equipo').value);
         porId('asignaciones-guardar').disabled = !atleta || atleta.estado !== 'activo' ||
             !idTemporada || !idEquipo || actual?.id_equipo === idEquipo;
@@ -67,7 +91,7 @@
             const clasificacion = raiz.JaguaresCategoriasFormativas?.clasificar(atleta.fecha_nacimiento);
             aviso.textContent = `Categoría por edad: ${clasificacion?.categoria?.nombre || 'Sin categoría publicada'}. ` +
                 (clasificacion?.estado === 'requiere_validacion' ? `${clasificacion.mensaje} ` : '') +
-                'Confirma manualmente la categoría deportiva del equipo antes de guardar.';
+                'Verifica la categoría del equipo.';
         } else aviso.textContent = '';
 
         const plantilla = porId('asignaciones-plantilla');
@@ -102,13 +126,15 @@
             if (!resCatalogo.ok || !datosCatalogo.success) throw new Error(datosCatalogo.message || 'No se pudo cargar el catálogo');
             if (!resAsignaciones.ok || !datosAsignaciones.success) throw new Error(datosAsignaciones.message || 'No se pudieron cargar las asignaciones');
             catalogo = datosCatalogo;
-            atletas = datosAsignaciones.atletas;
+            atletas = (Array.isArray(datosAsignaciones.atletas) ? datosAsignaciones.atletas : [])
+                .filter(atleta => atleta.estado === 'activo');
             movimientos = datosAsignaciones.movimientos;
             poblar(porId('asignaciones-temporada'), catalogo.temporadas, 'id_temporada',
                 fila => fila.nombre, 'Seleccionar temporada');
-            poblar(porId('asignaciones-atleta'), atletas, 'id_atleta',
-                fila => `${fila.apellidos} ${fila.nombres}${fila.estado === 'activo' ? '' : ` · ${fila.estado}`}`,
-                'Seleccionar atleta');
+            const temporada = porId('asignaciones-temporada');
+            if (!temporada.value && catalogo.temporadas.length === 1) {
+                temporada.value = String(catalogo.temporadas[0].id_temporada);
+            }
             actualizarEquipos();
             estado('');
         } catch (error) { estado(error.message || 'No se pudo cargar la plantilla', true); }
@@ -121,6 +147,7 @@
     }
 
     porId('asignaciones-temporada').addEventListener('change', actualizarEquipos);
+    porId('asignaciones-buscar-atleta').addEventListener('input', actualizarAtletas);
     porId('asignaciones-actualizar').addEventListener('click', cargar);
     porId('asignaciones-atleta').addEventListener('change', actualizarVista);
     porId('asignaciones-equipo').addEventListener('change', actualizarVista);
@@ -132,8 +159,7 @@
         const idEquipo = Number(porId('asignaciones-equipo').value);
         const atleta = atletas.find(fila => fila.id_atleta === idAtleta);
         if (!atleta || atleta.estado !== 'activo') return actualizarVista();
-        const actual = movimientos.find(fila => fila.id_atleta === idAtleta &&
-            fila.id_temporada === Number(porId('asignaciones-temporada').value) && !fila.fin_en);
+        const actual = asignacionActual(idAtleta, Number(porId('asignaciones-temporada').value));
         if (actual?.id_equipo === idEquipo) return estado('El atleta ya pertenece a ese equipo.', true);
         if (actual && !raiz.confirm(`¿Cambiar a ${atleta.nombres} ${atleta.apellidos} de ${actual.equipo_nombre} al equipo seleccionado? El movimiento anterior quedará en el historial.`)) return;
         const boton = porId('asignaciones-guardar');

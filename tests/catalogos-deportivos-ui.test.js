@@ -99,7 +99,12 @@ test('panel: crear y renombrar los tres catálogos sin usar innerHTML para nombr
     try {
         await page.goto(base+'/admin/panel-directiva.html');
         await abrirApartado(page, 'sec-deportes');
-        await page.locator('#deportes-form-temporadas input[name=nombre]').fill('2026–2027');
+        const nombreTemporada=page.locator('#deportes-form-temporadas input[name=nombre]');
+        await nombreTemporada.fill('<script>');
+        await page.locator('#deportes-form-temporadas [data-guardar]').click();
+        assert.equal(colecciones.temporadas.length,0);
+        assert.match(await nombreTemporada.evaluate(campo=>campo.validationMessage),/2 a 80 caracteres/);
+        await nombreTemporada.fill(' 2026–2027  ');
         await page.locator('#deportes-form-temporadas [data-guardar]').click();
         await page.locator('#deportes-lista-temporadas strong').filter({hasText:'2026–2027'}).waitFor();
 

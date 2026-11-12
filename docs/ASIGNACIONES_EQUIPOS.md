@@ -1,6 +1,6 @@
 # Asignación manual de atletas a equipos
 
-Implementación propuesta en [PR #46](https://github.com/josentss/jaguares/pull/46).
+Implementación fusionada en [PR #46](https://github.com/josentss/jaguares/pull/46).
 
 ## Reglas aprobadas el 11 de noviembre de 2026
 
@@ -31,6 +31,22 @@ revisar el esquema efectivo y ejecutar solo el archivo completo. La migración
 es repetible respecto al mismo diseño, no reconcilia esquemas divergentes.
 No contiene `DROP`, `DELETE` ni `TRUNCATE`.
 
+### Estado del destino compartido
+
+El 12 de noviembre de 2026 el propietario ejecutó manualmente la migración en
+la Supabase usada por Production. Antes de aplicarla, el preflight devolvió las
+tablas `atletas`, `usuarios`, `temporadas_deportivas`, `categorias_deportivas`
+y `equipos_deportivos`, con `asignaciones_equipos` ausente. SQL Editor respondió
+`Success. No rows returned`.
+
+La comprobación posterior encontró `asignaciones_equipos` con cero filas, los
+índices `asignaciones_equipos_pkey`, `asignaciones_equipos_activa_unica`,
+`asignaciones_equipos_equipo_activo` y
+`asignaciones_equipos_atleta_historial`, además de sus ocho restricciones de
+PK, FK, fechas y cierre. El propietario confirmó después que el módulo carga en
+Production y presenta correctamente una asignación vigente. No se realizó un
+cambio artificial de equipo para probar el historial.
+
 Comprobación de solo lectura después de aplicar:
 
 ```sql
@@ -53,7 +69,20 @@ continúan disponibles.
   lista» para recuperar el estado vigente.
 - Organización Deportiva incorpora temporada, atleta y equipo; muestra la
   plantilla vigente de la temporada y el historial del atleta seleccionado.
-  Los atletas inactivos pueden consultarse, pero el botón se deshabilita.
+  El selector ofrece solo atletas activos; los movimientos históricos se
+  conservan aunque el estado del atleta cambie posteriormente.
+
+## Cierre de UX y validaciones
+
+La rama `fix/organizacion-deportiva-ux-validaciones-20261112` limita desde el
+backend el selector a atletas `activo`; conserva movimientos históricos aunque
+el estado cambie. Añade búsqueda por nombre, equipo vigente en las opciones,
+selección automática cuando solo existe una temporada y textos operativos más
+breves. Los nombres de temporada, categoría y equipo se normalizan y validan en
+cliente y servidor; las FK y restricciones existentes siguen siendo la
+autoridad. Esta validación evita formatos malformados, duplicados y relaciones
+inexistentes, pero no puede certificar que un nombre libre corresponda a una
+entidad real sin un catálogo institucional externo.
 
 ## Ensayo breve en Preview
 
@@ -69,4 +98,13 @@ sin autorización separada.
 Pruebas automatizadas con PostgreSQL temporal: migración repetible, 401/403,
 validaciones, cambios, historial, segunda temporada y concurrencia. Chromium:
 asignación/cambio, aviso por edad, inactivo, staff y móvil. Estas pruebas no
-equivalen a aplicar la migración ni a probar datos reales en Preview o Production.
+equivalen a probar datos reales en Preview o Production. La migración sí fue
+aplicada y verificada estructuralmente el 12 de noviembre de 2026; el
+propietario confirmó después la carga del módulo y una asignación vigente en
+Production.
+
+Para el cierre de UX, el 12 de noviembre de 2026 pasaron 8/8 pruebas de API con
+PostgreSQL 18 local desechable y 11/11 pruebas de interfaz con Chromium en Node
+24. Incluyen filtro de activos desde SQL, validación de catálogos, búsqueda,
+asignación, cambio, historial, permisos y vista móvil. No sustituyen el ensayo
+humano del Preview del nuevo diff.

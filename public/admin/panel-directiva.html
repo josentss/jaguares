@@ -838,8 +838,7 @@
                     <h3>Revisión de pagos e inicio de cobro</h3>
                     <button id="cobros-recargar" type="button" class="cobros-btn-secundario">Actualizar</button>
                 </div>
-                <p class="cobros-ayuda">Revisa los pagos existentes antes de fijar el primer período de cobro.
-                    Esta sección no crea mensualidades, inscripciones ni deudas retroactivas.</p>
+                <p class="cobros-ayuda">Revisa los pagos y define el inicio de cobro de cada atleta.</p>
                 <p id="cobros-estado" role="status" aria-live="polite"></p>
                 <div class="cobros-seleccion">
                     <label>Buscar atleta
@@ -860,8 +859,7 @@
                     </div>
                     <div class="cobros-historial">
                         <h4>Pagos anteriores</h4>
-                        <p class="cobros-ayuda">El nombre del mes en los pagos antiguos no identifica el año.
-                            Un pago aprobado tampoco demuestra por sí solo que corresponda a una inscripción o mensualidad específica.</p>
+                        <p class="cobros-ayuda">Los pagos antiguos no identifican el período ni el concepto con precisión.</p>
                         <div class="cobros-tabla-scroll">
                             <table>
                                 <thead>
@@ -873,8 +871,7 @@
                     </div>
                     <form id="cobros-form" class="cobros-form">
                         <h4>Establecer inicio de cobro</h4>
-                        <p class="cobros-ayuda">La fecha y el día de referencia se establecen una sola vez.
-                            Evita períodos que ya se pagaron; el sistema no concilia automáticamente los registros antiguos.</p>
+                        <p class="cobros-ayuda">El inicio se registra una sola vez, previa revisión del historial.</p>
                         <div class="cobros-campos">
                             <label>Fecha inicial
                                 <input id="cobros-fecha-inicio" type="date" required>
@@ -885,7 +882,7 @@
                         </div>
                         <label class="cobros-confirmacion">
                             <input id="cobros-historial-revisado" type="checkbox" required>
-                            <span>He revisado los pagos del atleta y confirmo que esta fecha no duplicará un período ya cubierto.</span>
+                            <span>Revisé el historial y confirmé que este inicio no duplica pagos.</span>
                         </label>
                         <div class="cobros-acciones">
                             <button id="cobros-guardar" type="submit">Registrar inicio de cobro</button>

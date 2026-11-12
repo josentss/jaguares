@@ -32,6 +32,11 @@ BEGIN
     END IF;
 END $$;
 
+-- Evitar conceptos visualmente duplicados aunque tengan códigos distintos.
+-- Preflight: comprobar que no existen nombres duplicados antes de aplicar.
+CREATE UNIQUE INDEX IF NOT EXISTS conceptos_cobro_nombre_unico
+    ON conceptos_cobro (lower(btrim(nombre)));
+
 -- Las tasas no se calculan automáticamente a partir del dashboard ni de un
 -- fallback ficticio; las registra la Directiva con fuente y fecha explícitas.
 -- Puede haber correcciones en el mismo día; la última se aplica a FUTUROS

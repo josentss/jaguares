@@ -1,6 +1,23 @@
 # Cuentas por cobrar — contrato inicial (12-11-2026)
 
-## PR #54 — Reportes vinculados a obligaciones (rama en revisión)
+## PR #55 — Catálogo, cargos asignados y montos fijos (en revisión)
+Este PR reemplaza en el formulario del Representante la elección de cualquier mes por **concepto y cargo concreto pendiente**. Si no hay obligaciones asignadas, no aparece un período ficticio y no puede enviarse el formulario. El historial anterior continúa visible.
+
+**Directiva — Gestión de cobros:** dentro de «Inicio de cobros» puede editar nombre/precio USD/activo de cada concepto; crear nuevos conceptos de tipo manual (código derivado del nombre), asignar inscripción o cargos variables a un atleta habilitado, y emitir la mensualidad del mes actual/siguiente. La emisión exige inicio de cobro configurado y confirmación. La inscripción es única y exige revisión histórica expresa; no se reconstruye el pasado a partir del nombre del mes.
+
+**Precios:** la referencia en `conceptos_cobro.monto_referencia_usd` determina los nuevos cargos; cada `obligaciones_cobro.monto_usd` queda congelado al emitirse. El Representante no edita ningún importe: el servidor calcula la cotización desde el cargo real y rechaza una cifra manipulada. No hay pagos parciales.
+
+**Divisas:** para efectivo USD, monto = nominal USD. En Bs/COP, Directiva debe registrar en `tasas_cobro` la tasa «unidades de moneda por USD», fecha de vigencia y fuente declarada. Cada reporte nuevo guarda `pagos.id_tasa_cobro`; las tasas son inmutables y una corrección crea nueva fila. `GET /api/pagos/cotizacion/:id_obligacion?moneda=Bs&fecha=YYYY-MM-DD` responde el monto a pagar según la tasa de **esa fecha exacta**. Si falta tasa, el botón permanece bloqueado. No se consulta el proveedor externo del dashboard ni se usa el fallback 36,50. La fuente es ingresada por Directiva y no equivale a verificación automática de BCV.
+
+**Migración manual obligatoria antes de fusionar:**
+`migrations/2026-11-12_catalogo_y_tasas_cobro.sql`.
+Afloja únicamente las restricciones antiguas de códigos fijos y preserva la modalidad de cinco conceptos institucionales; agrega índice único de cargos manuales y la tabla de tasas y FK nullable desde `pagos.id_tasa_cobro`. No modifica ni borra pagos, anclas, obligaciones o precios emitidos. Probada sobre PostgreSQL temporal; **NO se aplica automáticamente en Vercel**. Requiere respaldo, preflight y aprobación del propietario antes de ejecutarla en Supabase. Si Preview comparte Production, **NO probar escritura ni cambiar tarifas desde Preview**.
+
+**Despliegue por fases:** Sin migración aplicada, los endpoints administrativos de tasas y nuevas tarifas no funcionan. No fusionar antes de aplicar la migración y validar integridad. Esta versión conserva el endpoint de reporte legado solo para cuentas sin ancla ni cargos, por compatibilidad del historial: **la interfaz no lo expone**. Tras activar y conciliar los atletas, debe retirarse también esa ruta legacy; jamás acepta reportes libres cuando el atleta ya tiene ancla o cargos. El nuevo flujo bloquea monedas sin tasa del día.
+
+**Puntos pendientes:** definir fuente institucional de tasa y responsabilidad de actualización diaria, tratamiento de fechas antiguas, y cuándo deshabilitar totalmente el endpoint legacy. No se activan mensualidades en lote, no se asigna inscripción automática, ni se aplican sanciones automáticas.
+
+## PR #54 — Reportes vinculados a obligaciones (fusionado y validado en Production)
 - **Sin migración nueva:** reutiliza `pagos.id_obligacion` y los índices del PR #50. No crea anclas ni nuevas obligaciones automáticamente.
 - Representante: en **Mis pagos > Reportar pago**, al elegir un atleta con inicio de cobro u obligaciones existentes se muestra el **cargo concreto** (concepto, período con año e importe nominal USD). No se permite elegir un mes ambiguo ni reportar cargos ya pagados o en revisión; están disponibles vencidos, el período vigente y **como máximo el mes siguiente**. La comprobación definitiva está en el backend.
 - Atletas **sin ancla ni obligaciones** conservan el reporte histórico por nombre de mes y montos declarados. El backend bloquea reportes históricos nuevos para atletas ya activados, para evitar que se salte el vínculo por petición manipulada.

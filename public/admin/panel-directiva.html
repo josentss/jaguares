@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=2">
     <link rel="stylesheet" href="asignaciones-equipos.css?v=4">
+    <link rel="stylesheet" href="conciliacion-cobros.css?v=1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=2">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
@@ -391,6 +392,7 @@
                 </button>
                 <ul id="nav-gestion-secciones" class="sidebar-submenu" hidden>
                     <li data-target="sec-pagos" role="button" tabindex="0">Auditoría de pagos</li>
+                    <li id="nav-conciliacion-cobros" data-target="sec-cobros" role="button" tabindex="0" hidden>Inicio de cobros</li>
                     <li data-target="sec-cms" role="button" tabindex="0">Gestión web y eventos</li>
                 </ul>
             </li>
@@ -829,6 +831,71 @@
             </div>
         </section>
 
+        <!-- CONCILIACIÓN MANUAL DE COBROS: sin creación automática de deudas -->
+        <section id="sec-cobros" class="panel-section">
+            <div id="cobros-panel" class="cobros-panel" hidden>
+                <div class="cobros-cabecera">
+                    <h3>Revisión de pagos e inicio de cobro</h3>
+                    <button id="cobros-recargar" type="button" class="cobros-btn-secundario">Actualizar</button>
+                </div>
+                <p class="cobros-ayuda">Revisa los pagos existentes antes de fijar el primer período de cobro.
+                    Esta sección no crea mensualidades, inscripciones ni deudas retroactivas.</p>
+                <p id="cobros-estado" role="status" aria-live="polite"></p>
+                <div class="cobros-seleccion">
+                    <label>Buscar atleta
+                        <input type="search" id="cobros-buscar" placeholder="Nombre o apellido" autocomplete="off">
+                    </label>
+                    <label>Atleta
+                        <select id="cobros-atleta" aria-label="Atleta para conciliación">
+                            <option value="">Seleccionar atleta</option>
+                        </select>
+                    </label>
+                    <p id="cobros-total" class="cobros-ayuda"></p>
+                </div>
+                <div id="cobros-detalle" hidden>
+                    <div class="cobros-resumen">
+                        <h4 id="cobros-nombre"></h4>
+                        <p id="cobros-condicion"></p>
+                        <p id="cobros-resumen-actual"></p>
+                    </div>
+                    <div class="cobros-historial">
+                        <h4>Pagos anteriores</h4>
+                        <p class="cobros-ayuda">El nombre del mes en los pagos antiguos no identifica el año.
+                            Un pago aprobado tampoco demuestra por sí solo que corresponda a una inscripción o mensualidad específica.</p>
+                        <div class="cobros-tabla-scroll">
+                            <table>
+                                <thead>
+                                    <tr><th>ID</th><th>Mes declarado</th><th>Fecha</th><th>Monto</th><th>Estado</th></tr>
+                                </thead>
+                                <tbody id="cobros-pagos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <form id="cobros-form" class="cobros-form">
+                        <h4>Establecer inicio de cobro</h4>
+                        <p class="cobros-ayuda">La fecha y el día de referencia se establecen una sola vez.
+                            Evita períodos que ya se pagaron; el sistema no concilia automáticamente los registros antiguos.</p>
+                        <div class="cobros-campos">
+                            <label>Fecha inicial
+                                <input id="cobros-fecha-inicio" type="date" required>
+                            </label>
+                            <label>Día de vencimiento
+                                <input id="cobros-dia-ancla" type="number" min="1" max="31" step="1" placeholder="1 a 31" required>
+                            </label>
+                        </div>
+                        <label class="cobros-confirmacion">
+                            <input id="cobros-historial-revisado" type="checkbox" required>
+                            <span>He revisado los pagos del atleta y confirmo que esta fecha no duplicará un período ya cubierto.</span>
+                        </label>
+                        <div class="cobros-acciones">
+                            <button id="cobros-guardar" type="submit">Registrar inicio de cobro</button>
+                        </div>
+                        <p id="cobros-aviso" role="status" aria-live="polite"></p>
+                    </form>
+                </div>
+            </div>
+        </section>
+
         <!-- SECCIÓN DE GESTIÓN WEB (CMS) -->
         <section id="sec-cms" class="panel-section">
             <div class="form-container-panel">
@@ -928,6 +995,7 @@
     <script src="comprobantes-ui.js?v=2"></script>
     <script src="catalogos-deportivos.js?v=5"></script>
     <script src="asignaciones-equipos.js?v=4"></script>
+    <script src="conciliacion-cobros.js?v=1"></script>
     <script src="categorias-formativas.js?v=1"></script>
     <script src="categorias-formativas-ui.js?v=1"></script>
     <script src="planilla-general.js?v=3"></script>
@@ -2146,6 +2214,7 @@
                 if (item.dataset.target === 'sec-registrar') cargarRepresentantes();
                 if (item.dataset.target === 'sec-deportes') window.JaguaresCatalogos?.cargar();
                 if (item.dataset.target === 'sec-asignaciones') window.JaguaresAsignaciones?.cargar();
+                if (item.dataset.target === 'sec-cobros') window.JaguaresConciliacion?.cargar();
                 if (item.dataset.target === 'sec-plantillas') window.JaguaresPlanillaGeneral?.cargar();
 
                 if (window.innerWidth <= 992) cerrarSidebarMovil();
@@ -2208,6 +2277,7 @@
                 protegerSesionPanel(rolesPermitidos, user);
                 currentUser = user;
                 window.JaguaresAsignaciones?.inicializar(user.rol);
+                window.JaguaresConciliacion?.inicializar(user.rol);
                 const rolEtiqueta = { directiva: 'Directiva', staff: 'Staff', admin: 'Administrador' }[user.rol] || user.rol;
                 document.getElementById('user-info').innerHTML = `<strong>${esc(user.nombres)} ${esc(user.apellidos)}</strong><span class="user-role">${esc(rolEtiqueta)}</span>`;
 

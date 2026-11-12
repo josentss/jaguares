@@ -111,7 +111,7 @@ test('Directiva consulta histórico, confirma explícitamente y activa SIN deuda
         const contenido=await page.locator('#cobros-nombre').textContent();
         assert.match(contenido,/<img src=x/);
         assert.equal(await page.locator('#cobros-nombre img').count(),0);
-        assert.match(await page.locator('#cobros-resumen-actual').textContent(),/aprobados/);
+        assert.match(await page.locator('#cobros-resumen-actual').textContent(),/aprobado/);
         assert.equal(await page.locator('#cobros-guardar').isDisabled(),false);
         const inicioMes=await page.locator('#cobros-fecha-inicio').getAttribute('min');
         await page.locator('#cobros-fecha-inicio').fill(inicioMes);

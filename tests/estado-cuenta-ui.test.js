@@ -100,7 +100,7 @@ test('representante consulta estados y montos USD sin ejecutar POST ni interpret
     try {
         await page.locator('#cuenta-obligaciones tr').first().waitFor();
         assert.equal(await page.locator('#cuenta-obligaciones tr').count(),3);
-        assert.match(await page.locator('#cuenta-resumen').innerText(),/1 por atender · 1 en revisión · 1 pagadas/);
+        assert.match(await page.locator('#cuenta-resumen').innerText(),/1 por atender · 1 en revisión · 1 pagada/);
         assert.match(await page.locator('#cuenta-obligaciones').innerText(),/USD 15.00/);
         assert.match(await page.locator('#cuenta-obligaciones').innerText(),/15\/11\/2026/);
         assert.match(await page.locator('#cuenta-obligaciones').innerText(),/Límite 30\/11\/2026/);

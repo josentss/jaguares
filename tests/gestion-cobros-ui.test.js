@@ -47,8 +47,15 @@ test.before(async()=>{
             let body='';for await(const s of req)body+=s;
             const parsed=JSON.parse(body);
             escrituras.push({p,method:req.method,body:parsed});
-            if(p.includes('/catalogo/')) return json(res,{success:true,concepto:{
-                ...conceptos[1],monto_referencia_usd:parsed.monto_usd}});
+            if(p.includes('/catalogo/')) {
+                const codigo=decodeURIComponent(p.split('/').pop());
+                const concepto=conceptos.find(x=>x.codigo===codigo);
+                if (!concepto) return json(res,{success:false,message:'No encontrado'},404);
+                concepto.nombre=parsed.nombre;
+                concepto.monto_referencia_usd=parsed.monto_usd;
+                concepto.activo=parsed.activo;
+                return json(res,{success:true,concepto});
+            }
             if(p.endsWith('/mensualidades'))return json(res,{success:true,creada:true,obligacion:{id_obligacion:1}});
             if(p.endsWith('/cargos'))return json(res,{success:true,obligacion:{id_obligacion:2}},201);
             if(p.endsWith('/tasas'))return json(res,{success:true,tasa:{id_tasa:1}},201);
@@ -96,6 +103,12 @@ test('directiva edita tarifa y registra cargos sin crear deuda al cargar la pant
         await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado').textContent.includes('Tarifa actualizada'));
         assert.equal(escrituras[0].p,'/api/directiva/cobros/catalogo/mensualidad');
         assert.equal(escrituras[0].body.monto_usd,'18.00');
+        // Refresco automático: las siguientes emisiones deben ver el precio nuevo.
+        await page.waitForFunction(() =>
+            document.querySelectorAll('#gestion-cobros-conceptos tr')[1]
+                ?.querySelector('input[type=number]')?.value === '18.00');
+        assert.equal(await page.locator('#gestion-cobros-conceptos tr').nth(1)
+            .locator('input[type=number]').inputValue(),'18.00');
         await page.locator('#cobros-atleta option[value="31"]').waitFor({state:'attached'});
         await page.locator('#cobros-atleta').selectOption('31');
         await page.locator('#gestion-cobros-mensualidad button[type=submit]').click();

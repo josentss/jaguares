@@ -59,8 +59,7 @@
             ['aprobado','pendiente'].includes(p.estado_pago)
         ) : [];
         if (repetidos.length) {
-            aviso.textContent = `Hay ${repetidos.length} reportes de ${nombreMes} pendientes o aprobados.
-                Como no consta el año, verifica que no estés cobrando de nuevo ese período.`;
+            aviso.textContent = `Hay ${repetidos.length} reportes de ${nombreMes} pendientes o aprobados. Verifica año y concepto.`;
             aviso.dataset.error = 'true';
         } else {
             aviso.textContent = '';

@@ -101,6 +101,8 @@ test.before(async () => {
     `);
     await db.pool.query(await fs.readFile(require('node:path').join(__dirname,
         '../migrations/2026-11-12_cuentas_por_cobrar_base.sql'),'utf8'));
+    await db.pool.query(await fs.readFile(require('node:path').join(__dirname,
+        '../migrations/2026-11-12_catalogo_y_tasas_cobro.sql'),'utf8'));
     await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Histórico sin hora', TIMESTAMPTZ '2020-01-01 00:00:00+00', 'Cancha', 'completado')");
     await db.pool.query(await fs.readFile(require('node:path').join(__dirname, '../migrations/2026-11-05_eventos_hora.sql'), 'utf8'));
     assert.equal((await db.pool.query("SELECT hora_evento FROM eventos WHERE titulo='Histórico sin hora'")).rows[0].hora_evento, null);
@@ -529,19 +531,24 @@ test('flujo real: registro pendiente, aprobación, perfil, inscripción, activac
         await rep.locator(`#pay-atleta option[value="${atleta.id_atleta}"]`).waitFor({state:'attached'});
         await seccion(rep,'sec-pagos');
         await rep.selectOption('#pay-atleta',String(atleta.id_atleta));
-        await rep.selectOption('#pay-mes','Noviembre');
-        await rep.selectOption('#pay-metodo','Transferencia Bancaria');
-        await rep.locator('#pay-fecha-trans').fill('2099-01-01');
-        // La fecha inválida del método abandonado no bloquea Efectivo.
-        await rep.selectOption('#pay-metodo','Efectivo');
-        await rep.locator('#pay-monto-efec').fill('0');
-        await rep.selectOption('#pay-moneda-efec','USD');
-        await rep.locator('#pay-fecha-efec').fill('2026-11-02');
-        await rep.locator('#form-report-pago button[type=submit]').click();
-        await rep.locator('#form-report-pago .form-validation-message').waitFor({state:'visible'});
+        await rep.getByText('No hay cargos pendientes asignados.').waitFor();
+        assert.equal(await rep.locator('#form-report-pago button[type=submit]').isDisabled(),true);
+
+        // Compatibilidad: la API legacy sigue admitiendo el reporte histórico
+        // solo antes de que Directiva configure obligaciones para el atleta.
+        const pagoLegacy={
+            id_atleta:String(atleta.id_atleta),mes:'Noviembre',
+            metodo:'Efectivo',monto:'25.50',moneda:'USD',fecha_pago:'2026-11-02'
+        };
+        const invalido=await rep.request.post(base+'/api/pagos/reportar',{
+            multipart:{...pagoLegacy,monto:'0'}
+        });
+        assert.equal(invalido.status(),400);
         assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM pagos WHERE id_atleta=$1',[atleta.id_atleta])).rows[0].n,0);
-        await rep.locator('#pay-monto-efec').fill('25.50');
-        await enviar(rep,'#form-report-pago','/api/pagos/reportar');
+        const creado=await rep.request.post(base+'/api/pagos/reportar',{
+            multipart:pagoLegacy
+        });
+        assert.equal(creado.status(),200);
         const pago = (await db.pool.query('SELECT id_pago,estado_pago,monto FROM pagos WHERE id_atleta=$1',[atleta.id_atleta])).rows[0];
         assert.equal(pago.estado_pago,'pendiente');assert.equal(pago.monto,'25.50');
         await dir.reload();
@@ -559,14 +566,15 @@ test('flujo real: registro pendiente, aprobación, perfil, inscripción, activac
         }
         await seccion(rep,'sec-pagos');
         await rep.selectOption('#pay-atleta',String(atleta.id_atleta));
-        await rep.selectOption('#pay-metodo','Efectivo');
-        await rep.locator('#pay-monto-efec').fill('20');
-        await rep.selectOption('#pay-moneda-efec','Bs');
         await seccion(dir,'sec-atletas');
         const desactivar = dir.waitForResponse(r=>r.url().endsWith('/api/directiva/atleta/estado')&&r.request().method()==='PUT');
         await dir.locator(`.js-atleta-estado[data-id="${atleta.id_atleta}"][data-estado="inactivo"]`).click();
         assert.equal((await desactivar).status(),200);
-        await enviar(rep,'#form-report-pago','/api/pagos/reportar',409);
+        const denegado=await rep.request.post(base+'/api/pagos/reportar',{
+            multipart:{id_atleta:String(atleta.id_atleta),mes:'Noviembre',
+                metodo:'Efectivo',monto:'20',moneda:'Bs',fecha_pago:'2026-11-02'}
+        });
+        assert.equal(denegado.status(),409);
         assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM pagos WHERE id_atleta=$1',[atleta.id_atleta])).rows[0].n,1);
         const notificaciones = await rep.request.get(base+`/api/notificaciones/${registro.id_usuario}`);
         assert.equal((await notificaciones.json()).notificaciones.some(n=>n.mensaje.includes('pago de Noviembre')),true);
@@ -669,17 +677,24 @@ test('flujo real: transferencia exige captura y persiste el comprobante tras cam
         await page.locator(`#pay-atleta option[value="${rows[0].id_atleta}"]`).waitFor({state:'attached'});
         await seccion(page,'sec-pagos');
         await page.selectOption('#pay-atleta',String(rows[0].id_atleta));
-        await page.selectOption('#pay-metodo','Efectivo');
-        await page.locator('#pay-monto-efec').fill('-1');
-        await page.selectOption('#pay-metodo','Transferencia Bancaria');
-        await page.locator('#pay-monto-trans').fill('35.50');
-        await page.locator('#pay-referencia').fill('REFERENCIA-SINTETICA');
-        await page.locator('#pay-fecha-trans').fill('2026-11-02');
-        await page.locator('#form-report-pago button[type=submit]').click();
-        await page.locator('#form-report-pago .form-validation-message').waitFor({state:'visible'});
-        await page.locator('#pay-captura').setInputFiles({name:'comprobante-prueba.png',mimeType:'image/png',
-            buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')});
-        await enviar(page,'#form-report-pago','/api/pagos/reportar');
+        await page.getByText('No hay cargos pendientes asignados.').waitFor();
+        assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(),true);
+        // El endpoint histórico no pierde la validación de comprobantes privados.
+        const sinComprobante=await page.request.post(base+'/api/pagos/reportar',{
+            multipart:{id_atleta:String(rows[0].id_atleta),mes:'Noviembre',
+                metodo:'Transferencia Bancaria',monto:'35.50',moneda:'Bs',
+                fecha_pago:'2026-11-02',referencia:'REFERENCIA-SINTETICA'}
+        });
+        assert.equal(sinComprobante.status(),400);
+        const reporte=await page.request.post(base+'/api/pagos/reportar',{
+            multipart:{id_atleta:String(rows[0].id_atleta),mes:'Noviembre',
+                metodo:'Transferencia Bancaria',monto:'35.50',moneda:'Bs',
+                fecha_pago:'2026-11-02',referencia:'REFERENCIA-SINTETICA',
+                captura:{name:'comprobante-prueba.png',mimeType:'image/png',
+                    buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')}
+            }
+        });
+        assert.equal(reporte.status(),200);
         const pago = (await db.pool.query('SELECT id_pago,moneda,ruta_captura FROM pagos WHERE referencia=$1',['REFERENCIA-SINTETICA'])).rows[0];
         assert.equal(pago.moneda,'Bs');
         assert.match(pago.ruta_captura,/^https:\/\/res\.cloudinary\.com\/solo-pruebas\/image\/authenticated\/v123456\/jaguares_comprobantes\/archivo-sintetico-\d+\.png$/);
@@ -851,28 +866,29 @@ for (const [nombre,viewport,timezoneId] of [
             await rep.reload();
             await rep.locator(`#pay-atleta option[value="${alta.id_atleta}"]`).waitFor({state:'attached'});
             await seccion(rep,'sec-pagos');
+            await rep.selectOption('#pay-atleta',String(alta.id_atleta));
+            await rep.getByText('No hay cargos pendientes asignados.').waitFor();
             for (const metodo of ['Efectivo','Transferencia Bancaria']) {
-                await rep.selectOption('#pay-atleta',String(alta.id_atleta));
-                await rep.selectOption('#pay-mes','Noviembre');
-                await rep.selectOption('#pay-metodo',metodo);
-                if (metodo==='Efectivo') {
-                    await rep.locator('#pay-monto-efec').fill('10.00');
-                    await rep.selectOption('#pay-moneda-efec','USD');
-                    await rep.locator('#pay-fecha-efec').fill(fechaPago);
-                } else {
-                    await rep.locator('#pay-monto-trans').fill('35.50');
-                    await rep.locator('#pay-referencia').fill('REFERENCIA-FECHAS-'+nombre);
-                    await rep.locator('#pay-fecha-trans').fill(fechaPago);
-                    await rep.locator('#pay-captura').setInputFiles({name:'comprobante-fechas.png',mimeType:'image/png',
-                        buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')});
+                const body={
+                    id_atleta:String(alta.id_atleta),mes:'Noviembre',metodo,
+                    monto:metodo==='Efectivo'?'10.00':'35.50',
+                    moneda:metodo==='Efectivo'?'USD':'Bs',
+                    fecha_pago:fechaPago
+                };
+                if (metodo==='Transferencia Bancaria') {
+                    body.referencia='REFERENCIA-FECHAS-'+nombre;
+                    body.captura={name:'comprobante-fechas.png',mimeType:'image/png',
+                        buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')};
                 }
-                await enviar(rep,'#form-report-pago','/api/pagos/reportar');
+                const r=await rep.request.post(base+'/api/pagos/reportar',{multipart:body});
+                assert.equal(r.status(),200);
             }
 
             const pagosSQL = await db.pool.query('SELECT fecha_pago FROM pagos WHERE id_atleta=$1 ORDER BY id_pago',[alta.id_atleta]);
             assert.deepEqual(pagosSQL.rows.map(p=>p.fecha_pago),[fechaPago,fechaPago]);
             const historial = await (await rep.request.get(base+'/api/pagos/historial/2')).json();
             assert.deepEqual(historial.datos.filter(p=>p.id_atleta===alta.id_atleta).map(p=>p.fecha_pago),[fechaPago,fechaPago]);
+            await rep.reload();
             await seccion(rep,'sec-historial');
             await rep.waitForFunction(n=>[...document.querySelectorAll('#table-my-pagos tbody tr')]
                 .filter(f=>f.textContent.includes(n)).length===2,nombres);

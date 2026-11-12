@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="catalogos-deportivos.css?v=2">
     <link rel="stylesheet" href="asignaciones-equipos.css?v=4">
     <link rel="stylesheet" href="conciliacion-cobros.css?v=1">
+    <link rel="stylesheet" href="gestion-cobros.css?v=1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=2">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
@@ -890,6 +891,92 @@
                         <p id="cobros-aviso" role="status" aria-live="polite"></p>
                     </form>
                 </div>
+
+                <div id="gestion-cobros" class="cobros-gestion" hidden>
+                    <div class="cobros-gestion-cabecera">
+                        <h3>Conceptos y cargos</h3>
+                        <button id="gestion-cobros-recargar" type="button" class="cobros-btn-secundario">Actualizar</button>
+                    </div>
+                    <p id="gestion-cobros-estado" class="cobros-ayuda" role="status" aria-live="polite"></p>
+                    <details class="cobros-gestion-seccion" open>
+                        <summary>Conceptos y tarifas</summary>
+                        <div class="cobros-tabla-scroll">
+                            <table class="cobros-gestion-tabla">
+                                <thead><tr><th>Concepto</th><th>USD</th><th>Activo</th><th></th></tr></thead>
+                                <tbody id="gestion-cobros-conceptos"></tbody>
+                            </table>
+                        </div>
+                        <form id="gestion-cobros-nuevo" class="cobros-gestion-form">
+                            <label>Nuevo concepto
+                                <input id="gestion-concepto-nombre" type="text" maxlength="60" minlength="3" required placeholder="Nombre">
+                            </label>
+                            <label>Precio USD
+                                <input id="gestion-concepto-precio" type="number" min="0.01" max="9999999" step="0.01" required>
+                            </label>
+                            <button type="submit" class="cobros-btn-principal">Agregar</button>
+                        </form>
+                    </details>
+
+                    <details class="cobros-gestion-seccion" open>
+                        <summary>Asignar cargos al atleta seleccionado</summary>
+                        <p id="gestion-cobros-atleta" class="cobros-ayuda"></p>
+                        <div class="cobros-gestion-doble">
+                            <form id="gestion-cobros-mensualidad" class="cobros-gestion-form">
+                                <h4>Mensualidad</h4>
+                                <label>Período
+                                    <input id="gestion-mes" type="month" required>
+                                </label>
+                                <button type="submit" class="cobros-btn-principal">Asignar mensualidad</button>
+                            </form>
+                            <form id="gestion-cobros-cargo" class="cobros-gestion-form">
+                                <h4>Inscripción u otro concepto</h4>
+                                <label>Concepto
+                                    <select id="gestion-cargo-concepto" required><option value="">Seleccionar</option></select>
+                                </label>
+                                <label>Detalle (opcional)
+                                    <input id="gestion-cargo-detalle" type="text" maxlength="160" placeholder="Encuentro o motivo">
+                                </label>
+                                <label>Vencimiento
+                                    <input id="gestion-cargo-vence" type="date" required>
+                                </label>
+                                <label>Fecha límite
+                                    <input id="gestion-cargo-limite" type="date" required>
+                                </label>
+                                <label class="cobros-confirmacion">
+                                    <input id="gestion-cargo-revisado" type="checkbox">
+                                    <span>Historial revisado (obligatorio para inscripción)</span>
+                                </label>
+                                <button type="submit" class="cobros-btn-principal">Asignar cargo</button>
+                            </form>
+                        </div>
+                    </details>
+
+                    <details class="cobros-gestion-seccion">
+                        <summary>Tasas de cobro</summary>
+                        <form id="gestion-cobros-tasa" class="cobros-gestion-form">
+                            <label>Moneda
+                                <select id="gestion-tasa-moneda"><option value="Bs">Bs</option><option value="COP">COP</option></select>
+                            </label>
+                            <label>Fecha
+                                <input id="gestion-tasa-fecha" type="date" required>
+                            </label>
+                            <label>Por USD
+                                <input id="gestion-tasa-valor" type="number" min="0.000001" max="999999999" step="0.000001" required>
+                            </label>
+                            <label>Fuente
+                                <input id="gestion-tasa-fuente" type="text" maxlength="120" minlength="3" required>
+                            </label>
+                            <button type="submit" class="cobros-btn-principal">Registrar tasa</button>
+                        </form>
+                        <p class="cobros-ayuda">Cada tasa queda guardada con fecha y fuente; no se modifica después.</p>
+                        <div class="cobros-tabla-scroll">
+                            <table class="cobros-gestion-tabla">
+                                <thead><tr><th>Fecha</th><th>Moneda</th><th>Por USD</th><th>Fuente</th></tr></thead>
+                                <tbody id="gestion-cobros-tasas"></tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
             </div>
         </section>
 
@@ -993,6 +1080,7 @@
     <script src="catalogos-deportivos.js?v=5"></script>
     <script src="asignaciones-equipos.js?v=4"></script>
     <script src="conciliacion-cobros.js?v=1"></script>
+    <script src="gestion-cobros.js?v=1"></script>
     <script src="categorias-formativas.js?v=1"></script>
     <script src="categorias-formativas-ui.js?v=1"></script>
     <script src="planilla-general.js?v=3"></script>
@@ -1893,7 +1981,10 @@
                         '<td style="font-weight:bold;white-space:nowrap;">' + esc(String(p.monto ?? '')) +
                         ' ' + esc(p.moneda || '') +
                         (vinculado ? '<small style="display:block;font-size:.72rem;font-weight:400;color:#677588;">Cargo USD ' +
-                            esc(String(p.obligacion_monto_usd ?? '')) + '</small>' : '') + '</td>' +
+                            esc(String(p.obligacion_monto_usd ?? '')) + '</small>' : '') +
+                        (p.id_tasa_cobro ? '<small style="display:block;font-size:.72rem;font-weight:400;color:#677588;" title="' +
+                            esc(String(p.fuente_tasa || '')) + ' · ' + esc(String(p.fecha_tasa || '')) +
+                            '">Tasa: ' + esc(String(p.tasa_por_usd ?? '')) + '</small>' : '') + '</td>' +
                         '<td style="font-size:0.85rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="' +
                         ref + '">' + ref + '</td>' +
                         '<td><span class="badge ' + getBadgeClase(estado) + '">' + esc(estado) + '</span></td>' +
@@ -2239,7 +2330,10 @@
                 if (item.dataset.target === 'sec-registrar') cargarRepresentantes();
                 if (item.dataset.target === 'sec-deportes') window.JaguaresCatalogos?.cargar();
                 if (item.dataset.target === 'sec-asignaciones') window.JaguaresAsignaciones?.cargar();
-                if (item.dataset.target === 'sec-cobros') window.JaguaresConciliacion?.cargar();
+                if (item.dataset.target === 'sec-cobros') {
+                    window.JaguaresConciliacion?.cargar();
+                    window.JaguaresGestionCobros?.cargar();
+                }
                 if (item.dataset.target === 'sec-plantillas') window.JaguaresPlanillaGeneral?.cargar();
 
                 if (window.innerWidth <= 992) cerrarSidebarMovil();
@@ -2303,6 +2397,7 @@
                 currentUser = user;
                 window.JaguaresAsignaciones?.inicializar(user.rol);
                 window.JaguaresConciliacion?.inicializar(user.rol);
+                window.JaguaresGestionCobros?.inicializar(user.rol);
                 const rolEtiqueta = { directiva: 'Directiva', staff: 'Staff', admin: 'Administrador' }[user.rol] || user.rol;
                 document.getElementById('user-info').innerHTML = `<strong>${esc(user.nombres)} ${esc(user.apellidos)}</strong><span class="user-role">${esc(rolEtiqueta)}</span>`;
 

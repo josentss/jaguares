@@ -1,0 +1,42 @@
+/* Gestión de cobros: formularios y tablas compactos, sin decoraciones invasivas. */
+.cobros-gestion { margin-top: 20px; padding-top: 14px; border-top: 1px solid #e1e6ed; }
+.cobros-gestion[hidden] { display:none!important; }
+.cobros-gestion-cabecera { display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; gap:10px; }
+.cobros-gestion-cabecera h3 { margin:0; font-size:1.02rem; }
+#gestion-cobros-estado { margin:6px 0; min-height:1.1em; }
+#gestion-cobros-estado[data-error="true"] { color:#b32332; }
+.cobros-gestion-seccion { border:1px solid #e2e6ec; border-radius:8px; margin-top:12px; background:#fff; }
+.cobros-gestion-seccion summary { padding:12px 13px; font-size:.91rem; font-weight:600; cursor:pointer; }
+.cobros-gestion-seccion > :not(summary) { margin:10px 12px; }
+.cobros-gestion-seccion .cobros-gestion-tabla { min-width:520px; }
+.cobros-gestion-tabla { width:100%; border-collapse:collapse; }
+.cobros-gestion-tabla th, .cobros-gestion-tabla td {
+  font-size:.8rem; padding:8px; text-align:left; border-bottom:1px solid #ecf0f3; vertical-align:middle;
+}
+.cobros-gestion-tabla th { background:#f6f7f9; color:#536173; }
+.cobros-gestion-tabla input[type="text"], .cobros-gestion-tabla input[type="number"] { min-width:90px; width:100%; }
+.cobros-gestion-tabla input[type="checkbox"] { width:16px; height:16px; accent-color:#ff4500; }
+.cobros-gestion-form { display:flex; align-items:end; flex-wrap:wrap; gap:10px; }
+.cobros-gestion-form h4 { flex-basis:100%; margin:4px 0; font-size:.87rem; }
+.cobros-gestion-form label:not(.cobros-confirmacion) {
+    flex:1 1 150px; min-width:0; display:flex; flex-direction:column; gap:6px;
+    font-size:.82rem; font-weight:600;
+}
+.cobros-gestion-form input:not([type="checkbox"]), .cobros-gestion-form select {
+    box-sizing:border-box; min-width:0; width:100%; padding:9px 10px;
+    border:1px solid #b9c4d1; border-radius:7px; color:#263445;
+    font:400 .87rem Poppins,sans-serif; background:white;
+}
+.cobros-gestion-form button { flex:0 0 auto; }
+.cobros-btn-principal { padding:9px 14px; border:1px solid #d7400e;
+    border-radius:7px; background:#eb470f; color:white; font:600 .83rem Poppins,sans-serif; cursor:pointer; }
+.cobros-gestion-doble { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+.cobros-gestion-doble > form { padding:12px; border:1px solid #e6e9ed; border-radius:7px; }
+.cobros-gestion-doble .cobros-confirmacion { flex-basis:100%; }
+.cobros-gestion-form button:focus-visible,.cobros-gestion-form input:focus-visible,
+.cobros-gestion-form select:focus-visible { outline:2px solid #ff4500; outline-offset:2px; }
+@media (max-width:720px) {
+ .cobros-gestion-doble { grid-template-columns:1fr; }
+ .cobros-gestion-form button { width:100%; }
+ .cobros-gestion-tabla { min-width:520px; }
+}

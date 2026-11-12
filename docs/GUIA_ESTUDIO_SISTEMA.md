@@ -129,13 +129,26 @@ Flujo de desarrollo recomendado:
 
 Si algo falla: identificar URL y método, código HTTP, rol autenticado, logs del servidor, consulta SQL correspondiente y prueba que cubre el caso. No publicar tokens, cadenas de conexión, claves ni documentos personales en issues o capturas.
 
-## 8. Próximas decisiones funcionales
+## 8. Catálogo editable, asignación y tasa por fecha (PR #55, en revisión)
 
-La pantalla de Estado de cuenta **no es aún un formulario de pago vinculado**. Para completar el ciclo obligación -> reporte -> revisión -> pago, falta:
-- Conciliar de forma explícita los históricos y resolver inscripciones ya pagadas.
-- Definir moneda y fuente de tasa verificable; política de importes parciales.
-- Enviar reportes vinculados a `id_obligacion`, impedir reportes simultáneos y permitir reenviar tras rechazo sin perder trazabilidad.
-- Mostrar el saldo de forma correcta, sin confundir «en revisión» con «pagado».
-- Conservar la protección Cloudinary y las revisiones de Directiva existentes.
+Al registrar un concepto, la Directiva establece nombre y precio nominal USD. «Inscripción» y «Mensualidad» están reservados; los conceptos adicionales se clasifican como **cargos manuales**. La Directiva puede desactivarlos o ajustar su precio, pero los cargos emitidos ya conservan su importe.
+
+La Directiva selecciona un atleta con inicio configurado y emite un cargo (manual, inscripción única o mensualidad). Solo después aparece en el Representante como **tipo de pago → cargo concreto**. Los meses que no han sido asignados no aparecen. Tampoco aparece el formulario antiguo de doce meses para atletas sin configurar.
+
+El servidor calcula el importe USD de la obligación. Para bolívares o pesos exige tasa por USD registrada por Directiva para esa **fecha civil** (America/Caracas), con fuente y registro inmutable. La tasa no se deduce del dashboard ni se inventa. La cotización del navegador es informativa: el servidor recalcula todo al recibir el pago y rechaza importes manipulados.
+
+Antes del merge hay que aplicar manualmente la migración de catálogo y tasas en Supabase; el CI se ejecuta sobre un PostgreSQL temporal. Nunca probar emisiones o registros de tasa en Preview cuando comparte la base de Production.
+
+## 9. Próximas decisiones funcionales
+
+El reporte **vinculado a `id_obligacion`** ya existe desde PR #54, y este PR #55 introduce el catálogo editable, la elección de cargos asignados y montos fijos cotizados por moneda. El Estado de cuenta sigue siendo **una consulta**, no un formulario de envío.
+
+Para completar la puesta en marcha operativa sigue pendiente:
+- Conciliar individualmente históricos e inscripciones previas antes de establecer anclas.
+- Definir y verificar una fuente institucional fiable para las tasas registradas, así como su actualización diaria.
+- Decidir cuándo automatizar o programar la emisión de mensualidades para atletas **ya activados**, sin crear deudas históricas no revisadas.
+- Definir pagos parciales, correcciones de saldos, anulaciones y una conciliación contable más completa.
+- Retirar el endpoint legado de reportes libres cuando todos los atletas estén migrados, conservando acceso a los pagos anteriores.
+- Mantener protecciones Cloudinary, permisos, historial de intentos rechazados y pruebas del CI.
 
 **Regla para estudiar:** el código actual es la fuente de verdad. Esta guía explica los flujos; ante discrepancias, buscar el endpoint, su controlador y sus pruebas antes de afirmar que una función ya está operativa.

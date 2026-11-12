@@ -174,7 +174,8 @@ for (const dispositivo of [
             assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), true);
             await page.evaluate(() => document.querySelector('[data-target="sec-pagos"]').click());
             await page.locator('#pay-atleta').selectOption('11');
-            await page.waitForFunction(() => !document.querySelector('#form-report-pago button[type=submit]').disabled);
+            await page.waitForFunction(() => document.querySelector('#pay-guia-estado').textContent.includes('No hay cargos pendientes asignados.'));
+            assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(), true);
             await page.evaluate(() => document.querySelector('[data-target="sec-inicio"]').click());
             await page.locator('#table-my-atletas button[data-docs-atleta="11"]').click();
             await page.locator('#documentos-atleta-modal').waitFor({state:'visible'});

@@ -312,12 +312,15 @@
                 <p id="pay-intro" class="form-lead">Reporta tu pago para revisión.</p>
                 <form id="form-report-pago" enctype="multipart/form-data">
                     <fieldset class="form-block">
-                        <legend>Mensualidad</legend>
+                        <legend>Reportar un cargo</legend>
                         <div class="form-grid">
                             <div class="form-group-panel"><label for="pay-atleta">Atleta</label><select id="pay-atleta" required></select></div>
-                            <div class="form-group-panel" id="pay-mes-wrap"><label for="pay-mes">Mes que estás pagando</label><select id="pay-mes" required><option value="Enero">Enero</option><option value="Febrero">Febrero</option><option value="Marzo">Marzo</option><option value="Abril">Abril</option><option value="Mayo">Mayo</option><option value="Junio">Junio</option><option value="Julio">Julio</option><option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Diciembre">Diciembre</option></select></div>
+                            <div class="form-group-panel" id="pay-concepto-wrap">
+                                <label for="pay-concepto">¿Qué vas a pagar?</label>
+                                <select id="pay-concepto" required disabled><option value="">Seleccionar concepto</option></select>
+                            </div>
                             <div class="form-group-panel" id="pay-obligacion-wrap" hidden>
-                                <label for="pay-obligacion">Cargo a reportar</label>
+                                <label for="pay-obligacion">Período o cargo pendiente</label>
                                 <select id="pay-obligacion" disabled><option value="">Seleccionar cargo</option></select>
                             </div>
                             <div class="form-group-panel full-width">
@@ -331,7 +334,7 @@
                     <fieldset id="panel-transferencia" class="form-block hidden-section" disabled>
                         <legend>Datos de la operación</legend>
                         <div class="form-grid">
-                            <div class="form-group-panel"><label for="pay-monto-trans">Monto en bolívares (Bs)</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-trans" placeholder="0,00" inputmode="decimal" required><small class="field-note">Tal como aparece en tu comprobante.</small></div>
+                            <div class="form-group-panel"><label for="pay-monto-trans">Monto en bolívares (Bs)</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-trans" placeholder="Monto fijo del club" inputmode="decimal" required readonly><small class="field-note">Calculado con la tasa configurada por Directiva.</small></div>
                             <div class="form-group-panel"><label for="pay-referencia">Número de referencia</label><input type="text" id="pay-referencia" placeholder="Ej: 123456" inputmode="numeric"><small class="field-note">Los últimos dígitos de la operación.</small></div>
                             <div class="form-group-panel"><label for="pay-fecha-trans">Fecha de la operación</label><input type="date" id="pay-fecha-trans" required></div>
                             <div class="form-group-panel">
@@ -349,7 +352,7 @@
                     <fieldset id="panel-efectivo" class="form-block hidden-section" disabled>
                         <legend>Pago en efectivo</legend>
                         <div class="form-grid">
-                            <div class="form-group-panel"><label for="pay-monto-efec">Monto entregado</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-efec" placeholder="0,00" inputmode="decimal" required></div>
+                            <div class="form-group-panel"><label for="pay-monto-efec">Monto entregado</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-efec" placeholder="Monto fijo del club" inputmode="decimal" required readonly></div>
                             <div class="form-group-panel"><label for="pay-moneda-efec">Moneda</label><select id="pay-moneda-efec"><option value="USD">Dólares (USD)</option><option value="COP">Pesos colombianos (COP)</option><option value="Bs">Bolívares (Bs)</option></select></div>
                             <div class="form-group-panel"><label for="pay-fecha-efec">Fecha de entrega</label><input type="date" id="pay-fecha-efec" required></div>
                         </div>
@@ -1259,9 +1262,9 @@
                 e.preventDefault();
                 const form = e.target;
                 const metodo = document.getElementById('pay-metodo').value;
-                const seleccionGuia = window.JaguaresPagosGuiados?.seleccion() || {modo:'legacy'};
-                if (seleccionGuia.modo === 'bloqueado') {
-                    showToast('Selecciona un cargo disponible para reportar', 'error');
+                const seleccionGuia = window.JaguaresPagosGuiados?.seleccion() || {modo:'bloqueado'};
+                if (seleccionGuia.modo !== 'vinculado' || !seleccionGuia.cotizacion) {
+                    showToast('Selecciona un cargo con monto válido para reportar', 'error');
                     return;
                 }
                  if (!document.getElementById('pay-atleta').value) {
@@ -1279,11 +1282,7 @@
 
                 // Datos comunes
                 formData.append('id_atleta', document.getElementById('pay-atleta').value);
-                if (seleccionGuia.modo === 'vinculado') {
-                    formData.append('id_obligacion', seleccionGuia.id_obligacion);
-                } else {
-                    formData.append('mes', document.getElementById('pay-mes').value);
-                }
+                formData.append('id_obligacion', seleccionGuia.id_obligacion);
                 formData.append('metodo', metodo);
 
                 // 2. EXTRACCIÓN CONDICIONAL (Transferencia vs Efectivo)

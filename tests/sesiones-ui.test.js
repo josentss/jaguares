@@ -359,7 +359,7 @@ test('un error temporal al comprobar en segundo plano conserva el panel ya autor
     }
 });
 
-test('login, perfil y reporte de pago funcionan si no se puede guardar usuario en localStorage', async () => {
+test('login, perfil y control de pagos sin cargos funcionan sin localStorage', async () => {
     reiniciarEstado('representante');
     state.atletas = [{ id_atleta: 77, nombres: 'Atleta', apellidos: 'Sintetico', estado: 'activo', cedula: 'V-99000003' }];
     const { browser, context } = await nuevoContexto({ width: 1440, height: 900 }, false);
@@ -398,16 +398,11 @@ test('login, perfil y reporte de pago funcionan si no se puede guardar usuario e
         await page.locator('[aria-controls="nav-rep-pagos"]').click();
         await page.locator('[data-target="sec-pagos"]').click();
         await page.locator('#pay-atleta').selectOption('77');
-        await page.locator('#pay-mes').selectOption('Enero');
-        await page.locator('#pay-metodo').selectOption('Efectivo');
-        await page.locator('#pay-monto-efec').fill('10');
-        await page.locator('#pay-moneda-efec').selectOption('USD');
-        await page.locator('#pay-fecha-efec').fill('2020-01-01');
-        const pago = page.waitForResponse(response =>
-            new URL(response.url()).pathname === '/api/pagos/reportar' && response.request().method() === 'POST');
-        await page.locator('#form-report-pago button[type="submit"]').click();
-        assert.equal((await pago).status(), 200);
-        await page.getByText('Pago reportado con éxito').waitFor({ state: 'visible' });
+        await page.getByText('No hay cargos pendientes asignados.').waitFor();
+        assert.equal(await page.locator('#pay-mes').count(),0);
+        assert.equal(await page.locator('#pay-monto-efec').isEditable(),false);
+        assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(),true);
+        assert.equal(state.requests.filter(r=>r.pathname==='/api/pagos/reportar').length,0);
         assert.deepEqual(errores, []);
     } finally {
         await context.close();

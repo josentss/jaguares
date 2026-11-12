@@ -104,7 +104,7 @@ test('Directiva consulta histórico, confirma explícitamente y activa SIN deuda
     page.on('dialog',dialog=>dialog.accept());
     try {
         await page.locator('#nav-conciliacion-cobros').evaluate(el=>el.click());
-        await page.locator('#cobros-atleta option[value="31"]').waitFor();
+        await page.locator('#cobros-atleta option[value="31"]').waitFor({state:'attached'});
         await page.locator('#cobros-atleta').selectOption('31');
         await page.locator('#cobros-pagos tr').first().waitFor();
         assert.equal(await page.locator('#cobros-pagos tr').count(),2);
@@ -143,7 +143,7 @@ test('móvil: formulario y tabla no desbordan el ancho del panel',async()=>{
     const {browser,page,errores}=await abrir({width:390,height:844});
     try {
         await page.locator('#nav-conciliacion-cobros').evaluate(el=>el.click());
-        await page.locator('#cobros-atleta option[value="31"]').waitFor();
+        await page.locator('#cobros-atleta option[value="31"]').waitFor({state:'attached'});
         await page.locator('#cobros-atleta').selectOption('31');
         await page.locator('#cobros-pagos tr').first().waitFor();
         const anchos=await page.evaluate(()=>({

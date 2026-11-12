@@ -10,8 +10,17 @@ const asignacionesEquipos = require('../controllers/asignacionesEquiposControlle
 const cobros = require('../controllers/cobrosController');
 const pagosVinculadosRevision = require('../controllers/pagosVinculadosRevisionController');
 const conciliacionCobros = require('../controllers/cobrosConciliacionController');
+const catalogoCobros = require('../controllers/catalogoCobrosController');
 
 // El prefijo /api/directiva ya comprueba sesión y rol en index.js.
+// Catálogo, cotizaciones manuales y cargos extraordinarios: solo Directiva/Admin.
+router.get('/cobros/catalogo', verificarSesionRole(['directiva','admin']), catalogoCobros.listar);
+router.post('/cobros/catalogo', verificarSesionRole(['directiva','admin']), catalogoCobros.crear);
+router.patch('/cobros/catalogo/:codigo', verificarSesionRole(['directiva','admin']), catalogoCobros.editar);
+router.get('/cobros/tasas', verificarSesionRole(['directiva','admin']), catalogoCobros.listarTasas);
+router.post('/cobros/tasas', verificarSesionRole(['directiva','admin']), catalogoCobros.registrarTasa);
+router.post('/cobros/cargos', verificarSesionRole(['directiva','admin']), catalogoCobros.crearCargo);
+
 // Lista de atletas y revisión individual del historial: únicamente Directiva/Admin.
 router.get('/cobros/conciliacion/atletas', verificarSesionRole(['directiva', 'admin']), conciliacionCobros.listarAtletas);
 router.get('/cobros/conciliacion/atletas/:id_atleta', verificarSesionRole(['directiva', 'admin']), conciliacionCobros.verDetalle);

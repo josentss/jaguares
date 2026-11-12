@@ -101,6 +101,8 @@ test.before(async () => {
     `);
     await db.pool.query(await fs.readFile(require('node:path').join(__dirname,
         '../migrations/2026-11-12_cuentas_por_cobrar_base.sql'),'utf8'));
+    await db.pool.query(await fs.readFile(require('node:path').join(__dirname,
+        '../migrations/2026-11-12_catalogo_y_tasas_cobro.sql'),'utf8'));
     await db.pool.query("INSERT INTO eventos (titulo, fecha_evento, lugar, estado) VALUES ('Histórico sin hora', TIMESTAMPTZ '2020-01-01 00:00:00+00', 'Cancha', 'completado')");
     await db.pool.query(await fs.readFile(require('node:path').join(__dirname, '../migrations/2026-11-05_eventos_hora.sql'), 'utf8'));
     assert.equal((await db.pool.query("SELECT hora_evento FROM eventos WHERE titulo='Histórico sin hora'")).rows[0].hora_evento, null);

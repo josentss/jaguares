@@ -115,3 +115,6 @@ deben convivir en una sola sección. La rama
 `feat/plantillas-equipos-secciones-20261112` conserva este contrato de datos y
 mueve cada responsabilidad a una pantalla independiente. Ver
 [Consulta de plantillas y asignación de equipos](PLANTILLAS_DEPORTIVAS.md).
+El PR #48 fue fusionado y el propietario validó esas pantallas en Production.
+El cierre posterior de UX conserva todas las reglas anteriores y solo añade
+estados operativos claros y mejor adaptación a listados extensos y móvil.

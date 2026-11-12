@@ -15,8 +15,8 @@
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
-    <link rel="stylesheet" href="catalogos-deportivos.css?v=1">
-    <link rel="stylesheet" href="asignaciones-equipos.css?v=3">
+    <link rel="stylesheet" href="catalogos-deportivos.css?v=2">
+    <link rel="stylesheet" href="asignaciones-equipos.css?v=4">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=2">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
@@ -676,6 +676,7 @@
                             <button class="deportes-cancelar" data-cancelar type="button" hidden>Cancelar</button>
                         </div>
                     </form>
+                    <p class="deportes-lista-resumen" id="deportes-mostrando-temporadas"></p>
                     <ul class="deportes-lista" id="deportes-lista-temporadas"></ul>
                 </div>
                 <div class="deportes-card">
@@ -693,6 +694,7 @@
                             <button class="deportes-cancelar" data-cancelar type="button" hidden>Cancelar</button>
                         </div>
                     </form>
+                    <p class="deportes-lista-resumen" id="deportes-mostrando-categorias"></p>
                     <ul class="deportes-lista" id="deportes-lista-categorias"></ul>
                 </div>
                 <div class="deportes-card">
@@ -710,6 +712,7 @@
                             <button class="deportes-cancelar" data-cancelar type="button" hidden>Cancelar</button>
                         </div>
                     </form>
+                    <p class="deportes-lista-resumen" id="deportes-mostrando-equipos"></p>
                     <ul class="deportes-lista" id="deportes-lista-equipos"></ul>
                 </div>
             </div>
@@ -923,11 +926,11 @@
     <script src="api-client.js?v=sesion-aviso-1"></script>
     <script src="iconos-acciones.js?v=1"></script>
     <script src="comprobantes-ui.js?v=2"></script>
-    <script src="catalogos-deportivos.js?v=4"></script>
-    <script src="asignaciones-equipos.js?v=3"></script>
+    <script src="catalogos-deportivos.js?v=5"></script>
+    <script src="asignaciones-equipos.js?v=4"></script>
     <script src="categorias-formativas.js?v=1"></script>
     <script src="categorias-formativas-ui.js?v=1"></script>
-    <script src="planilla-general.js?v=2"></script>
+    <script src="planilla-general.js?v=3"></script>
     <script>
         if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
             typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {

@@ -4,6 +4,7 @@
     const porId = id => document.getElementById(id);
     let permitido = false;
     let cargando = false;
+    let guardando = false;
     let catalogo = { temporadas: [], categorias: [], equipos: [] };
     let atletas = [];
     let movimientos = [];
@@ -79,9 +80,12 @@
         const atleta = atletas.find(fila => fila.id_atleta === idAtleta);
         const actual = asignacionActual(idAtleta, idTemporada);
         const idEquipo = Number(porId('asignaciones-equipo').value);
-        porId('asignaciones-guardar').disabled = !atleta || atleta.estado !== 'activo' ||
-            !idTemporada || !idEquipo || actual?.id_equipo === idEquipo;
-        porId('asignaciones-guardar').textContent = actual ? 'Cambiar equipo' : 'Asignar equipo';
+        const boton = porId('asignaciones-guardar');
+        const mismoEquipo = actual?.id_equipo === idEquipo;
+        boton.disabled = guardando || !atleta || atleta.estado !== 'activo' ||
+            !idTemporada || !idEquipo || mismoEquipo;
+        boton.textContent = guardando ? 'Guardando…' : mismoEquipo ? 'Equipo actual' :
+            actual ? 'Cambiar equipo' : 'Asignar equipo';
         porId('asignaciones-actual').textContent = atleta && idTemporada
             ? `Equipo actual: ${actual?.equipo_nombre || 'Sin asignación en esta temporada'}` : '';
         const aviso = porId('asignaciones-aviso');
@@ -106,6 +110,10 @@
     async function cargar() {
         if (!permitido || cargando) return;
         cargando = true;
+        const botonActualizar = porId('asignaciones-actualizar');
+        botonActualizar.disabled = true;
+        botonActualizar.textContent = 'Actualizando…';
+        botonActualizar.setAttribute('aria-busy', 'true');
         estado('Cargando plantilla y asignaciones...');
         try {
             const [resCatalogo, resAsignaciones] = await Promise.all([
@@ -130,7 +138,12 @@
             actualizarEquipos();
             estado('');
         } catch (error) { estado(error.message || 'No se pudo cargar la plantilla', true); }
-        finally { cargando = false; }
+        finally {
+            cargando = false;
+            botonActualizar.disabled = false;
+            botonActualizar.textContent = 'Actualizar lista';
+            botonActualizar.removeAttribute('aria-busy');
+        }
     }
 
     function inicializar(rol) {
@@ -156,7 +169,9 @@
         if (actual?.id_equipo === idEquipo) return estado('El atleta ya pertenece a ese equipo.', true);
         if (actual && !raiz.confirm(`¿Cambiar a ${atleta.nombres} ${atleta.apellidos} de ${actual.equipo_nombre} al equipo seleccionado? El movimiento anterior quedará en el historial.`)) return;
         const boton = porId('asignaciones-guardar');
-        boton.disabled = true;
+        guardando = true;
+        boton.setAttribute('aria-busy', 'true');
+        actualizarVista();
         try {
             const respuesta = await raiz.apiFetch('/api/directiva/deportes/asignaciones', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -168,7 +183,11 @@
             await cargar();
             if (typeof raiz.showToast === 'function') raiz.showToast(datos.movimiento ? 'Equipo cambiado' : 'Equipo asignado');
         } catch (error) { estado(error.message || 'No se pudo asignar el equipo', true); }
-        finally { actualizarVista(); }
+        finally {
+            guardando = false;
+            boton.removeAttribute('aria-busy');
+            actualizarVista();
+        }
     });
 
     raiz.JaguaresAsignaciones = Object.freeze({ inicializar, cargar });

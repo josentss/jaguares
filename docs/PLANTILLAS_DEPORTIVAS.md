@@ -65,13 +65,29 @@ directiva/admin.
 6. Comprobar alcance vacío, escritorio y móvil. No mover atletas reales solo
    para probar.
 
-No marcar la nueva organización como probada en Production hasta que el
-propietario valide el despliegue correspondiente.
+El propietario fusionó el PR #48 y validó visualmente en Production las tres
+secciones, la navegación, la asignación, la consulta y los catálogos.
+
+## Cierre de UX
+
+La rama `fix/ux-final-organizacion-deportiva-20261112` no cambia reglas, API ni
+base de datos. En asignación distingue de forma explícita «Equipo actual»,
+«Asignar equipo» y «Cambiar equipo», y muestra el progreso al actualizar o
+guardar. Consulta de plantillas muestra progreso al consultar/generar; en móvil
+presenta cada atleta como ficha y en escritorio mantiene encabezado visible en
+listados largos.
+
+Los listados de catálogos tienen altura acotada. Al seleccionar una temporada,
+la tarjeta de categorías muestra solo sus categorías; al seleccionar una
+categoría, la tarjeta de equipos muestra solo sus equipos. Sin selección se
+mantiene la vista completa y los contadores globales no cambian. Es un filtro
+visual: no elimina, archiva ni modifica registros.
 
 ## Evidencia local
 
-El 12 de noviembre de 2026 pasaron 7/7 pruebas con PostgreSQL 18 desechable,
-15/15 pruebas específicas de asignaciones, catálogos, consulta y PDF en
-Chromium, y 64/64 regresiones generales de interfaz y sesiones. Se probaron
-escritorio y móvil. Esta evidencia no equivale a validar el Preview ni
-Production del nuevo cambio.
+El 12 de noviembre de 2026 pasaron 7/7 pruebas con PostgreSQL 18 desechable en
+el PR #48, 16/16 pruebas específicas de asignaciones, catálogos, consulta y PDF
+en Chromium para el cierre de UX, y 64/64 regresiones generales de interfaz y
+sesiones. Se probaron escritorio y móvil. El PR #48 sí fue validado en
+Production por el propietario; el cierre de UX aún requiere revisión de su
+propio Preview.

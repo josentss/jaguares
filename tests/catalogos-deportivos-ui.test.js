@@ -333,3 +333,32 @@ test('gestión de atletas: compartir iconos SVG con auditoría y mantener accion
         }
     } finally { atletasFixture=[]; await context.close(); }
 });
+
+test('catálogos extensos se acotan y filtran por su selección superior', async () => {
+    colecciones.temporadas.push({id_temporada:2,nombre:'2027–2028'});
+    colecciones.categorias.push({id_categoria:2,id_temporada:2,nombre:'Sub-16'});
+    colecciones.equipos.push({id_equipo:2,id_categoria:2,nombre:'Jaguares B'});
+    const context=await browser.newContext({viewport:{width:1440,height:900}});
+    await context.route('**/*',r=>r.request().url().startsWith(base+'/')?r.continue():r.abort());
+    const page=await context.newPage();
+    page.on('pageerror',e=>errores.push(e.message));
+    try {
+        await page.goto(base+'/admin/panel-directiva.html');
+        await abrirApartado(page,'sec-deportes');
+        await page.waitForFunction(()=>document.querySelectorAll('#deportes-lista-categorias strong').length===2);
+        await page.locator('#deportes-form-categorias select').selectOption('1');
+        assert.equal(await page.locator('#deportes-lista-categorias strong').count(),1);
+        assert.equal(await page.locator('#deportes-lista-categorias strong').innerText(),'Sub-14');
+        assert.equal(await page.locator('#deportes-mostrando-categorias').innerText(),'Mostrando 1 de 2');
+        await page.locator('#deportes-form-equipos select').selectOption('2');
+        assert.equal(await page.locator('#deportes-lista-equipos strong').count(),1);
+        assert.equal(await page.locator('#deportes-lista-equipos strong').innerText(),'Jaguares B');
+        assert.equal(await page.locator('#deportes-mostrando-equipos').innerText(),'Mostrando 1 de 2');
+        assert.equal(await page.locator('#deportes-lista-equipos').evaluate(lista=>getComputedStyle(lista).overflowY),'auto');
+    } finally {
+        colecciones.temporadas.splice(colecciones.temporadas.findIndex(x=>x.id_temporada===2),1);
+        colecciones.categorias.splice(colecciones.categorias.findIndex(x=>x.id_categoria===2),1);
+        colecciones.equipos.splice(colecciones.equipos.findIndex(x=>x.id_equipo===2),1);
+        await context.close();
+    }
+});

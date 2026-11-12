@@ -118,6 +118,19 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
             await page.locator('#plantillas-consultar').click();
             await page.locator('#plantillas-body tr').first().waitFor();
             assert.equal(await page.locator('#plantillas-body tr').count(),28);
+            if (viewport.width === 390) {
+                const movil = await page.locator('.plantillas-tabla-wrap').evaluate(contenedor => {
+                    const celda = contenedor.querySelector('td');
+                    return {
+                        desborda: contenedor.scrollWidth > contenedor.clientWidth + 2,
+                        disposicion: getComputedStyle(celda).display,
+                        etiqueta: getComputedStyle(celda, '::before').content
+                    };
+                });
+                assert.equal(movil.desborda,false);
+                assert.equal(movil.disposicion,'grid');
+                assert.match(movil.etiqueta,/Atleta/);
+            }
             await page.evaluate(() => {
                 window.__planillaGeneralVista = null;
                 const observador = new MutationObserver(() => {

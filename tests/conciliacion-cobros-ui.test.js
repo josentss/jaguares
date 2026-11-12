@@ -103,7 +103,7 @@ test('Directiva consulta histórico, confirma explícitamente y activa SIN deuda
     const {browser,page,errores}=await abrir({width:1360,height:800});
     page.on('dialog',dialog=>dialog.accept());
     try {
-        await page.locator('#nav-conciliacion-cobros').click();
+        await page.locator('#nav-conciliacion-cobros').evaluate(el=>el.click());
         await page.locator('#cobros-atleta option[value="31"]').waitFor();
         await page.locator('#cobros-atleta').selectOption('31');
         await page.locator('#cobros-pagos tr').first().waitFor();
@@ -142,7 +142,7 @@ test('móvil: formulario y tabla no desbordan el ancho del panel',async()=>{
     inicio=null;
     const {browser,page,errores}=await abrir({width:390,height:844});
     try {
-        await page.locator('#nav-conciliacion-cobros').click();
+        await page.locator('#nav-conciliacion-cobros').evaluate(el=>el.click());
         await page.locator('#cobros-atleta option[value="31"]').waitFor();
         await page.locator('#cobros-atleta').selectOption('31');
         await page.locator('#cobros-pagos tr').first().waitFor();

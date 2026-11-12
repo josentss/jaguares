@@ -13,6 +13,29 @@ Este PR reemplaza en el formulario del Representante la elección de cualquier m
 `migrations/2026-11-12_catalogo_y_tasas_cobro.sql`.
 Afloja únicamente las restricciones antiguas de códigos fijos y preserva la modalidad de cinco conceptos institucionales; agrega índice único de cargos manuales y la tabla de tasas y FK nullable desde `pagos.id_tasa_cobro`. No modifica ni borra pagos, anclas, obligaciones o precios emitidos. Probada sobre PostgreSQL temporal; **NO se aplica automáticamente en Vercel**. Requiere respaldo, preflight y aprobación del propietario antes de ejecutarla en Supabase. Si Preview comparte Production, **NO probar escritura ni cambiar tarifas desde Preview**.
 
+**Preflight de lectura obligatorio antes de la migración en Supabase:** confirmar que la base objetivo es Production, disponer de un respaldo restaurable y ejecutar:
+
+```sql
+SELECT
+  to_regclass('public.conceptos_cobro') IS NOT NULL AS catalogo_existente,
+  to_regclass('public.obligaciones_cobro') IS NOT NULL AS obligaciones_existentes,
+  to_regclass('public.pagos') IS NOT NULL AS pagos_existentes,
+  (SELECT COUNT(*) FROM public.conceptos_cobro) AS conceptos_actuales,
+  (SELECT COUNT(*) FROM public.obligaciones_cobro) AS obligaciones_actuales,
+  (SELECT COUNT(*) FROM public.pagos) AS pagos_antes;
+```
+
+```sql
+SELECT lower(btrim(nombre)) AS nombre, COUNT(*) AS duplicados
+FROM public.conceptos_cobro
+GROUP BY lower(btrim(nombre))
+HAVING COUNT(*) > 1;
+```
+
+La segunda consulta debe regresar **cero filas**, pues la migración crea un índice único por nombre normalizado. Si hay duplicados, **detener la migración** y conciliar el catálogo sin editar directamente obligaciones. Registrar también la distribución de estados y el número de pagos vinculados antes de continuar.
+
+Después de ejecutar el SQL completo, verificar que `public.tasas_cobro` exista, que `public.pagos.id_tasa_cobro` sea nullable, que el índice `conceptos_cobro_nombre_unico` exista y que los conteos de pagos y obligaciones sean idénticos a los anteriores. No crear nuevas tasas, cargos o anclas hasta terminar las pruebas de lectura.
+
 **Despliegue por fases:** Sin migración aplicada, los endpoints administrativos de tasas y nuevas tarifas no funcionan. No fusionar antes de aplicar la migración y validar integridad. Esta versión conserva el endpoint de reporte legado solo para cuentas sin ancla ni cargos, por compatibilidad del historial: **la interfaz no lo expone**. Tras activar y conciliar los atletas, debe retirarse también esa ruta legacy; jamás acepta reportes libres cuando el atleta ya tiene ancla o cargos. El nuevo flujo bloquea monedas sin tasa del día.
 
 **Puntos pendientes:** definir fuente institucional de tasa y responsabilidad de actualización diaria, tratamiento de fechas antiguas, y cuándo deshabilitar totalmente el endpoint legacy. No se activan mensualidades en lote, no se asigna inscripción automática, ni se aplican sanciones automáticas.

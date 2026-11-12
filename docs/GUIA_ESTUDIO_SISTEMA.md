@@ -129,7 +129,17 @@ Flujo de desarrollo recomendado:
 
 Si algo falla: identificar URL y método, código HTTP, rol autenticado, logs del servidor, consulta SQL correspondiente y prueba que cubre el caso. No publicar tokens, cadenas de conexión, claves ni documentos personales en issues o capturas.
 
-## 8. Próximas decisiones funcionales
+## 8. Catálogo editable, asignación y tasa por fecha (PR #55, en revisión)
+
+Al registrar un concepto, la Directiva establece nombre y precio nominal USD. «Inscripción» y «Mensualidad» están reservados; los conceptos adicionales se clasifican como **cargos manuales**. La Directiva puede desactivarlos o ajustar su precio, pero los cargos emitidos ya conservan su importe.
+
+La Directiva selecciona un atleta con inicio configurado y emite un cargo (manual, inscripción única o mensualidad). Solo después aparece en el Representante como **tipo de pago → cargo concreto**. Los meses que no han sido asignados no aparecen. Tampoco aparece el formulario antiguo de doce meses para atletas sin configurar.
+
+El servidor calcula el importe USD de la obligación. Para bolívares o pesos exige tasa por USD registrada por Directiva para esa **fecha civil** (America/Caracas), con fuente y registro inmutable. La tasa no se deduce del dashboard ni se inventa. La cotización del navegador es informativa: el servidor recalcula todo al recibir el pago y rechaza importes manipulados.
+
+Antes del merge hay que aplicar manualmente la migración de catálogo y tasas en Supabase; el CI se ejecuta sobre un PostgreSQL temporal. Nunca probar emisiones o registros de tasa en Preview cuando comparte la base de Production.
+
+## 9. Próximas decisiones funcionales
 
 La pantalla de Estado de cuenta **no es aún un formulario de pago vinculado**. Para completar el ciclo obligación -> reporte -> revisión -> pago, falta:
 - Conciliar de forma explícita los históricos y resolver inscripciones ya pagadas.

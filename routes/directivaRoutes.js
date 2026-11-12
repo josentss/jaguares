@@ -8,6 +8,7 @@ const catalogosDeportivos = require('../controllers/catalogosDeportivosControlle
 const planillaGeneral = require('../controllers/planillaGeneralController');
 const asignacionesEquipos = require('../controllers/asignacionesEquiposController');
 const cobros = require('../controllers/cobrosController');
+const pagosVinculadosRevision = require('../controllers/pagosVinculadosRevisionController');
 const conciliacionCobros = require('../controllers/cobrosConciliacionController');
 
 // El prefijo /api/directiva ya comprueba sesión y rol en index.js.
@@ -30,6 +31,7 @@ router.put('/deportes/:tipo/:id', catalogosDeportivos.renombrar);
 router.get('/auditoria', verificarSesion, esDirectiva, directivaController.obtenerAuditoria);
 router.put('/atleta/estado', verificarSesion, esDirectiva, directivaController.actualizarEstadoAtleta);
 router.put('/pago/estado', verificarSesion, esDirectiva, directivaController.actualizarEstadoPago);
+router.put('/pago/vinculado/estado', verificarSesionRole(['directiva', 'admin']), pagosVinculadosRevision.revisar);
 router.delete('/pago/:id_pago', verificarSesionRole(['admin', 'directiva']), directivaController.eliminarPagoRechazado);
 router.get('/pendientes', verificarSesion, esDirectiva, directivaController.obtenerUsuariosPendientes);
 router.post('/gestionar-aprobacion', verificarSesion, esDirectiva, directivaController.gestionarAprobacion);

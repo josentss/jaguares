@@ -1,5 +1,6 @@
 # Jaguares — contexto maestro
 
+> **Cuentas por cobrar — 12 de noviembre de 2026 (PR en preparación):** tras PR #49 fusionado en `main` (SHA `8de75d3`), se definieron inscripción única USD 15 por atleta y mensualidad USD 15 con ancla individual y plazo hasta fin del mes del vencimiento (ejemplo 15/11/2026, plazo hasta 30/11/2026). La nueva migración `2026-11-12_cuentas_por_cobrar_base.sql` añade conceptos, anclas y obligaciones, sin generar deuda ni asociar pagos antiguos, y exige ejecución **manual** tras respaldo/autorización. Referencias variables: torneo USD 40, arbitraje USD 9/juego, sanción USD 10; uniformes excluidos. La API, pantallas y comprobantes aún conservan el comportamiento anterior. Contrato: [COBROS_Y_MENSUALIDADES.md](COBROS_Y_MENSUALIDADES.md). Pendientes: revisión CI, validación del esquema real, conciliación histórica, reglas de períodos iniciales, tasa oficial y pagos parciales; no aplicar a Production automáticamente.\n\n
 > **Asignación manual de equipos — estado al 12 de noviembre de 2026:**
 > [PR #46](https://github.com/josentss/jaguares/pull/46) fusionado en `main`
 > (`c439d2d`) y despliegue Vercel Production `success`. Implementa un equipo

@@ -88,6 +88,13 @@ test('solo directiva gestiona catálogo y nuevos códigos manuales',async()=>{
     assert.equal(editado.body.concepto.monto_referencia_usd,'10.00');
     assert.equal((await invocar(catalogo.crear,{...admin,body:{
         codigo:'transporte',nombre:'Transporte',monto_usd:'10'}})).codigo,409);
+    assert.equal((await invocar(catalogo.crear,{...admin,body:{
+        codigo:'transporte_extra',nombre:' transporte ESPECIAL ',monto_usd:'10'}})).codigo,409);
+    const {rows:conceptosDuplicados}=await db.pool.query(`
+        SELECT lower(btrim(nombre)) AS nombre,count(*)::int AS total
+        FROM conceptos_cobro GROUP BY lower(btrim(nombre)) HAVING count(*)>1
+    `);
+    assert.equal(conceptosDuplicados.length,0);
 });
 
 test('cargo manual usa tarifa fija y requiere inicio e historial para inscripción',async()=>{

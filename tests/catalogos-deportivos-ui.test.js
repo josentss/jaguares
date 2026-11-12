@@ -181,6 +181,9 @@ test('panel deportivo: diseño actualizado muestra resúmenes y estructura sin p
         assert.equal(await page.locator('#deportes-total-categorias').innerText(),'1');
         assert.equal(await page.locator('#deportes-total-equipos').innerText(),'1');
         assert.equal(await page.locator('#deportes-lista-equipos strong').innerText(),'Jaguares Principal');
+        assert.equal(await page.locator('#sec-deportes #asignaciones-panel').count(),0);
+        assert.equal(await page.locator('[data-target="sec-asignaciones"]').count(),1);
+        assert.equal(await page.locator('[data-target="sec-plantillas"]').count(),1);
     } finally { await context.close(); }
 });
 
@@ -207,7 +210,6 @@ test('directiva: filtrar categorías, estado y búsqueda; exportación disponibl
         await abrirApartado(page, 'sec-atletas');
         await page.waitForFunction(() => document.querySelectorAll('#body-atletas tr').length === 3);
         await page.locator('#filter-categoria-atletas').selectOption('u9');
-        assert.equal(await page.locator('#generar-planilla-general').isVisible(),true);
         await page.waitForFunction(() => document.getElementById('atletas-resultado-filtro').textContent.includes('1 de 3'));
         assert.equal(await page.locator('#body-atletas tr:visible').count(),1);
         assert.match(await page.locator('#body-atletas tr:visible').innerText(), /Ana/);
@@ -222,7 +224,6 @@ test('directiva: filtrar categorías, estado y búsqueda; exportación disponibl
         await page.locator('#filter-categoria-atletas').selectOption('sin_categoria');
         assert.equal(await page.locator('#body-atletas tr:visible').count(),1);
         assert.match(await page.locator('#body-atletas tr:visible').innerText(), /Eva/);
-        assert.equal(await page.locator('#generar-planilla-general').isVisible(),false);
     } finally {
         atletasFixture = [];
         await context.close();
@@ -275,7 +276,7 @@ test('directiva móvil: navegación de grupos y tarjetas de catálogos sin desbo
         assert.equal(visibles.length,3);
         assert.ok(visibles.every(r=>r.izquierda >= -1 && r.derecha <= 392),'Tarjetas deben caber en teléfono');
         const grupos=page.locator('.sidebar-group__toggle');
-        assert.equal(await grupos.count(),2);
+        assert.equal(await grupos.count(),3);
     }finally{await context.close();}
 });
 

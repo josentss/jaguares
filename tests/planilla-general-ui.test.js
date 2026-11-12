@@ -40,12 +40,23 @@ test.before(async () => {
             metricas: { activos: 0, espera: 0, pagos_pendientes: 0 },
             tasa_bcv: 36.5, tasa_fecha: null, atletas: [], pagos: []
         });
+        if (pathname === '/api/directiva/deportes/catalogo') return json(res, {
+            success: true,
+            temporadas: [{ id_temporada: 1, nombre: '2026-2027' }],
+            categorias: [{ id_categoria: 1, id_temporada: 1, nombre: 'U-09' }],
+            equipos: [{ id_equipo: 1, id_categoria: 1, nombre: 'Jaguares A' }]
+        });
         if (pathname === '/api/directiva/atletas/planilla-general') {
             peticiones.push(url.search);
             const codigo = url.searchParams.get('categoria');
-            const lista = codigo === 'u9' ? atletas : [];
+            const equipo = url.searchParams.get('equipo');
+            const lista = codigo === 'u9' ? atletas : (equipo === '1' ? atletas.slice(0, 2) : []);
             return json(res, { success: true,
-                categoria: { codigo, nombre: codigo === 'u9' ? 'U-9 Iniciación' : 'U-15 Infantil (M)' },
+                alcance: equipo ? { tipo: 'equipo', id_equipo: 1, nombre: 'Jaguares A',
+                    detalle: 'U-09 · 2026-2027' } :
+                    { tipo: 'categoria', codigo,
+                        nombre: codigo === 'u9' ? 'U-9 Iniciación' : 'U-15 Infantil (M)',
+                        detalle: 'Categoría por edad' },
                 fecha: '2026-11-11', total: lista.length, atletas: lista });
         }
         if (pathname.startsWith('/api/')) return json(res, { success: true, datos: [] });
@@ -87,7 +98,7 @@ async function abrir(viewport) {
     await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
     const toggleMovil = page.locator('#mobile-menu-btn');
     if (await toggleMovil.isVisible()) await toggleMovil.click();
-    const item = page.locator('[data-target="sec-atletas"]');
+    const item = page.locator('[data-target="sec-plantillas"]');
     const grupo = item.locator('xpath=ancestor::li[contains(concat(" ", normalize-space(@class), " "), " sidebar-group ")]');
     if (await grupo.count()) {
         const botonGrupo = grupo.locator('.sidebar-group__toggle');
@@ -101,13 +112,12 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     test(`categoría elegida genera PDF paginado en ${viewport.width}px`, async () => {
         const { browser, context, page, errores } = await abrir(viewport);
         try {
-            const categoria = page.locator('#filter-categoria-atletas');
+            const categoria = page.locator('#plantillas-alcance');
             const boton = page.locator('#generar-planilla-general');
-            assert.equal(await boton.evaluate(elemento => elemento.hidden), true);
             await categoria.selectOption('u9');
-            assert.equal(await boton.evaluate(elemento => elemento.hidden), false);
-            await page.locator('#search-atletas').fill('texto que no coincide');
-            await page.locator('#filter-estado-atletas').selectOption('espera');
+            await page.locator('#plantillas-consultar').click();
+            await page.locator('#plantillas-body tr').first().waitFor();
+            assert.equal(await page.locator('#plantillas-body tr').count(),28);
             await page.evaluate(() => {
                 window.__planillaGeneralVista = null;
                 const observador = new MutationObserver(() => {
@@ -126,7 +136,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
             const descarga = page.waitForEvent('download');
             await page.evaluate(() => document.getElementById('generar-planilla-general').click());
             const download = await descarga;
-            assert.equal(download.suggestedFilename(), 'Planilla_General_Jaguares_U9.pdf');
+            assert.equal(download.suggestedFilename(), 'Planilla_Categoria_Jaguares_U_9_Iniciacion.pdf');
             assert.deepEqual(peticiones.slice(-1), ['?categoria=u9']);
             const bytes = await fs.readFile(await download.path());
             assert.ok(bytes.byteLength > 10000, `PDF demasiado pequeño: ${bytes.byteLength} bytes`);
@@ -173,10 +183,31 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 test('una categoría sin activos muestra aviso y no descarga archivo', async () => {
     const { browser, context, page } = await abrir({ width: 1280, height: 800 });
     try {
-        await page.locator('#filter-categoria-atletas').selectOption('u15');
-        await page.locator('#generar-planilla-general').click();
-        await page.getByText('No hay atletas activos en esta categoría.').waitFor();
+        await page.locator('#plantillas-alcance').selectOption('u15');
+        await page.locator('#plantillas-consultar').click();
+        await page.getByText('No hay atletas activos en esta plantilla.').waitFor();
         assert.equal(await page.locator('.planilla-general-export').count(), 0);
-        assert.equal(await page.locator('#generar-planilla-general').isDisabled(), false);
+        assert.equal(await page.locator('#generar-planilla-general').isDisabled(), true);
+    } finally { await context.close(); await browser.close(); }
+});
+
+test('consulta un equipo por temporada y genera su PDF', async () => {
+    const { browser, context, page, errores } = await abrir({ width: 1280, height: 800 });
+    try {
+        await page.locator('#plantillas-tipo').selectOption('equipo');
+        assert.equal(await page.locator('#plantillas-alcance optgroup').getAttribute('label'),'2026-2027');
+        assert.match(await page.locator('#plantillas-alcance option[value="1"]').innerText(),/U-09 · Jaguares A/);
+        await page.locator('#plantillas-alcance').selectOption('1');
+        await page.locator('#plantillas-consultar').click();
+        await page.getByText('2 atletas activos').waitFor();
+        assert.equal(await page.locator('#plantillas-body tr').count(),2);
+        assert.match(await page.locator('#plantillas-resultado').innerText(),/Jaguares A/);
+        assert.match(await page.locator('#plantillas-resultado').innerText(),/U-09 · 2026-2027/);
+        const descarga = page.waitForEvent('download');
+        await page.locator('#generar-planilla-general').click();
+        const download = await descarga;
+        assert.equal(download.suggestedFilename(), 'Planilla_Equipo_Jaguares_Jaguares_A.pdf');
+        assert.deepEqual(peticiones.slice(-1), ['?equipo=1']);
+        assert.deepEqual(errores,[]);
     } finally { await context.close(); await browser.close(); }
 });

@@ -16,7 +16,17 @@
 > validación visible de catálogos y textos abreviados; sin SQL nuevo. Ver
 > [contrato y ensayo](ASIGNACIONES_EQUIPOS.md). Evidencia local: 8/8 pruebas con
 > PostgreSQL 18 desechable y 11/11 pruebas Chromium aprobadas en Node 24.
-> Próximo bloque tras validar este cierre: reporte de pagos del representante,
+> PR #47 fue fusionado en `main` (`b349573`), Vercel Production terminó en
+> `success` y el propietario comprobó allí el resultado. Reportó que mantener
+> catálogos, asignación, plantillas e historial en una sola sección resulta
+> desordenado. Rama `feat/plantillas-equipos-secciones-20261112`: separa
+> Organización deportiva, Asignación de equipos y Consulta de plantillas; mueve
+> la exportación colectiva fuera de Gestión de atletas y permite consultar/PDF
+> por categoría etaria o equipo vigente. Sin SQL nuevo. Ver
+> [contrato de plantillas deportivas](PLANTILLAS_DEPORTIVAS.md). Evidencia
+> local: PostgreSQL 7/7, interfaz específica 15/15 y regresión de
+> interfaz/sesiones 64/64. Preview y Production de este nuevo cambio no se han
+> probado. Después de validarlo, abordar el reporte de pagos del representante
 > sin inferir tarifa, deuda ni política de cobro.
 
 > **Ajustes de paneles — 11 de noviembre de 2026:** GitHub confirma PR #44

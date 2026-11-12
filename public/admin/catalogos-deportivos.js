@@ -169,6 +169,7 @@
             limpiarEdicion(tipo);
             await cargar();
             window.JaguaresAsignaciones?.cargar();
+            window.JaguaresPlanillaGeneral?.cargar();
             if (typeof window.showToast === 'function') window.showToast('Catálogo actualizado', 'success');
         } catch (error) {
             mensaje(error.message || 'No se pudo guardar el registro.', true);

@@ -108,3 +108,10 @@ PostgreSQL 18 local desechable y 11/11 pruebas de interfaz con Chromium en Node
 24. Incluyen filtro de activos desde SQL, validación de catálogos, búsqueda,
 asignación, cambio, historial, permisos y vista móvil. No sustituyen el ensayo
 humano del Preview del nuevo diff.
+
+El propietario fusionó PR #47 y comprobó Production. La siguiente observación
+fue de arquitectura visual: catálogos, asignación y consulta de plantillas no
+deben convivir en una sola sección. La rama
+`feat/plantillas-equipos-secciones-20261112` conserva este contrato de datos y
+mueve cada responsabilidad a una pantalla independiente. Ver
+[Consulta de plantillas y asignación de equipos](PLANTILLAS_DEPORTIVAS.md).

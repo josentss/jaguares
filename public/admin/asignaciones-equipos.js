@@ -94,14 +94,6 @@
                 'Verifica la categoría del equipo.';
         } else aviso.textContent = '';
 
-        const plantilla = porId('asignaciones-plantilla');
-        plantilla.replaceChildren();
-        const actuales = movimientos.filter(fila => fila.id_temporada === idTemporada && !fila.fin_en);
-        for (const fila of actuales) item(plantilla,
-            `${fila.atleta_apellidos} ${fila.atleta_nombres} · ${fila.equipo_nombre} (${fila.categoria_nombre})` +
-            (fila.atleta_estado === 'activo' ? '' : ` · ${fila.atleta_estado}`));
-        if (!actuales.length) item(plantilla, 'Sin asignaciones en esta temporada.');
-
         const historial = porId('asignaciones-historial');
         historial.replaceChildren();
         const propios = movimientos.filter(fila => fila.id_atleta === idAtleta);
@@ -144,6 +136,7 @@
     function inicializar(rol) {
         permitido = rol === 'directiva' || rol === 'admin';
         porId('asignaciones-panel').hidden = !permitido;
+        porId('nav-asignaciones').hidden = !permitido;
     }
 
     porId('asignaciones-temporada').addEventListener('change', actualizarEquipos);

@@ -1,5 +1,13 @@
 # UX operativa — navegación, formularios y filtros
 
+> **Actualización del 12 de noviembre de 2026:** el contrato histórico de este
+> documento se implementó inicialmente en Gestión de atletas. Tras validar PR
+> #47 en Production, el propietario acordó mover la exportación colectiva a una
+> sección independiente, **Consulta de plantillas**, y admitir también el
+> alcance por equipo vigente. Gestión de atletas conserva sus filtros y la
+> planilla individual. La especificación vigente está en
+> [PLANTILLAS_DEPORTIVAS.md](PLANTILLAS_DEPORTIVAS.md).
+
 ## Motivo
 
 El propietario validó el PR #40 en Preview y documentó problemas de densidad en cuatro capturas:

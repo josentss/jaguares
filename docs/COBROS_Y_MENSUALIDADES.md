@@ -1,6 +1,13 @@
 # Cuentas por cobrar — contrato inicial (12-11-2026)
 
-## PR #52 — Conciliación histórica e inicio de cobro (en revisión)
+## PR #53 — Vista de Estado de cuenta (en revisión)
+- El Representante accede a **Mis pagos > Estado de cuenta**, con consulta de obligaciones de sus atletas exclusivamente. Cada fila muestra concepto, período, monto USD, vencimiento, último día del plazo y estado calculado.
+- Si no existe ancla u obligación, no se presenta un saldo ficticio ni el mensaje "al día": la pantalla indica que está pendiente de configurar.
+- **Solo lectura**: no hace POST, no crea mensuales y no enlaza pagos del formulario antiguo a `id_obligacion`.
+- Simplifica el texto del módulo Directiva de conciliación y del formulario antiguo de pagos; los detalles del funcionamiento viven en [GUIA_ESTUDIO_SISTEMA.md](GUIA_ESTUDIO_SISTEMA.md).
+- El flujo guiado para reportar pagos vinculados requiere resolver antes moneda, tasa y conciliación. No se debe simular un pago contra obligaciones usando el formulario antiguo.
+
+## PR #52 — Conciliación histórica (fusionado en Production)
 La migración del PR #50 y el motor del PR #51 ya están en Production. La directiva verificó en Supabase 5 conceptos, 0 anclas, 0 obligaciones, **16 pagos históricos** (6 pendientes, 8 aprobados, 2 rechazados), y 0 pagos vinculados. Las cuatro comprobaciones de lectura del PR #51 en Production resultaron correctas: representante propietario, representante ajeno, Directiva y visitante sin sesión.
 
 **Esta propuesta no incorpora nuevas tablas ni modifica/importa pagos antiguos.**

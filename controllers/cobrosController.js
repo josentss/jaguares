@@ -46,13 +46,15 @@ exports.consultar = async (req, res) => {
         const [ancla, obligaciones] = await Promise.all([
             db.pool.query(`SELECT fecha_inicio, dia_ancla, configurado_en
                 FROM anclas_cobro_atleta WHERE id_atleta = $1`, [Number(id)]),
-            db.pool.query(`SELECT o.id_obligacion, o.codigo_concepto, o.periodo_mes,
-                o.detalle, o.monto_usd, o.fecha_emision, o.fecha_vencimiento, o.fecha_limite,
+            db.pool.query(`SELECT o.id_obligacion, o.codigo_concepto, c.nombre AS nombre_concepto,
+                o.periodo_mes, o.detalle, o.monto_usd, o.fecha_emision,
+                o.fecha_vencimiento, o.fecha_limite,
                 EXISTS (SELECT 1 FROM pagos p WHERE p.id_obligacion = o.id_obligacion
                     AND p.estado_pago = 'aprobado') AS existe_aprobado,
                 EXISTS (SELECT 1 FROM pagos p WHERE p.id_obligacion = o.id_obligacion
                     AND p.estado_pago = 'pendiente') AS existe_pendiente
                 FROM obligaciones_cobro o
+                JOIN conceptos_cobro c ON c.codigo = o.codigo_concepto
                 WHERE o.id_atleta = $1 ORDER BY o.fecha_vencimiento, o.id_obligacion`, [Number(id)])
         ]);
         const hoy = hoyCaracas();

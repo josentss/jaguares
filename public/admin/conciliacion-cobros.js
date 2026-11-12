@@ -84,8 +84,11 @@
         const pendientes = pagos.filter(p => p.estado_pago === 'pendiente').length;
         const rechazados = pagos.filter(p => p.estado_pago === 'rechazado').length;
         porId('cobros-resumen-actual').textContent =
-            `${pagos.length} pagos · ${aprobados} aprobados · ${pendientes} pendientes · ${rechazados} rechazados · ` +
-            `${detalle.obligaciones.length} obligaciones · ` +
+            `${pagos.length} ${pagos.length === 1 ? 'pago' : 'pagos'} · ` +
+            `${aprobados} ${aprobados === 1 ? 'aprobado' : 'aprobados'} · ` +
+            `${pendientes} ${pendientes === 1 ? 'pendiente' : 'pendientes'} · ` +
+            `${rechazados} ${rechazados === 1 ? 'rechazado' : 'rechazados'} · ` +
+            `${detalle.obligaciones.length} ${detalle.obligaciones.length === 1 ? 'obligación' : 'obligaciones'} · ` +
             (atleta.fecha_inicio ? `Inicio: ${fechaVisible(atleta.fecha_inicio)} · Día ${atleta.dia_ancla}` : 'Sin inicio de cobro');
 
         const cuerpo = porId('cobros-pagos');

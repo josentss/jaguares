@@ -116,6 +116,13 @@ test('solo conceptos emitidos: precio fijo USD y envío de ID de obligación',as
         assert.equal(await page.locator('#pay-mes').count(),0);
         await page.locator('#pay-metodo').selectOption('Efectivo');
         await page.waitForFunction(()=>document.querySelector('#pay-monto-efec').value==='15.00');
+        // Cambiar el tipo consulta el precio congelado de su propio cargo.
+        await page.locator('#pay-concepto').selectOption('torneo');
+        await page.waitForFunction(()=>document.querySelector('#pay-monto-efec').value==='40.00');
+        assert.equal(await page.locator('#pay-obligacion').inputValue(),'3');
+        await page.locator('#pay-concepto').selectOption('mensualidad');
+        await page.waitForFunction(()=>document.querySelector('#pay-obligacion').value==='1');
+        await page.waitForFunction(()=>document.querySelector('#pay-monto-efec').value==='15.00');
         assert.equal(await page.locator('#pay-monto-efec').isEditable(),false);
         assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(),false);
         await page.locator('#form-report-pago button[type=submit]').click();

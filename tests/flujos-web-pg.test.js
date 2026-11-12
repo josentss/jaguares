@@ -866,22 +866,22 @@ for (const [nombre,viewport,timezoneId] of [
             await rep.reload();
             await rep.locator(`#pay-atleta option[value="${alta.id_atleta}"]`).waitFor({state:'attached'});
             await seccion(rep,'sec-pagos');
+            await rep.selectOption('#pay-atleta',String(alta.id_atleta));
+            await rep.getByText('No hay cargos pendientes asignados.').waitFor();
             for (const metodo of ['Efectivo','Transferencia Bancaria']) {
-                await rep.selectOption('#pay-atleta',String(alta.id_atleta));
-                await rep.selectOption('#pay-mes','Noviembre');
-                await rep.selectOption('#pay-metodo',metodo);
-                if (metodo==='Efectivo') {
-                    await rep.locator('#pay-monto-efec').fill('10.00');
-                    await rep.selectOption('#pay-moneda-efec','USD');
-                    await rep.locator('#pay-fecha-efec').fill(fechaPago);
-                } else {
-                    await rep.locator('#pay-monto-trans').fill('35.50');
-                    await rep.locator('#pay-referencia').fill('REFERENCIA-FECHAS-'+nombre);
-                    await rep.locator('#pay-fecha-trans').fill(fechaPago);
-                    await rep.locator('#pay-captura').setInputFiles({name:'comprobante-fechas.png',mimeType:'image/png',
-                        buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')});
+                const body={
+                    id_atleta:String(alta.id_atleta),mes:'Noviembre',metodo,
+                    monto:metodo==='Efectivo'?'10.00':'35.50',
+                    moneda:metodo==='Efectivo'?'USD':'Bs',
+                    fecha_pago:fechaPago
+                };
+                if (metodo==='Transferencia Bancaria') {
+                    body.referencia='REFERENCIA-FECHAS-'+nombre;
+                    body.captura={name:'comprobante-fechas.png',mimeType:'image/png',
+                        buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')};
                 }
-                await enviar(rep,'#form-report-pago','/api/pagos/reportar');
+                const r=await rep.request.post(base+'/api/pagos/reportar',{multipart:body});
+                assert.equal(r.status(),200);
             }
 
             const pagosSQL = await db.pool.query('SELECT fecha_pago FROM pagos WHERE id_atleta=$1 ORDER BY id_pago',[alta.id_atleta]);

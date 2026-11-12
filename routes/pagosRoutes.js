@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pagosController = require('../controllers/pagosController');
+const cobrosController = require('../controllers/cobrosController');
 const { verificarSesion } = require('../middlewares/authMiddleware');
 const { upload, validarMagicBytes } = require('../middlewares/uploadMiddleware');
 const { logUploadEvent } = require('../utils/auditLogger');
@@ -71,6 +72,9 @@ function manejarUpload(req, res, next) {
 router.post('/reportar', verificarSesion, manejarUpload, pagosController.reportarPago);
 
 router.get('/historial/:id_rep', verificarSesion, pagosController.obtenerHistorial);
+
+// Consulta de obligaciones: comprueba propiedad del atleta dentro del controlador.
+router.get('/obligaciones/:id_atleta', verificarSesion, cobrosController.consultar);
 
 router.get('/captura/:id_pago', verificarSesion, pagosController.obtenerCaptura);
 

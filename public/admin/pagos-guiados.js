@@ -58,6 +58,7 @@
         consultarMonto();
     }
     function pintar() {
+        byId('pay-obligacion-wrap').hidden = !obligaciones.length;
         const sel=byId('pay-concepto');
         const primero=obligaciones[0];
         const nombres=new Map(obligaciones.map(o=>[o.codigo_concepto,nombre(o)]));
@@ -134,6 +135,7 @@
         estado='cargando';
         byId('pay-concepto').disabled=true;
         byId('pay-obligacion').disabled=true;
+        byId('pay-obligacion-wrap').hidden=true;
         habilitarBoton();
         if(!id){estado='sin-atleta';aviso('Selecciona un atleta.');return;}
         aviso('Consultando cargos…');

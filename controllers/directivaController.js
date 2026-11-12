@@ -63,11 +63,14 @@ exports.obtenerAuditoria = async (req, res) => {
         SELECT p.id_pago, a.id_representante,
                p.mes_pagado, p.metodo_pago, p.fecha_pago,
                p.monto, p.moneda, p.referencia, p.ruta_captura, p.estado_pago,
-               p.id_obligacion, o.codigo_concepto, o.periodo_mes, o.monto_usd AS obligacion_monto_usd,
+               p.id_obligacion, p.id_tasa_cobro, o.codigo_concepto, o.periodo_mes,
+               o.monto_usd AS obligacion_monto_usd,
+               tc.tasa_por_usd, tc.fuente AS fuente_tasa, tc.fecha_vigencia AS fecha_tasa,
                a.nombres AS atl_nombres, a.apellidos AS atl_apellidos
         FROM pagos p
         LEFT JOIN atletas a ON p.id_atleta = a.id_atleta
         LEFT JOIN obligaciones_cobro o ON o.id_obligacion = p.id_obligacion
+        LEFT JOIN tasas_cobro tc ON tc.id_tasa = p.id_tasa_cobro
         ORDER BY p.id_pago DESC
     `;
 

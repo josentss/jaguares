@@ -677,17 +677,24 @@ test('flujo real: transferencia exige captura y persiste el comprobante tras cam
         await page.locator(`#pay-atleta option[value="${rows[0].id_atleta}"]`).waitFor({state:'attached'});
         await seccion(page,'sec-pagos');
         await page.selectOption('#pay-atleta',String(rows[0].id_atleta));
-        await page.selectOption('#pay-metodo','Efectivo');
-        await page.locator('#pay-monto-efec').fill('-1');
-        await page.selectOption('#pay-metodo','Transferencia Bancaria');
-        await page.locator('#pay-monto-trans').fill('35.50');
-        await page.locator('#pay-referencia').fill('REFERENCIA-SINTETICA');
-        await page.locator('#pay-fecha-trans').fill('2026-11-02');
-        await page.locator('#form-report-pago button[type=submit]').click();
-        await page.locator('#form-report-pago .form-validation-message').waitFor({state:'visible'});
-        await page.locator('#pay-captura').setInputFiles({name:'comprobante-prueba.png',mimeType:'image/png',
-            buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')});
-        await enviar(page,'#form-report-pago','/api/pagos/reportar');
+        await page.getByText('No hay cargos pendientes asignados.').waitFor();
+        assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(),true);
+        // El endpoint histórico no pierde la validación de comprobantes privados.
+        const sinComprobante=await page.request.post(base+'/api/pagos/reportar',{
+            multipart:{id_atleta:String(rows[0].id_atleta),mes:'Noviembre',
+                metodo:'Transferencia Bancaria',monto:'35.50',moneda:'Bs',
+                fecha_pago:'2026-11-02',referencia:'REFERENCIA-SINTETICA'}
+        });
+        assert.equal(sinComprobante.status(),400);
+        const reporte=await page.request.post(base+'/api/pagos/reportar',{
+            multipart:{id_atleta:String(rows[0].id_atleta),mes:'Noviembre',
+                metodo:'Transferencia Bancaria',monto:'35.50',moneda:'Bs',
+                fecha_pago:'2026-11-02',referencia:'REFERENCIA-SINTETICA',
+                captura:{name:'comprobante-prueba.png',mimeType:'image/png',
+                    buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=','base64')}
+            }
+        });
+        assert.equal(reporte.status(),200);
         const pago = (await db.pool.query('SELECT id_pago,moneda,ruta_captura FROM pagos WHERE referencia=$1',['REFERENCIA-SINTETICA'])).rows[0];
         assert.equal(pago.moneda,'Bs');
         assert.match(pago.ruta_captura,/^https:\/\/res\.cloudinary\.com\/solo-pruebas\/image\/authenticated\/v123456\/jaguares_comprobantes\/archivo-sintetico-\d+\.png$/);

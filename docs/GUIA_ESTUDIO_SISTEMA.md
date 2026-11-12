@@ -141,11 +141,14 @@ Antes del merge hay que aplicar manualmente la migración de catálogo y tasas e
 
 ## 9. Próximas decisiones funcionales
 
-La pantalla de Estado de cuenta **no es aún un formulario de pago vinculado**. Para completar el ciclo obligación -> reporte -> revisión -> pago, falta:
-- Conciliar de forma explícita los históricos y resolver inscripciones ya pagadas.
-- Definir moneda y fuente de tasa verificable; política de importes parciales.
-- Enviar reportes vinculados a `id_obligacion`, impedir reportes simultáneos y permitir reenviar tras rechazo sin perder trazabilidad.
-- Mostrar el saldo de forma correcta, sin confundir «en revisión» con «pagado».
-- Conservar la protección Cloudinary y las revisiones de Directiva existentes.
+El reporte **vinculado a `id_obligacion`** ya existe desde PR #54, y este PR #55 introduce el catálogo editable, la elección de cargos asignados y montos fijos cotizados por moneda. El Estado de cuenta sigue siendo **una consulta**, no un formulario de envío.
+
+Para completar la puesta en marcha operativa sigue pendiente:
+- Conciliar individualmente históricos e inscripciones previas antes de establecer anclas.
+- Definir y verificar una fuente institucional fiable para las tasas registradas, así como su actualización diaria.
+- Decidir cuándo automatizar o programar la emisión de mensualidades para atletas **ya activados**, sin crear deudas históricas no revisadas.
+- Definir pagos parciales, correcciones de saldos, anulaciones y una conciliación contable más completa.
+- Retirar el endpoint legado de reportes libres cuando todos los atletas estén migrados, conservando acceso a los pagos anteriores.
+- Mantener protecciones Cloudinary, permisos, historial de intentos rechazados y pruebas del CI.
 
 **Regla para estudiar:** el código actual es la fuente de verdad. Esta guía explica los flujos; ante discrepancias, buscar el endpoint, su controlador y sus pruebas antes de afirmar que una función ya está operativa.

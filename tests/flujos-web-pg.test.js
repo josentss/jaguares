@@ -888,6 +888,7 @@ for (const [nombre,viewport,timezoneId] of [
             assert.deepEqual(pagosSQL.rows.map(p=>p.fecha_pago),[fechaPago,fechaPago]);
             const historial = await (await rep.request.get(base+'/api/pagos/historial/2')).json();
             assert.deepEqual(historial.datos.filter(p=>p.id_atleta===alta.id_atleta).map(p=>p.fecha_pago),[fechaPago,fechaPago]);
+            await rep.reload();
             await seccion(rep,'sec-historial');
             await rep.waitForFunction(n=>[...document.querySelectorAll('#table-my-pagos tbody tr')]
                 .filter(f=>f.textContent.includes(n)).length===2,nombres);

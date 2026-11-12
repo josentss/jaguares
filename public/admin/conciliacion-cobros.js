@@ -219,14 +219,18 @@
             });
             const data = await respuesta.json();
             if (!respuesta.ok || !data.success) throw new Error(data.message || 'No se pudo registrar');
-            mostrar('Inicio registrado. No se han creado obligaciones.');
+            const fila = atletas.find(x => Number(x.id_atleta) === Number(id));
+            if (fila) { fila.fecha_inicio = fecha; fila.dia_ancla = dia; }
+            actualizarSelector();
             await cargarDetalle();
-            await cargar();
+            mostrar('Inicio registrado correctamente. No se han creado obligaciones.');
         } catch (error) {
             mostrar(error.message || 'No se pudo registrar el inicio.',true,'cobros-aviso');
         } finally {
             guardando = false;
-            if (detalle) mostrarDetalle();
+            const actual = detalle?.atleta;
+            porId('cobros-guardar').disabled = !actual || !!actual.fecha_inicio ||
+                actual.estado !== 'activo' || actual.estado_representante !== 'aprobado';
         }
     }
 

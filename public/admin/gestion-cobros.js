@@ -55,11 +55,16 @@
         guardar.addEventListener('click',async()=>{
             if (enviando) return;
             if (!root.confirm(`¿Guardar la tarifa de ${concepto.nombre}? Solo afectará cargos futuros.`)) return;
-            await escribir('/api/directiva/cobros/catalogo/'+encodeURIComponent(concepto.codigo),{
+            const guardado=await escribir('/api/directiva/cobros/catalogo/'+encodeURIComponent(concepto.codigo),{
                 method:'PATCH',body:JSON.stringify({
                     nombre:nombre.value.trim(),monto_usd:precio.value,activo:activo.checked
                 })
             },'Tarifa actualizada');
+            if (guardado) {
+                // Usar siempre el precio guardado en servidor, no la copia previa del catálogo.
+                await cargar();
+                estado('Tarifa actualizada');
+            }
         });
         celda(tr,guardar);
         return tr;

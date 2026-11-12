@@ -10,6 +10,7 @@
     border: 1px solid #cbd5e1; border-radius: 7px; background: #f8fafc;
     padding: 8px 11px; color: #334155; font: inherit; font-size: .8rem; cursor: pointer;
 }
+.asignaciones-cabecera button:disabled { opacity: .65; cursor: wait; }
 .asignaciones-panel h4 { margin: 0 0 9px; font-size: .9rem; }
 .asignaciones-ayuda { margin: 7px 0 14px; color: #52616d; font-size: .82rem; line-height: 1.45; }
 #asignaciones-estado, .plantillas-estado { color: #475569; font-size: .82rem; margin: 0 0 10px; }
@@ -64,12 +65,15 @@
 }
 .plantillas-resultado-cabecera p { margin: 4px 0 0; color: #64748b; font-size: .82rem; }
 #plantillas-total { margin: 12px 0 8px; color: #475569; font-size: .82rem; }
-.plantillas-tabla-wrap { overflow-x: auto; }
+.plantillas-tabla-wrap { max-height: 430px; overflow: auto; }
 .plantillas-tabla { width: 100%; border-collapse: collapse; }
 .plantillas-tabla th, .plantillas-tabla td {
     padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: .84rem;
 }
-.plantillas-tabla th { background: #f8fafc; color: #334155; font-weight: 600; }
+.plantillas-tabla th {
+    position: sticky; top: 0; z-index: 1; background: #f8fafc;
+    color: #334155; font-weight: 600;
+}
 
 @media (max-width: 900px) {
     .plantillas-controles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -86,4 +90,19 @@
     #generar-planilla-general { width: 100%; }
     .plantillas-controles button { grid-column: auto; }
     .plantillas-resultado-cabecera { align-items: stretch; }
+    .plantillas-tabla-wrap { max-height: none; overflow: visible; }
+    .plantillas-tabla, .plantillas-tabla tbody, .plantillas-tabla tr,
+    .plantillas-tabla td { display: block; width: 100%; }
+    .plantillas-tabla thead { position: absolute; width: 1px; height: 1px; overflow: hidden;
+        clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+    .plantillas-tabla tr { margin-bottom: 10px; padding: 8px 11px;
+        border: 1px solid #e2e8f0; border-radius: 8px; }
+    .plantillas-tabla td { display: grid; grid-template-columns: minmax(105px, .8fr) minmax(0, 1.2fr);
+        gap: 10px; padding: 6px 0; border: 0; overflow-wrap: anywhere; }
+    .plantillas-tabla td::before { color: #475569; font-size: .77rem; font-weight: 600; }
+    .plantillas-tabla td:nth-child(1)::before { content: 'Atleta'; }
+    .plantillas-tabla td:nth-child(2)::before { content: 'Cédula'; }
+    .plantillas-tabla td:nth-child(3)::before { content: 'Nacimiento'; }
+    .plantillas-tabla td[colspan] { display: block; }
+    .plantillas-tabla td[colspan]::before { content: none; }
 }

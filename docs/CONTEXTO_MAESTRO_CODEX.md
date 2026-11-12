@@ -19,15 +19,22 @@
 > PR #47 fue fusionado en `main` (`b349573`), Vercel Production terminó en
 > `success` y el propietario comprobó allí el resultado. Reportó que mantener
 > catálogos, asignación, plantillas e historial en una sola sección resulta
-> desordenado. Rama `feat/plantillas-equipos-secciones-20261112`: separa
+> desordenado. [PR #48](https://github.com/josentss/jaguares/pull/48), fusionado
+> en `main` (`f9cdf1a`) y desplegado en Production con estado `success`, separa
 > Organización deportiva, Asignación de equipos y Consulta de plantillas; mueve
 > la exportación colectiva fuera de Gestión de atletas y permite consultar/PDF
 > por categoría etaria o equipo vigente. Sin SQL nuevo. Ver
 > [contrato de plantillas deportivas](PLANTILLAS_DEPORTIVAS.md). Evidencia
 > local: PostgreSQL 7/7, interfaz específica 15/15 y regresión de
-> interfaz/sesiones 64/64. Preview y Production de este nuevo cambio no se han
-> probado. Después de validarlo, abordar el reporte de pagos del representante
-> sin inferir tarifa, deuda ni política de cobro.
+> interfaz/sesiones 64/64. El propietario probó visualmente las tres secciones
+> en Production y confirmó navegación, asignación, consulta y catálogos.
+> Rama `fix/ux-final-organizacion-deportiva-20261112`: cierre visual sin SQL ni
+> cambio de API; distingue equipo actual/asignar/cambiar, informa cargas,
+> convierte la plantilla móvil en fichas y limita/filtra los listados de
+> catálogos por temporada o categoría seleccionada. Evidencia local: 16/16
+> pruebas específicas y 64/64 regresiones de interfaz/sesiones. Falta revisión
+> de Preview de este último diff. Después, abordar pagos sin inferir tarifa,
+> deuda ni política de cobro.
 
 > **Ajustes de paneles — 11 de noviembre de 2026:** GitHub confirma PR #44
 > fusionado en `main` (`64be09b`) y Vercel Production `success` para ese SHA.

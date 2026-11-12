@@ -115,7 +115,9 @@ test('directiva asigna, cambia equipo y conserva el historial sin asignar por ed
         await page.getByText('Equipo actual: Equipo A').waitFor();
         assert.deepEqual(enviados[0],{id_atleta:11,id_equipo:1,id_asignacion_actual:null});
         assert.equal(await page.locator('#asignaciones-guardar').isDisabled(),true);
+        assert.equal(await page.locator('#asignaciones-guardar').innerText(),'Equipo actual');
         await page.locator('#asignaciones-equipo').selectOption('2');
+        assert.equal(await page.locator('#asignaciones-guardar').innerText(),'Cambiar equipo');
         await page.locator('#asignaciones-guardar').click();
         await page.getByText('Equipo actual: Equipo B').waitFor();
         assert.deepEqual(enviados[1],{id_atleta:11,id_equipo:2,id_asignacion_actual:1});

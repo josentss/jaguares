@@ -56,6 +56,7 @@
         form.querySelector('[data-cancelar]').hidden = true;
         const campo = TIPOS[tipo].campo;
         if (campo) form.elements[campo].disabled = false;
+        renderTipo(tipo);
     }
 
     function opciones(tipo) {
@@ -79,8 +80,13 @@
 
     function renderTipo(tipo) {
         const lista = porId('deportes-lista-' + tipo);
+        const meta = TIPOS[tipo];
+        const seleccionPadre = meta.campo ? formulario(tipo).elements[meta.campo].value : '';
+        const filas = seleccionPadre
+            ? datos[tipo].filter(fila => Number(fila[meta.campo]) === Number(seleccionPadre))
+            : datos[tipo];
         lista.replaceChildren();
-        for (const fila of datos[tipo]) {
+        for (const fila of filas) {
             const li = document.createElement('li');
             const texto = document.createElement('div');
             texto.className = 'deportes-item-texto';
@@ -103,13 +109,18 @@
             li.append(texto, editar);
             lista.append(li);
         }
-        if (!datos[tipo].length) {
+        if (!filas.length) {
             const vacio = document.createElement('li');
             vacio.className = 'deportes-vacio';
-            vacio.textContent = 'Todavía no hay registros.';
+            vacio.textContent = seleccionPadre ? 'No hay registros para esta selección.' : 'Todavía no hay registros.';
             lista.append(vacio);
         }
-        const meta = TIPOS[tipo];
+        const resumen = porId('deportes-mostrando-' + tipo);
+        if (resumen) {
+            resumen.textContent = seleccionPadre && filas.length !== datos[tipo].length
+                ? `Mostrando ${filas.length} de ${datos[tipo].length}`
+                : `${datos[tipo].length} ${datos[tipo].length === 1 ? 'registro' : 'registros'}`;
+        }
         const parentDisponible = !meta.parent || datos[meta.parent].length > 0;
         formulario(tipo).querySelector('[data-guardar]').disabled = !parentDisponible;
         if (meta.parent) {
@@ -192,6 +203,7 @@
         if (campo) {
             form.elements[campo].value = String(fila[campo]);
             form.elements[campo].disabled = true;
+            renderTipo(tipo);
         }
         form.querySelector('[data-guardar]').textContent = 'Guardar cambios';
         form.querySelector('[data-cancelar]').hidden = false;
@@ -204,6 +216,8 @@
         formulario(tipo).querySelector('[data-cancelar]')
             .addEventListener('click', () => limpiarEdicion(tipo));
         porId('deportes-lista-' + tipo).addEventListener('click', evento => editar(tipo, evento));
+        const campo = TIPOS[tipo].campo;
+        if (campo) formulario(tipo).elements[campo].addEventListener('change', () => renderTipo(tipo));
     }
 
     window.JaguaresCatalogos = Object.freeze({ cargar });

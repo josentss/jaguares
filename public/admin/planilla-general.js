@@ -128,6 +128,8 @@
         if (!valor) return porId('plantillas-alcance').reportValidity();
         const boton = porId('plantillas-consultar');
         boton.disabled = true;
+        boton.textContent = 'Consultando…';
+        boton.setAttribute('aria-busy', 'true');
         estado('Consultando plantilla...');
         limpiarResultado();
         try {
@@ -141,6 +143,8 @@
             estado(error.message || 'No se pudo consultar la plantilla.', true);
         } finally {
             boton.disabled = false;
+            boton.textContent = 'Consultar plantilla';
+            boton.removeAttribute('aria-busy');
         }
     }
 
@@ -155,6 +159,7 @@
         const boton = porId('generar-planilla-general');
         if (!datosActuales?.atletas?.length || boton.disabled) return;
         boton.disabled = true;
+        boton.textContent = 'Generando…';
         boton.setAttribute('aria-busy', 'true');
         try {
             if (typeof raiz.html2pdf !== 'function') throw new Error('No se pudo cargar el generador de PDF');
@@ -176,6 +181,7 @@
             showToast(error.message || 'No se pudo generar la planilla', 'error');
         } finally {
             boton.disabled = false;
+            boton.textContent = 'Generar PDF';
             boton.removeAttribute('aria-busy');
         }
     }

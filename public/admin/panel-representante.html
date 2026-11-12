@@ -1032,8 +1032,12 @@
                             tbody.innerHTML += `<tr>
                                 <td>${fechaStr}</td>
                                 <td>${esc(pago.atl_nombres)} ${esc(pago.atl_apellidos)}</td>
-                                <td>${esc(pago.mes_pagado)}</td>
-                                <td>${esc(pago.monto)} ${esc(pago.moneda || 'Bs')}</td>
+                                <td>${esc(pago.id_obligacion && pago.periodo_mes ?
+                                    pago.mes_pagado + ' ' + String(pago.periodo_mes).slice(0, 4) :
+                                    pago.mes_pagado)}</td>
+                                <td>${esc(pago.monto)} ${esc(pago.moneda || 'Bs')}
+                                    ${pago.id_obligacion ? '<small style="display:block;color:#627184;">Cargo USD ' +
+                                        esc(pago.obligacion_monto_usd) + '</small>' : ''}</td>
                                 <td><span class="status-badge ${badgeClass}" style="text-transform: capitalize;">${esc(pago.estado_pago)}</span></td>
                                 <td><div class="pago-acciones" role="group" aria-label="Acciones del pago">${comprobante}</div></td>
                             </tr>`;

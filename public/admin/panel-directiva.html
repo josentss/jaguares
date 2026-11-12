@@ -1981,7 +1981,10 @@
                         '<td style="font-weight:bold;white-space:nowrap;">' + esc(String(p.monto ?? '')) +
                         ' ' + esc(p.moneda || '') +
                         (vinculado ? '<small style="display:block;font-size:.72rem;font-weight:400;color:#677588;">Cargo USD ' +
-                            esc(String(p.obligacion_monto_usd ?? '')) + '</small>' : '') + '</td>' +
+                            esc(String(p.obligacion_monto_usd ?? '')) + '</small>' : '') +
+                        (p.id_tasa_cobro ? '<small style="display:block;font-size:.72rem;font-weight:400;color:#677588;" title="' +
+                            esc(String(p.fuente_tasa || '')) + ' · ' + esc(String(p.fecha_tasa || '')) +
+                            '">Tasa: ' + esc(String(p.tasa_por_usd ?? '')) + '</small>' : '') + '</td>' +
                         '<td style="font-size:0.85rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="' +
                         ref + '">' + ref + '</td>' +
                         '<td><span class="badge ' + getBadgeClase(estado) + '">' + esc(estado) + '</span></td>' +

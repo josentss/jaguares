@@ -70,7 +70,7 @@
             ['pendiente', 'en_plazo', 'morosa'].includes(o.estado)).length;
         const revision = obligaciones.filter(o => o.estado === 'en_revision').length;
         const pagadas = obligaciones.filter(o => o.estado === 'pagada').length;
-        resumen.textContent = `${porAtender} por atender · ${revision} en revisión · ${pagadas} pagadas`;
+        resumen.textContent = `${porAtender} por atender · ${revision} en revisión · ${pagadas} ${pagadas === 1 ? 'pagada' : 'pagadas'}`;
         for (const obligacion of obligaciones) {
             const tr = document.createElement('tr');
             celda(tr, concepto[obligacion.codigo_concepto] || 'Otro cargo');

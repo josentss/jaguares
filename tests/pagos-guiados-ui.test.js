@@ -108,6 +108,8 @@ test('solo conceptos emitidos: precio fijo USD y envío de ID de obligación',as
     const {browser,page,errores}=await abrir({width:1400,height:900});
     try{
         await page.locator('#pay-obligacion option[value="1"]').waitFor({state:'attached'});
+        assert.equal(await page.locator('#pay-obligacion-wrap').isVisible(),true);
+        assert.equal(await page.locator('#pay-obligacion').isVisible(),true);
         assert.equal(await page.locator('#pay-concepto option').count(),3);
         assert.equal(await page.locator('#pay-obligacion option[value="2"]').count(),0);
         assert.equal(await page.locator('#pay-obligacion option[value="4"]').count(),0);
@@ -133,6 +135,7 @@ test('sin cargos no ofrece meses libres ni permite enviar pago',async()=>{
     try{
         await page.getByText('No hay cargos pendientes asignados.').waitFor();
         assert.equal(await page.locator('#pay-concepto').isDisabled(),true);
+        assert.equal(await page.locator('#pay-obligacion-wrap').isVisible(),false);
         assert.equal(await page.locator('#pay-mes').count(),0);
         assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(),true);
         assert.equal(envios.length,0);

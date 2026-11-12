@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="ux-panel-operativo.css?v=1">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
     <link rel="stylesheet" href="estado-cuenta.css?v=1">
+    <link rel="stylesheet" href="pagos-guiados.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -308,13 +309,21 @@
 
         <section id="sec-pagos" class="panel-section">
             <div class="form-container-panel">
-                <p class="form-lead">Reporta tu pago para revisión. Este formulario aún no lo vincula al estado de cuenta.</p>
+                <p id="pay-intro" class="form-lead">Reporta tu pago para revisión.</p>
                 <form id="form-report-pago" enctype="multipart/form-data">
                     <fieldset class="form-block">
                         <legend>Mensualidad</legend>
                         <div class="form-grid">
                             <div class="form-group-panel"><label for="pay-atleta">Atleta</label><select id="pay-atleta" required></select></div>
-                            <div class="form-group-panel"><label for="pay-mes">Mes que estás pagando</label><select id="pay-mes" required><option value="Enero">Enero</option><option value="Febrero">Febrero</option><option value="Marzo">Marzo</option><option value="Abril">Abril</option><option value="Mayo">Mayo</option><option value="Junio">Junio</option><option value="Julio">Julio</option><option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Diciembre">Diciembre</option></select></div>
+                            <div class="form-group-panel" id="pay-mes-wrap"><label for="pay-mes">Mes que estás pagando</label><select id="pay-mes" required><option value="Enero">Enero</option><option value="Febrero">Febrero</option><option value="Marzo">Marzo</option><option value="Abril">Abril</option><option value="Mayo">Mayo</option><option value="Junio">Junio</option><option value="Julio">Julio</option><option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Diciembre">Diciembre</option></select></div>
+                            <div class="form-group-panel" id="pay-obligacion-wrap" hidden>
+                                <label for="pay-obligacion">Cargo a reportar</label>
+                                <select id="pay-obligacion" disabled><option value="">Seleccionar cargo</option></select>
+                            </div>
+                            <div class="form-group-panel full-width">
+                                <p id="pay-guia-estado" class="pago-guia-estado" role="status" aria-live="polite"></p>
+                                <p id="pay-guia-monto" class="pago-guia-monto"></p>
+                            </div>
                             <div class="form-group-panel full-width"><label for="pay-metodo">¿Cómo realizaste el pago?</label><select id="pay-metodo" required onchange="toggleMetodoPago()"><option value="">Selecciona una opción</option><option value="Transferencia Bancaria">Transferencia bancaria o Pago Móvil (Bs)</option><option value="Efectivo">Efectivo (Bs, USD o COP)</option></select></div>
                         </div>
                     </fieldset>
@@ -454,6 +463,7 @@
 <script src="api-client.js?v=sesion-aviso-1"></script>
 <script src="iconos-acciones.js?v=1"></script>
 <script src="comprobantes-ui.js?v=2"></script>
+<script src="pagos-guiados.js?v=1"></script>
 <script src="estado-cuenta.js?v=1"></script>
 <script src="categorias-formativas.js?v=1"></script>
 <script src="categorias-formativas-ui.js?v=1"></script>
@@ -547,6 +557,7 @@
             const userData = await exigirSesionPanel(rolesPermitidos);
             if (!userData) return;
             window.JaguaresEstadoCuenta?.inicializar(userData.id_usuario);
+            window.JaguaresPagosGuiados?.iniciar();
             try { localStorage.setItem('usuario', JSON.stringify(userData)); } catch (_) {}
 
                     const userBadge = document.getElementById('user-info');
@@ -922,6 +933,7 @@
                         });
 
                         tbody.innerHTML = htmlContenido;
+                        window.JaguaresPagosGuiados?.refrescar();
                     }
                 } catch (error) {
                     console.error("Error al cargar atletas en el panel:", error);
@@ -1243,6 +1255,11 @@
                 e.preventDefault();
                 const form = e.target;
                 const metodo = document.getElementById('pay-metodo').value;
+                const seleccionGuia = window.JaguaresPagosGuiados?.seleccion() || {modo:'legacy'};
+                if (seleccionGuia.modo === 'bloqueado') {
+                    showToast('Selecciona un cargo disponible para reportar', 'error');
+                    return;
+                }
                  if (!document.getElementById('pay-atleta').value) {
                      showToast('Selecciona un atleta activo para reportar el pago', 'error');
                      return;
@@ -1258,7 +1275,11 @@
 
                 // Datos comunes
                 formData.append('id_atleta', document.getElementById('pay-atleta').value);
-                formData.append('mes', document.getElementById('pay-mes').value);
+                if (seleccionGuia.modo === 'vinculado') {
+                    formData.append('id_obligacion', seleccionGuia.id_obligacion);
+                } else {
+                    formData.append('mes', document.getElementById('pay-mes').value);
+                }
                 formData.append('metodo', metodo);
 
                 // 2. EXTRACCIÓN CONDICIONAL (Transferencia vs Efectivo)
@@ -1296,6 +1317,7 @@
                         form.reset();
                         document.getElementById('preview-container').style.display = 'none';
                         toggleMetodoPago();
+                        window.JaguaresPagosGuiados?.refrescar();
                         cargarHistorialPagos();
                     } else {
                         showToast(data.message || 'Error al enviar pago', 'error');

@@ -78,6 +78,10 @@ test.before(async () => {
             VALUES (11,'Octubre',15,'USD','aprobado');
     `);
     await db.pool.query(migracion);
+    await db.pool.query(fs.readFileSync(path.join(__dirname,
+        '../migrations/2026-11-12_catalogo_y_tasas_cobro.sql'),'utf8'));
+    await db.pool.query(`INSERT INTO tasas_cobro(moneda,fecha_vigencia,tasa_por_usd,fuente,creado_por)
+        VALUES ('Bs',$1,37.5,'Tasa sintética de prueba',9)`,[hoy]);
     await db.pool.query(
         'INSERT INTO anclas_cobro_atleta(id_atleta,fecha_inicio,dia_ancla) VALUES (11,$1,15)', [actual]);
     for (const [nombre,atleta,periodo] of [

@@ -57,6 +57,9 @@
         byId('pay-obligacion-wrap').hidden = !vinculado;
         byId('pay-obligacion').disabled = !vinculado || nuevo !== 'vinculado';
         byId('pay-obligacion').required = nuevo === 'vinculado';
+        byId('pay-intro').textContent = vinculado ?
+            'Selecciona el cargo y reporta el pago para revisión.' :
+            'Reporta tu pago para revisión.';
         const boton = byId('form-report-pago').querySelector('button[type="submit"]');
         boton.disabled = !['legacy','vinculado'].includes(nuevo) ||
             (nuevo === 'vinculado' && !byId('pay-obligacion').value) ||
@@ -128,6 +131,7 @@
             const actualMes = periodoDe(hoyCaracas());
             const siguiente = siguientePeriodo(actualMes);
             obligaciones = todas.filter(o => DISPONIBLES.has(o.estado) &&
+                (!o.fecha_emision || o.fecha_emision <= hoyCaracas()) &&
                 (o.codigo_concepto !== 'mensualidad' ||
                     (o.periodo_mes && o.periodo_mes <= siguiente)));
             for (const obligacion of obligaciones) {

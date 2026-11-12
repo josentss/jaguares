@@ -148,9 +148,11 @@ exports.obtenerHistorial = (req, res) => {
     }
 
     const query = `
-        SELECT p.*, a.nombres AS atl_nombres, a.apellidos AS atl_apellidos
+        SELECT p.*, a.nombres AS atl_nombres, a.apellidos AS atl_apellidos,
+               o.codigo_concepto, o.periodo_mes, o.monto_usd AS obligacion_monto_usd
         FROM pagos p
         INNER JOIN atletas a ON p.id_atleta = a.id_atleta
+        LEFT JOIN obligaciones_cobro o ON o.id_obligacion = p.id_obligacion
         WHERE a.id_representante = ?
         ORDER BY p.id_pago DESC
     `;

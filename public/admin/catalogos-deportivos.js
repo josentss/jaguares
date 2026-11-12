@@ -10,6 +10,19 @@
     let cargando = false;
     const porId = id => document.getElementById(id);
     const formulario = tipo => porId('deportes-form-' + tipo);
+    const NOMBRE_CATALOGO = /^[\p{L}\p{N}][\p{L}\p{N} .,'’_/()+&–-]*$/u;
+
+    function normalizarNombre(valor) {
+        return String(valor || '').normalize('NFC').trim().replace(/ +/g, ' ');
+    }
+
+    function validarNombre(input) {
+        const nombre = normalizarNombre(input.value);
+        const valido = nombre.length >= 2 && nombre.length <= 80 && NOMBRE_CATALOGO.test(nombre);
+        input.setCustomValidity(valido ? '' :
+            'Usa de 2 a 80 caracteres y comienza con una letra o número.');
+        return valido;
+    }
 
     function mensaje(texto, error = false) {
         const estado = porId('deportes-estado');
@@ -37,6 +50,7 @@
     function limpiarEdicion(tipo) {
         const form = formulario(tipo);
         form.reset();
+        form.elements.nombre.setCustomValidity('');
         delete form.dataset.editId;
         form.querySelector('[data-guardar]').textContent = 'Agregar';
         form.querySelector('[data-cancelar]').hidden = true;
@@ -134,9 +148,12 @@
     async function guardar(tipo, evento) {
         evento.preventDefault();
         const form = formulario(tipo);
+        const nombre = form.elements.nombre;
+        nombre.value = normalizarNombre(nombre.value);
+        validarNombre(nombre);
         if (!form.reportValidity()) return;
         const id = form.dataset.editId;
-        const cuerpo = { nombre: form.elements.nombre.value };
+        const cuerpo = { nombre: nombre.value };
         const campo = TIPOS[tipo].campo;
         if (!id && campo) cuerpo[campo] = form.elements[campo].value;
         const boton = form.querySelector('[data-guardar]');
@@ -181,6 +198,7 @@
     }
 
     for (const tipo of Object.keys(TIPOS)) {
+        formulario(tipo).elements.nombre.addEventListener('input', evento => validarNombre(evento.currentTarget));
         formulario(tipo).addEventListener('submit', evento => guardar(tipo, evento));
         formulario(tipo).querySelector('[data-cancelar]')
             .addEventListener('click', () => limpiarEdicion(tipo));

@@ -113,6 +113,9 @@ test('asignación manual, cambio con historial y segunda temporada independiente
         body:{id_atleta:1,id_equipo:3,id_asignacion_actual:null}});
     assert.equal(otraTemporada.status,201);
     const lista = await solicitar(ruta,{credencial});
+    assert.equal(lista.data.atletas.length,2);
+    assert.ok(lista.data.atletas.every(atleta => atleta.estado === 'activo'));
+    assert.equal(lista.data.atletas.some(atleta => atleta.id_atleta === 2),false);
     assert.equal(lista.data.movimientos.length,3);
     assert.equal(lista.data.movimientos.filter(m=>!m.fin_en).length,2);
     assert.equal(lista.data.movimientos.filter(m=>m.id_temporada===1&&!m.fin_en)[0].equipo_nombre,'Equipo B');

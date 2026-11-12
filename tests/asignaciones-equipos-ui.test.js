@@ -89,10 +89,17 @@ test('directiva asigna, cambia equipo y conserva el historial sin asignar por ed
     movimientos = []; siguienteId = 1; enviados = [];
     const {browser,page,errores} = await abrir({width:1440,height:900});
     try {
+        assert.equal(await page.locator('#asignaciones-temporada').inputValue(),'1');
+        assert.equal(await page.locator('#asignaciones-atleta option[value="12"]').count(),0);
+        assert.match(await page.locator('#asignaciones-atleta option[value="11"]').innerText(),/sin equipo/);
+        await page.locator('#asignaciones-buscar-atleta').fill('Sin coincidencia');
+        assert.equal(await page.locator('#asignaciones-atleta option[value="11"]').count(),0);
+        assert.match(await page.locator('#asignaciones-total-atletas').innerText(),/0 de 1/);
+        await page.locator('#asignaciones-buscar-atleta').fill('Ana');
         await page.locator('#asignaciones-temporada').selectOption('1');
         await page.locator('#asignaciones-atleta').selectOption('11');
         await page.locator('#asignaciones-equipo').selectOption('1');
-        assert.match(await page.locator('#asignaciones-aviso').innerText(),/Confirma manualmente/);
+        assert.match(await page.locator('#asignaciones-aviso').innerText(),/Verifica la categoría/);
         assert.match(await page.locator('#asignaciones-aviso').innerText(),/U-9 Iniciación/);
         await page.locator('#asignaciones-guardar').click();
         await page.getByText('Equipo actual: Equipo A').waitFor();
@@ -104,9 +111,6 @@ test('directiva asigna, cambia equipo y conserva el historial sin asignar por ed
         assert.deepEqual(enviados[1],{id_atleta:11,id_equipo:2,id_asignacion_actual:1});
         assert.equal(await page.locator('#asignaciones-historial li').count(),2);
         assert.match(await page.locator('#asignaciones-historial').innerText(),/Equipo A/);
-        await page.locator('#asignaciones-atleta').selectOption('12');
-        assert.equal(await page.locator('#asignaciones-guardar').isDisabled(),true);
-        assert.match(await page.locator('#asignaciones-aviso').innerText(),/no está activo/);
         assert.deepEqual(errores,[]);
     } finally { await browser.close(); }
 });

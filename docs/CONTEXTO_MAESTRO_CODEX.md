@@ -1,17 +1,22 @@
 # Jaguares — contexto maestro
 
-> **Asignación manual de equipos — 11 de noviembre de 2026:** PR #45 fusionado
-> en `main` (`cefb7c8`) y Vercel Production `success` para ese SHA; el propietario
-> confirmó visualmente los ajustes. La rama local anterior recibió un
-> `git pull --ff-only origin main` exitoso, pero la rama local llamada `main`
-> permanece atrasada; crear nuevas ramas desde `origin/main` evita ese desfase.
-> Rama `feat/asignaciones-equipos-20261111`
-> ([PR #46, borrador](https://github.com/josentss/jaguares/pull/46)):
-> un equipo activo por atleta y
-> temporada, solo atletas activos asignables, cambios por directiva/admin con
-> historial, aviso de edad sin bloqueo. Migración aditiva separada y manual;
-> **no se ha aplicado a Supabase**. Ver [contrato y ensayo](ASIGNACIONES_EQUIPOS.md).
-> Próximo bloque tras validar este PR: reporte de pagos del representante,
+> **Asignación manual de equipos — estado al 12 de noviembre de 2026:**
+> [PR #46](https://github.com/josentss/jaguares/pull/46) fusionado en `main`
+> (`c439d2d`) y despliegue Vercel Production `success`. Implementa un equipo
+> activo por atleta y temporada, solo atletas activos asignables, cambios por
+> directiva/admin con historial y aviso de edad sin bloqueo. El propietario
+> ejecutó manualmente en Supabase la migración aditiva
+> `2026-11-11_asignaciones_equipos.sql`: el preflight confirmó las cinco tablas
+> dependientes y ausencia de la nueva; SQL Editor respondió `Success. No rows
+> returned`; la verificación posterior confirmó tabla vacía, cuatro índices y
+> ocho restricciones. Después, el propietario confirmó visualmente en
+> Production que el módulo carga y presenta una asignación vigente. Rama de
+> cierre `fix/organizacion-deportiva-ux-validaciones-20261112`: selector limitado
+> por backend a atletas activos, búsqueda por nombre, contexto de equipo,
+> validación visible de catálogos y textos abreviados; sin SQL nuevo. Ver
+> [contrato y ensayo](ASIGNACIONES_EQUIPOS.md). Evidencia local: 8/8 pruebas con
+> PostgreSQL 18 desechable y 11/11 pruebas Chromium aprobadas en Node 24.
+> Próximo bloque tras validar este cierre: reporte de pagos del representante,
 > sin inferir tarifa, deuda ni política de cobro.
 
 > **Ajustes de paneles — 11 de noviembre de 2026:** GitHub confirma PR #44

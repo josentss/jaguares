@@ -1,3 +1,4 @@
+#nav-conciliacion-cobros[hidden] { display: none !important; }
 /* Panel de conciliación: componentes compactos y de tono institucional. */
 .cobros-panel {
     background: #fff;

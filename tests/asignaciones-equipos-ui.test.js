@@ -81,7 +81,7 @@ async function abrir(viewport, rol = 'directiva') {
     await page.route('https://**/*', route => route.abort());
     await page.goto(base + '/admin/panel-directiva.html?rol=' + rol);
     await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
-    await page.evaluate(() => document.querySelector('[data-target="sec-deportes"]').click());
+    await page.evaluate(() => document.querySelector('[data-target="sec-asignaciones"]').click());
     return {browser,page,errores};
 }
 
@@ -89,6 +89,16 @@ test('directiva asigna, cambia equipo y conserva el historial sin asignar por ed
     movimientos = []; siguienteId = 1; enviados = [];
     const {browser,page,errores} = await abrir({width:1440,height:900});
     try {
+        assert.equal(await page.locator('#asignaciones-panel').evaluate(panel => panel.closest('.panel-section').id),
+            'sec-asignaciones');
+        const filasFormulario = await page.locator('#asignaciones-form').evaluate(form => {
+            const top = selector => Math.round(form.querySelector(selector).closest('label').getBoundingClientRect().top);
+            return {temporada:top('#asignaciones-temporada'),equipo:top('#asignaciones-equipo'),
+                buscar:top('#asignaciones-buscar-atleta'),atleta:top('#asignaciones-atleta')};
+        });
+        assert.ok(Math.abs(filasFormulario.temporada-filasFormulario.equipo)<=2);
+        assert.ok(Math.abs(filasFormulario.buscar-filasFormulario.atleta)<=2);
+        assert.ok(filasFormulario.buscar>filasFormulario.temporada);
         assert.equal(await page.locator('#asignaciones-temporada').inputValue(),'1');
         assert.equal(await page.locator('#asignaciones-atleta option[value="12"]').count(),0);
         assert.match(await page.locator('#asignaciones-atleta option[value="11"]').innerText(),/sin equipo/);
@@ -119,6 +129,7 @@ test('staff no ve el formulario y la vista móvil no desborda', async () => {
     const staff = await abrir({width:390,height:844},'staff');
     try {
         assert.equal(await staff.page.locator('#asignaciones-panel').isVisible(),false);
+        assert.equal(await staff.page.locator('#nav-asignaciones').isHidden(),true);
         assert.deepEqual(staff.errores,[]);
     } finally { await staff.browser.close(); }
     const directiva = await abrir({width:390,height:844});

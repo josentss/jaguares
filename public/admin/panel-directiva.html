@@ -16,9 +16,9 @@
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=1">
-    <link rel="stylesheet" href="asignaciones-equipos.css?v=2">
+    <link rel="stylesheet" href="asignaciones-equipos.css?v=3">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
-    <link rel="stylesheet" href="ux-panel-operativo.css?v=1">
+    <link rel="stylesheet" href="ux-panel-operativo.css?v=2">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -371,7 +371,17 @@
                     <li data-target="sec-solicitudes" data-title="Solicitudes de Registro" role="button" tabindex="0">Solicitudes</li>
                     <li data-target="sec-registrar" role="button" tabindex="0">Registrar atleta</li>
                     <li data-target="sec-atletas" role="button" tabindex="0">Gestión de atletas</li>
-                    <li data-target="sec-deportes" role="button" tabindex="0">Organización deportiva</li>
+                </ul>
+            </li>
+            <li class="sidebar-group">
+                <button type="button" class="sidebar-group__toggle" aria-expanded="false" aria-controls="nav-deporte-secciones">
+                    <span><i class="fas fa-volleyball-ball" aria-hidden="true"></i> Organización deportiva</span>
+                    <i class="fas fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
+                </button>
+                <ul id="nav-deporte-secciones" class="sidebar-submenu" hidden>
+                    <li data-target="sec-deportes" role="button" tabindex="0">Catálogos deportivos</li>
+                    <li id="nav-asignaciones" data-target="sec-asignaciones" role="button" tabindex="0">Asignación de equipos</li>
+                    <li data-target="sec-plantillas" role="button" tabindex="0">Consulta de plantillas</li>
                 </ul>
             </li>
             <li class="sidebar-group">
@@ -622,8 +632,6 @@
                             <option value="espera">En Espera</option>
                             <option value="inactivo">Inactivos</option>
                         </select>
-                        <button type="button" id="generar-planilla-general" class="btn-action"
-                            title="Incluye solo atletas activos de la categoría seleccionada" hidden>Generar planilla general</button>
                     </div>
                 </div>
                 <p id="atletas-resultado-filtro" class="atletas-resultado-filtro" aria-live="polite"></p>
@@ -705,41 +713,81 @@
                     <ul class="deportes-lista" id="deportes-lista-equipos"></ul>
                 </div>
             </div>
+        </section>
+
+        <!-- ASIGNACIÓN MANUAL DE ATLETAS A EQUIPOS -->
+        <section id="sec-asignaciones" class="panel-section">
             <div class="asignaciones-panel" id="asignaciones-panel" hidden>
                 <div class="asignaciones-cabecera">
-                    <h3>Plantilla y movimientos de equipos</h3>
+                    <h3>Asignar o cambiar equipo</h3>
                     <button type="button" id="asignaciones-actualizar">Actualizar lista</button>
                 </div>
                 <p class="asignaciones-ayuda">Solo atletas activos. La categoría por edad es orientativa.</p>
                 <p id="asignaciones-estado" role="status" aria-live="polite"></p>
-                <div class="asignaciones-filtro">
-                    <label for="asignaciones-buscar-atleta">Buscar atleta</label>
-                    <input type="search" id="asignaciones-buscar-atleta"
-                        placeholder="Nombre o apellido" autocomplete="off">
-                    <span id="asignaciones-total-atletas" aria-live="polite"></span>
-                </div>
                 <form id="asignaciones-form" class="asignaciones-form">
                     <label>Temporada
                         <select id="asignaciones-temporada" required></select>
                     </label>
+                    <label>Equipo destino
+                        <select id="asignaciones-equipo" required></select>
+                    </label>
+                    <label>Buscar atleta
+                        <input type="search" id="asignaciones-buscar-atleta"
+                            placeholder="Nombre o apellido" autocomplete="off">
+                        <span id="asignaciones-total-atletas" class="asignaciones-contador" aria-live="polite"></span>
+                    </label>
                     <label>Atleta
                         <select id="asignaciones-atleta" required></select>
                     </label>
-                    <label>Equipo
-                        <select id="asignaciones-equipo" required></select>
-                    </label>
-                    <button type="submit" id="asignaciones-guardar">Asignar equipo</button>
-                </form>
-                <p id="asignaciones-aviso" class="asignaciones-ayuda" aria-live="polite"></p>
-                <p id="asignaciones-actual" class="asignaciones-actual"></p>
-                <div class="asignaciones-listas">
-                    <div>
-                        <h4>Plantilla de la temporada</h4>
-                        <ul id="asignaciones-plantilla"></ul>
+                    <div class="asignaciones-resumen">
+                        <p id="asignaciones-actual" class="asignaciones-actual"></p>
+                        <p id="asignaciones-aviso" class="asignaciones-ayuda" aria-live="polite"></p>
                     </div>
-                    <div>
-                        <h4>Historial del atleta</h4>
-                        <ul id="asignaciones-historial"></ul>
+                    <div class="asignaciones-acciones">
+                        <button type="submit" id="asignaciones-guardar">Asignar equipo</button>
+                    </div>
+                </form>
+                <div class="asignaciones-historial">
+                    <h4>Historial del atleta</h4>
+                    <ul id="asignaciones-historial"></ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONSULTA Y EXPORTACIÓN DE PLANTILLAS -->
+        <section id="sec-plantillas" class="panel-section">
+            <div class="plantillas-panel">
+                <form id="plantillas-consulta-form" class="plantillas-controles">
+                    <label>Consultar por
+                        <select id="plantillas-tipo">
+                            <option value="categoria">Categoría por edad</option>
+                            <option value="equipo">Equipo deportivo</option>
+                        </select>
+                    </label>
+                    <label><span id="plantillas-alcance-label">Categoría</span>
+                        <select id="plantillas-alcance" required></select>
+                    </label>
+                    <button type="submit" id="plantillas-consultar">Consultar plantilla</button>
+                </form>
+                <p id="plantillas-estado" class="plantillas-estado" role="status" aria-live="polite"></p>
+                <div id="plantillas-resultado" class="plantillas-resultado" hidden>
+                    <div class="plantillas-resultado-cabecera">
+                        <div>
+                            <h3 id="plantillas-titulo"></h3>
+                            <p id="plantillas-detalle"></p>
+                        </div>
+                        <button type="button" id="generar-planilla-general">Generar PDF</button>
+                    </div>
+                    <p id="plantillas-total"></p>
+                    <div class="plantillas-tabla-wrap">
+                        <table class="plantillas-tabla">
+                            <thead><tr>
+                                <th>Atleta</th>
+                                <th>Cédula</th>
+                                <th>Fecha de nacimiento</th>
+                            </tr></thead>
+                            <tbody id="plantillas-body"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -875,11 +923,11 @@
     <script src="api-client.js?v=sesion-aviso-1"></script>
     <script src="iconos-acciones.js?v=1"></script>
     <script src="comprobantes-ui.js?v=2"></script>
-    <script src="catalogos-deportivos.js?v=3"></script>
-    <script src="asignaciones-equipos.js?v=2"></script>
+    <script src="catalogos-deportivos.js?v=4"></script>
+    <script src="asignaciones-equipos.js?v=3"></script>
     <script src="categorias-formativas.js?v=1"></script>
     <script src="categorias-formativas-ui.js?v=1"></script>
-    <script src="planilla-general.js?v=1"></script>
+    <script src="planilla-general.js?v=2"></script>
     <script>
         if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
             typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {
@@ -2093,10 +2141,9 @@
                 document.getElementById(item.dataset.target).classList.add('active');
                 document.getElementById('panel-title').textContent = item.dataset.title || item.textContent.trim();
                 if (item.dataset.target === 'sec-registrar') cargarRepresentantes();
-                if (item.dataset.target === 'sec-deportes') {
-                    window.JaguaresCatalogos?.cargar();
-                    window.JaguaresAsignaciones?.cargar();
-                }
+                if (item.dataset.target === 'sec-deportes') window.JaguaresCatalogos?.cargar();
+                if (item.dataset.target === 'sec-asignaciones') window.JaguaresAsignaciones?.cargar();
+                if (item.dataset.target === 'sec-plantillas') window.JaguaresPlanillaGeneral?.cargar();
 
                 if (window.innerWidth <= 992) cerrarSidebarMovil();
             };

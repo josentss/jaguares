@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const { configurarPostgresTemporal } = require('./helpers/postgres');
 
 const esquema = configurarPostgresTemporal();
@@ -19,10 +21,10 @@ function cookie(id, rol) {
     return Object.entries(cookies).map(([nombre, valor]) => nombre + '=' + valor).join('; ');
 }
 
-async function solicitar(categoria, credencial) {
+async function solicitar(consulta, credencial) {
     const headers = { Origin: base };
     if (credencial) headers.Cookie = credencial;
-    const respuesta = await fetch(base + '/api/directiva/atletas/planilla-general?categoria=' + categoria,
+    const respuesta = await fetch(base + '/api/directiva/atletas/planilla-general?' + consulta,
         { headers });
     return { status: respuesta.status, headers: respuesta.headers, data: await respuesta.json() };
 }
@@ -38,6 +40,12 @@ test.before(async () => {
     )`);
     await db.pool.query(`INSERT INTO usuarios (rol, estado) VALUES
         ('directiva','aprobado'), ('staff','aprobado'), ('representante','aprobado')`);
+    const catalogos = await fs.readFile(
+        path.join(__dirname, '../migrations/2026-11-10_catalogos_deportivos.sql'), 'utf8');
+    const asignaciones = await fs.readFile(
+        path.join(__dirname, '../migrations/2026-11-11_asignaciones_equipos.sql'), 'utf8');
+    await db.pool.query(catalogos);
+    await db.pool.query(asignaciones);
     const [anio, mes, dia] = hoyCaracasISO().split('-');
     const fecha = edad => `${Number(anio) - edad}-${mes}-${dia}`;
     await db.pool.query(`INSERT INTO atletas (nombres, apellidos, cedula, fecha_nacimiento, estado)
@@ -46,6 +54,16 @@ test.before(async () => {
                ('En', 'Espera', 'V-99900003', $4, 'espera'),
                ('Ya', 'Inactivo', 'V-99900004', $4, 'inactivo')`,
         ['Niña <Prueba>', 'Álvarez & Sintética', 'V-99900001', fecha(8), fecha(10)]);
+    await db.pool.query(`
+        INSERT INTO temporadas_deportivas (nombre) VALUES ('2026-2027');
+        INSERT INTO categorias_deportivas (id_temporada, nombre) VALUES (1, 'U-09');
+        INSERT INTO equipos_deportivos (id_categoria, nombre) VALUES (1, 'Jaguares A'), (1, 'Jaguares B');
+        INSERT INTO asignaciones_equipos (id_atleta, id_equipo, id_temporada, asignado_por)
+            VALUES (1, 1, 1, 1), (2, 1, 1, 1), (3, 1, 1, 1), (4, 1, 1, 1);
+        INSERT INTO asignaciones_equipos
+            (id_atleta, id_equipo, id_temporada, inicio_en, fin_en, asignado_por, cerrado_por)
+            VALUES (1, 2, 1, '2026-01-01T12:00:00Z', '2026-02-01T12:00:00Z', 1, 1);
+    `);
     servidor = require('../index').listen(0, '127.0.0.1');
     await new Promise(resolve => servidor.once('listening', resolve));
     base = 'http://127.0.0.1:' + servidor.address().port;
@@ -58,13 +76,14 @@ test.after(async () => {
 });
 
 test('solo personal autorizado obtiene datos mínimos de atletas activos de la categoría', async () => {
-    assert.equal((await solicitar('u9')).status, 401);
-    assert.equal((await solicitar('u9', cookie(3, 'representante'))).status, 403);
+    assert.equal((await solicitar('categoria=u9')).status, 401);
+    assert.equal((await solicitar('categoria=u9', cookie(3, 'representante'))).status, 403);
     for (const rol of ['directiva', 'staff']) {
-        const respuesta = await solicitar('u9', cookie(rol === 'staff' ? 2 : 1, rol));
+        const respuesta = await solicitar('categoria=u9', cookie(rol === 'staff' ? 2 : 1, rol));
         assert.equal(respuesta.status, 200);
         assert.equal(respuesta.headers.get('cache-control'), 'no-store');
-        assert.equal(respuesta.data.categoria.nombre, 'U-9 Iniciación');
+        assert.equal(respuesta.data.alcance.nombre, 'U-9 Iniciación');
+        assert.equal(respuesta.data.alcance.tipo, 'categoria');
         assert.equal(respuesta.data.total, 1);
         assert.equal(respuesta.data.atletas[0].nombres, 'Niña <Prueba>');
         assert.deepEqual(Object.keys(respuesta.data.atletas[0]).sort(),
@@ -73,12 +92,30 @@ test('solo personal autorizado obtiene datos mínimos de atletas activos de la c
     }
 });
 
+test('planilla de equipo usa asignaciones vigentes y solo atletas activos', async () => {
+    for (const rol of ['directiva', 'staff']) {
+        const respuesta = await solicitar('equipo=1', cookie(rol === 'staff' ? 2 : 1, rol));
+        assert.equal(respuesta.status, 200);
+        assert.equal(respuesta.data.alcance.tipo, 'equipo');
+        assert.equal(respuesta.data.alcance.nombre, 'Jaguares A');
+        assert.equal(respuesta.data.alcance.categoria, 'U-09');
+        assert.equal(respuesta.data.alcance.temporada, '2026-2027');
+        assert.equal(respuesta.data.total, 2);
+        assert.deepEqual(respuesta.data.atletas.map(atleta => atleta.nombres), ['Niña <Prueba>', 'Otra']);
+    }
+    const historica = await solicitar('equipo=2', cookie(1, 'directiva'));
+    assert.equal(historica.status, 200);
+    assert.equal(historica.data.total, 0);
+});
+
 test('rechaza filtros no publicados y conserva resultado vacío sin exponer otras categorías', async () => {
     const directiva = cookie(1, 'directiva');
-    for (const codigo of ['todos', 'sin_categoria', 'u8', 'u9&estado=espera', '']) {
-        assert.equal((await solicitar(codigo, directiva)).status, 400, codigo);
+    for (const consulta of ['categoria=todos', 'categoria=sin_categoria', 'categoria=u8',
+        'categoria=u9&estado=espera', 'equipo=0', 'equipo=abc', '']) {
+        assert.equal((await solicitar(consulta, directiva)).status, 400, consulta);
     }
-    const vacia = await solicitar('u15', directiva);
+    assert.equal((await solicitar('equipo=99999', directiva)).status, 404);
+    const vacia = await solicitar('categoria=u15', directiva);
     assert.equal(vacia.status, 200);
     assert.equal(vacia.data.total, 0);
     assert.deepEqual(vacia.data.atletas, []);

@@ -64,4 +64,3 @@
     #sec-atletas .table-filters #filter-categoria-atletas { width: 100%; max-width: none; }
     .sidebar-group__toggle { min-height: 48px; }
 }
-#generar-planilla-general[hidden] { display: none !important; }

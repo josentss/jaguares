@@ -531,19 +531,24 @@ test('flujo real: registro pendiente, aprobación, perfil, inscripción, activac
         await rep.locator(`#pay-atleta option[value="${atleta.id_atleta}"]`).waitFor({state:'attached'});
         await seccion(rep,'sec-pagos');
         await rep.selectOption('#pay-atleta',String(atleta.id_atleta));
-        await rep.selectOption('#pay-mes','Noviembre');
-        await rep.selectOption('#pay-metodo','Transferencia Bancaria');
-        await rep.locator('#pay-fecha-trans').fill('2099-01-01');
-        // La fecha inválida del método abandonado no bloquea Efectivo.
-        await rep.selectOption('#pay-metodo','Efectivo');
-        await rep.locator('#pay-monto-efec').fill('0');
-        await rep.selectOption('#pay-moneda-efec','USD');
-        await rep.locator('#pay-fecha-efec').fill('2026-11-02');
-        await rep.locator('#form-report-pago button[type=submit]').click();
-        await rep.locator('#form-report-pago .form-validation-message').waitFor({state:'visible'});
+        await rep.getByText('No hay cargos pendientes asignados.').waitFor();
+        assert.equal(await rep.locator('#form-report-pago button[type=submit]').isDisabled(),true);
+
+        // Compatibilidad: la API legacy sigue admitiendo el reporte histórico
+        // solo antes de que Directiva configure obligaciones para el atleta.
+        const pagoLegacy={
+            id_atleta:String(atleta.id_atleta),mes:'Noviembre',
+            metodo:'Efectivo',monto:'25.50',moneda:'USD',fecha_pago:'2026-11-02'
+        };
+        const invalido=await rep.request.post(base+'/api/pagos/reportar',{
+            multipart:{...pagoLegacy,monto:'0'}
+        });
+        assert.equal(invalido.status(),400);
         assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM pagos WHERE id_atleta=$1',[atleta.id_atleta])).rows[0].n,0);
-        await rep.locator('#pay-monto-efec').fill('25.50');
-        await enviar(rep,'#form-report-pago','/api/pagos/reportar');
+        const creado=await rep.request.post(base+'/api/pagos/reportar',{
+            multipart:pagoLegacy
+        });
+        assert.equal(creado.status(),200);
         const pago = (await db.pool.query('SELECT id_pago,estado_pago,monto FROM pagos WHERE id_atleta=$1',[atleta.id_atleta])).rows[0];
         assert.equal(pago.estado_pago,'pendiente');assert.equal(pago.monto,'25.50');
         await dir.reload();
@@ -561,14 +566,15 @@ test('flujo real: registro pendiente, aprobación, perfil, inscripción, activac
         }
         await seccion(rep,'sec-pagos');
         await rep.selectOption('#pay-atleta',String(atleta.id_atleta));
-        await rep.selectOption('#pay-metodo','Efectivo');
-        await rep.locator('#pay-monto-efec').fill('20');
-        await rep.selectOption('#pay-moneda-efec','Bs');
         await seccion(dir,'sec-atletas');
         const desactivar = dir.waitForResponse(r=>r.url().endsWith('/api/directiva/atleta/estado')&&r.request().method()==='PUT');
         await dir.locator(`.js-atleta-estado[data-id="${atleta.id_atleta}"][data-estado="inactivo"]`).click();
         assert.equal((await desactivar).status(),200);
-        await enviar(rep,'#form-report-pago','/api/pagos/reportar',409);
+        const denegado=await rep.request.post(base+'/api/pagos/reportar',{
+            multipart:{id_atleta:String(atleta.id_atleta),mes:'Noviembre',
+                metodo:'Efectivo',monto:'20',moneda:'Bs',fecha_pago:'2026-11-02'}
+        });
+        assert.equal(denegado.status(),409);
         assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM pagos WHERE id_atleta=$1',[atleta.id_atleta])).rows[0].n,1);
         const notificaciones = await rep.request.get(base+`/api/notificaciones/${registro.id_usuario}`);
         assert.equal((await notificaciones.json()).notificaciones.some(n=>n.mensaje.includes('pago de Noviembre')),true);

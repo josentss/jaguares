@@ -90,9 +90,7 @@ test('directiva edita tarifa y registra cargos sin crear deuda al cargar la pant
         await page.locator('#gestion-cobros-conceptos tr').first().waitFor();
         assert.equal(escrituras.length,0);
         assert.equal(await page.locator('#gestion-cobros-conceptos tr').count(),3);
-        const mensual=page.locator('#gestion-cobros-conceptos tr').filter({
-            has:page.locator('input[value="Mensualidad"]')
-        });
+        const mensual=page.locator('#gestion-cobros-conceptos tr').nth(1);
         await mensual.locator('input[type=number]').fill('18.00');
         await mensual.getByRole('button',{name:'Guardar'}).click();
         await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado').textContent.includes('Tarifa actualizada'));

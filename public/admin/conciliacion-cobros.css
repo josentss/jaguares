@@ -1,0 +1,89 @@
+/* Panel de conciliación: componentes compactos y de tono institucional. */
+.cobros-panel {
+    background: #fff;
+    border: 1px solid #e1e6ed;
+    border-radius: 10px;
+    padding: clamp(12px, 2vw, 22px);
+    color: #27303f;
+}
+.cobros-panel [hidden] { display: none !important; }
+.cobros-cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.cobros-cabecera h3 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.cobros-panel h4 { margin: 0 0 9px; font-size: 0.95rem; font-weight: 600; }
+.cobros-ayuda { margin: 9px 0; font-size: 0.82rem; line-height: 1.5; color: #5c6776; }
+#cobros-estado, #cobros-aviso { margin: 8px 0; min-height: 1.1em; font-size: .83rem; color: #536173; }
+#cobros-estado[data-error="true"], #cobros-aviso[data-error="true"] { color: #ac2530; }
+.cobros-seleccion, .cobros-campos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+.cobros-seleccion { margin-top: 15px; }
+.cobros-panel label:not(.cobros-confirmacion) {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+.cobros-panel input:not([type="checkbox"]),
+.cobros-panel select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    border: 1px solid #b9c4d1;
+    border-radius: 7px;
+    padding: 9px 11px;
+    font: 400 .9rem Poppins, sans-serif;
+    background: #fff;
+    color: #263445;
+}
+.cobros-panel input:focus-visible,
+.cobros-panel select:focus-visible,
+.cobros-panel button:focus-visible {
+    outline: 2px solid #ff4500;
+    outline-offset: 2px;
+}
+.cobros-seleccion > p { grid-column: 1 / -1; margin: 0; }
+.cobros-resumen { margin-top: 16px; padding-top: 13px; border-top: 1px solid #e1e6ed; }
+.cobros-resumen p { margin: 5px 0; font-size: .85rem; }
+.cobros-historial { margin-top: 18px; }
+.cobros-tabla-scroll { width: 100%; overflow-x: auto; border: 1px solid #e1e6ed; border-radius: 7px; }
+.cobros-tabla-scroll table { width: 100%; min-width: 440px; border-collapse: collapse; }
+.cobros-tabla-scroll th, .cobros-tabla-scroll td {
+    text-align: left; padding: 9px 10px;
+    font-size: .8rem; border-bottom: 1px solid #e8ecf1;
+}
+.cobros-tabla-scroll th { background: #f6f7f9; color: #455166; }
+.cobros-tabla-scroll tbody tr:last-child td { border-bottom: 0; }
+.cobros-form { margin-top: 18px; border-top: 1px solid #e1e6ed; padding-top: 16px; }
+.cobros-form[aria-disabled="true"] { opacity: .8; }
+.cobros-confirmacion {
+    display: flex; align-items: flex-start; gap: 9px;
+    margin-top: 14px; font-size: .83rem; font-weight: 500; line-height: 1.5;
+}
+.cobros-confirmacion input { margin-top: 4px; accent-color: #ff4500; }
+.cobros-acciones { margin-top: 14px; }
+.cobros-acciones button {
+    background: #eb470f; border: 1px solid #d73b0b; color: white;
+    border-radius: 7px; padding: 9px 15px; font: 600 .86rem Poppins, sans-serif;
+    cursor: pointer; max-width: 100%;
+}
+.cobros-btn-secundario {
+    background: #fff; border: 1px solid #b9c4d1; color: #354052;
+    border-radius: 7px; padding: 8px 12px; font: 500 .82rem Poppins, sans-serif;
+    cursor: pointer;
+}
+.cobros-panel button:disabled { cursor: not-allowed; opacity: .55; }
+@media (max-width: 640px) {
+    .cobros-seleccion, .cobros-campos { grid-template-columns: minmax(0, 1fr); }
+    .cobros-seleccion > p { grid-column: auto; }
+    .cobros-panel { padding: 12px; }
+}

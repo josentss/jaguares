@@ -93,6 +93,24 @@ test('alta de ancla exige confirmación de historial y rol privilegiado', async 
     assert.equal(rows[0].configurado_por, 9);
 });
 
+test('el inicio de cobro no puede crear periodos retroactivos', async () => {
+    const fechaAnterior = new Date(actual + 'T00:00:00.000Z');
+    fechaAnterior.setUTCMonth(fechaAnterior.getUTCMonth() - 1);
+    const respuesta = await invocar(cobros.configurarAncla, {
+        ...admin,
+        params: { id_atleta: 14 },
+        body: {
+            fecha_inicio: fechaAnterior.toISOString().slice(0, 10),
+            dia_ancla: 15, historial_revisado: true
+        }
+    });
+    assert.equal(respuesta.codigo, 409);
+    const { rows } = await db.pool.query(
+        'SELECT count(*)::int AS total FROM anclas_cobro_atleta WHERE id_atleta = 14'
+    );
+    assert.equal(rows[0].total, 0);
+});
+
 test('genera solo mes actual/siguiente con confirmación y nunca dos veces', async () => {
     const body = { id_atleta: 11, periodo_mes: actual, confirmar: true };
     assert.equal((await invocar(cobros.generarMensualidad, { ...admin, body: { ...body, confirmar: false } })).codigo, 400);

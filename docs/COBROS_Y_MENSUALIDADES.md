@@ -1,5 +1,24 @@
 # Cuentas por cobrar — contrato inicial (12-11-2026)
 
+## PR #51 — Motor mensual: implementación propuesta en rama
+**Estado:** sin merge ni ejecución funcional en Production al preparar este PR. No hay migración nueva: reutiliza las tablas creadas y verificadas en el PR #50. No modifica el formulario actual, no envía avisos y no recorre automáticamente todos los atletas.
+
+### API y control de acceso
+- `GET /api/pagos/obligaciones/:id_atleta`: usuario autenticado; representantes solo consultan atletas propios, Directiva/Staff/Admin pueden consultar. Nunca exponer datos de otra familia.
+- `GET /api/directiva/cobros/atletas/:id_atleta`: consulta administrativa.
+- `POST /api/directiva/cobros/anclas/:id_atleta`: **solo Directiva/Admin**, cuerpo JSON `{"fecha_inicio":"2026-11-01","dia_ancla":15,"historial_revisado":true}`. La fecha no se deduce de `pagos.mes_pagado`; quien activa confirma que revisó el historial y estableció una fecha que no duplica mensualidades ya pagadas. Solo atleta activo con representante aprobado. Una vez creada el ancla no puede sobreescribirse sin proceso de conciliación.
+- `POST /api/directiva/cobros/mensualidades`: **solo Directiva/Admin**, cuerpo JSON `{"id_atleta":11,"periodo_mes":"2026-11-01","confirmar":true}`. Genera una única obligación para ese atleta y mes, con importe de catálogo congelado, fechas según su ancla, origen y creador. La misma petición repetida devuelve la obligación existente sin duplicarla. El motor serializa por atleta y el índice SQL actúa como defensa final.
+- Las escrituras solo permiten mes actual o siguiente en **America/Caracas**, nunca meses antiguos; no se crean saldos retroactivos, inscripción ni cargos variables en esta etapa.
+- Si el vencimiento del primer período es anterior a la `fecha_inicio` configurada, se rechaza esa mensualidad; no se inventa prorrateo.
+- El estado de consulta se **deriva** de comprobantes vinculados: `pagada`, `en_revision`, `pendiente`, `en_plazo` o `morosa`. La mora se calcula a partir de la fecha límite, sin penalizaciones económicas.
+- No se modifican los `pagos` históricos. Como el formulario anterior aún no está vinculado a `id_obligacion`, seguirá funcionando en paralelo hasta el próximo bloque. **No activar gestión de cobros al público antes de integrar el reporte guiado y conciliar los registros existentes.**
+
+### Validación
+- Pruebas unitarias: calendario civil Caracas, cambio de año, febrero bisiesto y días 29–31, plazo de gracia.
+- PostgreSQL temporal: ancla única, concurrencia e idempotencia, precios congelados, propiedad de atletas, representante inhabilitado, preservación de pagos históricos, sin nueva migración.
+- Prueba manual recomendada en Preview/local con atleta sintético y respaldo: comprobar `GET` sin mutaciones en Production y los `POST` **solo en entorno aislado**. La API aún no tiene controles de UI ni conciliación histórica asistida.
+- Revisar el CI del PR antes de merge. No fusionar ni desplegar sin autorización expresa.
+
 ## Estado de implementación
 Este documento especifica el bloque que sigue al PR #49. La migración `migrations/2026-11-12_cuentas_por_cobrar_base.sql` **solo prepara la base**; NO crea obligaciones para atletas, NO activa cobro, NO cambia API, NO toca interfaz, NO convierte registros históricos. Se ejecutará manualmente en el destino autorizado tras respaldo e inspección del esquema efectivo.
 

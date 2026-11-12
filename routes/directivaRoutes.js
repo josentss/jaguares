@@ -7,8 +7,14 @@ const { uploadAtletaFields, handleUploadError } = require('../middlewares/upload
 const catalogosDeportivos = require('../controllers/catalogosDeportivosController');
 const planillaGeneral = require('../controllers/planillaGeneralController');
 const asignacionesEquipos = require('../controllers/asignacionesEquiposController');
+const cobros = require('../controllers/cobrosController');
 
 // El prefijo /api/directiva ya comprueba sesión y rol en index.js.
+// Motor de cobros: lectura autorizada y activación manual, sin automatismos.
+router.get('/cobros/atletas/:id_atleta', cobros.consultar);
+router.post('/cobros/anclas/:id_atleta', verificarSesionRole(['directiva', 'admin']), cobros.configurarAncla);
+router.post('/cobros/mensualidades', verificarSesionRole(['directiva', 'admin']), cobros.generarMensualidad);
+
 router.get('/deportes/catalogo', catalogosDeportivos.listar);
 router.get('/deportes/asignaciones', verificarSesionRole(['directiva', 'admin']), asignacionesEquipos.listar);
 router.post('/deportes/asignaciones', verificarSesionRole(['directiva', 'admin']), asignacionesEquipos.asignar);

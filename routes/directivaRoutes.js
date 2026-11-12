@@ -8,8 +8,13 @@ const catalogosDeportivos = require('../controllers/catalogosDeportivosControlle
 const planillaGeneral = require('../controllers/planillaGeneralController');
 const asignacionesEquipos = require('../controllers/asignacionesEquiposController');
 const cobros = require('../controllers/cobrosController');
+const conciliacionCobros = require('../controllers/cobrosConciliacionController');
 
 // El prefijo /api/directiva ya comprueba sesión y rol en index.js.
+// Lista de atletas y revisión individual del historial: únicamente Directiva/Admin.
+router.get('/cobros/conciliacion/atletas', verificarSesionRole(['directiva', 'admin']), conciliacionCobros.listarAtletas);
+router.get('/cobros/conciliacion/atletas/:id_atleta', verificarSesionRole(['directiva', 'admin']), conciliacionCobros.verDetalle);
+
 // Motor de cobros: lectura autorizada y activación manual, sin automatismos.
 router.get('/cobros/atletas/:id_atleta', cobros.consultar);
 router.post('/cobros/anclas/:id_atleta', verificarSesionRole(['directiva', 'admin']), cobros.configurarAncla);

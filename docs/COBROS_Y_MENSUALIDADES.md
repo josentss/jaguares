@@ -1,7 +1,20 @@
 # Cuentas por cobrar — contrato inicial (12-11-2026)
 
-## PR #51 — Motor mensual: implementación propuesta en rama
-**Estado:** sin merge ni ejecución funcional en Production al preparar este PR. No hay migración nueva: reutiliza las tablas creadas y verificadas en el PR #50. No modifica el formulario actual, no envía avisos y no recorre automáticamente todos los atletas.
+## PR #52 — Conciliación histórica e inicio de cobro (en revisión)
+La migración del PR #50 y el motor del PR #51 ya están en Production. La directiva verificó en Supabase 5 conceptos, 0 anclas, 0 obligaciones, **16 pagos históricos** (6 pendientes, 8 aprobados, 2 rechazados), y 0 pagos vinculados. Las cuatro comprobaciones de lectura del PR #51 en Production resultaron correctas: representante propietario, representante ajeno, Directiva y visitante sin sesión.
+
+**Esta propuesta no incorpora nuevas tablas ni modifica/importa pagos antiguos.**
+- `GET /api/directiva/cobros/conciliacion/atletas`: Directiva/Admin, lista de atletas con estado, ancla existente y conteos por estado de pago; sin exponer datos de representantes ajenos.
+- `GET /api/directiva/cobros/conciliacion/atletas/:id_atleta`: Directiva/Admin, detalle de pagos históricos y obligaciones nuevas del atleta; no sirve comprobantes ni datos de archivos, conserva el nombre del mes *sin inferir el año*.
+- Sección compacta **Administración > Inicio de cobros**: buscar atleta, revisar movimientos y definir fecha/día de vencimiento. Solo permite registrar el ancla cuando se ha marcado la revisión individual y confirmado expresamente el cambio. La Directiva puede comprobar un pago en **Auditoría de pagos** si requiere el comprobante.
+- No permite reemplazar anclas ya registradas, activar atletas inactivos ni representantes no aprobados. **El backend impide configurar inicio anterior al mes actual en Caracas**, para evitar altas retroactivas.
+- El formulario no genera obligaciones, no cobra inscripción nuevamente, no activa cobros automáticos, no enlaza registros antiguos ni notifica a representantes.
+- `POST /api/directiva/cobros/mensualidades` sigue siendo una API manual del PR #51, **sin botón en esta pantalla**. No ejecutar escrituras contra la base Production para una prueba: trabajar sobre datos sintéticos en un entorno PostgreSQL separado.
+- La comprobación del mes sin año es necesariamente humana: la confirmación no prueba cuál era el período; ante dudas, **no activar** hasta conciliar por otro medio.
+- Verificación prevista: CI PostgreSQL temporal, Playwright escritorio/móvil y validación humana de lecturas en Preview sin writes en base compartida. No fusionar sin autorización.
+
+## PR #51 — Motor mensual (fusionado y validado en Production)
+**Estado:** PR fusionado y desplegado, 184/184 pruebas backend y 104/104 interfaz en CI. Endpoints de consulta validados manualmente (4/4), migración previamente ejecutada en Supabase por el propietario. Reutiliza las tablas del PR #50 sin añadir migración propia ni ejecutar débitos.
 
 ### API y control de acceso
 - `GET /api/pagos/obligaciones/:id_atleta`: usuario autenticado; representantes solo consultan atletas propios, Directiva/Staff/Admin pueden consultar. Nunca exponer datos de otra familia.
@@ -20,7 +33,7 @@
 - Revisar el CI del PR antes de merge. No fusionar ni desplegar sin autorización expresa.
 
 ## Estado de implementación
-Este documento especifica el bloque que sigue al PR #49. La migración `migrations/2026-11-12_cuentas_por_cobrar_base.sql` **solo prepara la base**; NO crea obligaciones para atletas, NO activa cobro, NO cambia API, NO toca interfaz, NO convierte registros históricos. Se ejecutará manualmente en el destino autorizado tras respaldo e inspección del esquema efectivo.
+La migración base `migrations/2026-11-12_cuentas_por_cobrar_base.sql` **ya se aplicó manualmente en Supabase Production** después de respaldo y preflight, con datos históricos conservados. El PR #51 añadió el motor de obligaciones; el PR #52 propone su interfaz de revisión y configuración individual sin generar deudas automáticamente. Nada convierte registros históricos sin año.
 
 ## Reglas institucionales comunicadas
 - Inscripción: USD 15, una vez por atleta al entrar, nunca por temporada. Para atletas existentes, comprobar si ya pagaron antes de generar un cargo: no inferir por ausencia de comprobante.

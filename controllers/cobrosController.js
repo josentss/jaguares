@@ -78,6 +78,11 @@ exports.configurarAncla = async (req, res) => {
         return res.status(400).json({ success: false,
             message: 'Indica atleta, fecha de inicio, día 1-31 y confirma la revisión de pagos históricos' });
     }
+    // No activar meses anteriores al actual: nunca crear mora retroactiva.
+    if (inicio < periodoDe(hoyCaracas())) {
+        return res.status(409).json({ success: false,
+            message: 'El inicio de cobro no puede ser anterior al mes actual' });
+    }
     let cliente;
     let confirmada = false;
     try {

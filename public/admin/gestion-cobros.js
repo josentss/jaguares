@@ -147,6 +147,7 @@
         },mensaje);
         if (correcto) {
             await cargar();
+            estado(mensaje);
             root.JaguaresConciliacion?.cargar();
         }
         return correcto;

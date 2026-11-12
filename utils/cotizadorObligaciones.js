@@ -21,9 +21,11 @@ async function cotizar(cliente, {
     }
     const { rows } = await cliente.query(`
         SELECT o.id_obligacion, o.id_atleta, o.codigo_concepto, o.periodo_mes,
-            o.monto_usd, o.fecha_emision, a.id_representante, a.estado AS estado_atleta,
+            o.monto_usd, o.fecha_emision, c.nombre AS nombre_concepto,
+            a.id_representante, a.estado AS estado_atleta,
             u.rol AS rol_representante, u.estado AS estado_representante
         FROM obligaciones_cobro o
+        JOIN conceptos_cobro c ON c.codigo = o.codigo_concepto
         JOIN atletas a ON a.id_atleta = o.id_atleta
         JOIN usuarios u ON u.id_usuario = a.id_representante
         WHERE o.id_obligacion = $1 ${filtroAtleta}

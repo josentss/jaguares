@@ -59,11 +59,10 @@
             ['aprobado','pendiente'].includes(p.estado_pago)
         ) : [];
         if (repetidos.length) {
-            aviso.textContent = `Atención: hay ${repetidos.length} pago(s) pendientes o aprobados declarados para ${nombreMes}.
-                Como no consta el año, verifica que no estés cobrando de nuevo ese período.`;
+            aviso.textContent = `Hay ${repetidos.length} reportes de ${nombreMes} pendientes o aprobados. Verifica año y concepto.`;
             aviso.dataset.error = 'true';
         } else {
-            aviso.textContent = 'La activación no modifica los pagos anteriores ni genera obligaciones.';
+            aviso.textContent = '';
             aviso.dataset.error = 'false';
         }
     }
@@ -85,10 +84,12 @@
         const pendientes = pagos.filter(p => p.estado_pago === 'pendiente').length;
         const rechazados = pagos.filter(p => p.estado_pago === 'rechazado').length;
         porId('cobros-resumen-actual').textContent =
-            `Pagos: ${pagos.length} (${aprobados} aprobados, ${pendientes} pendientes, ${rechazados} rechazados). ` +
-            `Obligaciones nuevas: ${detalle.obligaciones.length}. ` +
-            (atleta.fecha_inicio ? `Inicio ya configurado: ${fechaVisible(atleta.fecha_inicio)}, día ${atleta.dia_ancla}.` :
-                'Inicio de cobro sin configurar.');
+            `${pagos.length} ${pagos.length === 1 ? 'pago' : 'pagos'} · ` +
+            `${aprobados} ${aprobados === 1 ? 'aprobado' : 'aprobados'} · ` +
+            `${pendientes} ${pendientes === 1 ? 'pendiente' : 'pendientes'} · ` +
+            `${rechazados} ${rechazados === 1 ? 'rechazado' : 'rechazados'} · ` +
+            `${detalle.obligaciones.length} ${detalle.obligaciones.length === 1 ? 'obligación' : 'obligaciones'} · ` +
+            (atleta.fecha_inicio ? `Inicio: ${fechaVisible(atleta.fecha_inicio)} · Día ${atleta.dia_ancla}` : 'Sin inicio de cobro');
 
         const cuerpo = porId('cobros-pagos');
         cuerpo.replaceChildren();
@@ -118,8 +119,8 @@
         porId('cobros-fecha-inicio').min = fechaCaracas().slice(0, 7) + '-01';
         if (!listo) {
             mostrar(atleta.fecha_inicio ?
-                'Este atleta ya tiene un inicio de cobro registrado. No se puede reemplazar desde el formulario.' :
-                'Solo se puede activar a un atleta activo con representante aprobado.',
+                'El inicio de cobro ya está configurado.' :
+                'Atleta o representante no habilitado.',
             false,'cobros-aviso');
         } else actualizarAviso();
     }
@@ -138,7 +139,7 @@
             if (!respuesta.ok || !data.success) throw new Error(data.message || 'No se pudo consultar');
             detalle = data;
             mostrarDetalle();
-            mostrar('Historial cargado. La conciliación de pagos antiguos requiere revisión manual.');
+            mostrar('Historial actualizado.');
         } catch (error) {
             if (revision === versionDetalle) mostrar(error.message || 'No se pudo cargar el historial.', true);
         }

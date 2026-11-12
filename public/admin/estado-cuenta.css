@@ -1,0 +1,71 @@
+/* Estado de cuenta del representante. Sin banners ni iconos decorativos. */
+.cuenta-panel {
+    background: #fff;
+    border: 1px solid #e0e5eb;
+    border-radius: 10px;
+    padding: clamp(12px, 2vw, 22px);
+    color: #26303d;
+}
+.cuenta-panel [hidden] { display: none !important; }
+.cuenta-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.cuenta-cabecera h3 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.cuenta-actualizar {
+    background: #fff;
+    color: #354052;
+    border: 1px solid #b9c4d1;
+    border-radius: 7px;
+    font: 500 .82rem Poppins, sans-serif;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.cuenta-actualizar:disabled { opacity: .55; cursor: not-allowed; }
+.cuenta-actualizar:focus-visible, .cuenta-selector select:focus-visible {
+    outline: 2px solid #ff4500;
+    outline-offset: 2px;
+}
+.cuenta-selector { max-width: 420px; margin-top: 15px; }
+.cuenta-selector label { display: block; font-size: .83rem; font-weight: 600; margin-bottom: 6px; }
+.cuenta-selector select {
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #b9c4d1;
+    border-radius: 7px;
+    color: #263445;
+    padding: 9px 11px;
+    font: 400 .9rem Poppins, sans-serif;
+}
+.cuenta-mensaje, .cuenta-resumen, .cuenta-nota {
+    margin: 12px 0;
+    color: #536173;
+    font-size: .83rem;
+    line-height: 1.5;
+}
+.cuenta-mensaje[data-error="true"] { color: #ad2631; }
+.cuenta-resumen { color: #27303f; font-weight: 600; }
+.cuenta-nota { margin-bottom: 0; }
+.cuenta-tabla-scroll { width: 100%; overflow-x: auto; border: 1px solid #e1e6ed; border-radius: 7px; }
+.cuenta-tabla-scroll table { width: 100%; min-width: 565px; border-collapse: collapse; }
+.cuenta-tabla-scroll th, .cuenta-tabla-scroll td {
+    text-align: left;
+    border-bottom: 1px solid #e8ecf1;
+    padding: 10px;
+    vertical-align: middle;
+    font-size: .8rem;
+}
+.cuenta-tabla-scroll th { background: #f6f7f9; color: #455166; font-weight: 600; }
+.cuenta-tabla-scroll tbody tr:last-child td { border-bottom: 0; }
+.cuenta-estado-pagada { color: #22613a; font-weight: 600; }
+.cuenta-estado-en_revision { color: #8b590a; font-weight: 600; }
+.cuenta-estado-morosa { color: #ad2631; font-weight: 600; }
+.cuenta-estado-pendiente, .cuenta-estado-en_plazo { color: #394d65; font-weight: 600; }
+@media (max-width: 640px) {
+    .cuenta-panel { padding: 12px; }
+    .cuenta-selector { max-width: 100%; }
+}

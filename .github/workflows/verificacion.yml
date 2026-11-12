@@ -53,7 +53,7 @@ jobs:
       - name: Probar interfaz en escritorio y movil
         env:
           NODE_PATH: ${{ runner.temp }}/jaguares-playwright/node_modules
-        run: node --test --test-concurrency=1 tests/interfaz.test.js tests/planilla-pdf.test.js tests/planilla-general-ui.test.js tests/sesiones-ui.test.js tests/flujos-web-pg.test.js tests/catalogos-deportivos-ui.test.js tests/asignaciones-equipos-ui.test.js tests/conciliacion-cobros-ui.test.js
+        run: node --test --test-concurrency=1 tests/interfaz.test.js tests/planilla-pdf.test.js tests/planilla-general-ui.test.js tests/sesiones-ui.test.js tests/flujos-web-pg.test.js tests/catalogos-deportivos-ui.test.js tests/asignaciones-equipos-ui.test.js tests/conciliacion-cobros-ui.test.js tests/estado-cuenta-ui.test.js
       - name: Guardar capturas de pantalla
         if: always()
         uses: actions/upload-artifact@v4

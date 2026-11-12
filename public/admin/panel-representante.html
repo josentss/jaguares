@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=1">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
+    <link rel="stylesheet" href="estado-cuenta.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -154,6 +155,7 @@
                     <i class="fas fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
                 </button>
                 <ul class="sidebar-submenu" id="nav-rep-pagos" hidden>
+                    <li data-target="sec-estado-cuenta" role="button" tabindex="0">Estado de cuenta</li>
                     <li data-target="sec-pagos" role="button" tabindex="0">Reportar pago</li>
                     <li data-target="sec-historial" data-title="Historial de Pagos" role="button" tabindex="0">Historial de pagos</li>
                 </ul>
@@ -306,7 +308,7 @@
 
         <section id="sec-pagos" class="panel-section">
             <div class="form-container-panel">
-                <p class="form-lead">Informa la mensualidad de tu atleta para que la directiva la verifique. Recibirás una notificación cuando sea confirmada o si necesita correcciones.</p>
+                <p class="form-lead">Reporta tu pago para revisión. Este formulario aún no lo vincula al estado de cuenta.</p>
                 <form id="form-report-pago" enctype="multipart/form-data">
                     <fieldset class="form-block">
                         <legend>Mensualidad</legend>
@@ -346,6 +348,34 @@
 
                     <button type="submit" class="btn-panel-submit">Enviar reporte de pago</button>
                 </form>
+            </div>
+        </section>
+
+        <section id="sec-estado-cuenta" class="panel-section">
+            <div class="cuenta-panel">
+                <div class="cuenta-cabecera">
+                    <h3>Estado de cuenta</h3>
+                    <button type="button" id="cuenta-actualizar" class="cuenta-actualizar">Actualizar</button>
+                </div>
+                <div class="cuenta-selector">
+                    <label for="cuenta-atleta">Atleta</label>
+                    <select id="cuenta-atleta">
+                        <option value="">Seleccionar atleta</option>
+                    </select>
+                </div>
+                <p id="cuenta-estado" class="cuenta-mensaje" role="status" aria-live="polite"></p>
+                <div id="cuenta-detalle" hidden>
+                    <p id="cuenta-resumen" class="cuenta-resumen"></p>
+                    <div class="cuenta-tabla-scroll">
+                        <table>
+                            <thead>
+                                <tr><th>Concepto</th><th>Período</th><th>Monto</th><th>Vencimiento</th><th>Estado</th></tr>
+                            </thead>
+                            <tbody id="cuenta-obligaciones"></tbody>
+                        </table>
+                    </div>
+                    <p id="cuenta-nota" class="cuenta-nota"></p>
+                </div>
             </div>
         </section>
 
@@ -424,6 +454,7 @@
 <script src="api-client.js?v=sesion-aviso-1"></script>
 <script src="iconos-acciones.js?v=1"></script>
 <script src="comprobantes-ui.js?v=2"></script>
+<script src="estado-cuenta.js?v=1"></script>
 <script src="categorias-formativas.js?v=1"></script>
 <script src="categorias-formativas-ui.js?v=1"></script>
 <script>
@@ -515,6 +546,7 @@
             const rolesPermitidos = ['representante'];
             const userData = await exigirSesionPanel(rolesPermitidos);
             if (!userData) return;
+            window.JaguaresEstadoCuenta?.inicializar(userData.id_usuario);
             try { localStorage.setItem('usuario', JSON.stringify(userData)); } catch (_) {}
 
                     const userBadge = document.getElementById('user-info');
@@ -588,6 +620,7 @@
                     const targetSec = document.getElementById(item.getAttribute('data-target'));
                     if (targetSec) targetSec.classList.add('active');
                     actualizarTitulo();
+                    if (item.dataset.target === 'sec-estado-cuenta') window.JaguaresEstadoCuenta?.cargar();
                     if (window.innerWidth <= 992) cerrarSidebarMovil();
                 }
                 item.addEventListener('click', navegar);

@@ -53,7 +53,7 @@ test.before(async () => {
         );
         CREATE TABLE pagos (
             id_pago SERIAL PRIMARY KEY, id_atleta INTEGER REFERENCES atletas(id_atleta),
-            ruta_captura TEXT
+            ruta_captura TEXT, mes_pagado TEXT, estado_pago TEXT
         );
         CREATE TABLE notificaciones (
             id_notificacion SERIAL PRIMARY KEY, id_usuario INTEGER REFERENCES usuarios(id_usuario),
@@ -65,6 +65,8 @@ test.before(async () => {
                (3, 'Prueba', 'Tres', 'tres@example.org', 'V-83000003', 'representante', 'inactivo'),
                (4, 'Prueba', 'Staff', 'staff@example.org', 'V-83000004', 'staff', 'activo');
         SELECT setval(pg_get_serial_sequence('usuarios', 'id_usuario'), 4);`);
+    await db.pool.query(require('node:fs').readFileSync(require('node:path').join(__dirname,
+        '../migrations/2026-11-12_cuentas_por_cobrar_base.sql'),'utf8'));
 });
 
 test.after(async () => {

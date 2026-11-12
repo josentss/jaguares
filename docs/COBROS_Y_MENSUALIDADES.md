@@ -1,6 +1,18 @@
 # Cuentas por cobrar — contrato inicial (12-11-2026)
 
-## PR #53 — Vista de Estado de cuenta (en revisión)
+## PR #54 — Reportes vinculados a obligaciones (rama en revisión)
+- **Sin migración nueva:** reutiliza `pagos.id_obligacion` y los índices del PR #50. No crea anclas ni nuevas obligaciones automáticamente.
+- Representante: en **Mis pagos > Reportar pago**, al elegir un atleta con inicio de cobro u obligaciones existentes se muestra el **cargo concreto** (concepto, período con año e importe nominal USD). No se permite elegir un mes ambiguo ni reportar cargos ya pagados o en revisión; están disponibles vencidos, el período vigente y **como máximo el mes siguiente**. La comprobación definitiva está en el backend.
+- Atletas **sin ancla ni obligaciones** conservan el reporte histórico por nombre de mes y montos declarados. El backend bloquea reportes históricos nuevos para atletas ya activados, para evitar que se salte el vínculo por petición manipulada.
+- El POST `/api/pagos/reportar` acepta `id_obligacion` únicamente para reportes guiados: valida sesión/rol propietario, atleta activo y representante aprobado, cargo existente del mismo atleta, fecha de emisión, período, fecha de pago, importe, método y comprobante privado como antes. Inserta en transacción con estado `pendiente`.
+- En **efectivo USD**, el importe tiene que ser exactamente el nominal de la obligación; no se aceptan pagos parciales. Para Bs/COP se registra el importe *realmente declarado en la moneda entregada*, **sin convertirlo automáticamente ni presentarlo como equivalencia garantizada**.
+- Directiva puede aprobar o rechazar solo reportes vinculados `pendientes` mediante `PUT /api/directiva/pago/vinculado/estado`. **Para aprobar Bs/COP** debe confirmar expresamente que revisó manualmente el valor y su equivalencia con el nominal USD; la consulta del dashboard/fallback 36,50 **no se usa**. Esta confirmación es un control transitorio, **no guarda fuente/tasa verificable**: sigue pendiente de definición institucional para una etapa posterior.
+- Rechazar conserva el intento y permite uno nuevo. Los aprobados no pueden reabrirse desde el panel. Los reportes vinculados rechazados no se eliminan para preservar el historial; las reglas anteriores de los pagos no vinculados se mantienen.
+- Los historiales muestran período y nominal USD para reportes vinculados, sin alterar registros antiguos ni comprobantes Cloudinary.
+- Tests: PostgreSQL temporal para propietario, desactivados, mes adelantado, montos USD, concurrencia, 409 por duplicidad, revisión manual, rechazo/reenvío, históricos; Playwright desktop/móvil para selección, bloqueo y modo legado.
+- Preview puede compartir la base Production: **no activar anclas ni reportar pagos nuevos durante pruebas manuales**. La prueba completa de escrituras se realiza en PostgreSQL temporal.
+
+## PR #53 — Vista de Estado de cuenta (fusionado y validado en Production)
 - El Representante accede a **Mis pagos > Estado de cuenta**, con consulta de obligaciones de sus atletas exclusivamente. Cada fila muestra concepto, período, monto USD, vencimiento, último día del plazo y estado calculado.
 - Si no existe ancla u obligación, no se presenta un saldo ficticio ni el mensaje "al día": la pantalla indica que está pendiente de configurar.
 - **Solo lectura**: no hace POST, no crea mensuales y no enlaza pagos del formulario antiguo a `id_obligacion`.

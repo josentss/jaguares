@@ -1845,7 +1845,11 @@
                     const id = Number(p.id_pago);
                     if (!Number.isSafeInteger(id) || id <= 0) return;
                     const nombreAtleta = (p.atl_nombres || '') + ' ' + (p.atl_apellidos || '');
-                    const mes = p.mes_pagado || '';
+                    const vinculado = Number.isSafeInteger(Number(p.id_obligacion)) &&
+                        Number(p.id_obligacion) > 0;
+                    const mes = vinculado && p.periodo_mes ?
+                        (p.mes_pagado || 'Mensualidad') + ' ' + String(p.periodo_mes).slice(0, 4) :
+                        (p.mes_pagado || '');
                     const estado = (p.estado_pago || '').toLowerCase();
                     const iconos = window.JaguaresIconos;
                     const acciones = [];
@@ -1854,19 +1858,26 @@
                             'data-id="' + id + '" title="Ver comprobante" aria-label="Ver comprobante de ' +
                             esc(nombreAtleta) + '">' + iconos.comprobante + '</button>');
                     }
-                    if (estado !== 'aprobado') {
+                    const revisarVinculado = vinculado && estado === 'pendiente' &&
+                        ['directiva','admin'].includes(currentUser?.rol);
+                    const metadatos = ' data-vinculado="' + (vinculado ? '1' : '0') +
+                        '" data-moneda="' + esc(p.moneda || '') +
+                        '" data-monto="' + esc(p.monto ?? '') +
+                        '" data-nominal="' + esc(p.obligacion_monto_usd ?? '') + '"';
+                    if (revisarVinculado || (!vinculado && estado !== 'aprobado')) {
                         acciones.push('<button type="button" class="pago-icono pago-icono--aprobar js-pago-estado" ' +
-                            'data-id="' + id + '" data-estado="aprobado" data-mes="' + esc(mes) +
+                            'data-id="' + id + '" data-estado="aprobado"' + metadatos + ' data-mes="' + esc(mes) +
                             '" title="Aprobar pago" aria-label="Aprobar pago de ' + esc(nombreAtleta) + '">' +
                             iconos.aprobar + '</button>');
                     }
-                    if (estado !== 'rechazado') {
+                    if (revisarVinculado || (!vinculado && estado !== 'rechazado')) {
                         acciones.push('<button type="button" class="pago-icono pago-icono--rechazar js-pago-estado" ' +
-                            'data-id="' + id + '" data-estado="rechazado" data-mes="' + esc(mes) +
+                            'data-id="' + id + '" data-estado="rechazado"' + metadatos + ' data-mes="' + esc(mes) +
                             '" title="Rechazar pago" aria-label="Rechazar pago de ' + esc(nombreAtleta) + '">' +
                             iconos.rechazar + '</button>');
                     }
-                    if (estado === 'rechazado' && ['directiva', 'admin'].includes(currentUser?.rol)) {
+                    if (!vinculado && estado === 'rechazado' &&
+                        ['directiva', 'admin'].includes(currentUser?.rol)) {
                         acciones.push('<button type="button" class="pago-icono pago-icono--borrar js-pago-eliminar" ' +
                             'data-id="' + id + '" title="Eliminar pago rechazado" ' +
                             'aria-label="Eliminar pago rechazado de ' + esc(nombreAtleta) + '">' +
@@ -1880,7 +1891,9 @@
                         '<td>' + formatFecha(p.fecha_pago) + '</td>' +
                         '<td>' + esc(metodoCorto) + '</td>' +
                         '<td style="font-weight:bold;white-space:nowrap;">' + esc(String(p.monto ?? '')) +
-                        ' ' + esc(p.moneda || '') + '</td>' +
+                        ' ' + esc(p.moneda || '') +
+                        (vinculado ? '<small style="display:block;font-size:.72rem;font-weight:400;color:#677588;">Cargo USD ' +
+                            esc(String(p.obligacion_monto_usd ?? '')) + '</small>' : '') + '</td>' +
                         '<td style="font-size:0.85rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="' +
                         ref + '">' + ref + '</td>' +
                         '<td><span class="badge ' + getBadgeClase(estado) + '">' + esc(estado) + '</span></td>' +
@@ -1912,7 +1925,12 @@
                 window.JaguaresComprobantes.abrir(boton.dataset.id);
             } else if (boton.classList.contains('js-pago-estado')) {
                 actualizarPago(Number(boton.dataset.id), boton.dataset.estado,
-                    null, boton.dataset.mes);
+                    null, boton.dataset.mes, {
+                        vinculado: boton.dataset.vinculado === '1',
+                        moneda: boton.dataset.moneda,
+                        monto: boton.dataset.monto,
+                        nominal: boton.dataset.nominal
+                    });
             } else if (boton.classList.contains('js-pago-eliminar')) {
                 eliminarPagoRechazado(boton);
             }
@@ -1958,14 +1976,24 @@
             }
         }
 
-        async function actualizarPago(id, estado, id_rep, mes) {
+        async function actualizarPago(id, estado, id_rep, mes, opciones = {}) {
             const accionPago = estado === 'aprobado' ? 'aprobar' : 'rechazar';
-            if (!confirm(`¿Confirmas ${accionPago} el pago de ${mes}?\n\nEl representante recibirá una notificación.`)) return;
+            const revisionEquivalencia = opciones.vinculado &&
+                estado === 'aprobado' && opciones.moneda !== 'USD';
+            const aviso = revisionEquivalencia ?
+                `Cargo USD ${opciones.nominal}. Reportado: ${opciones.monto} ${opciones.moneda}.\n\n¿Comprobaste manualmente la equivalencia y confirmas aprobarlo?` :
+                `¿Confirmas ${accionPago} el pago de ${mes}?\n\nEl representante recibirá una notificación.`;
+            if (!confirm(aviso)) return;
             try {
-                const res = await apiFetch('/api/directiva/pago/estado', {
+                const res = await apiFetch(
+                    opciones.vinculado ? '/api/directiva/pago/vinculado/estado' : '/api/directiva/pago/estado', {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({id_pago: id, estado_pago: estado, id_representante: id_rep, mes})
+                    body: JSON.stringify({
+                        id_pago: id, estado_pago: estado,
+                        ...(opciones.vinculado ? { revision_equivalencia: revisionEquivalencia } :
+                            { id_representante: id_rep, mes })
+                    })
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {

@@ -75,7 +75,7 @@ Los componentes son:
 
 **PR #52:** agregó la sección Directiva de conciliación: ver pagos históricos del atleta, revisar los registros y configurar el inicio de cobro. No convierte los pagos anteriores ni crea obligaciones por abrir la pantalla.
 
-**PR #53 (en revisión):** agrega **Estado de cuenta** al Representante, de solo lectura, para consultar obligaciones propias y sus estados. Conserva separado el formulario antiguo de reportes hasta que exista un flujo vinculado fiable.
+**PR #53 (fusionado):** agrega **Estado de cuenta** al Representante, de solo lectura, para consultar obligaciones propias y sus estados. Conserva separado el formulario antiguo de reportes hasta que exista un flujo vinculado fiable.
 
 ### Estados financieros y vencimientos
 Para una mensualidad del período noviembre con ancla día 15:
@@ -85,6 +85,13 @@ Para una mensualidad del período noviembre con ancla día 15:
 - Un pago reportado y todavía no aprobado figura **en revisión**, no como pagado.
 
 No hay sanciones automáticas por mora, no se desactivan cuentas por deuda y el pago tardío no cambia por sí mismo la fecha ancla. En febrero, los días ancla 29–31 se ajustan al último día del mes.
+
+### Reporte vinculado (PR #54, en revisión)
+El representante puede elegir una obligación concreta desde **Reportar pago**. El navegador muestra el precio USD y el servidor comprueba la propiedad y que no haya pago activo anterior. El reporte queda `pendiente`; Directiva revisa y decide si aprobar o rechazar. El rechazo no elimina el intento.
+
+En efectivo USD el monto declarado debe ser exactamente el del cargo. En Bs y COP se registra el monto real y Directiva confirma manualmente la equivalencia antes de aprobar; **no se utiliza la tasa errónea de 36,50 del dashboard**. Falta definir e incorporar un registro verificable de fuente, fecha y tasa de conversión.
+
+Los atletas sin cobros configurados siguen con el formulario histórico; cuando haya ancla u obligaciones, el servidor exige reporte vinculado. No confundir un reporte *en revisión* con un pago aprobado.
 
 ## 5. Por qué todavía no se deben conciliar pagos de forma automática
 

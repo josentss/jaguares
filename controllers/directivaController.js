@@ -63,9 +63,11 @@ exports.obtenerAuditoria = async (req, res) => {
         SELECT p.id_pago, a.id_representante,
                p.mes_pagado, p.metodo_pago, p.fecha_pago,
                p.monto, p.moneda, p.referencia, p.ruta_captura, p.estado_pago,
+               p.id_obligacion, o.codigo_concepto, o.periodo_mes, o.monto_usd AS obligacion_monto_usd,
                a.nombres AS atl_nombres, a.apellidos AS atl_apellidos
         FROM pagos p
         LEFT JOIN atletas a ON p.id_atleta = a.id_atleta
+        LEFT JOIN obligaciones_cobro o ON o.id_obligacion = p.id_obligacion
         ORDER BY p.id_pago DESC
     `;
 
@@ -182,7 +184,7 @@ exports.actualizarEstadoPago = (req, res) => {
     }
 
     db.query(
-        'UPDATE pagos SET estado_pago = ? WHERE id_pago = ? AND estado_pago IS DISTINCT FROM ?',
+        'UPDATE pagos SET estado_pago = ? WHERE id_pago = ? AND id_obligacion IS NULL AND estado_pago IS DISTINCT FROM ?',
         [estado_pago, id_pago, estado_pago],
         (err, result) => {
             if (err) {
@@ -229,7 +231,7 @@ exports.eliminarPagoRechazado = async (req, res) => {
     }
     try {
         const eliminado = await db.pool.query(
-            "DELETE FROM pagos WHERE id_pago = $1 AND estado_pago = 'rechazado' RETURNING id_pago",
+            "DELETE FROM pagos WHERE id_pago = $1 AND id_obligacion IS NULL AND estado_pago = 'rechazado' RETURNING id_pago",
             [Number(id)]
         );
         if (eliminado.rowCount === 1) {

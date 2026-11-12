@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { configurarPostgresTemporal } = require('./helpers/postgres');
 const esquema = configurarPostgresTemporal();
@@ -65,6 +67,8 @@ test.before(async () => {
             (14, 6, 'activo', 'Prueba Cuatro'),
             (15, 7, 'activo', 'Prueba Cinco');
     `);
+    await db.pool.query(fs.readFileSync(path.join(__dirname,
+        '../migrations/2026-11-12_cuentas_por_cobrar_base.sql'),'utf8'));
 });
 
 test.after(async () => {

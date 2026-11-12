@@ -1,0 +1,16 @@
+/* Reporte guiado: reutiliza el formulario y la paleta institucional. */
+#pay-obligacion-wrap[hidden], #pay-mes-wrap[hidden] { display: none !important; }
+.pago-guia-estado, .pago-guia-monto {
+    margin: 0;
+    color: #536173;
+    font-size: .82rem;
+    line-height: 1.45;
+}
+.pago-guia-estado:empty, .pago-guia-monto:empty { display: none; }
+.pago-guia-estado[data-error="true"] { color: #ac2530; }
+#pay-monto-efec[readonly] { background: #f3f5f7; color: #2c3441; cursor: default; }
+#pay-obligacion-wrap select { max-width: 100%; min-width: 0; }
+@media (max-width: 640px) {
+    #pay-obligacion-wrap { min-width: 0; }
+    #pay-obligacion-wrap select { width: 100%; }
+}

@@ -4,6 +4,7 @@ const { esEnteroPositivo, esMontoValido, esFechaISOValida } = require('../utils/
 const { logUploadEvent } = require('../utils/auditLogger');
 const { enlaceAutorizado } = require('../utils/cloudinaryPrivado');
 const { compensarCargas, confirmarCargas, avisarEstadoIncierto } = require('../utils/compensacionCloudinary');
+const pagosVinculados = require('./pagosVinculadosController');
 
 async function rechazarPago(req, res, status, message) {
     await compensarCargas(req, 'validacion_pago');
@@ -29,6 +30,10 @@ async function insertarPago(req, res, datos) {
         WHERE a.id_atleta = ? AND a.id_representante = ?
           AND a.estado = 'activo'
           AND u.rol = 'representante' AND u.estado = 'aprobado'
+          AND NOT EXISTS (SELECT 1 FROM anclas_cobro_atleta ac
+                          WHERE ac.id_atleta = a.id_atleta)
+          AND NOT EXISTS (SELECT 1 FROM obligaciones_cobro oc
+                          WHERE oc.id_atleta = a.id_atleta)
         FOR SHARE OF a, u
         RETURNING id_pago
     `;
@@ -57,9 +62,10 @@ async function insertarPago(req, res, datos) {
 
 // 1. REPORTAR UN PAGO (Transferencia o Efectivo)
 exports.reportarPago = async (req, res) => {
-    const { id_atleta, mes, metodo, monto, moneda, referencia, fecha_pago } = req.body;
+    const { id_atleta, id_obligacion, mes, metodo, monto, moneda, referencia, fecha_pago } = req.body || {};
+    const esVinculado = id_obligacion !== undefined;
 
-    if (!id_atleta || !monto || !mes || !metodo || !fecha_pago) {
+    if (!id_atleta || !monto || (!esVinculado && !mes) || !metodo || !fecha_pago) {
         return rechazarPago(req, res, 400, 'Faltan datos requeridos para reportar el pago');
     }
 
@@ -75,7 +81,7 @@ exports.reportarPago = async (req, res) => {
         return rechazarPago(req, res, 400, 'Método de pago no válido');
     }
 
-    if (!MESES_PAGO.includes(mes) || !esFechaISOValida(fecha_pago)) {
+    if ((!esVinculado && !MESES_PAGO.includes(mes)) || !esFechaISOValida(fecha_pago)) {
         return rechazarPago(req, res, 400, 'Mes o fecha de pago no válidos');
     }
     if ((metodo === 'Transferencia Bancaria' && moneda !== 'Bs') ||
@@ -102,6 +108,17 @@ exports.reportarPago = async (req, res) => {
 
     // Guardar la URL completa de Cloudinary (req.file.path)
     const ruta_captura = req.file ? (req.file.path || req.file.filename) : null;
+
+    if (esVinculado) {
+        if (!esEnteroPositivo(id_obligacion)) {
+            return rechazarPago(req, res, 400, 'Identificador de obligación no válido');
+        }
+        return pagosVinculados.reportar(req, res, {
+            id_atleta, id_obligacion, metodo, monto, moneda,
+            referencia: referencia ? referencia.trim() : null,
+            fecha_pago, ruta_captura
+        });
+    }
 
     return insertarPago(req, res, {
         id_atleta,
@@ -131,9 +148,11 @@ exports.obtenerHistorial = (req, res) => {
     }
 
     const query = `
-        SELECT p.*, a.nombres AS atl_nombres, a.apellidos AS atl_apellidos
+        SELECT p.*, a.nombres AS atl_nombres, a.apellidos AS atl_apellidos,
+               o.codigo_concepto, o.periodo_mes, o.monto_usd AS obligacion_monto_usd
         FROM pagos p
         INNER JOIN atletas a ON p.id_atleta = a.id_atleta
+        LEFT JOIN obligaciones_cobro o ON o.id_obligacion = p.id_obligacion
         WHERE a.id_representante = ?
         ORDER BY p.id_pago DESC
     `;

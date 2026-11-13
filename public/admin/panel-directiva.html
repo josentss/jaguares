@@ -431,7 +431,7 @@
                     <p id="stat-total-bs">0.00 Bs</p>
                 </div>
                 <div class="card-status card-rate">
-                    <h3>Tasa BCV Oficial</h3>
+                    <h3>Bs por USD · referencia de mercado</h3>
                     <p id="stat-tasa-bcv">0.00</p>
                     <small id="stat-tasa-fecha">Fecha: N/A</small>
                 </div>
@@ -902,7 +902,7 @@
                         <summary>Conceptos y tarifas</summary>
                         <div class="cobros-tabla-scroll">
                             <table class="cobros-gestion-tabla">
-                                <thead><tr><th>Concepto</th><th>USD</th><th>Activo</th><th></th></tr></thead>
+                                <thead><tr><th>Concepto</th><th>Precio USD</th><th>Estado</th><th>Editar</th></tr></thead>
                                 <tbody id="gestion-cobros-conceptos"></tbody>
                             </table>
                         </div>
@@ -911,7 +911,7 @@
                                 <input id="gestion-concepto-nombre" type="text" maxlength="60" minlength="3" required placeholder="Nombre">
                             </label>
                             <label>Precio USD
-                                <input id="gestion-concepto-precio" type="number" min="0.01" max="9999999" step="0.01" required>
+                                <input id="gestion-concepto-precio" type="number" min="0.01" max="999.99" step="0.01" inputmode="decimal" required>
                             </label>
                             <button type="submit" class="cobros-btn-principal">Agregar</button>
                         </form>
@@ -951,11 +951,41 @@
                         </div>
                     </details>
 
-                    <details class="cobros-gestion-seccion">
+                    <details id="gestion-seccion-tasas" class="cobros-gestion-seccion">
                         <summary>Tasas de cobro</summary>
+                        <div class="cobros-referencias" aria-label="Referencias externas de cambio">
+                            <div class="cobros-referencias-encabezado">
+                                <strong>Referencias de cambio</strong>
+                                <button id="gestion-referencias-consultar" type="button" class="cobros-btn-secundario">Consultar</button>
+                            </div>
+                            <p id="gestion-referencias-estado" class="cobros-ayuda" role="status" aria-live="polite"></p>
+                            <div class="cobros-referencias-grid">
+                                <div class="cobros-referencia-item">
+                                    <span>BCV republicado · Bs por USD</span>
+                                    <strong id="gestion-bcv-usd">—</strong>
+                                    <small id="gestion-bcv-vigencia">Fuente secundaria: bcv.today</small>
+                                </div>
+                                <div class="cobros-referencia-item">
+                                    <span>BCV republicado · Bs por EUR</span>
+                                    <strong id="gestion-bcv-eur">—</strong>
+                                    <small>Informativo; cobros nominales en USD</small>
+                                </div>
+                                <div class="cobros-referencia-item">
+                                    <span>ExchangeRate-API · Bs por USD</span>
+                                    <strong id="gestion-mercado-usd">—</strong>
+                                    <small>Referencia comercial, no tasa BCV</small>
+                                </div>
+                            </div>
+                            <div class="cobros-referencias-acciones">
+                                <button id="gestion-bcv-registrar" type="button" class="cobros-btn-principal" disabled>Usar referencia BCV para hoy</button>
+                                <span id="gestion-referencias-cache" class="cobros-ayuda"></span>
+                            </div>
+                        </div>
+                        <details class="cobros-tasa-manual">
+                            <summary>Registrar tasa manual · COP o respaldo Bs</summary>
                         <form id="gestion-cobros-tasa" class="cobros-gestion-form">
                             <label>Moneda
-                                <select id="gestion-tasa-moneda"><option value="Bs">Bs</option><option value="COP">COP</option></select>
+                                <select id="gestion-tasa-moneda"><option value="COP">COP</option><option value="Bs">Bs (manual)</option></select>
                             </label>
                             <label>Fecha
                                 <input id="gestion-tasa-fecha" type="date" required>
@@ -968,7 +998,8 @@
                             </label>
                             <button type="submit" class="cobros-btn-principal">Registrar tasa</button>
                         </form>
-                        <p class="cobros-ayuda">Cada tasa queda guardada con fecha y fuente; no se modifica después.</p>
+                        <p class="cobros-ayuda">Tasas manuales para COP o respaldo en Bs. Las tasas confirmadas son inmutables.</p>
+                        </details>
                         <div class="cobros-tabla-scroll">
                             <table class="cobros-gestion-tabla">
                                 <thead><tr><th>Fecha</th><th>Moneda</th><th>Por USD</th><th>Fuente</th></tr></thead>
@@ -1838,11 +1869,14 @@
                 let acumuladoPuroUSD = 0;
                 let acumuladoPuroBs = 0;
 
-                const tasaBCV = parseFloat(data.tasa_bcv || (data.metricas && data.metricas.tasa_bcv) || 36.50);
-                document.getElementById('stat-tasa-bcv').textContent = `${tasaBCV.toFixed(2)} Bs`;
+                // Referencia de mercado únicamente informativa; nunca tasa BCV.
+                const tasaBCV = Number(data.tasa_bcv);
+                const tasaDisponible = Number.isFinite(tasaBCV) && tasaBCV > 0;
+                document.getElementById('stat-tasa-bcv').textContent =
+                    tasaDisponible ? `${tasaBCV.toFixed(2)} Bs/USD` : 'No disponible';
                 document.getElementById('stat-tasa-fecha').textContent = data.tasa_fecha
-                    ? `Fecha: ${formatFechaInstante(data.tasa_fecha)}`
-                    : 'Fecha: N/A (valor por defecto)';
+                    ? 'ExchangeRate-API · ' + String(data.tasa_fecha).slice(0,10)
+                    : 'Sin cotización vigente';
 
                 if (data.pagos && data.pagos.length > 0) {
                     data.pagos.forEach(p => {
@@ -1859,21 +1893,16 @@
                     });
                 }
 
-                const granTotalGlobalUSD = acumuladoPuroUSD + (acumuladoPuroBs / tasaBCV);
-                const granTotalGlobalBs = acumuladoPuroBs + (acumuladoPuroUSD * tasaBCV);
-
+                // Equivalencias estimadas con tasa de mercado actual, no saldo
+                // contable exacto de operaciones históricas.
+                const granTotalGlobalUSD = tasaDisponible ?
+                    acumuladoPuroUSD + (acumuladoPuroBs / tasaBCV) : null;
+                const granTotalGlobalBs = tasaDisponible ?
+                    acumuladoPuroBs + (acumuladoPuroUSD * tasaBCV) : null;
                 document.getElementById('stat-total-usd').textContent =
-                    `${granTotalGlobalUSD.toFixed(2)} $`;
-
+                    tasaDisponible ? `${granTotalGlobalUSD.toFixed(2)} $ (est.)` : '—';
                 document.getElementById('stat-total-bs').textContent =
-                    `${granTotalGlobalBs.toFixed(2)} Bs`;
-
-                document.getElementById('stat-tasa-bcv').textContent =
-                    `${tasaBCV.toFixed(2)} Bs/$`;
-
-                document.getElementById('stat-tasa-fecha').textContent = data.tasa_fecha
-                    ? `Fecha: ${formatFechaInstante(data.tasa_fecha)}`
-                    : 'Fecha: N/A (valor por defecto)';
+                    tasaDisponible ? `${granTotalGlobalBs.toFixed(2)} Bs (est.)` : '—';
 
                 const bodyAtletas = document.getElementById('body-atletas');
                 bodyAtletas.innerHTML = data.atletas.length === 0

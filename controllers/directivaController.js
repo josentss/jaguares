@@ -3,39 +3,21 @@ const { clasificar } = require('../public/admin/categorias-formativas');
 const { crearNotificacion } = require('./notificacionesController');
 const { esEnteroPositivo, esEstadoAtletaValido, esEstadoPagoValido } = require('../utils/validators');
 
-const BCV_API_KEY = process.env.EXCHANGERATE_API_KEY;
-const BCV_API_URL = `https://v6.exchangerate-api.com/v6/${BCV_API_KEY}/latest/USD`;
-const TASA_BCV_DEFAULT = 36.50;
+const { obtenerReferencia } = require('../utils/referenciasCambio');
 
-async function obtenerTasaBCV() {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
+// Dato referencial de mercado, NO tasa oficial BCV. El caché PostgreSQL
+// impide solicitar ExchangeRate-API cada vez que Directiva abre el panel.
+// Si no hay datos válidos, nunca utilizar una tasa fija ficticia.
+async function obtenerTasaMercado() {
     try {
-        const response = await fetch(BCV_API_URL, { signal: controller.signal });
-
-        if (!response.ok) {
-            throw new Error(`Status HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.result !== 'success' || !data.conversion_rates || !data.conversion_rates.VES) {
-            throw new Error('Formato de respuesta inesperado de exchangerate-api');
-        }
-
-        return {
-            tasa_bcv: data.conversion_rates.VES,
-            tasa_fecha: data.time_last_update_utc || new Date().toISOString()
-        };
+        const ref=await obtenerReferencia('exchangerate_api');
+        return { tasa_bcv:Number(ref.usd_ves),
+            tasa_fecha:ref.fecha_referencia,
+            tasa_fuente:'ExchangeRate-API (referencial, no BCV)' };
     } catch (err) {
-        console.error('⚠️  No se pudo obtener la tasa BCV externa, usando valor por defecto:', err.message);
-        return {
-            tasa_bcv: TASA_BCV_DEFAULT,
-            tasa_fecha: null
-        };
-    } finally {
-        clearTimeout(timeoutId);
+        console.warn('REFERENCIA_MERCADO_NO_DISPONIBLE',err.code||'INTERNAL');
+        return { tasa_bcv:null,tasa_fecha:null,
+            tasa_fuente:'ExchangeRate-API (no disponible)' };
     }
 }
 
@@ -43,7 +25,7 @@ async function obtenerTasaBCV() {
 exports.obtenerAuditoria = async (req, res) => {
     try { if (req.logAdmin) req.logAdmin({ action: 'obtenerAuditoria_start' }); } catch(e) { console.error('logAdmin error', e); }
 
-    const { tasa_bcv, tasa_fecha } = await obtenerTasaBCV();
+    const { tasa_bcv, tasa_fecha, tasa_fuente } = await obtenerTasaMercado();
 
     const qActivos = "SELECT COUNT(*) AS activos FROM atletas WHERE estado = 'activo'";
     const qEspera = "SELECT COUNT(*) AS espera FROM atletas WHERE estado = 'espera'";
@@ -114,6 +96,7 @@ exports.obtenerAuditoria = async (req, res) => {
                             },
                             tasa_bcv,
                             tasa_fecha,
+                            tasa_fuente,
                             atletas: listaAtletas.map(a => ({ ...a, clasificacion: clasificar(a.fecha_nac) })),
                             pagos: listaPagos.map(p => ({
                                 ...p,

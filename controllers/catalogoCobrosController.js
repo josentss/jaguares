@@ -21,7 +21,11 @@ function fallo(res,err) {
     console.error('CATALOGO_COBROS_SQL',err.code || 'INTERNAL');
     return res.status(500).json({ success:false, message:'No se pudo completar la operación' });
 }
-function validoPrecio(n) { return esMontoValido(n) && Number(n) <= 9999999; }
+function validoPrecio(n) {
+    return (typeof n === 'string' || typeof n === 'number') &&
+        /^\d{1,3}(?:\.\d{1,2})?$/.test(String(n)) &&
+        Number(n) >= 0.01 && Number(n) <= 999.99;
+}
 function validoNombre(n) {
     return typeof n === 'string' && n.trim().length >= 2 &&
         n.trim().length <= 60 && !/[<>\x00-\x1f]/.test(n);

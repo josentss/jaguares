@@ -40,3 +40,91 @@
  .cobros-gestion-form button { width:100%; }
  .cobros-gestion-tabla { min-width:520px; }
 }
+
+/* Acciones por fila: una sola acción visible hasta entrar en edición. */
+.cobros-gestion .cobros-gestion-tabla input[hidden],
+.cobros-gestion .cobros-gestion-tabla button[hidden] { display:none !important; }
+.cobros-columna-acciones { width:104px; white-space:nowrap; }
+.cobros-acciones-fila { display:flex; justify-content:flex-start; align-items:center; gap:5px; }
+.cobros-accion-icono {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:34px; height:34px; padding:5px;
+  border:1px solid transparent; border-radius:7px;
+  background:transparent; color:#4a5565; cursor:pointer;
+}
+.cobros-accion-icono:hover { background:#f2f5f8; border-color:#e0e5eb; }
+.cobros-accion-icono:focus-visible { outline:2px solid #e84613; outline-offset:2px; }
+.cobros-accion-guardar { color:#216741; }
+.cobros-accion-cancelar { color:#af3540; }
+.cobros-accion-icono:disabled { opacity:.45; cursor:wait; }
+.cobros-estado-concepto { color:#566579; }
+.cobros-gestion-tabla td > span { display:inline-block; line-height:1.5; overflow-wrap:anywhere; }
+.cobros-gestion-tabla input[type="text"],
+.cobros-gestion-tabla input[type="number"] { max-width:100%; min-width:90px; box-sizing:border-box; }
+.cobros-gestion-tabla input[type="number"] { max-width:145px; }
+.cobros-gestion-tabla input[type="checkbox"] { margin:0 0 0 4px; }
+.cobros-gestion .cobros-gestion-tabla td { vertical-align:middle; }
+
+/* Asignación: formularios con controles alineados y acciones al pie. */
+.cobros-gestion-doble > form {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:12px; row-gap:12px; align-content:start; align-items:end;
+  padding:15px; border:1px solid #e6e9ed; border-radius:8px;
+}
+.cobros-gestion-doble > form h4 { grid-column:1/-1; margin:0; }
+.cobros-gestion-doble > form label:not(.cobros-confirmacion) {
+  flex:none; min-width:0; width:100%; box-sizing:border-box;
+}
+.cobros-gestion-doble > form > button {
+  grid-column:1/-1; justify-self:start; align-self:end;
+}
+.cobros-gestion-doble #gestion-cobros-mensualidad {
+  grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto;
+  align-content:start;
+}
+.cobros-gestion-doble #gestion-cobros-mensualidad > button { grid-column:1; }
+.cobros-gestion-doble #gestion-cobros-cargo .cobros-confirmacion { grid-column:1/-1; }
+.cobros-gestion-doble #gestion-cobros-cargo label:has(#gestion-cargo-detalle) {
+  grid-column:2;
+}
+
+/* Referencias de cambio, sin presentarlas como tasas verificadas del BCV. */
+.cobros-referencias {
+  padding:12px; background:#fafbfc; border:1px solid #e7ebf0;
+  border-radius:8px;
+}
+.cobros-referencias-encabezado,
+.cobros-referencias-acciones { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.cobros-referencias-encabezado { justify-content:space-between; }
+.cobros-referencias-encabezado strong { font-size:.87rem; }
+.cobros-referencias-grid {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px; margin:10px 0;
+}
+.cobros-referencia-item {
+  border:1px solid #e5e9ef; background:#fff; border-radius:7px;
+  padding:10px; display:flex; flex-direction:column; gap:5px;
+  font-size:.8rem; min-width:0;
+}
+.cobros-referencia-item strong { font-size:1.06rem; color:#253144; }
+.cobros-referencia-item small { font-size:.73rem; color:#697587; }
+.cobros-referencias-acciones { margin-top:10px; }
+.cobros-referencias-acciones button:disabled { opacity:.55; cursor:not-allowed; }
+#gestion-referencias-estado { min-height:1em; margin:7px 0 0; }
+#gestion-referencias-estado[data-error="true"] { color:#ad2736; }
+.cobros-tasa-manual { border-top:1px solid #e3e7ed; padding-top:9px; }
+.cobros-tasa-manual summary { cursor:pointer; font-size:.85rem; font-weight:600; }
+.cobros-tasa-manual form { padding-top:12px; }
+
+@media(max-width:960px) {
+  .cobros-referencias-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:720px) {
+  .cobros-referencias-grid { grid-template-columns:1fr; }
+  .cobros-gestion-doble > form { grid-template-columns:minmax(0,1fr); padding:12px; }
+  .cobros-gestion-doble #gestion-cobros-cargo label:has(#gestion-cargo-detalle) {
+    grid-column:1;
+  }
+  .cobros-gestion-doble > form > button { width:auto; max-width:100%; }
+  .cobros-columna-acciones { width:83px; }
+}

@@ -176,8 +176,13 @@
         const tabla=el('gestion-cobros-conceptos');
         cerrarEdicion=null;
         tabla.replaceChildren();
-        const visibles=catalogo.filter(x=>x.activo||
-            el('gestion-conceptos-archivados')?.checked);
+        const filtro=el('gestion-conceptos-archivados');
+        const archivados=catalogo.filter(x=>!x.activo).length;
+        const control=filtro.closest('.cobros-archivados-filtro');
+        control.hidden=archivados===0;
+        if(!archivados) filtro.checked=false;
+        control.querySelector('span').textContent='Ver archivados ('+archivados+')';
+        const visibles=catalogo.filter(x=>x.activo||filtro.checked);
         for (const concepto of visibles) tabla.append(editarFila(concepto));
         if (!visibles.length) {
             const tr=document.createElement('tr');

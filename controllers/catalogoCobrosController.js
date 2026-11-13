@@ -83,6 +83,56 @@ exports.editar = async (req,res) => {
     } catch(err) {return fallo(res,err);}
 };
 
+// La eliminación es segura: conceptos con historial se archivan (activo=false).
+// Si nunca se usaron, los personalizados pueden borrarse físicamente.
+// Los conceptos institucionales siempre se archivan: su código es reservado.
+exports.retirar = async (req,res) => {
+    if (!ADMIN.includes(req.usuarioRol)) return denegar(res);
+    const codigo=req.params.codigo;
+    if(typeof codigo!=='string'||!CODIGO.test(codigo)) {
+        return res.status(400).json({success:false,message:'Concepto no válido'});
+    }
+    let client,committed=false;
+    try {
+        client=await db.pool.connect();
+        await client.query('BEGIN');
+        const encontrado=await client.query(
+            'SELECT codigo, nombre, activo FROM conceptos_cobro WHERE codigo=$1 FOR UPDATE',
+            [codigo]
+        );
+        if (!encontrado.rowCount) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({success:false,message:'Concepto no encontrado'});
+        }
+        const usado=await client.query(
+            'SELECT 1 FROM obligaciones_cobro WHERE codigo_concepto=$1 LIMIT 1',
+            [codigo]
+        );
+        const archivar=INSTITUCIONALES.has(codigo)||usado.rowCount>0;
+        if(archivar) {
+            await client.query('UPDATE conceptos_cobro SET activo=FALSE WHERE codigo=$1',[codigo]);
+        }else{
+            await client.query('DELETE FROM conceptos_cobro WHERE codigo=$1',[codigo]);
+        }
+        await client.query('COMMIT');committed=true;
+        res.set?.('Cache-Control','no-store');
+        return res.json({
+            success:true,
+            accion:archivar?'archivado':'eliminado',
+            message:archivar?'Concepto archivado; historial conservado':'Concepto eliminado'
+        });
+    }catch(err){return fallo(res,err);}
+    finally{
+        if(client) {
+            if(!committed){
+                try{await client.query('ROLLBACK');}
+                catch(e){console.error('CATALOGO_RETIRAR_ROLLBACK',e.code||'INTERNAL');}
+            }
+            client.release();
+        }
+    }
+};
+
 exports.listarTasas = async (req,res) => {
     if (!ADMIN.includes(req.usuarioRol)) return denegar(res);
     try {
@@ -99,8 +149,11 @@ exports.registrarTasa = async (req,res) => {
     if (!ADMIN.includes(req.usuarioRol)) return denegar(res);
     const {moneda,fecha_vigencia,tasa_por_usd,fuente} = req.body || {};
     const tasaValida = typeof tasa_por_usd === 'string' || typeof tasa_por_usd === 'number';
+    const hoy=hoyCaracas();
+    const rangoDesde=hoy.slice(0,7)+'-01';
+    const rangoHasta=String(Number(hoy.slice(0,4))+1)+'-12-31';
     if (!['Bs','COP'].includes(moneda) || !esFechaISOValida(fecha_vigencia) ||
-        fecha_vigencia > hoyCaracas() ||
+        fecha_vigencia < rangoDesde || fecha_vigencia > rangoHasta ||
         !tasaValida || !/^\d{1,9}(?:\.\d{1,6})?$/.test(String(tasa_por_usd)) ||
         Number(tasa_por_usd) <= 0 || Number(tasa_por_usd) > 999999999 ||
         typeof fuente !== 'string' || fuente.trim().length < 3 ||
@@ -144,7 +197,8 @@ exports.crearCargo = async (req,res) => {
         const ancla=await client.query('SELECT 1 FROM anclas_cobro_atleta WHERE id_atleta=$1',[Number(id_atleta)]);
         if (!rechazo && !ancla.rowCount) rechazo=[409,'Configura primero el inicio del cobro'];
         const concepto=await client.query(`
-            SELECT nombre,monto_referencia_usd,modalidad,activo FROM conceptos_cobro WHERE codigo=$1
+            SELECT nombre,monto_referencia_usd,modalidad,activo
+            FROM conceptos_cobro WHERE codigo=$1 FOR SHARE
         `,[codigo_concepto]);
         if (!rechazo && (!concepto.rowCount || !concepto.rows[0].activo ||
             !['manual','unica'].includes(concepto.rows[0].modalidad))) {

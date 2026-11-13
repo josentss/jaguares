@@ -1,5 +1,32 @@
 # Cuentas por cobrar — contrato inicial (12-11-2026)
 
+## PR #56 — UX de tarifas y referencias de cambio (en revisión)
+- Tarifa por concepto: muestra nombre, precio y estado **en modo lectura**, con solo un lápiz SVG discreto por fila. Al editar la fila aparecen **Guardar (disquete)** y **Cancelar (X)**. Solo una fila editable a la vez; cancelar no escribe. Si el servidor rechaza, el formulario permanece abierto.
+- **USD 0,01–999,99**, hasta dos decimales: validación de navegador, endpoint y restricción PostgreSQL. El límite aplica a la tarifa de referencia del catálogo, **no convierte retroactivamente** cargos emitidos ni limita tasas en bolívares.
+- «Asignar cargos»: campos y botones organizados en dos formularios compactos, distribución responsive sin bloques decorativos.
+- Cotizaciones: **ExchangeRate-API no certifica tasa BCV**. Su cotización USD/VES es referencia comercial (usada también por la tarjeta informativa del dashboard; se retiró el fallback falso de 36,50). Una fuente secundaria **bcv.today** reproduce lo publicado por BCV y expone USD/Bs y EUR/Bs con fecha de vigencia. Es un servicio tercero y no un endpoint oficial BCV. EUR es informativo: las obligaciones siguen nominadas en USD, los pagos siguen admitiendo USD, Bs y COP.
+- Nuevo endpoint administrativo `GET /api/directiva/cobros/tasas/referencias`: al desplegar la sección «Tasas de cobro», consulta por separado las dos fuentes; **cada proveedor se consulta como máximo una vez por fecha en Caracas** si tuvo éxito, con caché persistente de base de datos y advisory lock contra consultas simultáneas en Vercel. Las referencias fallidas no se guardan; el panel puede continuar con registro manual.
+- `POST /api/directiva/cobros/tasas/publicar-bcv` exige sesión Directiva/Admin y confirmación explícita. Solo usa referencia BCV **cacheada para el día local**, con vigencia no futura ni más de siete días anterior; copia importe y fuente a `tasas_cobro` (inmutable), sin manipulación de monto en navegador ni duplicar la misma publicación. No se publican cotizaciones de ExchangeRate-API como BCV.
+- Tasas manuales: siguen disponibles para **COP** y respaldo Bs. El registro de tasas BCV para cobros es **una acción consciente de Directiva**, no un ajuste automático invisible.
+- El dashboard deja de solicitar una y otra vez la referencia comercial el mismo día; si falla el proveedor o falta clave, muestra «No disponible» y no realiza conversiones usando tasa ficticia. El total equivalente mostrado, cuando existe, es **estimación de mercado**, no conciliación histórica de todos los cambios de cada fecha.
+
+### Migración necesaria (nueva, NO aplicada por el despliegue)
+`migrations/2026-11-13_referencias_cambio_cache.sql` es aditiva: crea `referencias_cambio_diarias`, única por (fecha_consulta, proveedor), y la restricción del catálogo `conceptos_cobro_precio_max_999`. No borra ni modifica pagos, tasas, anclas u obligaciones. Primero comprobar respaldo y ejecutar **preflight solo lectura**:
+
+```sql
+SELECT
+  (SELECT COUNT(*) FROM public.conceptos_cobro
+   WHERE monto_referencia_usd < 0.01 OR monto_referencia_usd > 999.99) AS tarifas_fuera_de_rango,
+  (SELECT COUNT(*) FROM public.pagos) AS pagos_antes,
+  (SELECT COUNT(*) FROM public.obligaciones_cobro) AS obligaciones_antes,
+  (SELECT COUNT(*) FROM public.tasas_cobro) AS tasas_antes,
+  to_regclass('public.referencias_cambio_diarias') IS NOT NULL AS cache_existente;
+```
+
+Debe haber **0 tarifas fuera de rango**. Tras aplicar la migración manual, revisar que el conteo de pagos/obligaciones/tasas sea idéntico, el índice `referencias_cambio_diarias_pkey` esté presente y la restricción `conceptos_cobro_precio_max_999` exista.
+
+No utilizar ninguna fuente comercial para etiquetar «BCV Oficial» ni registrar tasas de cambio sin confirmación. No desplegar antes de aplicar la migración, pues el endpoint de referencia y la tarjeta de tipo de cambio usan la nueva tabla.
+
 ## PR #55 — Catálogo, cargos asignados y montos fijos (en revisión)
 Este PR reemplaza en el formulario del Representante la elección de cualquier mes por **concepto y cargo concreto pendiente**. Si no hay obligaciones asignadas, no aparece un período ficticio y no puede enviarse el formulario. El historial anterior continúa visible.
 

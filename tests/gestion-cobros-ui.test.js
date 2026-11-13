@@ -7,7 +7,7 @@ const http=require('node:http');
 const {chromium}=require('playwright');
 
 const raiz=path.resolve(__dirname,'../public');
-let servidor,base,escrituras=[];
+let servidor,base,escrituras=[],consultasReferencias=0;
 const conceptos=[
     {codigo:'inscripcion',nombre:'Inscripción',modalidad:'unica',monto_referencia_usd:'15.00',activo:true},
     {codigo:'mensualidad',nombre:'Mensualidad',modalidad:'mensual',monto_referencia_usd:'15.00',activo:true},
@@ -30,6 +30,14 @@ test.before(async()=>{
             return json(res,{success:true,conceptos});
         if(p==='/api/directiva/cobros/tasas'&&req.method==='GET')
             return json(res,{success:true,tasas:[]});
+        if(p==='/api/directiva/cobros/tasas/referencias'&&req.method==='GET'){
+            consultasReferencias++;
+            return json(res,{success:true,fecha_consulta:'2026-11-13',bcv:{
+                usd_ves:'980.123456',eur_ves:'1130.120000',
+                fecha_referencia:'2026-11-13',desde_cache:true
+            },mercado:{usd_ves:'970.000000',fecha_referencia:'2026-11-13',
+                desde_cache:true},avisos:{bcv:null,mercado:null}});
+        }
         if(p==='/api/directiva/cobros/conciliacion/atletas'&&req.method==='GET')
             return json(res,{success:true,atletas:[{
                 id_atleta:31,nombres:'Atleta',apellidos:'Sintético',
@@ -56,6 +64,9 @@ test.before(async()=>{
                 concepto.activo=parsed.activo;
                 return json(res,{success:true,concepto});
             }
+            if(p.endsWith('/publicar-bcv'))return json(res,{
+                success:true,tasa:{id_tasa:40,moneda:'Bs',tasa_por_usd:'980.123456'}
+            },201);
             if(p.endsWith('/mensualidades'))return json(res,{success:true,creada:true,obligacion:{id_obligacion:1}});
             if(p.endsWith('/cargos'))return json(res,{success:true,obligacion:{id_obligacion:2}},201);
             if(p.endsWith('/tasas'))return json(res,{success:true,tasa:{id_tasa:1}},201);
@@ -98,22 +109,62 @@ test('directiva edita tarifa y registra cargos sin crear deuda al cargar la pant
         assert.equal(escrituras.length,0);
         assert.equal(await page.locator('#gestion-cobros-conceptos tr').count(),3);
         const mensual=page.locator('#gestion-cobros-conceptos tr').nth(1);
+        assert.equal(await mensual.locator('input[type=number]').isVisible(),false);
+        assert.equal(await mensual.getByRole('button',{name:'Guardar cambios de Mensualidad'}).isVisible(),false);
+        await mensual.getByRole('button',{name:'Editar Mensualidad'}).click();
+        assert.equal(await mensual.locator('input[type=number]').isVisible(),true);
+        assert.equal(await mensual.getByRole('button',{name:'Editar Mensualidad'}).isVisible(),false);
+        await mensual.locator('input[type=number]').fill('1000');
+        await mensual.getByRole('button',{name:'Guardar cambios de Mensualidad'}).click();
+        await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado')
+            ?.textContent.includes('fuera de USD'));
+        assert.equal(escrituras.length,0);
         await mensual.locator('input[type=number]').fill('18.00');
-        await mensual.getByRole('button',{name:'Guardar'}).click();
-        await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado').textContent.includes('Tarifa actualizada'));
+        await mensual.getByRole('button',{name:'Guardar cambios de Mensualidad'}).click();
+        await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado')
+            ?.textContent.includes('Tarifa actualizada'));
         assert.equal(escrituras[0].p,'/api/directiva/cobros/catalogo/mensualidad');
         assert.equal(escrituras[0].body.monto_usd,'18.00');
-        // Refresco automático: las siguientes emisiones deben ver el precio nuevo.
-        await page.waitForFunction(() =>
-            document.querySelectorAll('#gestion-cobros-conceptos tr')[1]
-                ?.querySelector('input[type=number]')?.value === '18.00');
-        assert.equal(await page.locator('#gestion-cobros-conceptos tr').nth(1)
-            .locator('input[type=number]').inputValue(),'18.00');
+        await page.waitForFunction(() => document.querySelectorAll(
+            '#gestion-cobros-conceptos tr')[1]?.textContent.includes('USD 18.00'));
+        const mensualActual=page.locator('#gestion-cobros-conceptos tr').nth(1);
+        assert.equal(await mensualActual.locator('input[type=number]').isVisible(),false);
+        await mensualActual.getByRole('button',{name:'Editar Mensualidad'}).click();
+        await mensualActual.locator('input[type=number]').fill('55');
+        await mensualActual.getByRole('button',{name:'Cancelar edición de Mensualidad'}).click();
+        assert.equal(await mensualActual.locator('input[type=number]').isVisible(),false);
+        assert.equal(escrituras.length,1);
+        assert.match(await mensualActual.innerText(),/USD 18.00/);
         await page.locator('#cobros-atleta option[value="31"]').waitFor({state:'attached'});
         await page.locator('#cobros-atleta').selectOption('31');
         await page.locator('#gestion-cobros-mensualidad button[type=submit]').click();
         await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado').textContent.includes('Mensualidad asignada'));
         assert.ok(escrituras.some(x=>x.p.endsWith('/mensualidades')&&x.body.id_atleta===31));
+        assert.deepEqual(errores,[]);
+    }finally{await browser.close();}
+});
+
+test('tasas: la referencia de mercado no es BCV y la publicación exige interacción',async()=>{
+    escrituras=[];consultasReferencias=0;
+    const {browser,page,errores}=await abrir({width:1360,height:900});
+    try{
+        await page.locator('#nav-conciliacion-cobros').evaluate(e=>e.click());
+        await page.locator('#gestion-cobros-conceptos tr').first().waitFor();
+        assert.equal(consultasReferencias,0);
+        assert.equal(escrituras.length,0);
+        await page.locator('#gestion-seccion-tasas summary').first().click();
+        await page.waitForFunction(()=>document.querySelector('#gestion-bcv-usd')
+            ?.textContent.includes('980'));
+        assert.match(await page.locator('#gestion-bcv-vigencia').textContent(),/bcv.today/);
+        assert.match(await page.locator('#gestion-mercado-usd').textContent(),/970/);
+        assert.equal(consultasReferencias,1);
+        assert.equal(escrituras.length,0);
+        await page.locator('#gestion-bcv-registrar').click();
+        await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado')
+            ?.textContent.includes('Referencia BCV registrada'));
+        assert.equal(escrituras.length,1);
+        assert.equal(escrituras[0].p,'/api/directiva/cobros/tasas/publicar-bcv');
+        assert.deepEqual(escrituras[0].body,{confirmar:true});
         assert.deepEqual(errores,[]);
     }finally{await browser.close();}
 });

@@ -112,6 +112,7 @@ test('directiva edita tarifa y registra cargos sin crear deuda al cargar la pant
         await page.locator('#nav-conciliacion-cobros').evaluate(e=>e.click());
         await page.locator('#gestion-cobros-conceptos tr').first().waitFor();
         assert.equal(escrituras.length,0);
+        assert.equal(await page.locator('.cobros-archivados-filtro').isVisible(),false);
         assert.equal(await page.locator('#gestion-cobros-conceptos tr').count(),3);
         const mensual=page.locator('#gestion-cobros-conceptos tr').nth(1);
         assert.equal(await mensual.locator('input[type=number]').isVisible(),false);
@@ -244,6 +245,9 @@ test('papelera contextual archiva concepto y permite mostrarlo para reactivar',a
             x.p==='/api/directiva/cobros/catalogo/torneo'));
         assert.equal(await page.locator('#gestion-cobros-conceptos tr')
             .filter({hasText:'Torneo'}).count(),0);
+        assert.equal(await page.locator('.cobros-archivados-filtro').isVisible(),true);
+        assert.match(await page.locator('.cobros-archivados-filtro').innerText(),
+            /Ver archivados \(1\)/);
         await page.locator('#gestion-conceptos-archivados').check();
         const archivado=page.locator('#gestion-cobros-conceptos tr')
             .filter({hasText:'Torneo'});

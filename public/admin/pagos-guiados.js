@@ -107,8 +107,13 @@
                 metodo:pago.metodo,monto:data.monto
             };
             const base=`Cargo USD ${Number(data.precio_usd).toFixed(2)}`;
+            const importe=Number(data.monto).toLocaleString('es-VE',{
+                minimumFractionDigits:2,maximumFractionDigits:2
+            });
+            const proveedor=String(data.fuente||'').includes('ExchangeRate-API')?
+                'ExchangeRate-API':'Tasa fijada por el club';
             byId('pay-guia-monto').textContent=pago.moneda==='USD'?base:
-                `${base} · 1 USD = ${data.tasa_por_usd} ${pago.moneda} · ${data.fuente} (${data.fecha_tasa})`;
+                `${base} = ${importe} ${pago.moneda} · ${proveedor} (${data.fecha_tasa})`;
             aviso('');
             habilitarBoton();
         }catch(e){

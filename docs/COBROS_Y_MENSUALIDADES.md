@@ -1,5 +1,17 @@
 # Cuentas por cobrar — contrato inicial (12-11-2026)
 
+## PR #58 — fuente de cambio principal, archivo de conceptos y fechas de tasas
+
+**Fuente de cambio elegida por Directiva:** ExchangeRate-API es la única fuente externa consultada para los valores Bs por USD y Bs por EUR en Gestión de cobros; la consulta se comparte por día en PostgreSQL. El club adopta estas referencias por decisión operativa. No declarar la respuesta automáticamente «tasa oficial BCV» ni afirmar una certificación de su origen que la respuesta estándar no incluye; conservar **ExchangeRate-API**, fecha de actualización y confirmación de Directiva en la tasa registrada. La tasa EUR es solo informativa; los cargos continúan en USD, los reportes aceptan USD/Bs/COP. El antiguo servicio bcv.today no se consulta más, aunque sus datos almacenados se conservan.
+
+`GET /api/directiva/cobros/tasas/referencias` retorna `principal` con importes USD/VES y EUR/VES de ExchangeRate-API. `POST /api/directiva/cobros/tasas/publicar-referencia` registra la referencia USD/VES solo cuando Directiva pulsa Registrar tasa y confirma; publica una fila inmutable de `tasas_cobro` indicando fuente y fecha. No se publican automáticamente datos de proveedores ni se inventan valores cuando hay errores. Las tasas manuales en Bs y COP siguen disponibles.
+
+**Fechas manuales:** desde el primer día del mes actual en `America/Caracas` hasta **31 de diciembre del año siguiente**. Ejemplo: el 13/11/2026, mínimo 01/11/2026 y máximo 31/12/2027. Validar en el selector y de nuevo en el servidor. Son fechas de vigencia; permitir una tasa futura no permite reportar un pago futuro, y la cotización del pago exige tasa correspondiente a su fecha exacta.
+
+**Retirar conceptos:** `DELETE /api/directiva/cobros/catalogo/:codigo` requiere Directiva/Admin. Si un concepto personalizado **nunca** estuvo vinculado a obligaciones, se elimina físicamente. Si tiene historial, se **archiva** (`activo=false`) y queda oculto de la tabla normal y del selector de cargos. Los cinco códigos institucionales siempre se archivan, nunca se destruyen. «Mostrar archivados» permite editarlos y reactivarlos. La papelera solo aparece durante la edición de una fila (no repetir íconos en todas las líneas). El servidor usa transacción y bloqueo de fila, y la emisión de cargos comparte bloqueo de lectura del concepto para evitar carreras. **Los cargos y pagos históricos se conservan**.
+
+**Despliegue:** PR solo de código. No requiere migración SQL nueva ni actualiza pagos/obligaciones en Supabase. CI usa PostgreSQL temporal y pruebas de navegador. En Production comprobar primero lectura y navegación; después cambios de catálogo/tasas solo con pruebas autorizadas y respaldo.
+
 ## PR #56 — UX de tarifas y referencias de cambio (en revisión)
 - Tarifa por concepto: muestra nombre, precio y estado **en modo lectura**, con solo un lápiz SVG discreto por fila. Al editar la fila aparecen **Guardar (disquete)** y **Cancelar (X)**. Solo una fila editable a la vez; cancelar no escribe. Si el servidor rechaza, el formulario permanece abierto.
 - **USD 0,01–999,99**, hasta dos decimales: validación de navegador, endpoint y restricción PostgreSQL. El límite aplica a la tarifa de referencia del catálogo, **no convierte retroactivamente** cargos emitidos ni limita tasas en bolívares.

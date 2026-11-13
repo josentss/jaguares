@@ -107,20 +107,27 @@ async function obtenerReferencia(proveedor, hoy=hoyCaracas()) {
     }
 }
 
+// ExchangeRate-API es la fuente primaria elegida por el club. La caché
+// histórica de fuentes secundarias se conserva para trazabilidad, pero no
+// se consulta bcv.today cada vez que se abre el panel.
 async function obtenerReferencias(hoy=hoyCaracas()) {
-    const [bcv,mercado]=await Promise.allSettled([
-        obtenerReferencia('bcv_republicacion',hoy),
-        obtenerReferencia('exchangerate_api',hoy)
-    ]);
-    return {
-        fecha_consulta:hoy,
-        bcv:bcv.status==='fulfilled'?bcv.value:null,
-        mercado:mercado.status==='fulfilled'?mercado.value:null,
-        avisos:{
-            bcv:bcv.status==='rejected'?'Referencia BCV no disponible; revisa el sitio del BCV.':null,
-            mercado:mercado.status==='rejected'?'ExchangeRate-API no disponible.':null
-        }
-    };
+    try {
+        const principal=await obtenerReferencia('exchangerate_api',hoy);
+        return {
+            fecha_consulta:hoy,
+            principal,
+            // Alias de solo lectura para compatibilidad con reportes antiguos.
+            mercado:principal,
+            avisos:{principal:null}
+        };
+    } catch(err) {
+        return {
+            fecha_consulta:hoy,
+            principal:null,
+            mercado:null,
+            avisos:{principal:'ExchangeRate-API no disponible; utiliza una tasa manual verificada.'}
+        };
+    }
 }
 
 module.exports={obtenerReferencia,obtenerReferencias,diasEntre,MAX_EDAD_BCV_DIAS};

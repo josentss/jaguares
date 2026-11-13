@@ -54,8 +54,16 @@ test.before(async()=>{
             const moneda=url.searchParams.get('moneda'),fecha=url.searchParams.get('fecha');
             const id=Number(p.split('/').pop());
             if(modo==='sin-tasa'&&moneda==='Bs')return json(res,{
-                success:false,message:'Directiva debe configurar una tasa para esta moneda y fecha'
+                success:false,message:'No hay tasa para la fecha elegida. Usa la fecha de hoy o consulta al club.'
             },409);
+            if(modo==='tasa-automatica'&&moneda==='Bs')return json(res,{
+                success:true,id_obligacion:id,moneda,
+                precio_usd:id===3?'40.00':'15.00',
+                monto:id===3?'36464.97':'13674.36',
+                tasa_por_usd:'911.624300',
+                fecha_tasa:fecha,
+                fuente:'ExchangeRate-API (fecha '+fecha+')'
+            });
             const nominal=id===3?'40.00':'15.00';
             return json(res,{
                 success:true,id_obligacion:id,moneda,precio_usd:nominal,
@@ -150,13 +158,33 @@ test('sin cargos no ofrece meses libres ni permite enviar pago',async()=>{
     }finally{await browser.close();}
 });
 
+test('transferencia Bs calcula importe automáticamente desde ExchangeRate-API',async()=>{
+    modo='tasa-automatica';envios=[];cotizaciones=0;
+    const {browser,page,errores}=await abrir({width:1400,height:900});
+    try{
+        await page.locator('#pay-obligacion option[value="1"]').waitFor({state:'attached'});
+        await page.locator('#pay-metodo').selectOption('Transferencia Bancaria');
+        await page.waitForFunction(()=>document.querySelector('#pay-monto-trans')
+            .value==='13674.36');
+        assert.equal(await page.locator('#pay-monto-trans').isEditable(),false);
+        assert.match(await page.locator('#pay-guia-monto').textContent(),
+            /13\.674,36 Bs/);
+        assert.match(await page.locator('#pay-guia-monto').textContent(),
+            /ExchangeRate-API/);
+        assert.equal(await page.locator('#form-report-pago button[type=submit]')
+            .isDisabled(),false);
+        assert.equal(envios.length,0);
+        assert.deepEqual(errores,[]);
+    }finally{await browser.close();}
+});
+
 test('monto Bs fijo requiere tasa del día; móvil sin desbordamiento',async()=>{
     modo='sin-tasa';envios=[];
     const {browser,page,errores}=await abrir({width:390,height:844});
     try{
         await page.locator('#pay-obligacion option[value="1"]').waitFor({state:'attached'});
         await page.locator('#pay-metodo').selectOption('Transferencia Bancaria');
-        await page.getByText('Directiva debe configurar una tasa para esta moneda y fecha').waitFor();
+        await page.getByText('No hay tasa para la fecha elegida. Usa la fecha de hoy o consulta al club.').waitFor();
         assert.equal(await page.locator('#pay-monto-trans').isEditable(),false);
         assert.equal(await page.locator('#form-report-pago button[type=submit]').isDisabled(),true);
         assert.equal(envios.length,0);

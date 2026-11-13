@@ -139,6 +139,16 @@ El servidor calcula el importe USD de la obligación. Para bolívares o pesos ex
 
 Antes del merge hay que aplicar manualmente la migración de catálogo y tasas en Supabase; el CI se ejecuta sobre un PostgreSQL temporal. Nunca probar emisiones o registros de tasa en Preview cuando comparte la base de Production.
 
+## Referencias de cambio y edición del catálogo (PR #56, en revisión)
+
+Directiva ve tarifas de referencia en modo lectura y edita una sola fila usando lápiz, guardar y cancelar. Cada tarifa puede ser de USD 0,01 hasta USD 999,99, con máximo dos decimales. Los importes congelados en obligaciones emitidas no se modifican al cambiar una tarifa.
+
+En «Tasas de cobro» se consultan dos fuentes diferenciadas: **bcv.today** (tercero que reproduce publicaciones BCV, con fecha de vigencia) y **ExchangeRate-API** (referencia comercial USD/VES; no es BCV). Se muestra también EUR/VES republicado por BCV como información, sin habilitar euros como medio de pago. La consulta diaria se almacena en `referencias_cambio_diarias` de PostgreSQL; el proveedor no se vuelve a consultar por ese día cuando hay datos válidos cacheados.
+
+Una referencia consultada **no constituye una tasa oficial del club**. La Directiva debe confirmar «Usar referencia BCV para hoy» para crear una fila inmutable en `tasas_cobro`. COP y Bs de respaldo siguen siendo manuales. El dashboard distingue referencia comercial de publicación BCV y deja de usar el respaldo ficticio.
+
+Este PR requiere ejecutar manualmente `migrations/2026-11-13_referencias_cambio_cache.sql` previa verificación y respaldo. Revisar detalles y preflight en [COBROS_Y_MENSUALIDADES.md](COBROS_Y_MENSUALIDADES.md).
+
 ## 9. Próximas decisiones funcionales
 
 El reporte **vinculado a `id_obligacion`** ya existe desde PR #54, y este PR #55 introduce el catálogo editable, la elección de cargos asignados y montos fijos cotizados por moneda. El Estado de cuenta sigue siendo **una consulta**, no un formulario de envío.

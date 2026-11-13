@@ -71,6 +71,8 @@ test.before(async () => {
         '../migrations/2026-11-12_cuentas_por_cobrar_base.sql'),'utf8'));
     await db.pool.query(require('node:fs').readFileSync(require('node:path').join(__dirname,
         '../migrations/2026-11-12_catalogo_y_tasas_cobro.sql'),'utf8'));
+    await db.pool.query(require('node:fs').readFileSync(require('node:path').join(__dirname,
+        '../migrations/2026-11-13_referencias_cambio_cache.sql'),'utf8'));
 });
 
 test.after(async () => {

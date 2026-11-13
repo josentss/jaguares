@@ -101,11 +101,15 @@ async function cotizar(cliente, {
             await cliente.query('SELECT pg_advisory_xact_lock(hashtext($1))',
                 ['jaguares:reporte-tasa:Bs:'+fecha_pago]);
         }
+        // COP conserva la última tasa manual desde su fecha de vigencia,
+        // hasta que Directiva publique una nueva. Bs nunca reutiliza una
+        // tasa del día anterior: se calcula con la referencia de su fecha.
+        const condicion=moneda==='COP'?'fecha_vigencia <= $2':'fecha_vigencia = $2';
         const registrada=await cliente.query(`
             SELECT id_tasa, tasa_por_usd, fuente, fecha_vigencia
             FROM tasas_cobro
-            WHERE moneda=$1 AND fecha_vigencia=$2
-            ORDER BY id_tasa DESC LIMIT 1
+            WHERE moneda=$1 AND ${condicion}
+            ORDER BY fecha_vigencia DESC,id_tasa DESC LIMIT 1
         `,[moneda,fecha_pago]);
         tasa=registrada.rows[0]||null;
 

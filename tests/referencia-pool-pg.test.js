@@ -50,13 +50,15 @@ test('tres transacciones comparten pool y solicitan la referencia solo una vez',
     // conexión mientras estas tres ya están prestadas, agota el pool.
     const clientes=await Promise.all([0,1,2].map(()=>db.pool.connect()));
     try {
-        await Promise.all(clientes.map(c=>c.query('BEGIN')));
-        const referencias=await Promise.all(clientes.map(c=>
-            obtenerReferencia('exchangerate_api',hoy,c)
-        ));
+        const referencias=await Promise.all(clientes.map(async c=>{
+            await c.query('BEGIN');
+            const ref=await obtenerReferencia('exchangerate_api',hoy,c);
+            // pg_advisory_xact_lock se libera al confirmar CADA transacción.
+            await c.query('COMMIT');
+            return ref;
+        }));
         assert.ok(referencias.every(x=>x.usd_ves==='915.250000'));
         assert.equal(llamadas,1);
-        await Promise.all(clientes.map(c=>c.query('COMMIT')));
         const {rows}=await db.pool.query(
             "SELECT COUNT(*)::int AS total FROM referencias_cambio_diarias WHERE proveedor='exchangerate_api'");
         assert.equal(rows[0].total,1);

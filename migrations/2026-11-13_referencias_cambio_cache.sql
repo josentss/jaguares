@@ -4,6 +4,22 @@
 -- No modifica pagos, obligaciones, conceptos ni tasas_cobro existentes.
 BEGIN;
 
+-- Reforzar en DB el límite aplicado en backend/UI a nuevas tarifas.
+-- Preflight: todos los montos actuales deben estar entre 0.01 y 999.99 USD.
+DO $
+BEGIN
+    IF EXISTS (SELECT 1 FROM conceptos_cobro
+        WHERE monto_referencia_usd < 0.01 OR monto_referencia_usd > 999.99)
+    THEN
+        RAISE EXCEPTION 'Existen tarifas fuera del rango USD 0.01 a 999.99; revisar antes de migrar';
+    END IF;
+END $;
+ALTER TABLE conceptos_cobro
+    DROP CONSTRAINT IF EXISTS conceptos_cobro_precio_max_999;
+ALTER TABLE conceptos_cobro
+    ADD CONSTRAINT conceptos_cobro_precio_max_999
+    CHECK (monto_referencia_usd >= 0.01 AND monto_referencia_usd <= 999.99);
+
 CREATE TABLE IF NOT EXISTS referencias_cambio_diarias (
     fecha_consulta DATE NOT NULL,
     proveedor VARCHAR(32) NOT NULL

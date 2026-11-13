@@ -1,180 +1,181 @@
-# Guía de estudio — Sistema de gestión Club Jaguares
+# Guía de uso y estudio — Club de Voleibol Jaguares
 
-**Objetivo:** explicar cómo está organizado Jaguares, qué resuelve cada módulo y cómo seguir una operación desde el navegador hasta PostgreSQL. Es una guía para estudiar el sistema, no una instrucción para ejecutar cambios en Production.
+**Edición:** noviembre de 2026 · **Alcance:** página pública, Directiva, Representante, base de datos, pagos, archivos y mantenimiento.
 
-## 1. Visión general
+Esta guía explica **qué hace cada sección, cómo usarla, dónde está implementada y qué precauciones tomar**. Está pensada para estudiar y presentar el proyecto sin llenar las pantallas de textos explicativos. Si una pantalla o regla cambia, confirmar siempre el código vigente y las pruebas. **No es una guía para manipular Production directamente.**
 
-Jaguares es una aplicación web de administración del club de voleibol. Tiene una página pública y dos paneles privados:
+## 1. Qué es Jaguares
 
-- **Directiva:** revisión de inscripciones, atletas, organización deportiva, pagos, eventos y administración.
-- **Representante:** inscripción y consulta de sus atletas, documentos autorizados, reportes de pagos, historial y estado de cuenta.
-- **Público:** información institucional y eventos sin acceso a datos privados.
+Es un sistema web de gestión de un club de voleibol. Reúne registro de personas y atletas, organización por temporadas y equipos, calendario, comprobantes y seguimiento de obligaciones económicas.
 
-En el repositorio se usa **Node.js/Express** en el servidor, HTML/CSS/JavaScript en el navegador, **PostgreSQL (Supabase)** para datos, **Cloudinary** para archivos privados y **Vercel** para despliegue. El servidor y el navegador comparten un dominio; las llamadas API comienzan por `/api/`.
+| Área | Acceso | Para qué sirve |
+|---|---|---|
+| Página pública | Visitantes | Información del club, categorías, noticias, calendario y contacto |
+| Representante | Usuario aprobado | Sus atletas, documentos autorizados, estado de cuenta, reportes e historial |
+| Directiva | Directiva y roles administrativos según permisos | Revisar usuarios/atletas, equipos, calendarios, pagos y cobros |
+
+**Entradas web:** `/` (inicio público), `/galeria.html` (galería), `/admin/login.html` (acceso), `/admin/panel-representante.html`, `/admin/panel-directiva.html`. Los HTML privados requieren sesión y rol válido. Se navega entre secciones dentro de cada panel, sin cambiar de URL.
+
+## 2. Recorrido del Representante
+
+### Cuenta y atletas
+1. Registrarse e iniciar sesión; el acceso del Representante depende de la aprobación administrativa.
+2. En **Inicio** consultar las tarjetas de resumen y sus atletas.
+3. En **Registrar atleta**, completar los datos y adjuntos solicitados; esperar la revisión correspondiente.
+4. Los documentos de atleta se abren desde las opciones autorizadas. No se envían enlaces privados de Cloudinary por la página pública.
+5. Consultar **Eventos**, **Mi perfil** y las notificaciones cuando corresponda.
+
+### Estado de cuenta y pago
+1. Entrar en **Estado de cuenta** y seleccionar un atleta. Se muestran cargos concretos: concepto, período, monto nominal USD, vencimiento, límite y estado.
+2. Si la Directiva aún no configuró el inicio, el sistema informa que no hay obligaciones; **no crea una deuda al abrir la pantalla**.
+3. En **Reportar pago**, elegir atleta, **tipo de cargo** y **período/cargo pendiente**. No se puede seleccionar cualquier mes ni editar el precio.
+4. Elegir **Transferencia/Pago Móvil en Bs** o **Efectivo** (USD, Bs o COP), informar la fecha real, referencia y comprobante si es transferencia.
+5. El sistema calcula el importe y comprueba la tasa para la fecha de la operación. Si no hay cotización aplicable, bloquea el envío y muestra un aviso. No inventar montos.
+6. Enviar el reporte. Queda **pendiente de revisión**, no pagado. Consultar **Historial de pagos** y **Estado de cuenta** tras la decisión de Directiva.
+
+**Importante:** un comprobante cargado no equivale a pago aprobado. Un reporte rechazado se conserva en el historial y puede volver a reportarse cuando el cargo esté disponible.
+
+## 3. Recorrido de Directiva
+
+### Administración y deporte
+| Sección | Función operativa | Archivos del navegador |
+|---|---|---|
+| Inicio | Indicadores de atletas y pagos; equivalencias monetarias **estimadas** | `public/admin/panel-directiva.html` |
+| Solicitudes | Aprobar/rechazar solicitudes de registro | `panel-directiva.html` |
+| Registrar / Gestión de atletas | Inscripciones autorizadas, estados, búsqueda y documentos | `panel-directiva.html`, `categorias-formativas-ui.js` |
+| Catálogos deportivos | Temporadas, categorías y equipos relacionados | `catalogos-deportivos.js` |
+| Asignación de equipos | Movimientos históricos de entrada/cambio de equipo | `asignaciones-equipos.js` |
+| Consulta de plantillas | Listado por categoría o equipo y exportación de planilla | `planilla-general.js` |
+| Auditoría de pagos | Ver reportes, comprobantes, aprobar o rechazar | `panel-directiva.html`, `comprobantes-ui.js` |
+| Inicio de cobros | Revisar históricos y activar cobros por atleta | `conciliacion-cobros.js` |
+| Conceptos y cargos | Tarifas, nuevos tipos de cobro, asignaciones y tasas | `gestion-cobros.js` |
+| Gestión web y eventos | Contenido público y calendario | `panel-directiva.html` |
+
+### Activar un cobro por atleta
+1. Abrir **Inicio de cobros** y seleccionar un atleta.
+2. **Revisar todos los pagos anteriores** antes de establecer la primera fecha de cobro; los históricos pueden no tener año/concepto inequívocos.
+3. Establecer inicio y día de referencia solo cuando el historial sea claro. El ancla no debe configurarse mediante ensayos al azar.
+4. En **Conceptos y cargos**, confirmar los precios USD activos y **asignar** mensualidad, inscripción u otro cargo al atleta seleccionado.
+5. Esa obligación aparece en Reportar pago y Estado de cuenta del Representante. Los cargos **no se generan automáticamente** por abrir el módulo.
+
+### Mantener el catálogo
+- Las tarifas nominales son de **USD 0,01 a 999,99**, hasta dos decimales; un cambio afecta cargos **futuros**, nunca modifica el importe congelado de obligaciones anteriores.
+- El lápiz abre una sola fila editable; **Guardar**, **Cancelar** y **Retirar** aparecen solo al editar.
+- Un concepto nuevo sin uso puede eliminarse. Si tiene obligaciones o es institucional, se **archiva** para preservar los registros.
+- **Ver archivados (N)** aparece solo cuando existen conceptos archivados y permite reactivarlos.
+
+### Tasas de cobro
+- ExchangeRate-API proporciona la referencia elegida por el club para **bolívares por USD y EUR**, almacenada una vez por día cuando está disponible. La tasa EUR es informativa: **no se habilitan pagos en euros**.
+- La cifra del dashboard es una *referencia de mercado* para estimar totales, no sustituye la tasa histórica de cada pago.
+- Para un reporte en **Bs**, el backend utiliza primero una tasa del club publicada **para la fecha exacta** del pago. Si no hay, puede utilizar la referencia ExchangeRate-API correspondiente a ese día (consulta actual o registro histórico del mismo día); al **reportar** guarda la tasa usada junto al pago.
+- Para **COP**, aplica la última tasa manual vigente desde su fecha hasta que Directiva registre otra. No reutilizar automáticamente una tasa Bs de ayer para hoy.
+- La Directiva puede **fijar una tasa** antes del reporte o registrar COP/Bs manualmente. Las tasas ya usadas quedan asociadas al reporte; no modificarlas retroactivamente.
+- La relación es `Bs = USD × (Bs por USD)`; para estimar USD desde Bs, `USD = Bs ÷ (Bs por USD)`. La tasa se elige según la **fecha de pago**, no el mes de la mensualidad.
+
+### Revisar un pago
+1. Abrir **Auditoría de pagos** y ver el reporte `pendiente`.
+2. Revisar atleta, cargo, importe, método, fecha y comprobante. En pagos Bs/COP comprobar la equivalencia y la tasa asociada.
+3. Aprobar o rechazar usando las acciones autorizadas. No marcar como pagado un reporte solo porque subió un comprobante.
+4. Comprobar el estado en **Historial** y **Estado de cuenta** del Representante. Un pago vinculado aprobado deja el cargo `pagada`.
+
+## 4. Estados de obligaciones
+
+| Estado | Significado |
+|---|---|
+| Pendiente / En plazo | Cargo emitido todavía dentro de su período de pago |
+| Morosa / Vencida | Pasó la fecha límite y no hay aprobación o reporte activo |
+| En revisión | Existe un reporte pendiente de decisión |
+| Pagada | Hay un reporte vinculado aprobado |
+
+El período de una mensualidad es **año y mes**, no solo el nombre «Noviembre». El motor distingue vencimiento y plazo de gracia (hasta el final del mes para mensualidades). **No** aplica sanciones automáticas, genera intereses ni suspende atletas por mora.
+
+## 5. Arquitectura: cómo se conectan las capas
 
 ```text
-Navegador (página pública, paneles)
-  └── /api/... (Express)
-        ├── Middleware de sesión / rol
-        ├── Routes -> Controllers
-        ├── PostgreSQL / Supabase
-        └── Cloudinary para documentos y comprobantes
+Navegador (HTML + CSS + JS)
+  -> apiFetch('/api/...') + cookie de sesión
+  -> index.js (Express, seguridad de origen, middleware)
+  -> routes/ (prefijos, sesión y roles)
+  -> controllers/ (permisos, reglas, respuestas)
+  -> utils/ (cobros, tasas, validadores, archivos privados)
+  -> config/db.js -> PostgreSQL / Supabase
+  -> Cloudinary (foto, documento y comprobante privados)
 ```
 
-## 2. Archivos para leer, en este orden
+- `index.js`: montaje de rutas, ficheros estáticos, cabeceras de privacidad y errores.
+- `config/db.js`: pool PostgreSQL de capacidad limitada; consulta parametrizada y compatibilidad heredada.
+- `middlewares/authMiddleware.js`, `panelMiddleware.js`, `uploadMiddleware.js`: sesión/roles, protección de paneles y archivos.
+- `public/admin/api-client.js`: `apiFetch`, actividad e invalidación de sesión.
+- `public/admin/estado-cuenta.js` y `pagos-guiados.js`: consultas y presentación sin permitir alterar precios.
+- `controllers/cobrosController.js`: anclas, mensualidades y estado de obligaciones.
+- `controllers/catalogoCobrosController.js`: conceptos, cargos manuales y tasas de Directiva.
+- `utils/referenciasCambio.js` y `utils/cotizadorObligaciones.js`: caché ExchangeRate-API, cálculo y congelación de tasas.
+- `controllers/pagosVinculadosController.js` y `pagosVinculadosRevisionController.js`: reporte transaccional y revisión.
+- `controllers/atletaController.js`, `planillaGeneralController.js`, `cmsController.js`: atletas, exportación y contenidos.
 
-| Archivo o carpeta | Qué estudiar |
+## 6. Mapa de rutas para estudiar (ejemplos)
+
+| Método y ruta | Uso |
 |---|---|
-| [index.js](../index.js) | Arranque del servidor, montaje de rutas, seguridad del origen y manejo de errores |
-| [config/db.js](../config/db.js) | Conexión a PostgreSQL y compatibilidad de consultas existentes |
-| [middlewares/authMiddleware.js](../middlewares/authMiddleware.js) | Autenticación, comprobación de roles y respuestas 401/403 |
-| [routes/](../routes) | Lista de endpoints y middlewares que protegen cada operación |
-| [controllers/](../controllers) | Reglas de negocio, validaciones, operaciones SQL |
-| [public/admin/panel-directiva.html](../public/admin/panel-directiva.html) | Navegación y módulos del panel Directiva |
-| [public/admin/panel-representante.html](../public/admin/panel-representante.html) | Navegación y formularios del Representante |
-| [public/admin/api-client.js](../public/admin/api-client.js) | Función `apiFetch`, sesión y llamadas del frontend |
-| [migrations/](../migrations) | Cambios controlados de esquema; no se ejecutan por desplegar |
-| [tests/](../tests) | Pruebas unitarias, integración PostgreSQL y navegador |
+| `POST /api/auth/login`, `GET /api/auth/me` | Sesión y validación de identidad |
+| `GET /api/atletas/representante/:id` | Listar atletas propios, según permisos |
+| `POST /api/atletas/registrar-atleta` | Registrar atleta desde Representante |
+| `GET /api/atletas/:id/documentos/:tipo` | Abrir foto/documentación autorizada |
+| `GET /api/pagos/obligaciones/:id_atleta` | Estado de cuenta y cargos emitidos |
+| `GET /api/pagos/cotizacion/:id_obligacion` | Monto fijo y tasa para moneda/fecha |
+| `POST /api/pagos/reportar` | Reportar pago y comprobante |
+| `GET /api/pagos/historial/:id_rep` | Historial accesible por rol/propiedad |
+| `GET /api/pagos/captura/:id_pago` | Comprobante privado autorizado |
+| `GET /api/directiva/cobros/conciliacion/atletas` | Atletas para inicio de cobro |
+| `POST /api/directiva/cobros/anclas/:id_atleta` | Registrar inicio después de revisar |
+| `POST /api/directiva/cobros/mensualidades` | Emitir mensualidad concreta |
+| `GET /api/directiva/cobros/catalogo` | Catálogo de conceptos |
+| `PATCH /api/directiva/cobros/catalogo/:codigo` | Cambiar tarifa / reactivar |
+| `DELETE /api/directiva/cobros/catalogo/:codigo` | Retirar/archivar de forma segura |
+| `POST /api/directiva/cobros/cargos` | Asignar cargo específico |
+| `GET /api/directiva/cobros/tasas/referencias` | Consultar referencias de cambio |
+| `POST /api/directiva/cobros/tasas/publicar-referencia` | Fijar referencia con confirmación |
+| `PUT /api/directiva/pago/vinculado/estado` | Revisar reporte vinculado |
+| `GET /api/directiva/deportes/catalogo` | Catálogos deportivos |
+| `GET /api/directiva/deportes/asignaciones` | Movimientos de equipos |
+| `GET /api/directiva/atletas/planilla-general` | Planilla general |
+| `GET /api/cms/public/eventos` | Calendario público |
+| `GET /api/cms/public/noticias` | Noticias públicas |
 
-No es necesario leer todos los archivos de una vez: sigue un caso de uso y busca sus rutas, controlador y pruebas.
+**Regla:** la navegación del panel es por `data-target` e IDs de secciones. Las rutas HTTP están en `routes/`; comprobar permisos exactos allí y en los controladores antes de hacer peticiones. Una respuesta `401` significa sin sesión; `403`, sin autorización.
 
-## 3. Sesión, permisos y seguridad
+## 7. Datos importantes en Supabase
 
-1. El usuario inicia sesión en `/api/auth`.
-2. El navegador conserva la sesión mediante cookies, no por un ID de representante editable en la interfaz.
-3. Los middlewares verifican el token, el rol y que la cuenta siga autorizada en PostgreSQL.
-4. Los controladores vuelven a verificar la propiedad de los datos sensibles (por ejemplo, solo el representante dueño del atleta).
-5. Sin sesión, una API privada responde **401**; sin permiso, **403**.
+- `usuarios`, `atletas`: cuentas y deportistas.
+- `temporadas`, `categorias`, `equipos` y asignaciones: estructura deportiva.
+- `conceptos_cobro`: precios base; `anclas_cobro_atleta`: inicio; `obligaciones_cobro`: deuda **congelada**.
+- `pagos`: intentos de pago y estados. `pagos.id_obligacion` vincula reportes nuevos; históricos pueden tener `NULL`.
+- `tasas_cobro`: referencia aplicada y registrada; `referencias_cambio_diarias`: caché de consulta del proveedor, **no equivale a un pago**.
+- `eventos`, `notificaciones` y demás tablas de contenido.
 
-La pertenencia de un atleta se determina en la base de datos. No confundir ocultar un botón con **control de acceso real**: el backend debe validar siempre.
+Nunca unir históricos a obligaciones por su nombre de mes sin una conciliación explícita. No borrar manualmente pagos, comprobantes, tasas o conceptos con relaciones vigentes.
 
-Los comprobantes, fotos y documentos nuevos se almacenan en Cloudinary como `authenticated`. Su acceso pasa por endpoints que comprueban permisos y emiten enlaces temporales. Los datos antiguos pueden tener tratamientos de compatibilidad; no retirar esa capa sin pruebas.
+## 8. Privacidad, mantenimiento y despliegue
 
-## 4. Funciones principales
+- Fotos, documentos y comprobantes nuevos usan **Cloudinary authenticated**, con validación de propiedad y enlaces firmados temporales. Los ficheros históricos pueden tener compatibilidad antigua; revisar antes de migrarlos.
+- **Preview puede compartir la misma Supabase y Cloudinary que Production.** Navegar o consultar sí; crear, aprobar, borrar o reportar pagos en Preview puede afectar datos reales.
+- Trabajar en rama, abrir PR, esperar CI, revisar Preview, fusionar **solo después de autorización**, verificar SHA/despliegue y hacer pruebas de lectura.
+- Cualquier migración SQL requiere respaldo recuperable, preflight y ejecución **manual**; Vercel no actualiza tablas por fusionar un PR.
+- En GitHub Actions ver `.github/workflows/verificacion.yml` para pruebas backend con PostgreSQL temporal, sintaxis Node y Playwright escritorio/móvil.
+- No subir API keys, cookies, documentos de menores, capturas bancarias ni datos sensibles a Git, capturas de CI o ejemplos de documentación.
 
-### Registro y atletas
-Un representante aprobado puede registrar atletas. La Directiva revisa/actualiza los estados conforme a los permisos del backend. El sistema valida datos personales, edad, cédula y campos de inscripción. La categoría por edad es una **orientación**, diferente de asignar al atleta formalmente a un equipo.
+## 9. Capturas y enseñanza visual
 
-### Organización deportiva
-Existen **temporadas, categorías y equipos**, asociados en ese orden. La asignación de un atleta a un equipo se guarda como un movimiento con fechas de inicio y cierre. La consulta de plantillas y la exportación PDF utilizan esos registros; no confundir asignación formal con categoría automática.
+Esta guía enlaza **rutas y secciones reales**, sin capturas autenticadas de usuarios. Si se desea una edición visual, hacer las capturas **en un entorno de pruebas con datos ficticios**, ocultando nombre, cédula, correo, referencias bancarias, documentos y URLs firmadas.
 
-### Pagos anteriores (flujo histórico)
-El Representante registra un mes por **nombre**, importe, moneda, método y fecha; si corresponde adjunta comprobante. Directiva puede aprobar/rechazar y consultar el comprobante. El historial conserva los registros y estados. Importante: `mes_pagado = "Noviembre"` **no identifica el año, la deuda exacta ni el concepto**; tampoco dos reportes del mismo mes equivalen necesariamente a un cobro duplicado.
+Capturas recomendadas: (1) Inicio Directiva; (2) Gestión de atletas; (3) Catálogos y equipos; (4) Conciliación e inicio de cobros; (5) Conceptos y tasas; (6) Reportar pago; (7) Estado de cuenta; (8) Auditoría y decisión; (9) Vista móvil de ambos paneles. Guardarlas solo después de revisarlas y, si van al repo, en una carpeta de documentación separada.
 
-### Nuevo sistema de obligaciones (PR #50–53)
-Los componentes son:
+## 10. Ejercicios para estudiar el código
 
-- `conceptos_cobro`: tarifa de referencia por concepto, como inscripción, mensualidad, torneo, arbitraje y sanción.
-- `anclas_cobro_atleta`: fecha desde la que se empezará a cobrar y día nominal de vencimiento de cada atleta.
-- `obligaciones_cobro`: deuda concreta asociada a atleta/concepto, período en caso de mensualidad, importe USD **congelado**, vencimiento y fecha límite.
-- `pagos.id_obligacion`: vínculo opcional del pago a una obligación. Los pagos históricos tienen `NULL` y se conservan.
+1. **Atleta:** localizar el formulario de Registro -> ruta de `atletaRoutes.js` -> controlador -> tablas -> prueba PostgreSQL correspondiente.
+2. **Mensualidad:** localizar `gestion-cobros.js` -> `directivaRoutes.js` -> `cobrosController.js` -> `obligaciones_cobro`.
+3. **Reporte Bs:** `pagos-guiados.js` -> `pagosRoutes.js` -> `cotizadorObligaciones.js` -> `pagosVinculadosController.js` -> `pagos` / `tasas_cobro`.
+4. **Aprobación:** tabla de auditoría -> `pagosVinculadosRevisionController.js` -> estado de cuenta y notificación.
+5. **Seguridad:** simular 401 sin sesión y 403 con un representante ajeno, siempre sobre datos sintéticos.
 
-**PR #50:** creó las tablas/índices y preservó el historial. Su migración se aplicó manualmente en Supabase.
-
-**PR #51:** agregó el motor de vencimientos y consulta con permisos. Solo Directiva/Admin pueden configurar anclas y crear una mensualidad por atleta/mes usando confirmación expresa. No hay generación automática de deuda.
-
-**PR #52:** agregó la sección Directiva de conciliación: ver pagos históricos del atleta, revisar los registros y configurar el inicio de cobro. No convierte los pagos anteriores ni crea obligaciones por abrir la pantalla.
-
-**PR #53 (fusionado):** agrega **Estado de cuenta** al Representante, de solo lectura, para consultar obligaciones propias y sus estados. Conserva separado el formulario antiguo de reportes hasta que exista un flujo vinculado fiable.
-
-### Estados financieros y vencimientos
-Para una mensualidad del período noviembre con ancla día 15:
-- Vence el **15/11**.
-- Tiene plazo hasta el **30/11**.
-- Si no fue pagada ni reportada para revisión, desde el **01/12** puede figurar vencida.
-- Un pago reportado y todavía no aprobado figura **en revisión**, no como pagado.
-
-No hay sanciones automáticas por mora, no se desactivan cuentas por deuda y el pago tardío no cambia por sí mismo la fecha ancla. En febrero, los días ancla 29–31 se ajustan al último día del mes.
-
-### Reporte vinculado (PR #54, en revisión)
-El representante puede elegir una obligación concreta desde **Reportar pago**. El navegador muestra el precio USD y el servidor comprueba la propiedad y que no haya pago activo anterior. El reporte queda `pendiente`; Directiva revisa y decide si aprobar o rechazar. El rechazo no elimina el intento.
-
-En efectivo USD el monto declarado debe ser exactamente el del cargo. En Bs y COP se registra el monto real y Directiva confirma manualmente la equivalencia antes de aprobar; **no se utiliza la tasa errónea de 36,50 del dashboard**. Falta definir e incorporar un registro verificable de fuente, fecha y tasa de conversión.
-
-Los atletas sin cobros configurados siguen con el formulario histórico; cuando haya ancla u obligaciones, el servidor exige reporte vinculado. No confundir un reporte *en revisión* con un pago aprobado.
-
-## 5. Por qué todavía no se deben conciliar pagos de forma automática
-
-Los pagos antiguos no incluyen un identificador inequívoco `año/mes/concepto`. Algunos atletas tienen reportes del mismo mes con estados distintos. No podemos deducir que se pagó una mensualidad o inscripción específica usando solamente el nombre del mes, el importe o la fecha.
-
-La Directiva debe confirmar el inicio por atleta **después de revisar el historial**. Ante incertidumbre, dejar el inicio sin configurar. El nuevo formulario del Representante no debe afirmar que una obligación está pagada hasta que exista un reporte **vinculado** y aprobado.
-
-Las tarifas son nominales en USD; **no usar una tasa ficticia o un respaldo fijo de 36,50 Bs/USD para liquidar obligaciones**. La política de conversión, pagos parciales y tratamiento de moneda debe definirse antes de habilitar reportes guiados.
-
-## 6. Seguir una petición paso a paso
-
-Ejemplo de **consulta de obligaciones del atleta 31**, solo cuando pertenece al representante autenticado:
-
-1. Vista del Representante: [estado-cuenta.js](../public/admin/estado-cuenta.js).
-2. Petición `GET /api/pagos/obligaciones/31`.
-3. Ruta en [routes/pagosRoutes.js](../routes/pagosRoutes.js).
-4. Sesión verificada y autorización por propiedad en [controllers/cobrosController.js](../controllers/cobrosController.js).
-5. Consulta a `anclas_cobro_atleta`, `obligaciones_cobro` y estados de pagos vinculados.
-6. La pantalla muestra las obligaciones recibidas. **No escribe datos.**
-
-Para estudiar la conciliación de Directiva, seguir `public/admin/conciliacion-cobros.js` -> `routes/directivaRoutes.js` -> `controllers/cobrosConciliacionController.js`.
-
-## 7. Pruebas y despliegue seguro
-
-El repositorio usa GitHub Actions con Node y PostgreSQL temporal; algunas pruebas usan Playwright en escritorio y móvil. La configuración está en [.github/workflows/verificacion.yml](../.github/workflows/verificacion.yml).
-
-Flujo de desarrollo recomendado:
-1. Crear una rama a partir del `main` vigente.
-2. Limitar el PR a un módulo o cambio coherente.
-3. Agregar o actualizar pruebas.
-4. Esperar CI y revisar Preview; una vista Preview **puede compartir Supabase Production**.
-5. No ejecutar operaciones de escritura de prueba sobre la base compartida sin acuerdo explícito.
-6. Tras autorización, fusionar el PR y comprobar despliegue y regresiones.
-7. Las migraciones PostgreSQL deben aplicarse **manualmente tras respaldo y preflight**, nunca asumir que Vercel las aplica.
-
-Si algo falla: identificar URL y método, código HTTP, rol autenticado, logs del servidor, consulta SQL correspondiente y prueba que cubre el caso. No publicar tokens, cadenas de conexión, claves ni documentos personales en issues o capturas.
-
-## 8. Catálogo editable, asignación y tasa por fecha (PR #55, en revisión)
-
-Al registrar un concepto, la Directiva establece nombre y precio nominal USD. «Inscripción» y «Mensualidad» están reservados; los conceptos adicionales se clasifican como **cargos manuales**. La Directiva puede desactivarlos o ajustar su precio, pero los cargos emitidos ya conservan su importe.
-
-La Directiva selecciona un atleta con inicio configurado y emite un cargo (manual, inscripción única o mensualidad). Solo después aparece en el Representante como **tipo de pago → cargo concreto**. Los meses que no han sido asignados no aparecen. Tampoco aparece el formulario antiguo de doce meses para atletas sin configurar.
-
-El servidor calcula el importe USD de la obligación. Para bolívares o pesos exige tasa por USD registrada por Directiva para esa **fecha civil** (America/Caracas), con fuente y registro inmutable. La tasa no se deduce del dashboard ni se inventa. La cotización del navegador es informativa: el servidor recalcula todo al recibir el pago y rechaza importes manipulados.
-
-Antes del merge hay que aplicar manualmente la migración de catálogo y tasas en Supabase; el CI se ejecuta sobre un PostgreSQL temporal. Nunca probar emisiones o registros de tasa en Preview cuando comparte la base de Production.
-
-## Referencias de cambio y edición del catálogo (PR #56, en revisión)
-
-Directiva ve tarifas de referencia en modo lectura y edita una sola fila usando lápiz, guardar y cancelar. Cada tarifa puede ser de USD 0,01 hasta USD 999,99, con máximo dos decimales. Los importes congelados en obligaciones emitidas no se modifican al cambiar una tarifa.
-
-En «Tasas de cobro» se consultan dos fuentes diferenciadas: **bcv.today** (tercero que reproduce publicaciones BCV, con fecha de vigencia) y **ExchangeRate-API** (referencia comercial USD/VES; no es BCV). Se muestra también EUR/VES republicado por BCV como información, sin habilitar euros como medio de pago. La consulta diaria se almacena en `referencias_cambio_diarias` de PostgreSQL; el proveedor no se vuelve a consultar por ese día cuando hay datos válidos cacheados.
-
-Una referencia consultada **no constituye una tasa oficial del club**. La Directiva debe confirmar «Usar referencia BCV para hoy» para crear una fila inmutable en `tasas_cobro`. COP y Bs de respaldo siguen siendo manuales. El dashboard distingue referencia comercial de publicación BCV y deja de usar el respaldo ficticio.
-
-Este PR requiere ejecutar manualmente `migrations/2026-11-13_referencias_cambio_cache.sql` previa verificación y respaldo. Revisar detalles y preflight en [COBROS_Y_MENSUALIDADES.md](COBROS_Y_MENSUALIDADES.md).
-
-### Gestión de tasas y archivo de conceptos (PR #58)
-
-En Directiva, ExchangeRate-API es ahora el proveedor principal de referencia para bolívares por 1 USD y por 1 EUR. La consulta se guarda una sola vez al día; el endpoint público del proveedor no incluye certificación de origen BCV, por lo que la interfaz conserva su nombre y fecha. La Directiva **confirma la tasa** antes de crear una fila inmutable en `tasas_cobro`. El valor EUR no habilita reportes en euros.
-
-El calendario manual de tasas limita el intervalo al primer día del mes actual y al último día del año próximo en `America/Caracas`, tanto desde navegador como backend.
-
-Cada concepto tiene edición contextual. Retirar un concepto nuevo sin uso lo borra; retirar uno con cargos lo **archiva** para preservar relaciones e historiales. Mostrar archivados permite reactivarlo. Los cinco conceptos institucionales jamás se borran definitivamente. Evitar ejecutar SQL `DELETE` manual sobre conceptos relacionados con pagos.
-
-### Conversión del importe de pagos en bolívares (PR #59)
-
-El Representante ya no necesita que Directiva pulse «Fijar tasa» para cada día: el sistema toma ExchangeRate-API desde caché (o solicita la referencia de hoy) cuando no haya tasa previamente publicada para la fecha del pago. Muestra importe fijo en bolívares y bloquea el envío si falta tasa verificable. Al reportar, el backend guarda la tasa usada en `tasas_cobro` dentro de la misma transacción que el pago. Los importes no se determinan en el navegador. La tasa de un pago ya registrado no cambia cuando Directiva modifica posteriormente sus preferencias.
-
-Para COP se conserva la última tasa manual vigente; para Bs no se arrastra la de días anteriores. El período de mensualidad puede ser posterior a la fecha de pago y no altera el cálculo de moneda.
-
-Los conceptos archivados no desaparecen de PostgreSQL: «Ver archivados» solo se muestra si hay alguno. El historial permanece íntegro.
-
-## 9. Próximas decisiones funcionales
-
-El reporte **vinculado a `id_obligacion`** ya existe desde PR #54, y este PR #55 introduce el catálogo editable, la elección de cargos asignados y montos fijos cotizados por moneda. El Estado de cuenta sigue siendo **una consulta**, no un formulario de envío.
-
-Para completar la puesta en marcha operativa sigue pendiente:
-- Conciliar individualmente históricos e inscripciones previas antes de establecer anclas.
-- Definir y verificar una fuente institucional fiable para las tasas registradas, así como su actualización diaria.
-- Decidir cuándo automatizar o programar la emisión de mensualidades para atletas **ya activados**, sin crear deudas históricas no revisadas.
-- Definir pagos parciales, correcciones de saldos, anulaciones y una conciliación contable más completa.
-- Retirar el endpoint legado de reportes libres cuando todos los atletas estén migrados, conservando acceso a los pagos anteriores.
-- Mantener protecciones Cloudinary, permisos, historial de intentos rechazados y pruebas del CI.
-
-**Regla para estudiar:** el código actual es la fuente de verdad. Esta guía explica los flujos; ante discrepancias, buscar el endpoint, su controlador y sus pruebas antes de afirmar que una función ya está operativa.
+**Límites actuales:** la conciliación histórica es manual; no hay automatización general de mensualidades para todos los atletas ni conciliación bancaria automática, pagos parciales o contabilidad de tres estados. Una mejora futura debe tener reglas acordadas antes de cambiar la base.

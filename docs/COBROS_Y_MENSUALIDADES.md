@@ -1,5 +1,20 @@
 # Cuentas por cobrar — contrato inicial (12-11-2026)
 
+## PR #59 — Conversión Bs en el reporte y catálogo sin controles vacíos
+
+**Problema resuelto:** el panel Directiva guardaba `referencias_cambio_diarias` desde ExchangeRate-API, pero Representante solo leía `tasas_cobro`. La referencia existía, pero la cotización de transferencia fallaba con «Directiva debe configurar una tasa».
+
+**Regla de conversión:** obligación congelada en USD × tasa (Bs por 1 USD) = bolívares a reportar, redondeados a dos decimales por PostgreSQL. Para expresar bolívares equivalentes en USD se divide por la tasa. El mes de la **obligación** no determina la tasa; se toma la **fecha real del pago** (no futura).
+
+- `GET /api/pagos/cotizacion/:id_obligacion`: comprueba atleta propio, cargo activo y fecha. En Bs usa primero una tasa registrada por Directiva para la fecha exacta. **Si no existe**, consulta la referencia de ExchangeRate-API cacheada para ese día (o la solicita una sola vez si es hoy). Retorna importe fijo sin insertar fila financiera en `tasas_cobro`.
+- `POST /api/pagos/reportar`: vuelve a cotizar en la misma transacción, exige coincidencia exacta de monto, y solo si no existe tasa previa crea una **fila inmutable** en `tasas_cobro` con fuente/fecha ExchangeRate-API y `creado_por` = representante que inició el pago. La fila de pago queda ligada mediante `pagos.id_tasa_cobro`. Si el importe falla, hay duplicidad o falla SQL, se revierte la tasa junto con el pago. Bloqueo PostgreSQL por fecha protege reportes simultáneos.
+- Fechas pasadas: **nunca** usar la tasa de hoy como si fuera histórica. Solo valen tasas registradas o referencias cacheadas del día correspondiente; si falta, el Representante verá un mensaje breve para consultar al club. Si el proveedor falla o la clave se agota y no hay registro del día, no se inventa cotización.
+- COP: se reutiliza la última tasa manual cuya `fecha_vigencia` es anterior o igual a la operación. Continúa hasta que Directiva registre otra. Las tasas en Bs exigen fecha exacta y no reutilizan una del día anterior.
+- La Directiva conserva «Fijar tasa para hoy» como acción **opcional** para establecer una tasa antes de los reportes. Una tasa ya publicada tiene prioridad y no es reemplazada en silencio por una cotización nueva.
+- UX: fórmula/resumen de pago en Bs más corto, monto no editable, botón bloqueado si falta tasa. Filtro «Ver archivados (N)» solo aparece cuando realmente hay conceptos inactivos; si hay cero, no ocupa espacio.
+
+**Seguridad y despliegue:** no se requiere nueva migración; se reutilizan las tablas `referencias_cambio_diarias`, `tasas_cobro` y `pagos.id_tasa_cobro`. No se tocaron pagos históricos, montos emitidos, revisiones de aprobación ni Cloudinary. Verificar primero Preview **sin enviar pagos**, ya que comparte Supabase Production. Para el ensayo completo de reportería, usar DB aislada o un caso ficticio autorizado.
+
 ## PR #58 — fuente de cambio principal, archivo de conceptos y fechas de tasas
 
 **Fuente de cambio elegida por Directiva:** ExchangeRate-API es la única fuente externa consultada para los valores Bs por USD y Bs por EUR en Gestión de cobros; la consulta se comparte por día en PostgreSQL. El club adopta estas referencias por decisión operativa. No declarar la respuesta automáticamente «tasa oficial BCV» ni afirmar una certificación de su origen que la respuesta estándar no incluye; conservar **ExchangeRate-API**, fecha de actualización y confirmación de Directiva en la tasa registrada. La tasa EUR es solo informativa; los cargos continúan en USD, los reportes aceptan USD/Bs/COP. El antiguo servicio bcv.today no se consulta más, aunque sus datos almacenados se conservan.

@@ -57,13 +57,18 @@ async function descargar(hoy) {
 
 // Una transacción con advisory-lock evita llamadas simultáneas por la misma
 // fuente/día en varias instancias serverless. Los errores no se almacenan.
-async function obtenerReferencia(proveedor, hoy=hoyCaracas()) {
+// Cuando se cotiza un POST ya existe una transacción abierta. Reutilizar
+// ese cliente evita agotar el pool (max=3) cuando varios representantes
+// consultan por primera vez la tasa del día al mismo tiempo.
+// El llamador sigue siendo responsable de COMMIT/ROLLBACK en ese caso.
+async function obtenerReferencia(proveedor, hoy=hoyCaracas(), clienteExistente=null) {
     if(!PROVEEDORES.has(proveedor)||!fechaCivilValida(hoy))
         throw new TypeError('Proveedor o fecha no válidos');
-    const client=await db.pool.connect();
+    const propio=!clienteExistente;
+    const client=clienteExistente||await db.pool.connect();
     let committed=false;
     try{
-        await client.query('BEGIN');
+        if(propio)await client.query('BEGIN');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',
             ['jaguares:referencia:'+proveedor+':'+hoy]);
         const antigua=await client.query(`
@@ -72,7 +77,8 @@ async function obtenerReferencia(proveedor, hoy=hoyCaracas()) {
             FROM referencias_cambio_diarias
             WHERE fecha_consulta=$1 AND proveedor=$2`,[hoy,proveedor]);
         if(antigua.rowCount){
-            await client.query('COMMIT');committed=true;
+            if(propio)await client.query('COMMIT');
+            committed=true;
             return {...antigua.rows[0],desde_cache:true};
         }
         const d=await descargar(hoy);
@@ -84,14 +90,17 @@ async function obtenerReferencia(proveedor, hoy=hoyCaracas()) {
             RETURNING fecha_consulta,proveedor,fecha_referencia,
                 usd_ves,eur_ves,capturado_en
         `,[hoy,proveedor,d.fecha_referencia,d.usd_ves,d.eur_ves]);
-        await client.query('COMMIT');committed=true;
+        if(propio)await client.query('COMMIT');
+        committed=true;
         return {...rows[0],desde_cache:false};
     } finally {
-        if(!committed) {
-            try{await client.query('ROLLBACK');}
-            catch(e){console.error('REFERENCIA_ROLLBACK',e.code||'INTERNAL');}
+        if(propio){
+            if(!committed){
+                try{await client.query('ROLLBACK');}
+                catch(e){console.error('REFERENCIA_ROLLBACK',e.code||'INTERNAL');}
+            }
+            client.release();
         }
-        client.release();
     }
 }
 

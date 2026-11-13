@@ -3,6 +3,7 @@
 La documentación activa se mantiene deliberadamente corta:
 
 - [GUIA_ESTUDIO_SISTEMA.md](GUIA_ESTUDIO_SISTEMA.md): guía completa de uso, estructura, rutas y seguridad.
+- [AUDITORIA_CONSOLIDACION_20261113.md](AUDITORIA_CONSOLIDACION_20261113.md): cambios concretos, riesgos de código antiguo y próximos pasos medibles.
 - [COBROS_Y_MENSUALIDADES.md](COBROS_Y_MENSUALIDADES.md): reglas y estados de cobro, riesgos pendientes.
 - [CONTEXTO_MAESTRO_CODEX.md](CONTEXTO_MAESTRO_CODEX.md): estado, inventario del esquema SQL comunicado, diferencias con el código, riesgos y hoja de ruta.
 - [PRUEBAS_MANUALES_WEB.md](PRUEBAS_MANUALES_WEB.md): regresión manual por recorridos.

@@ -32,11 +32,10 @@ test.before(async()=>{
             return json(res,{success:true,tasas:[]});
         if(p==='/api/directiva/cobros/tasas/referencias'&&req.method==='GET'){
             consultasReferencias++;
-            return json(res,{success:true,fecha_consulta:'2026-11-13',bcv:{
-                usd_ves:'980.123456',eur_ves:'1130.120000',
-                fecha_referencia:'2026-11-13',desde_cache:true
-            },mercado:{usd_ves:'970.000000',fecha_referencia:'2026-11-13',
-                desde_cache:true},avisos:{bcv:null,mercado:null}});
+            return json(res,{success:true,fecha_consulta:'2026-11-13',
+                principal:{usd_ves:'970.000000',eur_ves:'1141.176471',
+                    fecha_referencia:'2026-11-13',desde_cache:true},
+                avisos:{principal:null}});
         }
         if(p==='/api/directiva/cobros/conciliacion/atletas'&&req.method==='GET')
             return json(res,{success:true,atletas:[{
@@ -53,19 +52,25 @@ test.before(async()=>{
             },pagos:[],obligaciones:[],historial_sin_periodo_anual:false});
         if(req.method!=='GET'&&p.startsWith('/api/directiva/cobros/')){
             let body='';for await(const s of req)body+=s;
-            const parsed=JSON.parse(body);
+            const parsed=body?JSON.parse(body):{};
             escrituras.push({p,method:req.method,body:parsed});
             if(p.includes('/catalogo/')) {
                 const codigo=decodeURIComponent(p.split('/').pop());
-                const concepto=conceptos.find(x=>x.codigo===codigo);
-                if (!concepto) return json(res,{success:false,message:'No encontrado'},404);
+                const idx=conceptos.findIndex(x=>x.codigo===codigo);
+                if (idx<0) return json(res,{success:false,message:'No encontrado'},404);
+                const concepto=conceptos[idx];
+                if(req.method==='DELETE'){
+                    concepto.activo=false;
+                    return json(res,{success:true,accion:'archivado',
+                        message:'Concepto archivado'});
+                }
                 concepto.nombre=parsed.nombre;
                 concepto.monto_referencia_usd=parsed.monto_usd;
                 concepto.activo=parsed.activo;
                 return json(res,{success:true,concepto});
             }
-            if(p.endsWith('/publicar-bcv'))return json(res,{
-                success:true,tasa:{id_tasa:40,moneda:'Bs',tasa_por_usd:'980.123456'}
+            if(p.endsWith('/publicar-referencia'))return json(res,{
+                success:true,tasa:{id_tasa:40,moneda:'Bs',tasa_por_usd:'970.000000'}
             },201);
             if(p.endsWith('/mensualidades'))return json(res,{success:true,creada:true,obligacion:{id_obligacion:1}});
             if(p.endsWith('/cargos'))return json(res,{success:true,obligacion:{id_obligacion:2}},201);
@@ -144,7 +149,7 @@ test('directiva edita tarifa y registra cargos sin crear deuda al cargar la pant
     }finally{await browser.close();}
 });
 
-test('tasas: la referencia de mercado no es BCV y la publicación exige interacción',async()=>{
+test('tasas ExchangeRate-API y publicación requieren interacción explícita',async()=>{
     escrituras=[];consultasReferencias=0;
     const {browser,page,errores}=await abrir({width:1360,height:900});
     try{
@@ -153,18 +158,47 @@ test('tasas: la referencia de mercado no es BCV y la publicación exige interacc
         assert.equal(consultasReferencias,0);
         assert.equal(escrituras.length,0);
         await page.locator('#gestion-seccion-tasas summary').first().click();
-        await page.waitForFunction(()=>document.querySelector('#gestion-bcv-usd')
-            ?.textContent.includes('980'));
-        assert.match(await page.locator('#gestion-bcv-vigencia').textContent(),/bcv.today/);
-        assert.match(await page.locator('#gestion-mercado-usd').textContent(),/970/);
+        await page.waitForFunction(()=>document.querySelector('#gestion-mercado-usd')
+            ?.textContent.includes('970'));
+        assert.match(await page.locator('#gestion-mercado-vigencia').textContent(),/2026-11-13/);
+        assert.match(await page.locator('#gestion-mercado-eur').textContent(),/1\.141/);
         assert.equal(consultasReferencias,1);
         assert.equal(escrituras.length,0);
-        await page.locator('#gestion-bcv-registrar').click();
+        await page.locator('#gestion-referencia-registrar').click();
         await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado')
-            ?.textContent.includes('Referencia BCV registrada'));
+            ?.textContent.includes('Tasa ExchangeRate-API registrada'));
         assert.equal(escrituras.length,1);
-        assert.equal(escrituras[0].p,'/api/directiva/cobros/tasas/publicar-bcv');
+        assert.equal(escrituras[0].p,'/api/directiva/cobros/tasas/publicar-referencia');
         assert.deepEqual(escrituras[0].body,{confirmar:true});
+        assert.deepEqual(errores,[]);
+    }finally{await browser.close();}
+});
+
+
+test('calendario manual restringe el mes actual y el año siguiente',async()=>{
+    escrituras=[];
+    const {browser,page,errores}=await abrir({width:1360,height:900});
+    try{
+        await page.locator('#nav-conciliacion-cobros').evaluate(e=>e.click());
+        await page.locator('#gestion-cobros-conceptos tr').first().waitFor();
+        await page.locator('#gestion-seccion-tasas summary').first().click();
+        await page.locator('.cobros-tasa-manual summary').click();
+        const limites=await page.locator('#gestion-tasa-fecha').evaluate(el=>({
+            desde:el.min,hasta:el.max,valor:el.value
+        }));
+        assert.equal(limites.desde,limites.valor.slice(0,7)+'-01');
+        assert.equal(limites.hasta,
+            String(Number(limites.valor.slice(0,4))+1)+'-12-31');
+        await page.locator('#gestion-tasa-moneda').selectOption('COP');
+        await page.locator('#gestion-tasa-valor').fill('3800');
+        await page.locator('#gestion-tasa-fuente').fill('Directiva prueba');
+        await page.locator('#gestion-tasa-fecha').fill('1890-01-01');
+        const fueraDeRango=await page.locator('#gestion-tasa-fecha')
+            .evaluate(el=>el.validity.rangeUnderflow);
+        assert.equal(fueraDeRango,true);
+        await page.locator('#gestion-cobros-tasa button[type=submit]').click();
+        // El navegador impide enviar el formulario con el día fuera de rango.
+        assert.equal(escrituras.length,0);
         assert.deepEqual(errores,[]);
     }finally{await browser.close();}
 });
@@ -190,4 +224,37 @@ test('móvil: catálogo y tasas no desbordan y staff no puede gestionar',async()
         assert.equal(await staff.page.locator('#nav-conciliacion-cobros').isVisible(),false);
         assert.deepEqual(staff.errores,[]);
     }finally{await staff.browser.close();}
+});
+
+test('papelera contextual archiva concepto y permite mostrarlo para reactivar',async()=>{
+    escrituras=[];
+    const {browser,page,errores}=await abrir({width:1360,height:900});
+    try {
+        await page.locator('#nav-conciliacion-cobros').evaluate(e=>e.click());
+        const fila=page.locator('#gestion-cobros-conceptos tr')
+            .filter({hasText:'Torneo'});
+        await fila.waitFor();
+        assert.equal(await fila.getByRole('button',{name:'Retirar concepto Torneo'}).isVisible(),false);
+        await fila.getByRole('button',{name:'Editar Torneo'}).click();
+        assert.equal(await fila.getByRole('button',{name:'Retirar concepto Torneo'}).isVisible(),true);
+        await fila.getByRole('button',{name:'Retirar concepto Torneo'}).click();
+        await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado')
+            ?.textContent.includes('Concepto retirado'));
+        assert.ok(escrituras.some(x=>x.method==='DELETE'&&
+            x.p==='/api/directiva/cobros/catalogo/torneo'));
+        assert.equal(await page.locator('#gestion-cobros-conceptos tr')
+            .filter({hasText:'Torneo'}).count(),0);
+        await page.locator('#gestion-conceptos-archivados').check();
+        const archivado=page.locator('#gestion-cobros-conceptos tr')
+            .filter({hasText:'Torneo'});
+        assert.equal(await archivado.count(),1);
+        await archivado.getByRole('button',{name:'Editar Torneo'}).click();
+        await archivado.getByRole('checkbox',{name:'Activo Torneo'}).check();
+        await archivado.getByRole('button',{name:'Guardar cambios de Torneo'}).click();
+        await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado')
+            ?.textContent.includes('Tarifa actualizada'));
+        assert.equal(await page.locator('#gestion-cobros-conceptos tr')
+            .filter({hasText:'Torneo'}).count(),1);
+        assert.deepEqual(errores,[]);
+    } finally {await browser.close();}
 });

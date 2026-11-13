@@ -128,3 +128,17 @@
   .cobros-gestion-doble > form > button { width:auto; max-width:100%; }
   .cobros-columna-acciones { width:83px; }
 }
+
+/* Los conceptos retirados solo se muestran bajo demanda. */
+.cobros-archivados-filtro {
+  display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+  padding:2px 0; font-size:.8rem; color:#4f6072;
+}
+.cobros-archivados-filtro input { width:15px; height:15px; accent-color:#eb470f; }
+.cobros-accion-retirar { color:#b13737; }
+.cobros-columna-acciones { width:140px; }
+.cobros-acciones-fila { gap:2px; }
+@media(max-width:720px) {
+  .cobros-columna-acciones { width:130px; }
+  .cobros-accion-icono { width:30px; height:32px; }
+}

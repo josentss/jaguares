@@ -1,14 +1,14 @@
 'use strict';
 
-// Fuentes distintas: BCV republicado por un tercero != cotización comercial.
+// ExchangeRate-API como referencia operativa seleccionada por el club.
 // Nunca introducir un tipo de cambio en pagos desde este módulo sin aprobación
 // explícita de Directiva. Caché en PostgreSQL para todas las réplicas Vercel.
 const db = require('../config/db');
 const { hoyCaracas, fechaCivilValida } = require('./cobrosMensuales');
 
-const PROVEEDORES = new Set(['bcv_republicacion', 'exchangerate_api']);
-const ORIGEN_BCV = 'https://bcv.today/api/v1/rate.json';
-const MAX_EDAD_BCV_DIAS = 7;
+// La tabla mantiene referencias históricas de proveedores anteriores, pero
+// solo ExchangeRate-API se consulta a partir de esta versión.
+const PROVEEDORES = new Set(['exchangerate_api']);
 
 function diasEntre(fecha1, fecha2) {
     const a=Date.parse(fecha1+'T00:00:00Z');
@@ -34,19 +34,7 @@ async function solicitar(url) {
     return contenido;
 }
 
-async function descargar(proveedor, hoy) {
-    if(proveedor==='bcv_republicacion') {
-        const d=await solicitar(ORIGEN_BCV);
-        if (!fechaCivilValida(d.effective_date) ||
-            diasEntre(d.effective_date,hoy)<0 ||
-            diasEntre(d.effective_date,hoy)>MAX_EDAD_BCV_DIAS ||
-            !validarValor(d.USD) || !validarValor(d.EUR)) {
-            throw new Error('Referencia BCV ausente, futura o desactualizada');
-        }
-        return {fecha_referencia:d.effective_date,
-            usd_ves:numeroSQL(d.USD),eur_ves:numeroSQL(d.EUR)};
-    }
-
+async function descargar(hoy) {
     const key=process.env.EXCHANGERATE_API_KEY;
     if(!key) throw new Error('ExchangeRate-API no configurada');
     const data=await solicitar('https://v6.exchangerate-api.com/v6/'+
@@ -87,7 +75,7 @@ async function obtenerReferencia(proveedor, hoy=hoyCaracas()) {
             await client.query('COMMIT');committed=true;
             return {...antigua.rows[0],desde_cache:true};
         }
-        const d=await descargar(proveedor,hoy);
+        const d=await descargar(hoy);
         const {rows}=await client.query(`
             INSERT INTO referencias_cambio_diarias
                 (fecha_consulta,proveedor,fecha_referencia,usd_ves,eur_ves)
@@ -107,20 +95,27 @@ async function obtenerReferencia(proveedor, hoy=hoyCaracas()) {
     }
 }
 
+// ExchangeRate-API es la fuente primaria elegida por el club. La caché
+// histórica de fuentes secundarias se conserva para trazabilidad, pero no
+// se consulta bcv.today cada vez que se abre el panel.
 async function obtenerReferencias(hoy=hoyCaracas()) {
-    const [bcv,mercado]=await Promise.allSettled([
-        obtenerReferencia('bcv_republicacion',hoy),
-        obtenerReferencia('exchangerate_api',hoy)
-    ]);
-    return {
-        fecha_consulta:hoy,
-        bcv:bcv.status==='fulfilled'?bcv.value:null,
-        mercado:mercado.status==='fulfilled'?mercado.value:null,
-        avisos:{
-            bcv:bcv.status==='rejected'?'Referencia BCV no disponible; revisa el sitio del BCV.':null,
-            mercado:mercado.status==='rejected'?'ExchangeRate-API no disponible.':null
-        }
-    };
+    try {
+        const principal=await obtenerReferencia('exchangerate_api',hoy);
+        return {
+            fecha_consulta:hoy,
+            principal,
+            // Alias de solo lectura para compatibilidad con reportes antiguos.
+            mercado:principal,
+            avisos:{principal:null}
+        };
+    } catch(err) {
+        return {
+            fecha_consulta:hoy,
+            principal:null,
+            mercado:null,
+            avisos:{principal:'ExchangeRate-API no disponible; utiliza una tasa manual verificada.'}
+        };
+    }
 }
 
-module.exports={obtenerReferencia,obtenerReferencias,diasEntre,MAX_EDAD_BCV_DIAS};
+module.exports={obtenerReferencia,obtenerReferencias,diasEntre};

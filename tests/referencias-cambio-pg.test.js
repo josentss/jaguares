@@ -74,7 +74,7 @@ test.after(async()=>{
 test('solo Directiva/Admin pueden consultar y publicar',async()=>{
     const rep={usuarioRol:'representante',usuarioId:5};
     assert.equal((await invocar(controller.consultar,rep)).codigo,403);
-    assert.equal((await invocar(controller.publicarBCV,{
+    assert.equal((await invocar(controller.publicarReferencia,{
         ...rep,body:{confirmar:true}
     })).codigo,403);
     assert.equal(bcvLlamadas,0);
@@ -84,44 +84,41 @@ test('solo Directiva/Admin pueden consultar y publicar',async()=>{
 test('caché persistente impide nuevas peticiones al repetir el mismo día',async()=>{
     const primera=await invocar(controller.consultar,admin);
     assert.equal(primera.codigo,200);
-    assert.equal(primera.body.bcv.usd_ves,'980.123456');
-    assert.equal(primera.body.bcv.eur_ves,'1140.654321');
-    assert.equal(primera.body.mercado.usd_ves,'970.120000');
-    assert.equal(primera.body.bcv.desde_cache,false);
-    assert.equal(bcvLlamadas,1);
+    assert.equal(primera.body.principal.usd_ves,'970.120000');
+    assert.equal(primera.body.principal.eur_ves,'1141.317647');
+    assert.equal(primera.body.principal.desde_cache,false);
+    assert.equal(bcvLlamadas,0);
     assert.equal(mercadoLlamadas,1);
     const segunda=await invocar(controller.consultar,admin);
     assert.equal(segunda.codigo,200);
-    assert.equal(segunda.body.bcv.desde_cache,true);
-    assert.equal(segunda.body.mercado.desde_cache,true);
-    assert.equal(bcvLlamadas,1);
+    assert.equal(segunda.body.principal.desde_cache,true);
+    assert.equal(bcvLlamadas,0);
     assert.equal(mercadoLlamadas,1);
     const {rows}=await db.pool.query('SELECT proveedor FROM referencias_cambio_diarias');
-    assert.equal(rows.length,2);
-    assert.deepEqual(rows.map(x=>x.proveedor).sort(),
-        ['bcv_republicacion','exchangerate_api']);
+    assert.deepEqual(rows.map(x=>x.proveedor),['exchangerate_api']);
 });
 
-test('BCV guardado únicamente tras confirmar y sin duplicados',async()=>{
-    const sin=await invocar(controller.publicarBCV,{
+test('ExchangeRate-API solo se publica tras confirmar y sin duplicados',async()=>{
+    const sin=await invocar(controller.publicarReferencia,{
         ...admin,body:{confirmar:false}
     });
     assert.equal(sin.codigo,400);
     assert.equal((await db.pool.query('SELECT * FROM tasas_cobro')).rowCount,0);
-    const publicado=await invocar(controller.publicarBCV,{
+    const publicado=await invocar(controller.publicarReferencia,{
         ...admin,body:{confirmar:true}
     });
     assert.equal(publicado.codigo,201);
     assert.equal(publicado.body.tasa.moneda,'Bs');
-    assert.equal(publicado.body.tasa.tasa_por_usd,'980.123456');
-    assert.match(publicado.body.tasa.fuente,/bcv\.today/);
-    const repetido=await invocar(controller.publicarBCV,{
+    assert.equal(publicado.body.tasa.tasa_por_usd,'970.120000');
+    assert.match(publicado.body.tasa.fuente,/ExchangeRate-API/);
+    const repetido=await invocar(controller.publicarReferencia,{
         ...admin,body:{confirmar:true}
     });
     assert.equal(repetido.codigo,200);
     assert.equal(repetido.body.reutilizada,true);
     assert.equal((await db.pool.query('SELECT * FROM tasas_cobro')).rowCount,1);
-    assert.equal(bcvLlamadas,1);
+    assert.equal(bcvLlamadas,0);
+    assert.equal(mercadoLlamadas,1);
 });
 
 test('precios inválidos se rechazan y constraint DB protege el catálogo',async()=>{
@@ -143,8 +140,9 @@ test('precios inválidos se rechazan y constraint DB protege el catálogo',async
         WHERE codigo='precio_valido'`),error=>error.code==='23514');
 });
 
-test('valor comercial nunca se guarda como fuente BCV',async()=>{
+test('fuente de la tasa publicada es explícita y no se afirma BCV oficial',async()=>{
     const {rows}=await db.pool.query('SELECT fuente FROM tasas_cobro');
     assert.equal(rows.length,1);
-    assert.ok(rows.every(x=>!x.fuente.includes('ExchangeRate-API')));
+    assert.match(rows[0].fuente,/ExchangeRate-API/);
+    assert.doesNotMatch(rows[0].fuente,/BCV/);
 });

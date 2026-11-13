@@ -18,10 +18,11 @@ const referenciasCobros = require('../controllers/referenciasCobrosController');
 router.get('/cobros/catalogo', verificarSesionRole(['directiva','admin']), catalogoCobros.listar);
 router.post('/cobros/catalogo', verificarSesionRole(['directiva','admin']), catalogoCobros.crear);
 router.patch('/cobros/catalogo/:codigo', verificarSesionRole(['directiva','admin']), catalogoCobros.editar);
+router.delete('/cobros/catalogo/:codigo', verificarSesionRole(['directiva','admin']), catalogoCobros.retirar);
 router.get('/cobros/tasas', verificarSesionRole(['directiva','admin']), catalogoCobros.listarTasas);
 router.post('/cobros/tasas', verificarSesionRole(['directiva','admin']), catalogoCobros.registrarTasa);
 router.get('/cobros/tasas/referencias', verificarSesionRole(['directiva','admin']), referenciasCobros.consultar);
-router.post('/cobros/tasas/publicar-bcv', verificarSesionRole(['directiva','admin']), referenciasCobros.publicarBCV);
+router.post('/cobros/tasas/publicar-referencia', verificarSesionRole(['directiva','admin']), referenciasCobros.publicarReferencia);
 router.post('/cobros/cargos', verificarSesionRole(['directiva','admin']), catalogoCobros.crearCargo);
 
 // Lista de atletas y revisión individual del historial: únicamente Directiva/Admin.

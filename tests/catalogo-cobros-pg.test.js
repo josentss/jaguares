@@ -173,3 +173,96 @@ test('nuevo precio altera solo las nuevas obligaciones, no cargos existentes',as
     assert.ok(listado.body.obligaciones.some(o=>o.nombre_concepto==='Transporte especial'));
     assert.equal(listado.body.obligaciones.length,3);
 });
+
+test('rango de tasas: mes corriente completo hasta diciembre del año siguiente',async()=>{
+    const desde=hoy.slice(0,7)+'-01';
+    const anterior=new Date(Date.parse(desde+'T12:00:00Z')-86400000)
+        .toISOString().slice(0,10);
+    const hasta=String(Number(hoy.slice(0,4))+1)+'-12-31';
+    const posterior=String(Number(hoy.slice(0,4))+2)+'-01-01';
+    const body=fecha_vigencia=>({
+        moneda:'COP',fecha_vigencia,tasa_por_usd:'3800.00',
+        fuente:'Directiva revisión manual'
+    });
+    assert.equal((await invocar(catalogo.registrarTasa,{
+        ...admin,body:body(anterior)
+    })).codigo,400);
+    assert.equal((await invocar(catalogo.registrarTasa,{
+        ...admin,body:body(posterior)
+    })).codigo,400);
+    const primerDia=await invocar(catalogo.registrarTasa,{
+        ...admin,body:body(desde)
+    });
+    assert.equal(primerDia.codigo,201);
+    const ultimoDia=await invocar(catalogo.registrarTasa,{
+        ...admin,body:body(hasta)
+    });
+    assert.equal(ultimoDia.codigo,201);
+    const {rows}=await db.pool.query(
+        "SELECT fecha_vigencia::text FROM tasas_cobro WHERE moneda='COP'"
+    );
+    assert.deepEqual(rows.map(x=>x.fecha_vigencia).sort(),[desde,hasta].sort());
+});
+
+test('Directiva retira conceptos sin historial y archiva los utilizados',async()=>{
+    const nuevo=await invocar(catalogo.crear,{...admin,body:{
+        codigo:'concepto_descartable',nombre:'Concepto descartable',monto_usd:'10.00'
+    }});
+    assert.equal(nuevo.codigo,201);
+    const rechazado=await invocar(catalogo.retirar,{
+        ...rep,params:{codigo:'concepto_descartable'}
+    });
+    assert.equal(rechazado.codigo,403);
+    const quitado=await invocar(catalogo.retirar,{
+        ...admin,params:{codigo:'concepto_descartable'}
+    });
+    assert.equal(quitado.codigo,200);
+    assert.equal(quitado.body.accion,'eliminado');
+    const {rowCount:quedan}=await db.pool.query(
+        "SELECT 1 FROM conceptos_cobro WHERE codigo='concepto_descartable'"
+    );
+    assert.equal(quedan,0);
+
+    // Ya existe un cargo de transporte y su tarifa no debe desaparecer.
+    const archivado=await invocar(catalogo.retirar,{
+        ...admin,params:{codigo:'transporte'}
+    });
+    assert.equal(archivado.codigo,200);
+    assert.equal(archivado.body.accion,'archivado');
+    const registros=await db.pool.query(
+        "SELECT count(*)::int AS total FROM obligaciones_cobro WHERE codigo_concepto='transporte'"
+    );
+    assert.equal(registros.rows[0].total,2);
+    const {rows:concepto}=await db.pool.query(
+        "SELECT activo FROM conceptos_cobro WHERE codigo='transporte'"
+    );
+    assert.equal(concepto[0].activo,false);
+    const crear=await invocar(catalogo.crearCargo,{...admin,body:{
+        id_atleta:11,codigo_concepto:'transporte',detalle:'Salida C',
+        fecha_vencimiento:hoy,fecha_limite:hoy,confirmar:true
+    }});
+    assert.equal(crear.codigo,409);
+
+    // Reactivar para nuevos cargos mediante la edición ya existente.
+    const reactivado=await invocar(catalogo.editar,{...admin,
+        params:{codigo:'transporte'},
+        body:{nombre:'Transporte especial',monto_usd:'12.00',activo:true}
+    });
+    assert.equal(reactivado.codigo,200);
+    assert.equal(reactivado.body.concepto.activo,true);
+});
+
+test('conceptos base se archivan en vez de borrarse para preservar códigos',async()=>{
+    const r=await invocar(catalogo.retirar,{...admin,params:{codigo:'torneo'}});
+    assert.equal(r.codigo,200);
+    assert.equal(r.body.accion,'archivado');
+    const {rows}=await db.pool.query("SELECT activo FROM conceptos_cobro WHERE codigo='torneo'");
+    assert.equal(rows.length,1);
+    assert.equal(rows[0].activo,false);
+    const editado=await invocar(catalogo.editar,{...admin,
+        params:{codigo:'torneo'},
+        body:{nombre:'Torneo',monto_usd:'40.00',activo:true}
+    });
+    assert.equal(editado.codigo,200);
+    assert.equal(editado.body.concepto.activo,true);
+});

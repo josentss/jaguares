@@ -43,7 +43,7 @@ function consulta(id,moneda='Bs',fecha=hoy,rep=repA){
 function enviar(id_atleta,id_obligacion,monto,fecha=hoy,rep=repA,moneda='Bs'){
     return invocar(pagos.reportarPago,{...rep,body:{
         id_atleta:String(id_atleta),id_obligacion:String(id_obligacion),
-        metodo:moneda==='Bs'?'Transferencia Bancaria':'Efectivo',
+        metodo:'Efectivo',
         monto,moneda,fecha_pago:fecha,referencia:'123456'
     }});
 }
@@ -101,6 +101,12 @@ test.before(async()=>{
             (fecha_consulta,proveedor,fecha_referencia,usd_ves,eur_ves)
         VALUES ($1,'exchangerate_api',$1,911.624300,1008.992031)
     `,[hoy]);
+    // El cargo ya existía ayer; probar así el bloqueo por falta de tasa
+    // histórica y no por fecha de emisión.
+    await db.pool.query(`
+        UPDATE obligaciones_cobro SET fecha_emision=$2
+        WHERE id_obligacion=$1
+    `,[ids.d,ayer]);
 });
 test.after(async()=>{
     global.fetch=originalFetch;

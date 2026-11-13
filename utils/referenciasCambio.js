@@ -1,14 +1,14 @@
 'use strict';
 
-// Fuentes distintas: BCV republicado por un tercero != cotización comercial.
+// ExchangeRate-API como referencia operativa seleccionada por el club.
 // Nunca introducir un tipo de cambio en pagos desde este módulo sin aprobación
 // explícita de Directiva. Caché en PostgreSQL para todas las réplicas Vercel.
 const db = require('../config/db');
 const { hoyCaracas, fechaCivilValida } = require('./cobrosMensuales');
 
-const PROVEEDORES = new Set(['bcv_republicacion', 'exchangerate_api']);
-const ORIGEN_BCV = 'https://bcv.today/api/v1/rate.json';
-const MAX_EDAD_BCV_DIAS = 7;
+// La tabla mantiene referencias históricas de proveedores anteriores, pero
+// solo ExchangeRate-API se consulta a partir de esta versión.
+const PROVEEDORES = new Set(['exchangerate_api']);
 
 function diasEntre(fecha1, fecha2) {
     const a=Date.parse(fecha1+'T00:00:00Z');
@@ -34,19 +34,7 @@ async function solicitar(url) {
     return contenido;
 }
 
-async function descargar(proveedor, hoy) {
-    if(proveedor==='bcv_republicacion') {
-        const d=await solicitar(ORIGEN_BCV);
-        if (!fechaCivilValida(d.effective_date) ||
-            diasEntre(d.effective_date,hoy)<0 ||
-            diasEntre(d.effective_date,hoy)>MAX_EDAD_BCV_DIAS ||
-            !validarValor(d.USD) || !validarValor(d.EUR)) {
-            throw new Error('Referencia BCV ausente, futura o desactualizada');
-        }
-        return {fecha_referencia:d.effective_date,
-            usd_ves:numeroSQL(d.USD),eur_ves:numeroSQL(d.EUR)};
-    }
-
+async function descargar(hoy) {
     const key=process.env.EXCHANGERATE_API_KEY;
     if(!key) throw new Error('ExchangeRate-API no configurada');
     const data=await solicitar('https://v6.exchangerate-api.com/v6/'+
@@ -87,7 +75,7 @@ async function obtenerReferencia(proveedor, hoy=hoyCaracas()) {
             await client.query('COMMIT');committed=true;
             return {...antigua.rows[0],desde_cache:true};
         }
-        const d=await descargar(proveedor,hoy);
+        const d=await descargar(hoy);
         const {rows}=await client.query(`
             INSERT INTO referencias_cambio_diarias
                 (fecha_consulta,proveedor,fecha_referencia,usd_ves,eur_ves)
@@ -130,4 +118,4 @@ async function obtenerReferencias(hoy=hoyCaracas()) {
     }
 }
 
-module.exports={obtenerReferencia,obtenerReferencias,diasEntre,MAX_EDAD_BCV_DIAS};
+module.exports={obtenerReferencia,obtenerReferencias,diasEntre};

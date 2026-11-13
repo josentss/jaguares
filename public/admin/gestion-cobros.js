@@ -195,6 +195,50 @@
         }
     }
 
+    let referencias = null, referenciasCargando = false;
+    function mostrarReferencias(datos) {
+        const formatear = v => Number(v).toLocaleString('es-VE',{
+            minimumFractionDigits:2,maximumFractionDigits:6
+        });
+        const bcv=datos.bcv, mercado=datos.mercado;
+        el('gestion-bcv-usd').textContent=bcv?formatear(bcv.usd_ves)+' Bs':'—';
+        el('gestion-bcv-eur').textContent=bcv?formatear(bcv.eur_ves)+' Bs':'—';
+        el('gestion-mercado-usd').textContent=mercado?
+            formatear(mercado.usd_ves)+' Bs':'—';
+        el('gestion-bcv-vigencia').textContent=bcv?
+            'Vigente desde '+String(bcv.fecha_referencia).slice(0,10)+' · fuente bcv.today':
+            'Fuente secundaria: bcv.today';
+        el('gestion-bcv-registrar').disabled=!bcv;
+        el('gestion-referencias-cache').textContent=bcv?.desde_cache&&
+            (!mercado||mercado.desde_cache)?'Desde caché del día':'Consulta registrada hoy';
+        const errores=[datos.avisos?.bcv,datos.avisos?.mercado].filter(Boolean);
+        const aviso=el('gestion-referencias-estado');
+        aviso.textContent=errores.join(' ');
+        aviso.dataset.error=String(errores.length>0);
+    }
+    async function consultarReferencias() {
+        if(!habilitado||referenciasCargando)return;
+        referenciasCargando=true;
+        el('gestion-referencias-consultar').disabled=true;
+        const aviso=el('gestion-referencias-estado');
+        aviso.textContent='Consultando referencias…';aviso.dataset.error='false';
+        try{
+            const respuesta=await apiFetch('/api/directiva/cobros/tasas/referencias');
+            const datos=await respuesta.json();
+            if(!respuesta.ok||!datos.success)
+                throw new Error(datos.message||'No se pudieron consultar referencias');
+            referencias=datos;
+            mostrarReferencias(datos);
+        }catch(error){
+            aviso.textContent=error.message||'No hay referencias disponibles.';
+            aviso.dataset.error='true';
+            el('gestion-bcv-registrar').disabled=true;
+        }finally{
+            referenciasCargando=false;
+            el('gestion-referencias-consultar').disabled=false;
+        }
+    }
+
     async function cargar() {
         if(!habilitado||cargando||enviando)return;
         cargando=true;
@@ -266,6 +310,23 @@
         el('gestion-tasa-fecha').max=hoy;
         el('cobros-atleta').addEventListener('change',pintar);
         el('gestion-cobros-recargar').addEventListener('click',cargar);
+        el('gestion-seccion-tasas').addEventListener('toggle',event=>{
+            if(event.target.open&&!referencias)consultarReferencias();
+        });
+        el('gestion-referencias-consultar').addEventListener('click',consultarReferencias);
+        el('gestion-bcv-registrar').addEventListener('click',async()=>{
+            const referencia=referencias?.bcv;
+            if(!referencia||enviando)return;
+            const hoy=hoyCaracas();
+            const precio=Number(referencia.usd_ves).toFixed(6);
+            if(!root.confirm('¿Registrar '+precio+' Bs por USD para hoy ('+hoy+')?\\n'+
+                'Fuente: datos BCV republicados por bcv.today; vigencia '+
+                String(referencia.fecha_referencia).slice(0,10)+
+                '.\\nUna vez registrada, la tasa queda inmutable.'))return;
+            const listo=await terminar('/api/directiva/cobros/tasas/publicar-bcv',
+                {confirmar:true},'Referencia BCV registrada para cobros');
+            if(listo)el('gestion-bcv-registrar').disabled=true;
+        });
 
         el('gestion-cobros-nuevo').addEventListener('submit',async(e)=>{
             e.preventDefault();

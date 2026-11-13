@@ -105,7 +105,8 @@ test('representante consulta estados y montos USD sin ejecutar POST ni interpret
         assert.match(await page.locator('#cuenta-obligaciones').innerText(),/15\/11\/2026/);
         assert.match(await page.locator('#cuenta-obligaciones').innerText(),/Límite 30\/11\/2026/);
         assert.match(await page.locator('#cuenta-obligaciones').innerText(),/En revisión/);
-        assert.match(await page.locator('#cuenta-nota').innerText(),/aún no se vinculan/);
+        assert.equal(await page.locator('#cuenta-nota').count(),0);
+        assert.equal(await page.locator('.cuenta-tabla-scroll').getAttribute('role'),'region');
         assert.equal(await page.locator('#cuenta-atleta img').count(),0);
         assert.ok(consultas>=1);
         assert.equal(escrituras,0);

@@ -192,15 +192,12 @@ test('calendario manual restringe el mes actual y el año siguiente',async()=>{
         await page.locator('#gestion-tasa-moneda').selectOption('COP');
         await page.locator('#gestion-tasa-valor').fill('3800');
         await page.locator('#gestion-tasa-fuente').fill('Directiva prueba');
-        await page.evaluate(()=>{
-            const fecha=document.getElementById('gestion-tasa-fecha');
-            fecha.value='1890-01-01';
-            fecha.closest('form').dispatchEvent(new Event('submit',{
-                cancelable:true,bubbles:true
-            }));
-        });
-        await page.waitForFunction(()=>document.querySelector('#gestion-cobros-estado')
-            ?.textContent.includes('Fecha permitida'));
+        await page.locator('#gestion-tasa-fecha').fill('1890-01-01');
+        const fueraDeRango=await page.locator('#gestion-tasa-fecha')
+            .evaluate(el=>el.validity.rangeUnderflow);
+        assert.equal(fueraDeRango,true);
+        await page.locator('#gestion-cobros-tasa button[type=submit]').click();
+        // El navegador impide enviar el formulario con el día fuera de rango.
         assert.equal(escrituras.length,0);
         assert.deepEqual(errores,[]);
     }finally{await browser.close();}

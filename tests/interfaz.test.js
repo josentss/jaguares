@@ -629,7 +629,10 @@ async function comprobarFechasPanel(browser, { panel, timezoneId, viewport, lega
             await page.waitForFunction(() => document.querySelector('.js-atleta-estado'));
             assert.equal((await page.locator('#body-atletas tr').first().locator('td').nth(2).textContent()).trim(), '1/2/2011');
             assert.equal((await page.locator('#body-pagos tr').first().locator('td').nth(2).textContent()).trim(), '2/11/2026');
-            assert.equal(await page.locator('#stat-tasa-fecha').textContent(), 'Fecha: 1/11/2026');
+            // La referencia comercial conserva su fecha publicada, no se
+            // convierte como fecha civil del pago ni se etiqueta tasa BCV.
+            assert.equal(await page.locator('#stat-tasa-fecha').textContent(),
+                'ExchangeRate-API · 2026-11-02');
         } else {
             await page.waitForFunction(() => document.querySelector('#table-my-pagos tbody')?.textContent.includes('Noviembre'));
             assert.equal((await page.locator('#table-my-pagos tbody tr').first().locator('td').first().textContent()).trim(), '2/11/2026');

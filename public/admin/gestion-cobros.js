@@ -4,6 +4,9 @@
     const el = id => document.getElementById(id);
     let habilitado = false, cargando = false, enviando = false;
     let catalogo = [];
+    let cerrarEdicion = null;
+    const PRECIO_VALIDO = /^(?:\d{1,3})(?:\.\d{1,2})?$/;
+    const precioValido = v => PRECIO_VALIDO.test(String(v)) && Number(v) >= .01 && Number(v) <= 999.99;
 
     function hoyCaracas() {
         const partes = new Intl.DateTimeFormat('en-US', {
@@ -34,44 +37,126 @@
 
     function numero(n) { return Number(n).toFixed(2); }
 
+    // SVG del sistema: acciones discretas, nunca mostrar guardar/cancelar sin editar.
+    function icono(nombre) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('viewBox','0 0 24 24');
+        svg.setAttribute('width','18');svg.setAttribute('height','18');
+        svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');
+        svg.setAttribute('stroke-width','2');svg.setAttribute('stroke-linecap','round');
+        svg.setAttribute('stroke-linejoin','round');
+        svg.setAttribute('aria-hidden','true');
+        const trazos = {
+            editar: ['M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1',
+                'M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3z','M16 5l3 3'],
+            guardar: ['M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',
+                'M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7M7 3v4a1 1 0 0 0 1 1h7'],
+            cancelar: ['M18 6 6 18','M6 6l12 12']
+        };
+        for(const d of trazos[nombre]) {
+            const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+            path.setAttribute('d',d);svg.append(path);
+        }
+        return svg;
+    }
+
+    function botonAccion(tipo,etiqueta) {
+        const boton=document.createElement('button');
+        boton.type='button';
+        boton.className='cobros-accion-icono cobros-accion-'+tipo;
+        boton.title=etiqueta;
+        boton.setAttribute('aria-label',etiqueta);
+        boton.append(icono(tipo));
+        return boton;
+    }
+
     function editarFila(concepto) {
         const tr=document.createElement('tr');
+        const nombreVista=document.createElement('span');
+        nombreVista.textContent=concepto.nombre;
         const nombre=document.createElement('input');
-        nombre.type='text';nombre.maxLength=60;nombre.value=concepto.nombre;
+        nombre.type='text';nombre.maxLength=60;nombre.minLength=2;
+        nombre.value=concepto.nombre;nombre.required=true;
         nombre.setAttribute('aria-label','Nombre '+concepto.codigo);
-        celda(tr,nombre);
+        const celdaNombre=celda(tr,nombreVista);celdaNombre.append(nombre);nombre.hidden=true;
+
+        const precioVista=document.createElement('span');
+        precioVista.textContent='USD '+numero(concepto.monto_referencia_usd);
         const precio=document.createElement('input');
-        precio.type='number';precio.min='0.01';precio.max='9999999';
-        precio.step='0.01';precio.value=numero(concepto.monto_referencia_usd);
+        precio.type='number';precio.min='0.01';precio.max='999.99';
+        precio.step='0.01';precio.inputMode='decimal';
+        precio.value=numero(concepto.monto_referencia_usd);
         precio.setAttribute('aria-label','Precio USD '+concepto.nombre);
-        celda(tr,precio);
+        const celdaPrecio=celda(tr,precioVista);celdaPrecio.append(precio);precio.hidden=true;
+
+        const activoVista=document.createElement('span');
+        activoVista.className='cobros-estado-concepto';
+        activoVista.textContent=concepto.activo?'Activo':'Inactivo';
         const activo=document.createElement('input');
         activo.type='checkbox';activo.checked=Boolean(concepto.activo);
         activo.setAttribute('aria-label','Activo '+concepto.nombre);
-        celda(tr,activo);
-        const guardar=document.createElement('button');
-        guardar.type='button';guardar.className='cobros-btn-secundario';
-        guardar.textContent='Guardar';
+        const celdaActivo=celda(tr,activoVista);celdaActivo.append(activo);activo.hidden=true;
+
+        const acciones=document.createElement('div');
+        acciones.className='cobros-acciones-fila';
+        const editar=botonAccion('editar','Editar '+concepto.nombre);
+        const guardar=botonAccion('guardar','Guardar cambios de '+concepto.nombre);
+        const cancelar=botonAccion('cancelar','Cancelar edición de '+concepto.nombre);
+        guardar.hidden=true;cancelar.hidden=true;
+        acciones.append(editar,guardar,cancelar);
+        celda(tr,acciones).className='cobros-columna-acciones';
+
+        function edicion(activa) {
+            for(const input of [nombre,precio,activo])input.hidden=!activa;
+            for(const vista of [nombreVista,precioVista,activoVista])vista.hidden=activa;
+            editar.hidden=activa;guardar.hidden=!activa;cancelar.hidden=!activa;
+            if(!activa) {
+                nombre.value=concepto.nombre;
+                precio.value=numero(concepto.monto_referencia_usd);
+                activo.checked=Boolean(concepto.activo);
+                if(cerrarEdicion===finalizar)cerrarEdicion=null;
+            }
+        }
+        function finalizar() { edicion(false); }
+        editar.addEventListener('click',()=>{
+            if(enviando||cargando)return;
+            if(cerrarEdicion)cerrarEdicion();
+            edicion(true);cerrarEdicion=finalizar;nombre.focus();
+        });
+        cancelar.addEventListener('click',()=>{if(!enviando)finalizar();});
         guardar.addEventListener('click',async()=>{
-            if (enviando) return;
-            if (!root.confirm(`¿Guardar la tarifa de ${concepto.nombre}? Solo afectará cargos futuros.`)) return;
+            if(enviando)return;
+            const nuevoNombre=nombre.value.trim();
+            if(nuevoNombre.length<2||nuevoNombre.length>60||/[<>\\x00-\\x1f]/.test(nuevoNombre)||
+                !precioValido(precio.value)) {
+                estado('Nombre no válido o precio fuera de USD 0,01–999,99 (máximo 2 decimales).',true);
+                return;
+            }
+            if(nuevoNombre===concepto.nombre&&
+                Number(precio.value)===Number(concepto.monto_referencia_usd)&&
+                activo.checked===Boolean(concepto.activo)) {
+                finalizar();return;
+            }
+            if(!root.confirm('¿Guardar cambios de '+concepto.nombre+'? Solo afectan cargos futuros.'))return;
+            guardar.disabled=true;cancelar.disabled=true;
             const guardado=await escribir('/api/directiva/cobros/catalogo/'+encodeURIComponent(concepto.codigo),{
                 method:'PATCH',body:JSON.stringify({
-                    nombre:nombre.value.trim(),monto_usd:precio.value,activo:activo.checked
+                    nombre:nuevoNombre,monto_usd:precio.value,activo:activo.checked
                 })
             },'Tarifa actualizada');
-            if (guardado) {
-                // Usar siempre el precio guardado en servidor, no la copia previa del catálogo.
+            guardar.disabled=false;cancelar.disabled=false;
+            if(guardado) {
+                cerrarEdicion=null;
                 await cargar();
                 estado('Tarifa actualizada');
             }
         });
-        celda(tr,guardar);
         return tr;
     }
 
     function pintar() {
         const tabla=el('gestion-cobros-conceptos');
+        cerrarEdicion=null;
         tabla.replaceChildren();
         for (const concepto of catalogo) tabla.append(editarFila(concepto));
         if (!catalogo.length) {
@@ -191,6 +276,7 @@
             if (codigo.length<3 || ['inscripcion','mensualidad'].includes(codigo)) {
                 estado('Usa un nombre de concepto diferente.',true);return;
             }
+            if(!precioValido(monto)) {estado('Precio permitido: USD 0,01–999,99 (dos decimales).',true);return;}
             if(!root.confirm(`¿Agregar ${nombre} con tarifa USD ${monto}?`))return;
             if(await terminar('/api/directiva/cobros/catalogo',
                 {codigo,nombre,monto_usd:monto},'Concepto agregado'))e.target.reset();

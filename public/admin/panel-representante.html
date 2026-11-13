@@ -327,14 +327,14 @@
                                 <p id="pay-guia-estado" class="pago-guia-estado" role="status" aria-live="polite"></p>
                                 <p id="pay-guia-monto" class="pago-guia-monto"></p>
                             </div>
-                            <div class="form-group-panel full-width"><label for="pay-metodo">¿Cómo realizaste el pago?</label><select id="pay-metodo" required onchange="toggleMetodoPago()"><option value="">Selecciona una opción</option><option value="Transferencia Bancaria">Transferencia bancaria o Pago Móvil (Bs)</option><option value="Efectivo">Efectivo (Bs, USD o COP)</option></select></div>
+                            <div class="form-group-panel full-width"><label for="pay-metodo">Forma de pago</label><select id="pay-metodo" required onchange="toggleMetodoPago()"><option value="">Selecciona una opción</option><option value="Transferencia Bancaria">Transferencia bancaria o Pago Móvil (Bs)</option><option value="Efectivo">Efectivo (Bs, USD o COP)</option></select></div>
                         </div>
                     </fieldset>
 
                     <fieldset id="panel-transferencia" class="form-block hidden-section" disabled>
                         <legend>Datos de la operación</legend>
                         <div class="form-grid">
-                            <div class="form-group-panel"><label for="pay-monto-trans">Monto en bolívares (Bs)</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-trans" placeholder="Monto fijo del club" inputmode="decimal" required readonly><small class="field-note">Calculado con la tasa configurada por Directiva.</small></div>
+                            <div class="form-group-panel"><label for="pay-monto-trans">Monto en bolívares (Bs)</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-trans" placeholder="Monto fijo del club" inputmode="decimal" required readonly><small class="field-note">Se calcula según la fecha del pago.</small></div>
                             <div class="form-group-panel"><label for="pay-referencia">Número de referencia</label><input type="text" id="pay-referencia" placeholder="Ej: 123456" inputmode="numeric"><small class="field-note">Los últimos dígitos de la operación.</small></div>
                             <div class="form-group-panel"><label for="pay-fecha-trans">Fecha de la operación</label><input type="date" id="pay-fecha-trans" required></div>
                             <div class="form-group-panel">
@@ -378,7 +378,7 @@
                 <p id="cuenta-estado" class="cuenta-mensaje" role="status" aria-live="polite"></p>
                 <div id="cuenta-detalle" hidden>
                     <p id="cuenta-resumen" class="cuenta-resumen"></p>
-                    <div class="cuenta-tabla-scroll">
+                    <div class="cuenta-tabla-scroll" tabindex="0" role="region" aria-label="Obligaciones del atleta, tabla desplazable">
                         <table>
                             <thead>
                                 <tr><th>Concepto</th><th>Período</th><th>Monto</th><th>Vencimiento</th><th>Estado</th></tr>
@@ -386,7 +386,7 @@
                             <tbody id="cuenta-obligaciones"></tbody>
                         </table>
                     </div>
-                    <p id="cuenta-nota" class="cuenta-nota"></p>
+                    
                 </div>
             </div>
         </section>

@@ -432,13 +432,12 @@
                 </div>
                 <div class="card-status card-rate">
                     <h3>Bs por USD · referencia de mercado</h3>
-                    <p id="stat-tasa-bcv">0.00</p>
-                    <small id="stat-tasa-fecha">Fecha: N/A</small>
+                    <p id="stat-tasa-bcv">—</p>
+                    <small id="stat-tasa-fecha">Sin cotización</small>
                 </div>
             </div>
             <p class="dashboard-note">
-                Los montos solo suman pagos <strong>aprobados</strong>.
-                La conversión USD ↔ Bs usa la tasa mostrada (actualizada al cargar el panel).
+                Solo pagos aprobados. Los equivalentes se estiman con la referencia actual.
             </p>
         </section>
 
@@ -901,7 +900,7 @@
                     <details class="cobros-gestion-seccion" open>
                         <summary>Conceptos y tarifas</summary>
                         <label class="cobros-archivados-filtro" hidden><input id="gestion-conceptos-archivados" type="checkbox"> <span>Ver archivados</span></label>
-                        <div class="cobros-tabla-scroll">
+                        <div class="cobros-tabla-scroll" tabindex="0" role="region" aria-label="Conceptos y tarifas, tabla desplazable">
                             <table class="cobros-gestion-tabla">
                                 <thead><tr><th>Concepto</th><th>Precio USD</th><th>Estado</th><th>Acciones</th></tr></thead>
                                 <tbody id="gestion-cobros-conceptos"></tbody>
@@ -997,7 +996,7 @@
                         </form>
                         <p id="gestion-tasa-rango" class="cobros-ayuda">Desde el mes actual hasta diciembre del próximo año.</p>
                         </details>
-                        <div class="cobros-tabla-scroll">
+                        <div class="cobros-tabla-scroll" tabindex="0" role="region" aria-label="Historial de tasas, tabla desplazable">
                             <table class="cobros-gestion-tabla">
                                 <thead><tr><th>Fecha</th><th>Moneda</th><th>Por USD</th><th>Fuente</th></tr></thead>
                                 <tbody id="gestion-cobros-tasas"></tbody>

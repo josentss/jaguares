@@ -13,11 +13,12 @@ const MONEDAS = new Set(['USD', 'Bs', 'COP']);
 
 // Esta función solo obtiene una referencia. En cotizaciones GET no crea tasas.
 // Nunca se solicita /latest/USD para reconstruir un día anterior.
-async function referenciaParaFecha(cliente, fechaPago) {
+async function referenciaParaFecha(cliente, fechaPago, bloquear) {
     try {
         let ref;
         if (fechaPago === hoyCaracas()) {
-            ref = await obtenerReferencia('exchangerate_api',fechaPago);
+            ref = await obtenerReferencia('exchangerate_api',fechaPago,
+                bloquear?cliente:null);
         } else {
             const anterior=await cliente.query(`
                 SELECT fecha_referencia::text, usd_ves
@@ -114,7 +115,7 @@ async function cotizar(cliente, {
         tasa=registrada.rows[0]||null;
 
         if(!tasa && moneda==='Bs') {
-            const automatica=await referenciaParaFecha(cliente,fecha_pago);
+            const automatica=await referenciaParaFecha(cliente,fecha_pago,bloquear);
             if(automatica) {
                 if(bloquear) {
                     // La tasa solo se inserta dentro de la transacción del

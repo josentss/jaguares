@@ -44,11 +44,11 @@
 /* Acciones por fila: una sola acción visible hasta entrar en edición. */
 .cobros-gestion .cobros-gestion-tabla input[hidden],
 .cobros-gestion .cobros-gestion-tabla button[hidden] { display:none !important; }
-.cobros-columna-acciones { width:104px; white-space:nowrap; }
+.cobros-columna-acciones { width:140px; white-space:nowrap; }
 .cobros-acciones-fila { display:flex; justify-content:flex-start; align-items:center; gap:5px; }
 .cobros-accion-icono {
   display:inline-flex; align-items:center; justify-content:center;
-  width:34px; height:34px; padding:5px;
+  width:40px; height:40px; padding:6px;
   border:1px solid transparent; border-radius:7px;
   background:transparent; color:#4a5565; cursor:pointer;
 }
@@ -98,7 +98,7 @@
 .cobros-referencias-encabezado { justify-content:space-between; }
 .cobros-referencias-encabezado strong { font-size:.87rem; }
 .cobros-referencias-grid {
-  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
   gap:10px; margin:10px 0;
 }
 .cobros-referencia-item {
@@ -126,7 +126,7 @@
     grid-column:1;
   }
   .cobros-gestion-doble > form > button { width:auto; max-width:100%; }
-  .cobros-columna-acciones { width:83px; }
+  .cobros-columna-acciones { width:140px; }
 }
 
 /* Los conceptos retirados solo se muestran bajo demanda. */
@@ -136,13 +136,39 @@
 }
 .cobros-archivados-filtro input { width:15px; height:15px; accent-color:#eb470f; }
 .cobros-accion-retirar { color:#b13737; }
-.cobros-columna-acciones { width:140px; }
 .cobros-acciones-fila { gap:2px; }
 @media(max-width:720px) {
-  .cobros-columna-acciones { width:130px; }
-  .cobros-accion-icono { width:30px; height:32px; }
+  .cobros-columna-acciones { width:140px; }
+  .cobros-accion-icono { width:44px; height:44px; }
 }
 
 /* No mostrar filtros vacíos; los antiguos conceptos solo aparecen si existen. */
 .cobros-archivados-filtro[hidden] { display:none !important; }
 .cobros-leyenda-tasas { flex-basis:100%; margin:0; font-size:.77rem; }
+
+/* Mantener columnas y acciones accesibles en pantallas estrechas. */
+.cobros-gestion .cobros-tabla-scroll {
+    max-width:100%;
+    overflow-x:auto;
+    overscroll-behavior-inline:contain;
+    -webkit-overflow-scrolling:touch;
+}
+.cobros-gestion .cobros-tabla-scroll:focus-visible {
+    outline:2px solid var(--club-naranja, #ff4500);
+    outline-offset:2px;
+}
+.cobros-accion-icono svg { flex:none; }
+.cobros-gestion-seccion summary:focus-visible,
+.cobros-archivados-filtro:focus-within {
+    outline:2px solid var(--club-naranja, #ff4500);
+    outline-offset:2px;
+    border-radius:5px;
+}
+@media (pointer: coarse) {
+    .cobros-accion-icono { min-width:44px; min-height:44px; }
+}
+@media (max-width:720px) {
+    .cobros-gestion-seccion > :not(summary) { margin-inline:9px; }
+    .cobros-gestion .cobros-gestion-tabla { min-width:560px; }
+    .cobros-referencias-acciones > button { min-height:44px; }
+}

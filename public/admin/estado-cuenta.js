@@ -49,7 +49,6 @@
         const detalle = el('cuenta-detalle');
         const cuerpo = el('cuenta-obligaciones');
         const resumen = el('cuenta-resumen');
-        const nota = el('cuenta-nota');
         cuerpo.replaceChildren();
         const obligaciones = Array.isArray(info.obligaciones) ? info.obligaciones : [];
         detalle.hidden = false;
@@ -61,7 +60,6 @@
             const tr = document.createElement('tr');
             celda(tr, 'Sin obligaciones registradas').colSpan = 5;
             cuerpo.append(tr);
-            nota.textContent = '';
             aviso('');
             return;
         }
@@ -85,7 +83,6 @@
                 (Object.hasOwn(estados, obligacion.estado) ? obligacion.estado : 'pendiente');
             cuerpo.append(tr);
         }
-        nota.textContent = 'Los reportes de pago actuales aún no se vinculan al estado de cuenta.';
         aviso('');
     }
 

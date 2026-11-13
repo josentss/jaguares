@@ -41,7 +41,7 @@
     padding: 9px 11px;
     font: 400 .9rem Poppins, sans-serif;
 }
-.cuenta-mensaje, .cuenta-resumen, .cuenta-nota {
+.cuenta-mensaje, .cuenta-resumen {
     margin: 12px 0;
     color: #536173;
     font-size: .83rem;
@@ -49,8 +49,8 @@
 }
 .cuenta-mensaje[data-error="true"] { color: #ad2631; }
 .cuenta-resumen { color: #27303f; font-weight: 600; }
-.cuenta-nota { margin-bottom: 0; }
-.cuenta-tabla-scroll { width: 100%; overflow-x: auto; border: 1px solid #e1e6ed; border-radius: 7px; }
+.cuenta-tabla-scroll { width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; border: 1px solid #e1e6ed; border-radius: 7px; }
+.cuenta-tabla-scroll:focus-visible { outline: 2px solid #ff4500; outline-offset: 2px; }
 .cuenta-tabla-scroll table { width: 100%; min-width: 565px; border-collapse: collapse; }
 .cuenta-tabla-scroll th, .cuenta-tabla-scroll td {
     text-align: left;

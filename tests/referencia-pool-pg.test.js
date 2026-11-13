@@ -63,7 +63,7 @@ test('tres transacciones comparten pool y solicitan la referencia solo una vez',
         assert.ok(referencias.every(x=>x.usd_ves==='915.250000'));
         assert.equal(llamadas,1);
         const {rows}=await db.pool.query(
-            "SELECT COUNT(*)::int AS total FROM ${schema}.referencias_cambio_diarias WHERE proveedor='exchangerate_api'");
+            `SELECT COUNT(*)::int AS total FROM ${schema}.referencias_cambio_diarias WHERE proveedor='exchangerate_api'`);
         assert.equal(rows[0].total,1);
     }finally {
         await Promise.all(clientes.map(async c=>{

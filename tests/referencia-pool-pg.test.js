@@ -52,6 +52,9 @@ test('tres transacciones comparten pool y solicitan la referencia solo una vez',
     try {
         const referencias=await Promise.all(clientes.map(async c=>{
             await c.query('BEGIN');
+            // En pruebas concurrentes fijar el esquema temporal en cada
+            // cliente, sin depender de la conexión reutilizada por el pool.
+            await c.query("SELECT set_config('search_path',$1,true)",[schema]);
             const ref=await obtenerReferencia('exchangerate_api',hoy,c);
             // pg_advisory_xact_lock se libera al confirmar CADA transacción.
             await c.query('COMMIT');
@@ -60,7 +63,7 @@ test('tres transacciones comparten pool y solicitan la referencia solo una vez',
         assert.ok(referencias.every(x=>x.usd_ves==='915.250000'));
         assert.equal(llamadas,1);
         const {rows}=await db.pool.query(
-            "SELECT COUNT(*)::int AS total FROM referencias_cambio_diarias WHERE proveedor='exchangerate_api'");
+            "SELECT COUNT(*)::int AS total FROM ${schema}.referencias_cambio_diarias WHERE proveedor='exchangerate_api'");
         assert.equal(rows[0].total,1);
     }finally {
         await Promise.all(clientes.map(async c=>{

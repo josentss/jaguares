@@ -900,7 +900,7 @@
                     <p id="gestion-cobros-estado" class="cobros-ayuda" role="status" aria-live="polite"></p>
                     <details class="cobros-gestion-seccion" open>
                         <summary>Conceptos y tarifas</summary>
-                        <label class="cobros-archivados-filtro"><input id="gestion-conceptos-archivados" type="checkbox"> Mostrar archivados</label>
+                        <label class="cobros-archivados-filtro" hidden><input id="gestion-conceptos-archivados" type="checkbox"> <span>Ver archivados</span></label>
                         <div class="cobros-tabla-scroll">
                             <table class="cobros-gestion-tabla">
                                 <thead><tr><th>Concepto</th><th>Precio USD</th><th>Estado</th><th>Acciones</th></tr></thead>
@@ -973,8 +973,9 @@
                                 </div>
                             </div>
                             <div class="cobros-referencias-acciones">
-                                <button id="gestion-referencia-registrar" type="button" class="cobros-btn-principal" disabled>Registrar tasa USD/Bs</button>
+                                <button id="gestion-referencia-registrar" type="button" class="cobros-btn-principal" disabled>Fijar tasa para hoy</button>
                                 <span id="gestion-referencias-cache" class="cobros-ayuda"></span>
+                                <p class="cobros-ayuda cobros-leyenda-tasas">Sin tasa fijada, los pagos de hoy en Bs usan esta referencia automáticamente.</p>
                             </div>
                         </div>
                         <details class="cobros-tasa-manual">

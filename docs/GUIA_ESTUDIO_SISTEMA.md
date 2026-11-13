@@ -157,6 +157,14 @@ El calendario manual de tasas limita el intervalo al primer día del mes actual 
 
 Cada concepto tiene edición contextual. Retirar un concepto nuevo sin uso lo borra; retirar uno con cargos lo **archiva** para preservar relaciones e historiales. Mostrar archivados permite reactivarlo. Los cinco conceptos institucionales jamás se borran definitivamente. Evitar ejecutar SQL `DELETE` manual sobre conceptos relacionados con pagos.
 
+### Conversión del importe de pagos en bolívares (PR #59)
+
+El Representante ya no necesita que Directiva pulse «Fijar tasa» para cada día: el sistema toma ExchangeRate-API desde caché (o solicita la referencia de hoy) cuando no haya tasa previamente publicada para la fecha del pago. Muestra importe fijo en bolívares y bloquea el envío si falta tasa verificable. Al reportar, el backend guarda la tasa usada en `tasas_cobro` dentro de la misma transacción que el pago. Los importes no se determinan en el navegador. La tasa de un pago ya registrado no cambia cuando Directiva modifica posteriormente sus preferencias.
+
+Para COP se conserva la última tasa manual vigente; para Bs no se arrastra la de días anteriores. El período de mensualidad puede ser posterior a la fecha de pago y no altera el cálculo de moneda.
+
+Los conceptos archivados no desaparecen de PostgreSQL: «Ver archivados» solo se muestra si hay alguno. El historial permanece íntegro.
+
 ## 9. Próximas decisiones funcionales
 
 El reporte **vinculado a `id_obligacion`** ya existe desde PR #54, y este PR #55 introduce el catálogo editable, la elección de cargos asignados y montos fijos cotizados por moneda. El Estado de cuenta sigue siendo **una consulta**, no un formulario de envío.

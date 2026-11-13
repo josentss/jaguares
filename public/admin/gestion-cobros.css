@@ -142,3 +142,7 @@
   .cobros-columna-acciones { width:130px; }
   .cobros-accion-icono { width:30px; height:32px; }
 }
+
+/* No mostrar filtros vacíos; los antiguos conceptos solo aparecen si existen. */
+.cobros-archivados-filtro[hidden] { display:none !important; }
+.cobros-leyenda-tasas { flex-basis:100%; margin:0; font-size:.77rem; }

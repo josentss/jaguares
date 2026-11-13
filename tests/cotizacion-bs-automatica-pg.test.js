@@ -185,6 +185,44 @@ test('no usar cotización actual para fecha anterior sin tasa histórica y COP r
     assert.equal(solicitudesExteriores,0);
 });
 
+test('COP aplica última tasa vigente sin obligar a actualizarla cada día',async()=>{
+    const guardada=await db.pool.query(`
+        INSERT INTO tasas_cobro(moneda,fecha_vigencia,tasa_por_usd,fuente,creado_por)
+        VALUES ('COP',$1,3800.000000,'Directiva referencia COP',9)
+        RETURNING id_tasa
+    `,[ayer]);
+    const r=await consulta(ids.d,'COP',hoy,repB);
+    assert.equal(r.codigo,200);
+    assert.equal(r.body.monto,'114000.00');
+    assert.equal(r.body.fecha_tasa,ayer);
+    assert.match(r.body.fuente,/Directiva/);
+    assert.equal(guardada.rows.length,1);
+});
+
+test('una tasa histórica solo puede recuperarse de la caché de su propio día',async()=>{
+    const anterior=await consulta(ids.d,'Bs',ayer,repB);
+    assert.equal(anterior.codigo,409);
+    await db.pool.query(`
+        INSERT INTO referencias_cambio_diarias
+            (fecha_consulta,proveedor,fecha_referencia,usd_ves,eur_ves)
+        VALUES ($1,'exchangerate_api',$1,900.000000,1000.000000)
+    `,[ayer]);
+    const cot=await consulta(ids.d,'Bs',ayer,repB);
+    assert.equal(cot.codigo,200);
+    assert.equal(cot.body.monto,'27000.00');
+    const enviado=await enviar(12,ids.d,'27000.00',ayer,repB);
+    assert.equal(enviado.codigo,200);
+    const {rows}=await db.pool.query(`
+        SELECT p.monto,t.fecha_vigencia::text,t.tasa_por_usd
+        FROM pagos p JOIN tasas_cobro t ON t.id_tasa=p.id_tasa_cobro
+        WHERE p.id_obligacion=$1
+    `,[ids.d]);
+    assert.equal(rows[0].monto,'27000.00');
+    assert.equal(rows[0].fecha_vigencia,ayer);
+    assert.equal(rows[0].tasa_por_usd,'900.000000');
+    assert.equal(solicitudesExteriores,0);
+});
+
 test('una referencia no exime los controles de propiedad y fecha futura',async()=>{
     const otro=await consulta(ids.d,'Bs',hoy,repA);
     assert.equal(otro.codigo,403);

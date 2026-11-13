@@ -1,5 +1,16 @@
 # Jaguares — contexto maestro
 
+## Estado vigente — 13 de noviembre de 2026
+
+- **Main:** PR #59 fusionado; paneles Directiva y Representante desplegados. El propietario confirmó reporte de transferencia Bs, tasa automática, comprobantes privados y aprobación reflejada al Representante. Esta validación es manual, no una certificación de ausencia de defectos.
+- **Finanzas:** conceptos nominales USD, anclas manuales, obligaciones por atleta, cotización ExchangeRate-API compartida por día, COP por última tasa manual vigente, snapshot de Bs al reportar, revisión separada. No generar mensualidades masivas ni saldos retroactivos automáticamente.
+- **Protección:** la fecha de un pago determina su tipo de cambio; las obligaciones emitidas conservan importe USD. No borrar pagos históricos. Cloudinary authenticated/roles y Supabase Production compartida con Preview.
+- **PR #60 — rama de consolidación, NO fusionado:** elimina mensajes desactualizados, mejora controles táctiles/lectura de tablas, reutiliza el cliente PostgreSQL al consultar tasas dentro del reporte (evita pedir conexión extra con pool de 3), agrega test concurrente y actualiza guía operativa/técnica. Sin migración ni escrituras Production.
+- **Guía actual:** [GUIA_ESTUDIO_SISTEMA.md](GUIA_ESTUDIO_SISTEMA.md), ahora explica todos los módulos, roles, rutas, seguridad y cálculos vigentes. **No tomar anotaciones históricas de PR siguientes como instrucciones de despliegue actuales**.
+- **Riesgos posteriores, fuera del PR:** conciliación bancaria, emisión periódica supervisada, pagos parciales/anulaciones, auditoría de artefactos binarios y logs versionados, modularización incremental de HTML/CSS largo. Requieren revisión independiente y pruebas, no borrado automático.
+
+## Registro histórico de decisiones (no describe el estado actual del despliegue)
+
 > **PR #59 (13-11-2026, en revisión):** corregida separación entre referencia diaria ExchangeRate-API y tasa que requiere Reportar pago. Bs usa primero tasa publicada exacta por fecha; si falta, la referencia de ese día; GET cotiza sin crear tasa financiera y POST guarda su snapshot en transacción junto al pago (bloqueo contra duplicados concurrentes). No se utiliza tasa de hoy para un pasado sin referencia. COP arrastra última tasa de vigencia hasta reemplazarla. UX de Representante simplifica equivalencia y de Directiva oculta «Ver archivados» cuando no hay inactivos. Sin migración ni escrituras en Production; requiere CI y aprobación. Ver [contrato](COBROS_Y_MENSUALIDADES.md).
 
 > **PR #58 (13-11-2026, rama de revisión):** usuario reportó PR #57 desplegado y cache de referencias funcionando, con COP manual vigente; pide fuente única ExchangeRate-API, eliminar conceptos antiguos sin romper historial y rango de fechas (mes actual hasta fin del siguiente año). Se implementa la consulta única diaria ExchangeRate-API USD/VES y EUR/VES, confirmación Directiva para tasa operativa Bs/USD identificada por fuente/fecha y sin adjudicar certificado BCV al API. Se retira llamada secundaria bcv.today, pero no borra datos existentes. Conceptos nuevos sin uso se borran; utilizados e institucionales se archivan y se pueden restaurar. Rango de tasas validado en UI/API. Sin migración ni escritura de Production; PR y CI pendientes. Ver [contrato](COBROS_Y_MENSUALIDADES.md).

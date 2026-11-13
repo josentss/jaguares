@@ -127,7 +127,7 @@
         guardar.addEventListener('click',async()=>{
             if(enviando)return;
             const nuevoNombre=nombre.value.trim();
-            if(nuevoNombre.length<2||nuevoNombre.length>60||/[<>\\x00-\\x1f]/.test(nuevoNombre)||
+            if(nuevoNombre.length<2||nuevoNombre.length>60||/[<>\x00-\x1f]/.test(nuevoNombre)||
                 !precioValido(precio.value)) {
                 estado('Nombre no válido o precio fuera de USD 0,01–999,99 (máximo 2 decimales).',true);
                 return;

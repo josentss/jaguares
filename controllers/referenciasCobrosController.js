@@ -2,7 +2,7 @@
 
 const db=require('../config/db');
 const {hoyCaracas}=require('../utils/cobrosMensuales');
-const {obtenerReferencias,diasEntre,MAX_EDAD_BCV_DIAS}=require('../utils/referenciasCambio');
+const {obtenerReferencias,diasEntre}=require('../utils/referenciasCambio');
 const ADMIN=new Set(['directiva','admin']);
 
 function autorizado(req,res) {
@@ -20,8 +20,8 @@ function fallo(res,error) {
     });
 }
 
-// El GET nunca publica tasas de cobro: únicamente almacena referencias externas
-// en una tabla independiente, una vez por día/proveedor.
+// GET solo consulta y cachea la referencia de ExchangeRate-API,
+// sin crear ninguna tasa de cobro.
 exports.consultar=async(req,res)=>{
     if(!autorizado(req,res))return;
     try{
@@ -31,12 +31,13 @@ exports.consultar=async(req,res)=>{
     }catch(error){return fallo(res,error);}
 };
 
-// La confirmación escribe en tasas_cobro, que es inmutable por trigger.
-// No confundir referencia comercial de ExchangeRate-API con datos BCV.
-exports.publicarBCV=async(req,res)=>{
+// Publicación explícita de la referencia comercial que Directiva confirmó
+// como tasa operativa del club. El proveedor NO certifica que sea una
+// publicación oficial BCV. Los pagos guardan el id de la tasa inmutable.
+exports.publicarReferencia=async(req,res)=>{
     if(!autorizado(req,res))return;
     if(req.body?.confirmar!==true)return res.status(400).json({
-        success:false,message:'Confirma la tasa BCV antes de publicarla'
+        success:false,message:'Confirma la tasa antes de registrarla'
     });
     const hoy=hoyCaracas();
     let client,committed=false;
@@ -44,30 +45,34 @@ exports.publicarBCV=async(req,res)=>{
         client=await db.pool.connect();
         await client.query('BEGIN');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',
-            ['jaguares:publicar-bcv:'+hoy]);
+            ['jaguares:publicar-exchangerate:'+hoy]);
         const r=await client.query(`
             SELECT fecha_referencia,usd_ves
             FROM referencias_cambio_diarias
-            WHERE proveedor='bcv_republicacion' AND fecha_consulta=$1
+            WHERE proveedor='exchangerate_api' AND fecha_consulta=$1
         `,[hoy]);
-        if(!r.rowCount)return res.status(409).json({
-            success:false,message:'Consulta primero la referencia BCV de hoy'
-        });
-        const ref=r.rows[0];
-        if(diasEntre(ref.fecha_referencia,hoy)<0||
-            diasEntre(ref.fecha_referencia,hoy)>MAX_EDAD_BCV_DIAS){
+        if(!r.rowCount){
             return res.status(409).json({
-                success:false,message:'Referencia desactualizada: no se puede publicar'
+                success:false,message:'Consulta primero ExchangeRate-API para hoy'
             });
         }
-        const fuente='BCV republicado por bcv.today (vigencia '+ref.fecha_referencia+')';
-        // Si ya fue publicada esta referencia exacta, devolverla sin duplicarla.
+        const referencia=r.rows[0];
+        const dias=diasEntre(referencia.fecha_referencia,hoy);
+        if(!Number.isFinite(dias)||dias<0||dias>3) {
+            return res.status(409).json({
+                success:false,message:'La referencia está desactualizada o aún no es válida'
+            });
+        }
+        const fuente='ExchangeRate-API (referencia confirmada por Directiva; fecha '+
+            referencia.fecha_referencia+')';
+        // Dos clics sobre la misma cifra/día devuelven la tasa existente.
         const publicada=await client.query(`
-            SELECT id_tasa,fecha_vigencia,tasa_por_usd,fuente
-            FROM tasas_cobro WHERE moneda='Bs' AND fecha_vigencia=$1
-                AND tasa_por_usd=$2 AND fuente=$3
+            SELECT id_tasa,moneda,fecha_vigencia,tasa_por_usd,fuente
+            FROM tasas_cobro
+            WHERE moneda='Bs' AND fecha_vigencia=$1
+              AND tasa_por_usd=$2 AND fuente=$3
             ORDER BY id_tasa DESC LIMIT 1
-        `,[hoy,ref.usd_ves,fuente]);
+        `,[hoy,referencia.usd_ves,fuente]);
         if(publicada.rowCount){
             await client.query('COMMIT');committed=true;
             return res.json({success:true,tasa:publicada.rows[0],reutilizada:true});
@@ -77,11 +82,13 @@ exports.publicarBCV=async(req,res)=>{
                 (moneda,fecha_vigencia,tasa_por_usd,fuente,creado_por)
             VALUES ('Bs',$1,$2,$3,$4)
             RETURNING id_tasa,moneda,fecha_vigencia,tasa_por_usd,fuente
-        `,[hoy,ref.usd_ves,fuente,req.usuarioId]);
+        `,[hoy,referencia.usd_ves,fuente,req.usuarioId]);
         await client.query('COMMIT');committed=true;
         res.set?.('Cache-Control','no-store');
-        return res.status(201).json({success:true,tasa:guardada.rows[0],reutilizada:false});
-    }catch(error){return fallo(res,error);}
+        return res.status(201).json({
+            success:true,tasa:guardada.rows[0],reutilizada:false
+        });
+    }catch(err){return fallo(res,err);}
     finally{
         if(client){
             if(!committed){

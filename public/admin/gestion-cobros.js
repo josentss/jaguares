@@ -51,7 +51,8 @@
                 'M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3z','M16 5l3 3'],
             guardar: ['M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',
                 'M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7M7 3v4a1 1 0 0 0 1 1h7'],
-            cancelar: ['M18 6 6 18','M6 6l12 12']
+            cancelar: ['M18 6 6 18','M6 6l12 12'],
+            retirar: ['M3 6h18','M8 6V4h8v2','M6 6l1 15h10l1-15','M10 10v7','M14 10v7']
         };
         for(const d of trazos[nombre]) {
             const path=document.createElementNS('http://www.w3.org/2000/svg','path');
@@ -102,14 +103,16 @@
         const editar=botonAccion('editar','Editar '+concepto.nombre);
         const guardar=botonAccion('guardar','Guardar cambios de '+concepto.nombre);
         const cancelar=botonAccion('cancelar','Cancelar edición de '+concepto.nombre);
-        guardar.hidden=true;cancelar.hidden=true;
-        acciones.append(editar,guardar,cancelar);
+        const retirar=botonAccion('retirar','Retirar concepto '+concepto.nombre);
+        guardar.hidden=true;cancelar.hidden=true;retirar.hidden=true;
+        acciones.append(editar,guardar,cancelar,retirar);
         celda(tr,acciones).className='cobros-columna-acciones';
 
         function edicion(activa) {
             for(const input of [nombre,precio,activo])input.hidden=!activa;
             for(const vista of [nombreVista,precioVista,activoVista])vista.hidden=activa;
             editar.hidden=activa;guardar.hidden=!activa;cancelar.hidden=!activa;
+            retirar.hidden=!activa;
             if(!activa) {
                 nombre.value=concepto.nombre;
                 precio.value=numero(concepto.monto_referencia_usd);
@@ -124,6 +127,21 @@
             edicion(true);cerrarEdicion=finalizar;nombre.focus();
         });
         cancelar.addEventListener('click',()=>{if(!enviando)finalizar();});
+        retirar.addEventListener('click',async()=>{
+            if(enviando)return;
+            if(!root.confirm('¿Retirar «'+concepto.nombre+'» del catálogo? '+
+                'Si tiene cargos anteriores se archivará y conservará su historial. '+
+                'Los conceptos institucionales también se archivan.'))return;
+            retirar.disabled=true;guardar.disabled=true;cancelar.disabled=true;
+            const exito=await escribir('/api/directiva/cobros/catalogo/'+
+                encodeURIComponent(concepto.codigo),{method:'DELETE'},'Concepto retirado');
+            retirar.disabled=false;guardar.disabled=false;cancelar.disabled=false;
+            if(exito){
+                cerrarEdicion=null;
+                await cargar();
+                estado('Concepto retirado. Puedes mostrar los archivados para reactivarlos.');
+            }
+        });
         guardar.addEventListener('click',async()=>{
             if(enviando)return;
             const nuevoNombre=nombre.value.trim();
@@ -158,8 +176,10 @@
         const tabla=el('gestion-cobros-conceptos');
         cerrarEdicion=null;
         tabla.replaceChildren();
-        for (const concepto of catalogo) tabla.append(editarFila(concepto));
-        if (!catalogo.length) {
+        const visibles=catalogo.filter(x=>x.activo||
+            el('gestion-conceptos-archivados')?.checked);
+        for (const concepto of visibles) tabla.append(editarFila(concepto));
+        if (!visibles.length) {
             const tr=document.createElement('tr');
             celda(tr,'Sin conceptos').colSpan=4;
             tabla.append(tr);
@@ -197,25 +217,25 @@
 
     let referencias = null, referenciasCargando = false;
     function mostrarReferencias(datos) {
-        const formatear = v => Number(v).toLocaleString('es-VE',{
+        const formatear=v=>Number(v).toLocaleString('es-VE',{
             minimumFractionDigits:2,maximumFractionDigits:6
         });
-        const bcv=datos.bcv, mercado=datos.mercado;
-        el('gestion-bcv-usd').textContent=bcv?formatear(bcv.usd_ves)+' Bs':'—';
-        el('gestion-bcv-eur').textContent=bcv?formatear(bcv.eur_ves)+' Bs':'—';
-        el('gestion-mercado-usd').textContent=mercado?
-            formatear(mercado.usd_ves)+' Bs':'—';
-        el('gestion-bcv-vigencia').textContent=bcv?
-            'Vigente desde '+String(bcv.fecha_referencia).slice(0,10)+' · fuente bcv.today':
-            'Fuente secundaria: bcv.today';
-        el('gestion-bcv-registrar').disabled=!bcv;
-        el('gestion-referencias-cache').textContent=bcv?.desde_cache&&
-            (!mercado||mercado.desde_cache)?'Desde caché del día':'Consulta registrada hoy';
-        const errores=[datos.avisos?.bcv,datos.avisos?.mercado].filter(Boolean);
+        const principal=datos.principal||datos.mercado;
+        el('gestion-mercado-usd').textContent=principal?
+            formatear(principal.usd_ves)+' Bs':'—';
+        el('gestion-mercado-eur').textContent=principal?
+            formatear(principal.eur_ves)+' Bs':'—';
+        el('gestion-mercado-vigencia').textContent=principal?
+            'Fecha del proveedor: '+String(principal.fecha_referencia).slice(0,10):
+            'Sin cotización vigente';
+        el('gestion-referencia-registrar').disabled=!principal;
+        el('gestion-referencias-cache').textContent=principal?
+            (principal.desde_cache?'Desde caché del día':'Cotización guardada hoy'):'';
         const aviso=el('gestion-referencias-estado');
-        aviso.textContent=errores.join(' ');
-        aviso.dataset.error=String(errores.length>0);
+        aviso.textContent=datos.avisos?.principal||'';
+        aviso.dataset.error=String(Boolean(datos.avisos?.principal));
     }
+
     async function consultarReferencias() {
         if(!habilitado||referenciasCargando)return;
         referenciasCargando=true;
@@ -232,7 +252,7 @@
         }catch(error){
             aviso.textContent=error.message||'No hay referencias disponibles.';
             aviso.dataset.error='true';
-            el('gestion-bcv-registrar').disabled=true;
+            el('gestion-referencia-registrar').disabled=true;
         }finally{
             referenciasCargando=false;
             el('gestion-referencias-consultar').disabled=false;
@@ -306,26 +326,30 @@
         el('gestion-cargo-vence').min=hoy;
         el('gestion-cargo-limite').value=hoy;
         el('gestion-cargo-limite').min=hoy;
+        const rangoDesde=mes+'-01';
+        const rangoHasta=String(Number(hoy.slice(0,4))+1)+'-12-31';
         el('gestion-tasa-fecha').value=hoy;
-        el('gestion-tasa-fecha').max=hoy;
+        el('gestion-tasa-fecha').min=rangoDesde;
+        el('gestion-tasa-fecha').max=rangoHasta;
         el('cobros-atleta').addEventListener('change',pintar);
         el('gestion-cobros-recargar').addEventListener('click',cargar);
+        el('gestion-conceptos-archivados').addEventListener('change',pintar);
         el('gestion-seccion-tasas').addEventListener('toggle',event=>{
             if(event.target.open&&!referencias)consultarReferencias();
         });
         el('gestion-referencias-consultar').addEventListener('click',consultarReferencias);
-        el('gestion-bcv-registrar').addEventListener('click',async()=>{
-            const referencia=referencias?.bcv;
+        el('gestion-referencia-registrar').addEventListener('click',async()=>{
+            const referencia=referencias?.principal||referencias?.mercado;
             if(!referencia||enviando)return;
             const hoy=hoyCaracas();
             const precio=Number(referencia.usd_ves).toFixed(6);
-            if(!root.confirm('¿Registrar '+precio+' Bs por USD para hoy ('+hoy+')?\\n'+
-                'Fuente: datos BCV republicados por bcv.today; vigencia '+
+            if(!root.confirm('¿Registrar '+precio+' Bs por USD para '+hoy+'?\n'+
+                'Fuente: ExchangeRate-API, actualización '+
                 String(referencia.fecha_referencia).slice(0,10)+
-                '.\\nUna vez registrada, la tasa queda inmutable.'))return;
-            const listo=await terminar('/api/directiva/cobros/tasas/publicar-bcv',
-                {confirmar:true},'Referencia BCV registrada para cobros');
-            if(listo)el('gestion-bcv-registrar').disabled=true;
+                '.\nLa tasa quedará registrada e inmutable.'))return;
+            const listo=await terminar('/api/directiva/cobros/tasas/publicar-referencia',
+                {confirmar:true},'Tasa ExchangeRate-API registrada');
+            if(listo)el('gestion-referencia-registrar').disabled=true;
         });
 
         el('gestion-cobros-nuevo').addEventListener('submit',async(e)=>{
@@ -380,6 +404,10 @@
                 tasa_por_usd:el('gestion-tasa-valor').value,
                 fuente:el('gestion-tasa-fuente').value.trim()
             };
+            if(body.fecha_vigencia < rangoDesde || body.fecha_vigencia > rangoHasta) {
+                estado('Fecha permitida: desde el mes actual hasta diciembre del próximo año.',true);
+                return;
+            }
             if(!root.confirm(`¿Registrar ${body.tasa_por_usd} ${body.moneda} por USD para ${body.fecha_vigencia}?\nFuente: ${body.fuente}`))return;
             if(await terminar('/api/directiva/cobros/tasas',body,'Tasa registrada')) {
                 el('gestion-tasa-valor').value='';

@@ -149,6 +149,14 @@ Una referencia consultada **no constituye una tasa oficial del club**. La Direct
 
 Este PR requiere ejecutar manualmente `migrations/2026-11-13_referencias_cambio_cache.sql` previa verificación y respaldo. Revisar detalles y preflight en [COBROS_Y_MENSUALIDADES.md](COBROS_Y_MENSUALIDADES.md).
 
+### Gestión de tasas y archivo de conceptos (PR #58)
+
+En Directiva, ExchangeRate-API es ahora el proveedor principal de referencia para bolívares por 1 USD y por 1 EUR. La consulta se guarda una sola vez al día; el endpoint público del proveedor no incluye certificación de origen BCV, por lo que la interfaz conserva su nombre y fecha. La Directiva **confirma la tasa** antes de crear una fila inmutable en `tasas_cobro`. El valor EUR no habilita reportes en euros.
+
+El calendario manual de tasas limita el intervalo al primer día del mes actual y al último día del año próximo en `America/Caracas`, tanto desde navegador como backend.
+
+Cada concepto tiene edición contextual. Retirar un concepto nuevo sin uso lo borra; retirar uno con cargos lo **archiva** para preservar relaciones e historiales. Mostrar archivados permite reactivarlo. Los cinco conceptos institucionales jamás se borran definitivamente. Evitar ejecutar SQL `DELETE` manual sobre conceptos relacionados con pagos.
+
 ## 9. Próximas decisiones funcionales
 
 El reporte **vinculado a `id_obligacion`** ya existe desde PR #54, y este PR #55 introduce el catálogo editable, la elección de cargos asignados y montos fijos cotizados por moneda. El Estado de cuenta sigue siendo **una consulta**, no un formulario de envío.

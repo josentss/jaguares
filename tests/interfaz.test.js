@@ -875,3 +875,24 @@ for (const dispositivo of [
         } finally { await browser.close(); }
     });
 }
+
+test('directiva: un estado inesperado no se transforma en atributos HTML', async () => {
+    const browser = await chromium.launch({headless:true});
+    const page = await browser.newPage({viewport:{width:1280,height:800}});
+    try {
+        await page.route('https://**/*', route => route.abort());
+        const estado = 'espera" data-inyeccion="fixture';
+        await page.route('**/api/directiva/auditoria', async route => {
+            const response = await route.fetch();
+            const data = await response.json();
+            data.atletas[0].estado = estado;
+            await route.fulfill({response,json:data});
+        });
+        await page.goto(baseUrl + '/admin/panel-directiva.html');
+        const fila = page.locator('#body-atletas tr').first();
+        await page.waitForFunction(() => document.querySelector('#body-atletas tr[data-estado]'));
+        assert.equal(await fila.getAttribute('data-estado'), estado);
+        assert.equal(await fila.getAttribute('data-inyeccion'), null);
+        assert.equal(await page.locator('#body-atletas [data-inyeccion]').count(), 0);
+    } finally { await browser.close(); }
+});

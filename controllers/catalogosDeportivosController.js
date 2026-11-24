@@ -49,7 +49,7 @@ exports.listar = async (_req, res) => {
 };
 
 exports.crear = async (req, res) => {
-    const tipo = TIPOS[req.params.tipo];
+    const tipo = Object.hasOwn(TIPOS, req.params.tipo) ? TIPOS[req.params.tipo] : null;
     if (!tipo) return res.status(404).json({ success: false, message: 'Catálogo no encontrado' });
     const nombre = nombreValido(req.body?.nombre);
     if (!nombre) return res.status(400).json({ success: false,
@@ -76,7 +76,7 @@ exports.crear = async (req, res) => {
 };
 
 exports.renombrar = async (req, res) => {
-    const tipo = TIPOS[req.params.tipo];
+    const tipo = Object.hasOwn(TIPOS, req.params.tipo) ? TIPOS[req.params.tipo] : null;
     if (!tipo) return res.status(404).json({ success: false, message: 'Catálogo no encontrado' });
     if (!esEnteroPositivo(req.params.id)) {
         return res.status(400).json({ success: false, message: 'Identificador no válido' });

@@ -40,9 +40,11 @@ test.before(async()=>{
         }
         if(u.startsWith('https://v6.exchangerate-api.com/')){
             mercadoLlamadas++;
-            return fakeResponse({result:'success',base_code:'USD',
-                conversion_rates:{VES:970.12,EUR:0.85},
-                time_last_update_unix:Date.parse(hoy+'T12:00:00Z')/1000});
+            const base=u.endsWith('/USD')?'USD':u.endsWith('/EUR')?'EUR':null;
+            assert.ok(base);
+            return fakeResponse({result:'success',base_code:base,
+                conversion_rates:base==='USD'?{VES:970.12,EUR:0.85}:{VES:1145.67},
+                time_last_update_unix:Math.floor(Date.now()/1000)});
         }
         throw new Error('URL no autorizada en test '+u);
     };
@@ -85,15 +87,15 @@ test('caché persistente impide nuevas peticiones al repetir el mismo día',asyn
     const primera=await invocar(controller.consultar,admin);
     assert.equal(primera.codigo,200);
     assert.equal(primera.body.principal.usd_ves,'970.120000');
-    assert.equal(primera.body.principal.eur_ves,'1141.317647');
+    assert.equal(primera.body.principal.eur_ves,'1145.670000');
     assert.equal(primera.body.principal.desde_cache,false);
     assert.equal(bcvLlamadas,0);
-    assert.equal(mercadoLlamadas,1);
+    assert.equal(mercadoLlamadas,2);
     const segunda=await invocar(controller.consultar,admin);
     assert.equal(segunda.codigo,200);
     assert.equal(segunda.body.principal.desde_cache,true);
     assert.equal(bcvLlamadas,0);
-    assert.equal(mercadoLlamadas,1);
+    assert.equal(mercadoLlamadas,2);
     const {rows}=await db.pool.query('SELECT proveedor FROM referencias_cambio_diarias');
     assert.deepEqual(rows.map(x=>x.proveedor),['exchangerate_api']);
 });
@@ -118,7 +120,7 @@ test('ExchangeRate-API solo se publica tras confirmar y sin duplicados',async()=
     assert.equal(repetido.body.reutilizada,true);
     assert.equal((await db.pool.query('SELECT * FROM tasas_cobro')).rowCount,1);
     assert.equal(bcvLlamadas,0);
-    assert.equal(mercadoLlamadas,1);
+    assert.equal(mercadoLlamadas,2);
 });
 
 test('precios inválidos se rechazan y constraint DB protege el catálogo',async()=>{
@@ -145,4 +147,24 @@ test('fuente de la tasa publicada es explícita y no se afirma BCV oficial',asyn
     assert.equal(rows.length,1);
     assert.match(rows[0].fuente,/ExchangeRate-API/);
     assert.doesNotMatch(rows[0].fuente,/BCV/);
+});
+
+test('la actualización UTC del 24 corresponde al 23 en Caracas y el EUR es directo',()=>{
+    const ahora=Date.parse('2026-11-24T02:20:00Z');
+    const data=(base,VES,segundos=1795478402)=>({
+        result:'success',base_code:base,time_last_update_unix:segundos,
+        conversion_rates:{VES}
+    });
+    assert.deepEqual(servicio.interpretarCotizacion(data('USD',919.8227),'USD','2026-11-23',ahora),
+        {fecha:'2026-11-23',ves:'919.822700'});
+    assert.deepEqual(servicio.interpretarCotizacion(data('EUR',1011.1795),'EUR','2026-11-23',ahora),
+        {fecha:'2026-11-23',ves:'1011.179500'});
+    assert.throws(()=>servicio.interpretarCotizacion(data('EUR',0),'EUR','2026-11-23',ahora),
+        {code:'REFERENCIA_DATOS_INVALIDOS'});
+    assert.throws(()=>servicio.interpretarCotizacion(data('USD',100,Math.floor(ahora/1000)+3600),
+        'USD','2026-11-23',ahora),{code:'REFERENCIA_FECHA_INVALIDA'});
+    assert.throws(()=>servicio.interpretarCotizacion(data('USD',100,1795478402-5*86400),
+        'USD','2026-11-23',ahora),{code:'REFERENCIA_FECHA_DESACTUALIZADA'});
+    assert.throws(()=>servicio.interpretarCotizacion(data('EUR',100),'USD','2026-11-23',ahora),
+        {code:'REFERENCIA_DATOS_INVALIDOS'});
 });

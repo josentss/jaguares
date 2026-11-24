@@ -16,13 +16,13 @@ const originalKey=process.env.EXCHANGERATE_API_KEY;
 test.before(async()=>{
     process.env.EXCHANGERATE_API_KEY='sintetica-no-real';
     global.fetch=async(url)=>{
-        assert.ok(String(url).startsWith(
-            'https://v6.exchangerate-api.com/v6/sintetica-no-real/latest/USD'));
+        assert.match(String(url),/^https:\/\/v6\.exchangerate-api\.com\/v6\/sintetica-no-real\/latest\/(USD|EUR)$/);
+        const base=String(url).endsWith('/USD')?'USD':'EUR';
         llamadas++;
         return {ok:true,json:async()=>({
-            result:'success',base_code:'USD',
-            conversion_rates:{VES:915.25,EUR:0.91},
-            time_last_update_unix:Date.parse(hoy+'T12:00:00Z')/1000
+            result:'success',base_code:base,
+            conversion_rates:base==='USD'?{VES:915.25,EUR:0.91}:{VES:1008.12},
+            time_last_update_unix:Math.floor(Date.now()/1000)
         })};
     };
     await db.pool.query(`CREATE SCHEMA ${schema}`);
@@ -61,7 +61,7 @@ test('tres transacciones comparten pool y solicitan la referencia solo una vez',
             return ref;
         }));
         assert.ok(referencias.every(x=>x.usd_ves==='915.250000'));
-        assert.equal(llamadas,1);
+        assert.equal(llamadas,2);
         // Usar uno de los tres clientes aún prestados: pedir un cuarto
         // bloquearía artificialmente la prueba aunque el código funcione.
         const {rows}=await clientes[0].query(

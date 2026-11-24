@@ -424,20 +424,23 @@
                 </div>
                 <div class="card-status card-money">
                     <h3>Pagos aprobados (USD)</h3>
-                    <p id="stat-total-usd">0.00 $</p>
+                    <p id="stat-total-usd">—</p>
+                    <small id="stat-estimado-usd"></small>
                 </div>
                 <div class="card-status card-money">
                     <h3>Pagos aprobados (Bs)</h3>
-                    <p id="stat-total-bs">0.00 Bs</p>
+                    <p id="stat-total-bs">—</p>
+                    <small id="stat-estimado-bs"></small>
                 </div>
                 <div class="card-status card-rate">
                     <h3>Bs por USD · referencia de mercado</h3>
                     <p id="stat-tasa-bcv">—</p>
+                    <small id="stat-tasa-eur"></small>
                     <small id="stat-tasa-fecha">Sin cotización</small>
                 </div>
             </div>
-            <p class="dashboard-note">
-                Solo pagos aprobados. Los equivalentes se estiman con la referencia actual.
+            <p class="dashboard-note" id="stat-nota-pagos">
+                Solo pagos aprobados en su moneda original.
             </p>
         </section>
 
@@ -1856,49 +1859,56 @@
         async function cargarAuditoria() {
             try {
                 const res = await apiFetch('/api/directiva/auditoria');
+                if (!res.ok) throw new Error('Auditoría no disponible');
                 const data = await res.json();
+                if (!data.metricas || !Array.isArray(data.pagos) || !Array.isArray(data.atletas))
+                    throw new Error('Respuesta de auditoría inválida');
 
                 document.getElementById('stat-activos').textContent = data.metricas.activos || 0;
                 document.getElementById('stat-espera').textContent = data.metricas.espera || 0;
                 document.getElementById('stat-pendientes').textContent = data.metricas.pagos_pendientes || 0;
 
-                let acumuladoPuroUSD = 0;
-                let acumuladoPuroBs = 0;
-
-                // Referencia de mercado únicamente informativa; nunca tasa BCV.
-                const tasaBCV = Number(data.tasa_bcv);
-                const tasaDisponible = Number.isFinite(tasaBCV) && tasaBCV > 0;
+                // Los ingresos reales se muestran incluso sin servicio cambiario.
+                // No convertir COP con una tasa de mercado ni modificar pagos.
+                const totales = {USD:0, BS:0, COP:0};
+                let pagosCOP = 0;
+                for (const pago of data.pagos) {
+                    if ((pago.estado_pago || '').toLowerCase() !== 'aprobado') continue;
+                    const moneda = String(pago.moneda || '').trim().toUpperCase();
+                    const clave = moneda === '$' ? 'USD' : moneda === 'VES' ? 'BS' : moneda;
+                    const centavos = Math.round(Number(pago.monto) * 100);
+                    if (!Object.hasOwn(totales,clave) || pago.monto == null ||
+                        !Number.isSafeInteger(centavos) || centavos < 0) continue;
+                    totales[clave] += centavos;
+                    if (clave === 'COP') pagosCOP++;
+                }
+                const usd = totales.USD / 100;
+                const bs = totales.BS / 100;
+                const tasaUSD = Number(data.tasa_bcv);
+                const tasaEUR = Number(data.tasa_eur);
+                const tasaDisponible = Number.isFinite(tasaUSD) && tasaUSD > 0;
+                const euroDisponible = Number.isFinite(tasaEUR) && tasaEUR > 0;
+                document.getElementById('stat-total-usd').textContent = usd.toFixed(2) + ' $';
+                document.getElementById('stat-total-bs').textContent = bs.toFixed(2) + ' Bs';
                 document.getElementById('stat-tasa-bcv').textContent =
-                    tasaDisponible ? `${tasaBCV.toFixed(2)} Bs/USD` : 'No disponible';
-                document.getElementById('stat-tasa-fecha').textContent = data.tasa_fecha
+                    tasaDisponible ? tasaUSD.toFixed(2) + ' Bs/USD' : 'No disponible';
+                document.getElementById('stat-tasa-eur').textContent =
+                    euroDisponible ? tasaEUR.toFixed(2) + ' Bs/EUR' : '';
+                document.getElementById('stat-tasa-fecha').textContent = tasaDisponible && data.tasa_fecha
                     ? 'ExchangeRate-API · ' + String(data.tasa_fecha).slice(0,10)
                     : 'Sin cotización vigente';
 
-                if (data.pagos && data.pagos.length > 0) {
-                    data.pagos.forEach(p => {
-                        if ((p.estado_pago || '').toLowerCase() === 'aprobado') {
-                            const montoNum = parseFloat(p.monto) || 0;
-                            const monedaStr = (p.moneda || '').toUpperCase();
-
-                            if (monedaStr === 'USD' || monedaStr === '$') {
-                                acumuladoPuroUSD += montoNum;
-                            } else if (monedaStr === 'BS' || monedaStr === 'VES') {
-                                acumuladoPuroBs += montoNum;
-                            }
-                        }
-                    });
-                }
-
-                // Equivalencias estimadas con tasa de mercado actual, no saldo
-                // contable exacto de operaciones históricas.
-                const granTotalGlobalUSD = tasaDisponible ?
-                    acumuladoPuroUSD + (acumuladoPuroBs / tasaBCV) : null;
-                const granTotalGlobalBs = tasaDisponible ?
-                    acumuladoPuroBs + (acumuladoPuroUSD * tasaBCV) : null;
-                document.getElementById('stat-total-usd').textContent =
-                    tasaDisponible ? `${granTotalGlobalUSD.toFixed(2)} $ (est.)` : '—';
-                document.getElementById('stat-total-bs').textContent =
-                    tasaDisponible ? `${granTotalGlobalBs.toFixed(2)} Bs (est.)` : '—';
+                // La equivalencia USD/Bs es informativa y se distingue del
+                // dinero efectivamente recibido; no es un saldo histórico.
+                document.getElementById('stat-estimado-usd').textContent = tasaDisponible
+                    ? 'Equiv. USD/Bs: ' + (usd + bs / tasaUSD).toFixed(2) + ' $' : '';
+                document.getElementById('stat-estimado-bs').textContent = tasaDisponible
+                    ? 'Equiv. USD/Bs: ' + (bs + usd * tasaUSD).toFixed(2) + ' Bs' : '';
+                document.getElementById('stat-nota-pagos').textContent =
+                    'Solo pagos aprobados en su moneda original.' +
+                    (pagosCOP ? ' Pagos aprobados (COP): ' + (totales.COP / 100).toFixed(2) + ' COP.' : '') +
+                    (tasaDisponible ? ' Equivalencias estimadas solo entre USD y Bs.' :
+                        ' Equivalencias no disponibles.');
 
                 const bodyAtletas = document.getElementById('body-atletas');
                 bodyAtletas.innerHTML = data.atletas.length === 0
@@ -2022,6 +2032,11 @@
                 aplicarFiltrosAtletas();
                 aplicarFiltrosPagos();
             } catch (err) {
+                for (const id of ['stat-activos','stat-espera','stat-pendientes','stat-total-usd','stat-total-bs','stat-tasa-bcv'])
+                    document.getElementById(id).textContent = '—';
+                for (const id of ['stat-estimado-usd','stat-estimado-bs','stat-tasa-eur','stat-tasa-fecha'])
+                    document.getElementById(id).textContent = '';
+                document.getElementById('stat-nota-pagos').textContent = 'No se pudo consultar la auditoría.';
                 showToast('Error al cargar datos', 'error');
                 console.error(err);
             }

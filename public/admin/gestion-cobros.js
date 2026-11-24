@@ -231,7 +231,7 @@
         el('gestion-mercado-eur').textContent=principal?
             formatear(principal.eur_ves)+' Bs':'—';
         el('gestion-mercado-vigencia').textContent=principal?
-            'Fecha del proveedor: '+String(principal.fecha_referencia).slice(0,10):
+            'Fecha de referencia (Caracas): '+String(principal.fecha_referencia).slice(0,10):
             'Sin cotización vigente';
         el('gestion-referencia-registrar').disabled=!principal;
         el('gestion-referencias-cache').textContent=principal?

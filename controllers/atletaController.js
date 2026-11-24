@@ -288,7 +288,7 @@ const COLUMNAS_DOCUMENTO = Object.freeze({
 
 exports.abrirDocumentoAtleta = (req, res) => {
     const { id, tipo } = req.params;
-    const columna = COLUMNAS_DOCUMENTO[tipo];
+    const columna = Object.hasOwn(COLUMNAS_DOCUMENTO, tipo) ? COLUMNAS_DOCUMENTO[tipo] : null;
     if (!esEnteroPositivo(id) || !columna) {
         return res.status(400).json({ success: false, message: 'Documento no válido' });
     }

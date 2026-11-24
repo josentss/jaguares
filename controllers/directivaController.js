@@ -11,12 +11,12 @@ const { obtenerReferencia } = require('../utils/referenciasCambio');
 async function obtenerTasaMercado() {
     try {
         const ref=await obtenerReferencia('exchangerate_api');
-        return { tasa_bcv:Number(ref.usd_ves),
+        return { tasa_bcv:Number(ref.usd_ves), tasa_eur:Number(ref.eur_ves),
             tasa_fecha:ref.fecha_referencia,
             tasa_fuente:'ExchangeRate-API (referencial, no BCV)' };
     } catch (err) {
         console.warn('REFERENCIA_MERCADO_NO_DISPONIBLE',err.code||'INTERNAL');
-        return { tasa_bcv:null,tasa_fecha:null,
+        return { tasa_bcv:null,tasa_eur:null,tasa_fecha:null,
             tasa_fuente:'ExchangeRate-API (no disponible)' };
     }
 }
@@ -25,7 +25,7 @@ async function obtenerTasaMercado() {
 exports.obtenerAuditoria = async (req, res) => {
     try { if (req.logAdmin) req.logAdmin({ action: 'obtenerAuditoria_start' }); } catch(e) { console.error('logAdmin error', e); }
 
-    const { tasa_bcv, tasa_fecha, tasa_fuente } = await obtenerTasaMercado();
+    const { tasa_bcv, tasa_eur, tasa_fecha, tasa_fuente } = await obtenerTasaMercado();
 
     const qActivos = "SELECT COUNT(*) AS activos FROM atletas WHERE estado = 'activo'";
     const qEspera = "SELECT COUNT(*) AS espera FROM atletas WHERE estado = 'espera'";
@@ -95,6 +95,7 @@ exports.obtenerAuditoria = async (req, res) => {
                                 pagos_pendientes: resPendientes[0]?.pendientes || 0
                             },
                             tasa_bcv,
+                            tasa_eur,
                             tasa_fecha,
                             tasa_fuente,
                             atletas: listaAtletas.map(a => ({ ...a, clasificacion: clasificar(a.fecha_nac) })),

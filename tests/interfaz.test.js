@@ -896,3 +896,41 @@ test('directiva: un estado inesperado no se transforma en atributos HTML', async
         assert.equal(await page.locator('#body-atletas [data-inyeccion]').count(), 0);
     } finally { await browser.close(); }
 });
+
+test('Directiva: ingresos por moneda visibles aunque la referencia falle', async () => {
+    const browser=await chromium.launch({headless:true});
+    try {
+        const page=await browser.newPage({viewport:{width:1280,height:800}});
+        await page.route('https://**/*',r=>r.abort());
+        const respuesta={
+            metricas:{activos:0,espera:0,pagos_pendientes:1},
+            tasa_bcv:null,tasa_eur:null,tasa_fecha:null,atletas:[],
+            pagos:[
+                {id_pago:1,estado_pago:'aprobado',moneda:'USD',monto:'56.00'},
+                {id_pago:2,estado_pago:'aprobado',moneda:'Bs',monto:'213674.36'},
+                {id_pago:3,estado_pago:'aprobado',moneda:'COP',monto:'38000'},
+                {id_pago:4,estado_pago:'pendiente',moneda:'USD',monto:'30'},
+                {id_pago:5,estado_pago:'rechazado',moneda:'Bs',monto:'10000'}
+            ]
+        };
+        await page.route('**/api/directiva/auditoria',r=>r.fulfill({json:respuesta}));
+        await page.goto(baseUrl+'/admin/panel-directiva.html');
+        await page.waitForFunction(()=>document.getElementById('stat-total-usd')?.textContent==='56.00 $');
+        assert.equal(await page.locator('#stat-total-bs').textContent(),'213674.36 Bs');
+        assert.equal(await page.locator('#stat-tasa-bcv').textContent(),'No disponible');
+        assert.equal(await page.locator('#stat-estimado-usd').textContent(),'');
+        assert.match(await page.locator('#stat-nota-pagos').textContent(),/38000\.00 COP/);
+        respuesta.tasa_bcv=919.8227;
+        respuesta.tasa_eur=1011.1795;
+        respuesta.tasa_fecha='2026-11-23';
+        await page.reload();
+        await page.waitForFunction(()=>document.getElementById('stat-tasa-eur')?.textContent==='1011.18 Bs/EUR');
+        assert.equal(await page.locator('#stat-total-usd').textContent(),'56.00 $');
+        assert.equal(await page.locator('#stat-total-bs').textContent(),'213674.36 Bs');
+        assert.match(await page.locator('#stat-estimado-usd').textContent(),/Equiv\. USD\/Bs:/);
+        respuesta.pagos=[];
+        await page.reload();
+        await page.waitForFunction(()=>document.getElementById('stat-total-usd')?.textContent==='0.00 $');
+        assert.equal(await page.locator('#stat-total-bs').textContent(),'0.00 Bs');
+    } finally {await browser.close();}
+});

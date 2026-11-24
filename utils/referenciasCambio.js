@@ -21,38 +21,74 @@ function validarValor(n) {
 }
 function numeroSQL(n) { return Number(n).toFixed(6); }
 
-async function solicitar(url) {
-    const respuesta=await fetch(url,{
-        method:'GET',
-        signal:AbortSignal.timeout(4500),
-        headers:{Accept:'application/json'},
-        redirect:'error'
-    });
-    if (!respuesta.ok) throw new Error('HTTP '+respuesta.status);
-    const contenido=await respuesta.json();
-    if (!contenido || typeof contenido!=='object') throw new Error('Respuesta no válida');
+// Códigos cerrados: los logs nunca incluyen URLs, claves ni respuestas crudas.
+function fallo(code) {
+    return Object.assign(new Error(code), {code});
+}
+
+const ERRORES_API = new Map([
+    ['invalid-key','REFERENCIA_CLAVE_INVALIDA'],
+    ['inactive-account','REFERENCIA_CUENTA_INACTIVA'],
+    ['quota-reached','REFERENCIA_CUOTA_AGOTADA'],
+    ['unsupported-code','REFERENCIA_MONEDA_NO_SOPORTADA'],
+    ['malformed-request','REFERENCIA_SOLICITUD_INVALIDA']
+]);
+
+async function solicitar(base, key) {
+    let respuesta;
+    try {
+        respuesta=await fetch('https://v6.exchangerate-api.com/v6/'+
+            encodeURIComponent(key)+'/latest/'+base,{
+            method:'GET',signal:AbortSignal.timeout(4500),
+            headers:{Accept:'application/json'},redirect:'error'
+        });
+    } catch (error) {
+        throw fallo(['TimeoutError','AbortError'].includes(error?.name)?
+            'REFERENCIA_TIMEOUT':'REFERENCIA_RED');
+    }
+    let contenido;
+    try { contenido=await respuesta.json(); }
+    catch { throw fallo('REFERENCIA_JSON_INVALIDO'); }
+    if(contenido?.result==='error')
+        throw fallo(ERRORES_API.get(contenido['error-type'])||'REFERENCIA_PROVEEDOR');
+    if(!respuesta.ok)
+        throw fallo(respuesta.status===429?'REFERENCIA_CUOTA_AGOTADA':'REFERENCIA_HTTP');
     return contenido;
 }
 
+// El proveedor entrega un instante UTC, no una fecha civil venezolana.
+// Normalizar ambas bases a Caracas antes de comparar con el día de cobro.
+function interpretarCotizacion(data, base, hoy, ahora=Date.now()) {
+    if(data?.result!=='success'||data.base_code!==base||
+        !validarValor(data.conversion_rates?.VES)) {
+        throw fallo('REFERENCIA_DATOS_INVALIDOS');
+    }
+    const segundos=data.time_last_update_unix;
+    const instante=segundos*1000;
+    if(!Number.isSafeInteger(segundos)||segundos<=0||
+        !Number.isFinite(new Date(instante).getTime())||instante>ahora+60000)
+        throw fallo('REFERENCIA_FECHA_INVALIDA');
+    const fecha=hoyCaracas(new Date(instante));
+    const antiguedad=diasEntre(fecha,hoy);
+    if(!Number.isFinite(antiguedad)||antiguedad<0||antiguedad>3)
+        throw fallo('REFERENCIA_FECHA_DESACTUALIZADA');
+    return {fecha,ves:numeroSQL(data.conversion_rates.VES)};
+}
+
 async function descargar(hoy) {
-    const key=process.env.EXCHANGERATE_API_KEY;
-    if(!key) throw new Error('ExchangeRate-API no configurada');
-    const data=await solicitar('https://v6.exchangerate-api.com/v6/'+
-        encodeURIComponent(key)+'/latest/USD');
-    const ves=data.conversion_rates?.VES;
-    const eur=data.conversion_rates?.EUR;
-    if(data.result!=='success'||data.base_code && data.base_code!=='USD' ||
-        !validarValor(ves)||!validarValor(eur)||!validarValor(ves/eur)) {
-        throw new Error('Cotización referencial no válida');
-    }
-    let fecha=hoy;
-    if(Number.isSafeInteger(data.time_last_update_unix)) {
-        fecha=new Date(data.time_last_update_unix*1000).toISOString().slice(0,10);
-        if(diasEntre(fecha,hoy)<0||diasEntre(fecha,hoy)>3)
-            throw new Error('Cotización referencial desactualizada');
-    }
-    return {fecha_referencia:fecha,
-        usd_ves:numeroSQL(ves),eur_ves:numeroSQL(ves/eur)};
+    const key=(process.env.EXCHANGERATE_API_KEY||'').trim();
+    if(!key) throw fallo('REFERENCIA_CLAVE_NO_CONFIGURADA');
+    // Ambos valores son directos; no reconstruir EUR con una tasa cruzada.
+    // Conservar la fila de caché como una unidad coherente y no guardar
+    // resultados incompletos ni modificar las tasas de cobro publicadas.
+    const [dataUSD,dataEUR]=await Promise.all([
+        solicitar('USD',key),solicitar('EUR',key)
+    ]);
+    const ahora=Date.now();
+    const usd=interpretarCotizacion(dataUSD,'USD',hoy,ahora);
+    const eur=interpretarCotizacion(dataEUR,'EUR',hoy,ahora);
+    if(usd.fecha!==eur.fecha)throw fallo('REFERENCIA_FECHAS_INCONSISTENTES');
+    return {fecha_referencia:usd.fecha,usd_ves:usd.ves,eur_ves:eur.ves};
 }
 
 // Una transacción con advisory-lock evita llamadas simultáneas por la misma
@@ -118,6 +154,7 @@ async function obtenerReferencias(hoy=hoyCaracas()) {
             avisos:{principal:null}
         };
     } catch(err) {
+        console.warn('REFERENCIAS_NO_DISPONIBLES',err.code||'INTERNAL');
         return {
             fecha_consulta:hoy,
             principal:null,
@@ -127,4 +164,4 @@ async function obtenerReferencias(hoy=hoyCaracas()) {
     }
 }
 
-module.exports={obtenerReferencia,obtenerReferencias,diasEntre};
+module.exports={obtenerReferencia,obtenerReferencias,diasEntre,interpretarCotizacion};

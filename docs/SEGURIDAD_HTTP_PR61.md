@@ -20,7 +20,7 @@ La protección de escrituras por Origin coincide con la semántica de mayúscula
 
 ## SQL y XSS
 
-- Se conserva el uso de parámetros PostgreSQL para valores. El nombre de columna de documento se limita a propiedades propias del catálogo cerrado (foto, cédula y partida), no propiedades heredadas. Identificadores inválidos no llegan a SQL.
+- Se conserva el uso de parámetros PostgreSQL para valores. El nombre de columna de documento se limita a propiedades propias del catálogo cerrado (foto, cédula y partida), no propiedades heredadas. Identificadores inválidos no llegan a SQL. El catálogo de tablas deportivas se endurece del mismo modo en creación y renombrado; sus identificadores de tabla, columna y clave primaria proceden exclusivamente de los tres tipos definidos. Las pruebas comprueban que propiedades heredadas no disparan consultas.
 - Se escapa el estado del atleta interpolado en el atributo data-estado de la tabla Directiva. Se prueba un valor inesperado en el navegador con datos ficticios.
 - Las pruebas existentes de roles, propiedad, sesiones, subida privada, SQL parametrizado y validaciones permanecen. Las pruebas no constituyen una auditoría exhaustiva ni certifican inexistencia de vulnerabilidades.
 

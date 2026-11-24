@@ -52,7 +52,7 @@ function noEncontrado(req, res, next) {
     if (esApi(req.path) || esApi(ruta) || !['GET','HEAD'].includes(req.method)) {
         return res.status(404).json({ success: false, message: 'Ruta no encontrada' });
     }
-    return res.status(404).sendFile(HTML_404, err => { if (err) next(err); });
+    return res.status(404).sendFile(HTML_404, { cacheControl: false }, err => { if (err) next(err); });
 }
 
 // Después de proteger paneles: conservar sus alias históricos autorizados,

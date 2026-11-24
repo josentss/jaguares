@@ -364,3 +364,28 @@ test('orígenes: POST cross-site falla con 403 incluso sin necesidad de CORS', (
     politica.protegerEscrituras(req,res,()=>siguientes++);
     assert.equal(siguientes,2);
 });
+
+test('documentos: solo columnas propias permitidas, tipos inválidos no llegan a SQL', () => {
+    const consultas = [];
+    const atleta = cargarConMocks('../controllers/atletaController', {
+        '../config/db': { query(sql, params, cb) { consultas.push({sql, params}); cb(null, []); } }
+    });
+    for (const tipo of ['constructor', 'toString', '__proto__', 'foto_url', 'desconocido']) {
+        const res = respuesta();
+        atleta.abrirDocumentoAtleta({params:{id:'12',tipo},usuarioId:5,usuarioRol:'representante'},res);
+        assert.equal(res.statusCode,400,tipo);
+    }
+    const malId = respuesta();
+    atleta.abrirDocumentoAtleta({params:{id:'12 OR 1=1',tipo:'foto'},usuarioId:5},malId);
+    assert.equal(malId.statusCode,400);
+    assert.equal(consultas.length,0);
+    for (const [tipo,columna] of [['foto','foto_url'],['cedula_archivo','cedula_archivo_url'],
+        ['partida_nacimiento','partida_nacimiento_url']]) {
+        const res = respuesta();
+        atleta.abrirDocumentoAtleta({params:{id:'12',tipo},usuarioId:5,usuarioRol:'representante'},res);
+        assert.equal(res.statusCode,404);
+        assert.equal(consultas.at(-1).sql,
+            'SELECT id_representante, '+columna+' AS archivo FROM atletas WHERE id_atleta = ?');
+        assert.deepEqual(consultas.at(-1).params,[12]);
+    }
+});

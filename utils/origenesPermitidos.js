@@ -48,7 +48,7 @@ function crearPoliticaOrigen({ corsOrigin = '', port = 3000, vercel = false } = 
 
     function protegerEscrituras(req, res, next) {
         if (!METODOS_ESCRITURA.has(req.method) ||
-            !(req.path === '/api' || req.path.startsWith('/api/'))) return next();
+            !/^\/api(?:\/|$)/i.test(req.path)) return next();
 
         const origen = req.get('origin');
         if ((origen && !permitido(req, origen)) ||

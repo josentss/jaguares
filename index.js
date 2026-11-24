@@ -5,6 +5,9 @@ const cors    = require('cors');
 const path    = require('path');
 const cookieParser = require('cookie-parser');
 const app = express();
+const { cabeceras, filtrarRutas, noEncontrado, esApi } = require('./middlewares/seguridadHttp');
+app.disable('x-powered-by');
+app.use(cabeceras);
 
 // ── Guardia de arranque (solo avisa, no mata el proceso en Vercel) ──────────
 if (!process.env.JWT_SECRET) {
@@ -45,16 +48,6 @@ const politicaOrigen = crearPoliticaOrigen({
 app.use(politicaOrigen.protegerEscrituras);
 app.use(cors(politicaOrigen.opcionesCors));
 
-// Respuestas con sesión o datos personales y HTML de panel no deben quedar en cachés.
-const panelesProtegidos = new Set(['/admin/panel-directiva.html', '/admin/panel-representante.html']);
-app.use((req, res, next) => {
-    const ruta = req.path.toLowerCase();
-    if (ruta === '/api' || ruta.startsWith('/api/') || panelesProtegidos.has(ruta)) {
-        res.set('Cache-Control', 'no-store');
-    }
-    next();
-});
-
 // ── Body / cookies ─────────────────────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
@@ -63,7 +56,9 @@ app.use(cookieParser());
 app.use(require('./middlewares/panelMiddleware'));
 
 // Vercel enruta las solicitudes a Express según vercel.json.
-app.use(express.static(path.join(__dirname, './public')));
+app.use(filtrarRutas);
+const servirPublico = express.static(path.join(__dirname, './public'), { dotfiles: 'deny', redirect: false });
+app.use((req, res, next) => esApi(req.path) ? next() : servirPublico(req, res, next));
 
 // ── Rutas API ──────────────────────────────────────────────────────────────
 const { verificarSesionRole } = require('./middlewares/authMiddleware');
@@ -80,15 +75,22 @@ app.use('/api/directiva',
     require('./routes/directivaRoutes')
 );
 
+// La tabla de rutas de Express determina qué endpoints existen.
+app.use(noEncontrado);
+
 // ── Manejo de errores global ───────────────────────────────────────────────
 app.use((err, req, res, next) => {
+    if (res.headersSent) return next(err);
+    if (err instanceof URIError || err.status === 400 && err.type !== 'entity.parse.failed') {
+        return res.status(400).json({ success: false, message: 'Solicitud no válida' });
+    }
     if (err.type === 'entity.parse.failed' || err.type === 'entity.too.large') {
         return res.status(err.type === 'entity.too.large' ? 413 : 400).json({
             success: false, message: err.type === 'entity.too.large'
                 ? 'La solicitud supera el tamaño permitido' : 'El formato de la solicitud no es válido'
         });
     }
-    console.error(`[ERROR] ${req.method} ${req.originalUrl}:`, err.message || err);
+    console.error('[ERROR HTTP]', req.method, err.code || err.type || 'INTERNAL');
     if (!res.headersSent) {
         res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }

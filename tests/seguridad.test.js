@@ -389,3 +389,19 @@ test('documentos: solo columnas propias permitidas, tipos inválidos no llegan a
         assert.deepEqual(consultas.at(-1).params,[12]);
     }
 });
+
+test('catálogos deportivos: nombres de tabla no aceptan propiedades heredadas', async () => {
+    let consultas = 0;
+    const catalogo = cargarConMocks('../controllers/catalogosDeportivosController', {
+        '../config/db': {pool:{query:async()=>{consultas++;throw new Error('No consultar SQL');}}}
+    });
+    for (const tipo of ['constructor','toString','__proto__','desconocido']) {
+        const crear = respuesta();
+        await catalogo.crear({params:{tipo},body:{nombre:'Prueba'}},crear);
+        assert.equal(crear.statusCode,404,tipo);
+        const renombrar = respuesta();
+        await catalogo.renombrar({params:{tipo,id:'1'},body:{nombre:'Prueba'}},renombrar);
+        assert.equal(renombrar.statusCode,404,tipo);
+    }
+    assert.equal(consultas,0);
+});

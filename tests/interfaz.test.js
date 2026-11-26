@@ -36,6 +36,10 @@ test.before(async () => {
                         nombres: 'Prueba', apellidos: esDirectiva ? 'Directiva' : 'Representante' }
                 });
             }
+            if (pathname === '/api/directiva/resumen') return json(res, {success:true,resumen:{
+                representantes_aprobados:5,representantes_pendientes:2,temporadas:3,categorias:4,
+                equipos:5,activos_con_equipo:1,activos_sin_equipo:0,eventos_proximos:2
+            }});
             if (pathname === '/api/directiva/auditoria') return json(res, {
                 metricas: {activos: 1, espera: 0, pagos_pendientes: 1},
                 tasa_bcv: 36.5, tasa_fecha: null,
@@ -1216,4 +1220,46 @@ test('representante: planilla denegada no muestra datos ni permite exportar; cie
         assert.equal(await page.locator('#planillaModal').isVisible(),false);
         assert.equal(await page.locator('#planilla-contenido').textContent(),'');
     } finally {await browser.close();}
+});
+
+test('Directiva: resumen agregado, navegación y ausencia de desbordamientos',async()=>{
+    const browser=await chromium.launch({headless:true});
+    try{
+        const page=await browser.newPage({viewport:{width:1440,height:900}});
+        await page.route('https://**/*',r=>r.abort());
+        const errores=[];page.on('pageerror',e=>errores.push(e.message));
+        await page.goto(baseUrl+'/admin/panel-directiva.html');
+        await page.waitForFunction(()=>document.querySelector('#stat-temporadas')?.textContent==='3');
+        assert.equal(await page.locator('#stat-categorias').textContent(),'4');
+        assert.equal(await page.locator('#stat-solicitudes').textContent(),'2');
+        assert.equal(await page.locator('#stat-sin-equipo').textContent(),'0');
+        for(const width of [1440,1100,390,320]){
+            await page.setViewportSize({width,height:844});
+            const menu=page.locator('#mobile-menu-btn');
+            const comprobar=()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2&&
+                [...document.querySelectorAll('#sec-dashboard .inicio-grid')].every(g=>g.scrollWidth<=g.clientWidth+2));
+            assert.equal(await comprobar(),true);
+            if(width>=993){
+                await menu.click(); assert.equal(await comprobar(),true); await menu.click();
+            }
+        }
+        await page.locator('#sec-dashboard button[data-dashboard-filtro="pendiente"]').click();
+        assert.equal(await page.locator('#sec-pagos').isVisible(),true);
+        assert.equal(await page.locator('#filter-estado-pagos').inputValue(),'pendiente');
+        assert.deepEqual(errores,[]);
+    }finally{await browser.close();}
+});
+
+test('Directiva: fallo del resumen complementario no oculta los ingresos ni inventa ceros',async()=>{
+    const browser=await chromium.launch({headless:true});
+    try{
+        const page=await browser.newPage({viewport:{width:390,height:844}});
+        await page.route('https://**/*',r=>r.abort());
+        await page.route('**/api/directiva/resumen',r=>r.fulfill({status:503,json:{success:false}}));
+        await page.goto(baseUrl+'/admin/panel-directiva.html');
+        await page.waitForFunction(()=>document.querySelector('#inicio-resumen-estado')?.textContent.includes('no disponible'));
+        await page.waitForFunction(()=>document.querySelector('#stat-total-bs')?.textContent==='45.00 Bs');
+        assert.equal(await page.locator('#stat-temporadas').textContent(),'—');
+        assert.equal(await page.locator('#stat-total-bs').textContent(),'45.00 Bs');
+    }finally{await browser.close();}
 });

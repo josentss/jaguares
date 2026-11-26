@@ -38,6 +38,9 @@ test.before(async () => {
         id_atleta SERIAL PRIMARY KEY, nombres TEXT NOT NULL, apellidos TEXT NOT NULL,
         fecha_nacimiento DATE NOT NULL, estado TEXT NOT NULL
     )`);
+    await db.pool.query(`CREATE TABLE eventos (
+        id_evento SERIAL PRIMARY KEY, fecha_evento TIMESTAMPTZ NOT NULL, estado TEXT
+    )`);
     const catalogos = await fs.readFile(path.join(__dirname, '../migrations/2026-11-10_catalogos_deportivos.sql'), 'utf8');
     const asignaciones = await fs.readFile(path.join(__dirname, '../migrations/2026-11-11_asignaciones_equipos.sql'), 'utf8');
     await db.pool.query(catalogos);
@@ -140,4 +143,26 @@ test('cambios concurrentes dejan una sola asignación activa por temporada', asy
     const sql = await db.pool.query(`SELECT count(*)::int AS total FROM asignaciones_equipos
         WHERE id_atleta = 3 AND id_temporada = 1 AND fin_en IS NULL`);
     assert.equal(sql.rows[0].total,1);
+});
+
+test('resumen de Directiva: permisos, agregados sin datos personales y fechas civiles',async()=>{
+    const resumen='/api/directiva/resumen';
+    assert.equal((await solicitar(resumen)).status,401);
+    for(const [id,rol] of [[3,'staff'],[4,'representante']])
+        assert.equal((await solicitar(resumen,{credencial:cookie(id,rol)})).status,403);
+    const hoy=require('../utils/validators').hoyCaracasISO();
+    await db.pool.query(`INSERT INTO eventos(fecha_evento,estado) VALUES
+        ($1::date::timestamp AT TIME ZONE 'UTC','proximo'),
+        (($1::date-1)::timestamp AT TIME ZONE 'UTC','proximo'),
+        (($1::date+1)::timestamp AT TIME ZONE 'UTC','cancelado'),
+        (($1::date+1)::timestamp AT TIME ZONE 'UTC','en_progreso')`,[hoy]);
+    const esperado={representantes_aprobados:1,representantes_pendientes:0,temporadas:2,categorias:2,equipos:3,
+        activos_con_equipo:2,activos_sin_equipo:0,eventos_proximos:2};
+    // El escenario anterior deja dos asignaciones abiertas para el atleta 1,
+    // pero se contabiliza un solo atleta, y no se cuenta el atleta en espera.
+    for(const [id,rol] of [[1,'directiva'],[2,'admin']]){
+        const respuesta=await solicitar(resumen,{credencial:cookie(id,rol)});
+        assert.equal(respuesta.status,200);
+        assert.deepEqual(respuesta.data,{success:true,resumen:esperado});
+    }
 });

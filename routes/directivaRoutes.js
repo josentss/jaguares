@@ -41,6 +41,7 @@ router.get('/atletas/planilla-general', planillaGeneral.obtener);
 router.post('/deportes/:tipo', catalogosDeportivos.crear);
 router.put('/deportes/:tipo/:id', catalogosDeportivos.renombrar);
 
+router.get('/resumen', verificarSesionRole(['directiva','admin']), directivaController.obtenerResumen);
 router.get('/auditoria', verificarSesion, esDirectiva, directivaController.obtenerAuditoria);
 router.put('/atleta/estado', verificarSesion, esDirectiva, directivaController.actualizarEstadoAtleta);
 router.put('/pago/estado', verificarSesion, esDirectiva, directivaController.actualizarEstadoPago);

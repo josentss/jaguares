@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const { clasificar } = require('../public/admin/categorias-formativas');
 const { crearNotificacion } = require('./notificacionesController');
-const { esEnteroPositivo, esEstadoAtletaValido, esEstadoPagoValido } = require('../utils/validators');
+const { esEnteroPositivo, esEstadoAtletaValido, esEstadoPagoValido, hoyCaracasISO } = require('../utils/validators');
 
 const { obtenerReferencia } = require('../utils/referenciasCambio');
 
@@ -20,6 +20,34 @@ async function obtenerTasaMercado() {
             tasa_fuente:'ExchangeRate-API (no disponible)' };
     }
 }
+
+// Resumen complementario: una sola lectura agregada, sin datos personales,
+ // tasas externas ni modificaciones. Se mantienen los permisos de asignaciones.
+exports.obtenerResumen = async (req, res) => {
+    if (!['directiva', 'admin'].includes(req.usuarioRol))
+        return res.status(403).json({success:false,message:'No autorizado'});
+    res.set('Cache-Control', 'no-store');
+    try {
+        const {rows} = await db.pool.query(`
+            SELECT
+                (SELECT count(*)::int FROM usuarios WHERE rol='representante' AND estado='aprobado') AS representantes_aprobados,
+                (SELECT count(*)::int FROM usuarios WHERE rol='representante' AND estado='pendiente') AS representantes_pendientes,
+                (SELECT count(*)::int FROM temporadas_deportivas) AS temporadas,
+                (SELECT count(*)::int FROM categorias_deportivas) AS categorias,
+                (SELECT count(*)::int FROM equipos_deportivos) AS equipos,
+                (SELECT count(*)::int FROM atletas a WHERE a.estado='activo' AND EXISTS
+                    (SELECT 1 FROM asignaciones_equipos ae WHERE ae.id_atleta=a.id_atleta AND ae.fin_en IS NULL)) AS activos_con_equipo,
+                (SELECT count(*)::int FROM atletas a WHERE a.estado='activo' AND NOT EXISTS
+                    (SELECT 1 FROM asignaciones_equipos ae WHERE ae.id_atleta=a.id_atleta AND ae.fin_en IS NULL)) AS activos_sin_equipo,
+                (SELECT count(*)::int FROM eventos WHERE COALESCE(estado,'proximo') IN ('proximo','en_progreso')
+                    AND fecha_evento >= ($1::date::timestamp AT TIME ZONE 'UTC')) AS eventos_proximos
+        `, [hoyCaracasISO()]);
+        return res.json({success:true,resumen:rows[0]});
+    } catch (error) {
+        console.error('DASHBOARD_RESUMEN_SQL',error.code || 'INTERNAL');
+        return res.status(503).json({success:false,message:'Resumen complementario no disponible'});
+    }
+};
 
 // 1. Obtener todas las métricas, atletas y pagos para el dashboard de administración
 exports.obtenerAuditoria = async (req, res) => {

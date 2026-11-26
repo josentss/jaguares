@@ -9,6 +9,9 @@ const publicRoot = path.resolve(__dirname, '../public');
 const html2pdfBundlePath = require.resolve('html2pdf.js/dist/html2pdf.bundle.min.js');
 const pdfjsPath = require.resolve('pdfjs-dist/legacy/build/pdf.mjs');
 const pdfjsWorkerPath = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
+// Foto sintética de color distintivo (32×40 PNG), no datos personales.
+// Permite comprobar que el PDF contiene realmente la foto, no solo el marco.
+const fotoSintetica = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAACAAAAAoCAIAAAAQS2/OAAAALElEQVR4nO3NMQEAAAjDMMC/52ECvlRA06nUZ/N6BwAAAAAAAAAAAAAA4LQFnPwCTs6c1dsAAAAASUVORK5CYII=', 'base64');
 const fixtureAtleta = {
     id_atleta: 9001,
     nombres: 'Atleta de prueba',
@@ -28,7 +31,7 @@ const fixtureAtleta = {
         telefono1: '04140000002',
         cedula: 'V-99000002'
     },
-    documentos: { foto_url: 'https://imagenes.invalid.example/foto-sintetica.png' }
+    documentos: { foto_url: '/api/atletas/9001/documentos/foto' }
 };
 
 let server;
@@ -61,7 +64,7 @@ test.before(async () => {
                     sesion: { id: 'sesion-sintetica-planilla', servidor: ahora,
                         vence: ahora + 900000, limite: ahora + 43200000 },
                     usuario: {
-                    id_usuario: 9, rol: 'directiva', nombres: 'Directiva', apellidos: 'Sintética'
+                    id_usuario: 9, rol: (req.headers.referer || '').includes('panel-representante.html') ? 'representante' : 'directiva', nombres: 'Usuario', apellidos: 'Sintético'
                 } });
             }
             if (pathname === '/api/directiva/auditoria') {
@@ -69,6 +72,16 @@ test.before(async () => {
                     metricas: { activos: 0, espera: 0, pagos_pendientes: 0 },
                     tasa_bcv: 36.5, tasa_fecha: null, atletas: [], pagos: []
                 });
+            }
+            if (pathname === '/api/usuarios/perfil/9') {
+                return json(res, {success:true, perfil:{...fixtureAtleta.representante}});
+            }
+            if (pathname === '/api/atletas/representante/9') {
+                return json(res, {success:true, atletas:[fixtureAtleta]});
+            }
+            if (pathname === '/api/atletas/9001/documentos/foto') {
+                res.writeHead(200, {'Content-Type':'image/png'});
+                return res.end(fotoSintetica);
             }
             if (pathname === '/api/atletas/9001') {
                 return json(res, { success: true, atleta: fixtureAtleta });
@@ -107,7 +120,7 @@ function json(res, data) {
     res.end(JSON.stringify(data));
 }
 
-async function openDirectiva(viewport) {
+async function openDirectiva(viewport, rol='directiva') {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport, acceptDownloads: true });
     const page = await context.newPage();
@@ -122,9 +135,11 @@ async function openDirectiva(viewport) {
             body: html2pdfBundle
         })
     );
-    await page.goto(baseUrl + '/admin/panel-directiva.html');
+    await page.goto(baseUrl + '/admin/panel-'+rol+'.html');
+    await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
     await page.waitForFunction(() => typeof window.verPlanilla === 'function');
-    await page.evaluate(() => window.verPlanilla(9001));
+    if(rol==='representante') await page.locator('[data-ficha-ver="9001"]').click();
+    else await page.evaluate(() => window.verPlanilla(9001));
     await page.locator('#planillaModal .planilla-toolbar button[onclick="descargarPlanillaPDF()"]')
         .waitFor({ state: 'visible' });
     return { browser, context, page, pageErrors };
@@ -269,5 +284,40 @@ for (const device of [
             await context.close();
             await browser.close();
         }
+    });
+}
+
+for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {
+    test('representante exporta la misma planilla institucional a PDF ('+viewport.width+'px)',async()=>{
+        const {browser,context,page,pageErrors}=await openDirectiva(viewport,'representante');
+        try {
+            const hoja=page.locator('#planilla-print-root');
+            // innerText refleja text-transform: uppercase del diseño institucional.
+            assert.match(await hoja.locator('.planilla-header-text h2').innerText(),/^CLUB DE VOLEIBOL JAGUARES$/);
+            assert.match(await hoja.innerText(),/PLANILLA DE INSCRIPCIÓN/);
+            assert.match(await hoja.innerText(),/U-13 Mini Voleibol/);
+            assert.match(await hoja.innerText(),/representante@example.org/);
+            assert.equal(await hoja.locator('a').count(),0);
+            const foto = hoja.locator('.planilla-foto-box img');
+            assert.equal(await foto.getAttribute('src'),'/api/atletas/9001/documentos/foto');
+            await page.waitForFunction(()=>{
+                const imagen=document.querySelector('.planilla-foto-box img');
+                return imagen?.complete && imagen.naturalWidth===32 && imagen.naturalHeight===40;
+            });
+            const boton=page.locator('#planillaModal .planilla-toolbar button[onclick="descargarPlanillaPDF()"]');
+            const downloadPromise=page.waitForEvent('download');
+            await boton.click();
+            const download=await downloadPromise;
+            assert.equal(download.suggestedFilename(),'Planilla_Jaguares_Atleta_de_prueba_PDF_completo_9001.pdf');
+            const bytes=await fs.readFile(await download.path());
+            assert.ok(bytes.length>10000);
+            assert.equal(bytes.subarray(0,5).toString(),'%PDF-');
+            await page.waitForFunction(()=>!document.querySelector('#planillaModal button[onclick="descargarPlanillaPDF()"]').disabled);
+            assert.equal(await boton.getAttribute('aria-busy'),null);
+            const paginas=await inspectPdfInBrowser(page,bytes);
+            assert.ok(paginas.length>=1&&paginas[0].minContentX<60&&paginas[0].maxContentX>paginas[0].width-60);
+            assert.ok(paginas.some(p=>p.magentaPixels>1000),'La fotografía sintética debe aparecer en el PDF renderizado');
+            assert.deepEqual(pageErrors,[]);
+        }finally{await context.close();await browser.close();}
     });
 }

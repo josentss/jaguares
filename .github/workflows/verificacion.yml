@@ -15,6 +15,7 @@ jobs:
   backend:
     name: Sintaxis y pruebas backend
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
     env:
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/jaguares_test?sslmode=disable
     services:
@@ -40,17 +41,68 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Instalar dependencias
+        timeout-minutes: 5
         run: npm ci
       - name: Comprobar sintaxis de JavaScript
         run: |
           find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -r -n 1 node --check
       - name: Ejecutar pruebas con mocks
+        timeout-minutes: 5
         run: node --test tests/cloudinary-private-middleware.test.js tests/cloudinary-prueba-sintetica.test.js tests/cloudinary-privado.test.js tests/archivos-seguros.test.js tests/compensacion-cloudinary.test.js tests/comprobantes-ui.test.js tests/catalogos-deportivos-pg.test.js tests/asignaciones-equipos-pg.test.js tests/categorias-formativas.test.js tests/planilla-general-pg.test.js tests/seguridad.test.js tests/estados-y-sesiones.test.js tests/formularios.test.js tests/fechas.test.js tests/postgres-config.test.js tests/cabeceras-privacidad.test.js tests/sesion-servidor.test.js tests/pagos-pg.test.js tests/cuentas-por-cobrar-pg.test.js tests/cobros-mensuales.test.js tests/cobros-mensuales-pg.test.js tests/pagos-vinculados-pg.test.js tests/cotizacion-bs-automatica-pg.test.js tests/referencia-pool-pg.test.js tests/catalogo-cobros-pg.test.js tests/referencias-cambio-pg.test.js tests/conciliacion-cobros-pg.test.js tests/integridad-pg.test.js
-      - name: Preparar Playwright Chromium
+      - name: Instalar herramientas de interfaz
+        timeout-minutes: 4
         run: |
-          npm install --prefix "$RUNNER_TEMP/jaguares-playwright" --no-save --package-lock=false playwright@1.56.1 html2pdf.js@0.10.1 pdfjs-dist@4.10.38
-          node "$RUNNER_TEMP/jaguares-playwright/node_modules/playwright/cli.js" install --with-deps chromium
+          npm install --prefix "$RUNNER_TEMP/jaguares-playwright" --no-save --package-lock=false --fetch-retries=2 --fetch-timeout=60000 playwright@1.56.1 html2pdf.js@0.10.1 pdfjs-dist@4.10.38
+      - name: Preparar Playwright Chromium
+        timeout-minutes: 8
+        env:
+          NODE_PATH: ${{ runner.temp }}/jaguares-playwright/node_modules
+          PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: '60000'
+        run: |
+          set -euo pipefail
+          cli="$RUNNER_TEMP/jaguares-playwright/node_modules/playwright/cli.js"
+          # El runner de Ubuntu ya incluye bibliotecas para navegadores.
+          # Instalar solo Chromium fijado por Playwright, sin actualizar APT.
+          timeout --kill-after=10s 180s node "$cli" install chromium
+          probar_chromium() {
+            timeout --kill-after=5s 30s node - <<'NODE'
+          const { chromium } = require('playwright');
+          const assert = require('node:assert/strict');
+          (async () => {
+            const browser = await chromium.launch({headless: true, timeout: 15000});
+            try {
+              const page = await browser.newPage();
+              await page.setContent('<title>Jaguares CI</title>');
+              assert.equal(await page.title(), 'Jaguares CI');
+              console.log('Chromium de Playwright operativo:', browser.version());
+            } finally {
+              await browser.close();
+            }
+          })().catch(error => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          NODE
+          }
+          if ! probar_chromium; then
+            echo "::warning::Chromium no pudo iniciar; comprobando dependencias del sistema."
+            # Solo como respaldo, en el runner desechable. Limitar APT y evitar
+            # el mirror HTTP de Azure que bloqueó la ejecución anterior.
+            sudo tee /etc/apt/apt.conf.d/99-jaguares-ci-timeouts >/dev/null <<'APT'
+          Acquire::Retries "1";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          APT
+            for origen in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+              if [ -f "$origen" ] && grep -q 'azure.archive.ubuntu.com/ubuntu' "$origen"; then
+                sudo sed -i -E 's#https?://azure\.archive\.ubuntu\.com/ubuntu#https://archive.ubuntu.com/ubuntu#g' "$origen"
+              fi
+            done
+            timeout --kill-after=10s 180s node "$cli" install-deps chromium
+            probar_chromium
+          fi
       - name: Probar interfaz en escritorio y movil
+        timeout-minutes: 10
         env:
           NODE_PATH: ${{ runner.temp }}/jaguares-playwright/node_modules
         run: node --test --test-concurrency=1 tests/interfaz.test.js tests/planilla-pdf.test.js tests/planilla-general-ui.test.js tests/sesiones-ui.test.js tests/flujos-web-pg.test.js tests/catalogos-deportivos-ui.test.js tests/asignaciones-equipos-ui.test.js tests/conciliacion-cobros-ui.test.js tests/estado-cuenta-ui.test.js tests/pagos-guiados-ui.test.js tests/gestion-cobros-ui.test.js

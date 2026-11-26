@@ -13,6 +13,7 @@
 .deportes-estado { min-height: 0; color: #475569; font-size: .85rem; margin-bottom: 10px; }
 .deportes-estado:empty { display: none; }
 .deportes-estado[data-error="true"] { color: #b42318; }
+#sec-deportes { container: deportes-catalogos / inline-size; }
 .deportes-grid {
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px; align-items: stretch;
@@ -62,7 +63,7 @@
 }
 .deportes-lista .deportes-vacio { color: #64748b; justify-content: start; font-size: .82rem; }
 
-@media (max-width: 1199px) {
+@container deportes-catalogos (max-width: 899px) {
     .deportes-grid { grid-template-columns: minmax(0, 1fr); }
     .deportes-card { width: 100%; }
     .deportes-card p { min-height: 0; }

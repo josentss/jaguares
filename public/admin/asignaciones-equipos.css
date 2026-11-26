@@ -1,6 +1,7 @@
-.asignaciones-panel[hidden], .plantillas-resultado[hidden] { display: none !important; }
+.asignaciones-panel[hidden], .plantillas-resultado[hidden], .asignaciones-resumen[hidden] { display: none !important; }
 .asignaciones-panel, .plantillas-panel {
     padding: 20px; border: 1px solid #dce2e9; border-radius: 11px; background: #fff;
+    min-width: 0; container: deportes-panel / inline-size;
 }
 .asignaciones-panel h3, .plantillas-panel h3 { margin: 0; font-size: 1rem; color: #18232e; }
 .asignaciones-cabecera, .plantillas-resultado-cabecera {
@@ -18,13 +19,13 @@
 #asignaciones-estado[data-error="true"], .plantillas-estado[data-error="true"] { color: #b42318; }
 .asignaciones-form {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 16px; max-width: 1040px;
+    gap: 14px 16px; width: 100%; min-width: 0;
 }
-.asignaciones-form label, .plantillas-controles label {
+.asignaciones-form label, .plantillas-filtros label {
     display: grid; align-content: start; gap: 6px; color: #334155;
-    font-size: .82rem; font-weight: 600;
+    font-size: .82rem; font-weight: 600; min-width: 0;
 }
-.asignaciones-form :is(select,input), .plantillas-controles select {
+.asignaciones-form :is(select,input), .plantillas-filtros select {
     width: 100%; min-width: 0; min-height: 43px; padding: 8px 11px;
     border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; font: inherit;
 }
@@ -34,7 +35,9 @@
     gap: 8px 18px; padding: 11px 13px; border-left: 3px solid #fb923c;
     border-radius: 6px; background: #fff8f3;
 }
-.asignaciones-resumen p { margin: 0; }
+.asignaciones-resumen p { margin: 0; overflow-wrap: anywhere; }
+.asignaciones-resumen p:empty { display: none; }
+.asignaciones-resumen p:only-child, .asignaciones-resumen p:not(:empty):has(+ p:empty), .asignaciones-resumen p:empty + p { grid-column: 1 / -1; }
 .asignaciones-actual { color: #18232e; font-size: .84rem; font-weight: 600; }
 .asignaciones-acciones { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
 .asignaciones-acciones button, .plantillas-controles button,
@@ -50,16 +53,25 @@
     outline: 2px solid var(--naranja); outline-offset: 2px;
 }
 .asignaciones-historial {
-    max-width: 1040px; margin-top: 17px; padding: 13px;
+    width: 100%; min-width: 0; margin-top: 17px; padding: 13px;
     border: 1px solid #e2e8f0; border-radius: 8px;
 }
 .asignaciones-historial ul { margin: 0; padding-left: 18px; font-size: .81rem; line-height: 1.55; }
 .asignaciones-historial li { overflow-wrap: anywhere; margin-bottom: 5px; }
 
-.plantillas-controles {
-    display: grid; grid-template-columns: minmax(180px, .7fr) minmax(260px, 1.3fr) auto;
-    align-items: end; gap: 14px; max-width: 980px;
+.plantillas-controles { width: 100%; min-width: 0; }
+.plantillas-filtros {
+    display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) auto;
+    align-items: end; gap: 14px; width: 100%; min-width: 0;
 }
+.plantillas-filtros > button { min-height: 43px; white-space: nowrap; }
+.plantillas-controles .form-validation-message {
+    margin: 12px 0 0; width: 100%; overflow-wrap: anywhere;
+}
+.plantillas-estado:not(:empty) { margin: 12px 0 0; overflow-wrap: anywhere; }
+.plantillas-resultado-cabecera > div { min-width: 0; overflow-wrap: anywhere; }
+.plantillas-resultado-cabecera button { flex-shrink: 0; }
+.asignaciones-form > .form-validation-message { grid-column: 1 / -1; margin: 0; }
 .plantillas-resultado {
     margin-top: 18px; padding-top: 17px; border-top: 1px solid #e2e8f0;
 }
@@ -75,20 +87,23 @@
     color: #334155; font-weight: 600;
 }
 
-@media (max-width: 900px) {
-    .plantillas-controles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .plantillas-controles button { grid-column: 1 / -1; justify-self: start; }
+@container deportes-panel (max-width: 639px) {
+    .plantillas-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .plantillas-filtros > button { grid-column: 1 / -1; justify-self: end; }
+}
+@container deportes-panel (max-width: 479px) {
+    .asignaciones-form, .asignaciones-resumen, .plantillas-filtros {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .plantillas-filtros > button { grid-column: 1 / -1; width: 100%; white-space: normal; }
+    .asignaciones-acciones button { width: 100%; }
 }
 @media (max-width: 700px) {
     .asignaciones-panel, .plantillas-panel { padding: 14px; }
-    .asignaciones-form, .asignaciones-resumen, .plantillas-controles {
-        grid-template-columns: minmax(0, 1fr);
-    }
     .asignaciones-form :is(select,input), .plantillas-controles select { font-size: 16px; }
     .asignaciones-acciones { justify-content: stretch; }
     .asignaciones-acciones button, .plantillas-controles button,
     #generar-planilla-general { width: 100%; }
-    .plantillas-controles button { grid-column: auto; }
     .plantillas-resultado-cabecera { align-items: stretch; }
     .plantillas-tabla-wrap { max-height: none; overflow: visible; }
     .plantillas-tabla, .plantillas-tabla tbody, .plantillas-tabla tr,

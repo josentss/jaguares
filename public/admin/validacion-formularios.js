@@ -157,14 +157,20 @@
         const mensaje = document.createElement('p');
         mensaje.className = 'form-validation-message';
         mensaje.setAttribute('role', 'alert');
-        const etiqueta = invalido.labels?.[0]?.textContent.trim() ||
-            invalido.closest('.form-group-panel')?.querySelector('label')?.textContent.trim();
+        // Una etiqueta que envuelve un select no incluye sus opciones en el mensaje.
+        const nodoEtiqueta = invalido.labels?.[0] ||
+            invalido.closest('.form-group-panel')?.querySelector('label');
+        const copia = nodoEtiqueta?.cloneNode(true);
+        copia?.querySelectorAll('input, select, textarea, button, small, [aria-live]').forEach(nodo => nodo.remove());
+        const etiqueta = copia?.textContent.trim().replace(/\s+/g, ' ');
         mensaje.textContent = `${etiqueta ? etiqueta + ': ' : ''}${invalido.validationMessage}`;
         const boton = formulario.querySelector('button[type="submit"]');
-        if (boton?.parentElement === formulario) formulario.insertBefore(mensaje, boton);
+        if (formulario.hasAttribute('data-validation-inline')) formulario.append(mensaje);
+        else if (boton?.parentElement === formulario) formulario.insertBefore(mensaje, boton);
         else formulario.prepend(mensaje);
         invalido.setAttribute('aria-invalid', 'true');
-        formulario.reportValidity();
+        if (formulario.hasAttribute('data-validation-inline')) invalido.focus();
+        else formulario.reportValidity();
         return false;
     }
 
@@ -231,7 +237,10 @@
                 }
             }, true);
             form.addEventListener('input', () => limpiarMensaje(form));
-            form.addEventListener('change', () => limpiarMensaje(form));
+            form.addEventListener('change', evento => {
+                limpiarMensaje(form);
+                if (evento.target.validity?.valid) evento.target.removeAttribute('aria-invalid');
+            });
             form.addEventListener('reset', () => {
                 limpiarMensaje(form);
                 for (const campo of form.querySelectorAll('input, select, textarea')) {

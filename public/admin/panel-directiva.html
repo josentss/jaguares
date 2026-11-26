@@ -15,13 +15,13 @@
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=sidebar-4">
-    <link rel="stylesheet" href="catalogos-deportivos.css?v=2">
-    <link rel="stylesheet" href="asignaciones-equipos.css?v=4">
+    <link rel="stylesheet" href="catalogos-deportivos.css?v=3">
+    <link rel="stylesheet" href="asignaciones-equipos.css?v=5">
     <link rel="stylesheet" href="conciliacion-cobros.css?v=1">
     <link rel="stylesheet" href="gestion-cobros.css?v=1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=4">
-    <link rel="stylesheet" href="estilo-institucional.css?v=2">
+    <link rel="stylesheet" href="estilo-institucional.css?v=3">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -778,7 +778,7 @@
                     <label>Atleta
                         <select id="asignaciones-atleta" required></select>
                     </label>
-                    <div class="asignaciones-resumen">
+                    <div class="asignaciones-resumen" hidden>
                         <p id="asignaciones-actual" class="asignaciones-actual"></p>
                         <p id="asignaciones-aviso" class="asignaciones-ayuda" aria-live="polite"></p>
                     </div>
@@ -796,17 +796,19 @@
         <!-- CONSULTA Y EXPORTACIÓN DE PLANTILLAS -->
         <section id="sec-plantillas" class="panel-section">
             <div class="plantillas-panel">
-                <form id="plantillas-consulta-form" class="plantillas-controles">
-                    <label>Consultar por
-                        <select id="plantillas-tipo">
-                            <option value="categoria">Categoría por edad</option>
-                            <option value="equipo">Equipo deportivo</option>
-                        </select>
-                    </label>
-                    <label><span id="plantillas-alcance-label">Categoría</span>
-                        <select id="plantillas-alcance" required></select>
-                    </label>
-                    <button type="submit" id="plantillas-consultar">Consultar plantilla</button>
+                <form id="plantillas-consulta-form" class="plantillas-controles" data-validation-inline>
+                    <div class="plantillas-filtros">
+                        <label for="plantillas-tipo">Consultar por
+                            <select id="plantillas-tipo">
+                                <option value="categoria">Categoría por edad</option>
+                                <option value="equipo">Equipo deportivo</option>
+                            </select>
+                        </label>
+                        <label for="plantillas-alcance"><span id="plantillas-alcance-label">Categoría</span>
+                            <select id="plantillas-alcance" required aria-labelledby="plantillas-alcance-label"></select>
+                        </label>
+                        <button type="submit" id="plantillas-consultar">Consultar plantilla</button>
+                    </div>
                 </form>
                 <p id="plantillas-estado" class="plantillas-estado" role="status" aria-live="polite"></p>
                 <div id="plantillas-resultado" class="plantillas-resultado" hidden>
@@ -1158,19 +1160,19 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="fechas.js?v=eventos-limite-1"></script>
-    <script src="validacion-formularios.js?v=fichas-1"></script>
+    <script src="validacion-formularios.js?v=deportes-2"></script>
     <script src="api-client.js?v=perfiles-1"></script>
     <script src="sidebar-panel.js?v=3"></script>
     <script src="ficha-atleta.js?v=2"></script>
     <script src="iconos-acciones.js?v=2"></script>
     <script src="comprobantes-ui.js?v=2"></script>
     <script src="catalogos-deportivos.js?v=5"></script>
-    <script src="asignaciones-equipos.js?v=4"></script>
+    <script src="asignaciones-equipos.js?v=5"></script>
     <script src="conciliacion-cobros.js?v=1"></script>
     <script src="gestion-cobros.js?v=1"></script>
     <script src="categorias-formativas.js?v=1"></script>
     <script src="categorias-formativas-ui.js?v=1"></script>
-    <script src="planilla-general.js?v=3"></script>
+    <script src="planilla-general.js?v=4"></script>
     <script>
         if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||
             typeof cerrarSesionPanel !== 'function' || typeof actualizarEstadoPanelSesion !== 'function') {

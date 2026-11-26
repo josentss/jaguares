@@ -143,3 +143,41 @@ test('staff no ve el formulario y la vista móvil no desborda', async () => {
         assert.deepEqual(directiva.errores,[]);
     } finally { await directiva.browser.close(); }
 });
+
+test('asignaciones aprovecha toda la tarjeta y conserva campos al alternar menú', async () => {
+    const {browser,page,errores}=await abrir({width:1920,height:900});
+    try {
+        const menu=page.locator('#mobile-menu-btn');
+        await page.locator('#asignaciones-atleta option[value="11"]').waitFor({state:'attached'});
+        assert.equal(await page.locator('.asignaciones-resumen').isHidden(),true);
+        await page.locator('#asignaciones-atleta').selectOption('11');
+        assert.equal(await page.locator('.asignaciones-resumen').isVisible(),true);
+        const comprobar=()=>page.evaluate(()=>{
+            const card=document.querySelector('.asignaciones-panel');
+            const form=document.querySelector('.asignaciones-form');
+            const history=document.querySelector('.asignaciones-historial');
+            const button=document.getElementById('asignaciones-guardar');
+            const css=getComputedStyle(card), rect=card.getBoundingClientRect();
+            const limite=rect.right-parseFloat(css.paddingRight)-parseFloat(css.borderRightWidth);
+            return {ancho:form.clientWidth,form:form.getBoundingClientRect().right,
+                historial:history.getBoundingClientRect().right,boton:button.getBoundingClientRect().right,
+                limite,scroll:document.documentElement.scrollWidth,ventana:innerWidth};
+        });
+        const validar=g=>{
+            for(const x of [g.form,g.historial,g.boton])assert.ok(Math.abs(x-g.limite)<2,JSON.stringify(g));
+            assert.ok(g.scroll<=g.ventana+2);
+        };
+        for(const width of [1920,1440,1100,993]){
+            await page.setViewportSize({width,height:900});
+            const a=await comprobar();validar(a);
+            await menu.click();const b=await comprobar();validar(b);
+            assert.ok(b.ancho>=a.ancho,'El formulario no debe reducirse al ocultar el menú');
+            assert.equal(await page.locator('#asignaciones-atleta').inputValue(),'11');
+            await menu.click();
+        }
+        for(const width of [768,390,320]){
+            await page.setViewportSize({width,height:844});validar(await comprobar());
+        }
+        assert.deepEqual(errores,[]);
+    }finally{await browser.close();}
+});

@@ -642,8 +642,8 @@ async function comprobarFechasPanel(browser, { panel, timezoneId, viewport, lega
             assert.equal((await page.locator('#body-pagos tr').first().locator('td').nth(2).textContent()).trim(), '2/11/2026');
             // La referencia comercial conserva su fecha publicada, no se
             // convierte como fecha civil del pago ni se etiqueta tasa BCV.
-            assert.equal(await page.locator('#stat-tasa-fecha').textContent(),
-                'ExchangeRate-API · 2026-11-02');
+            assert.match(await page.locator('#inicio-tasas').getAttribute('title'),/2026-11-02.*no oficial BCV/);
+            assert.doesNotMatch(await page.locator('#inicio-tasas').innerText(),/ExchangeRate-API/);
         } else {
             await page.waitForFunction(() => document.querySelector('#table-my-pagos tbody')?.textContent.includes('Noviembre'));
             assert.equal((await page.locator('#table-my-pagos tbody tr').first().locator('td').first().textContent()).trim(), '2/11/2026');
@@ -939,6 +939,9 @@ test('Directiva: ingresos por moneda visibles aunque la referencia falle', async
         assert.equal(await page.locator('#stat-total-usd').textContent(),'56.00 $');
         assert.equal(await page.locator('#stat-total-bs').textContent(),'213674.36 Bs');
         assert.match(await page.locator('#stat-estimado-usd').textContent(),/Equiv\. USD\/Bs:/);
+        const tasas=await page.locator('#inicio-tasas').evaluate(e=>[...e.querySelectorAll('.inicio-tasas-valores p')].map(p=>[getComputedStyle(p).fontSize,getComputedStyle(p).fontWeight]));
+        assert.deepEqual(tasas[0],tasas[1]);
+        assert.doesNotMatch(await page.locator('#inicio-tasas').innerText(),/ExchangeRate-API/);
         respuesta.pagos=[];
         await page.reload();
         await page.waitForFunction(()=>document.getElementById('stat-total-usd')?.textContent==='0.00 $');
@@ -1261,5 +1264,30 @@ test('Directiva: fallo del resumen complementario no oculta los ingresos ni inve
         await page.waitForFunction(()=>document.querySelector('#stat-total-bs')?.textContent==='45.00 Bs');
         assert.equal(await page.locator('#stat-temporadas').textContent(),'—');
         assert.equal(await page.locator('#stat-total-bs').textContent(),'45.00 Bs');
+        assert.equal(await page.locator('#inicio-exportar').isDisabled(),true);
+    }finally{await browser.close();}
+});
+
+test('Directiva: gráficos coherentes con los registros y exportación disponible solo con datos completos',async()=>{
+    const browser=await chromium.launch({headless:true});
+    try{
+        const page=await browser.newPage({viewport:{width:390,height:844}});
+        await page.route('https://**/*',r=>r.abort());
+        await page.goto(baseUrl+'/admin/panel-directiva.html');
+        await page.waitForFunction(()=>!document.getElementById('inicio-exportar').disabled);
+        assert.equal(await page.locator('#stat-atletas-total').textContent(),'1');
+        assert.equal(await page.locator('#stat-espera').textContent(),'1');
+        assert.equal(await page.locator('#inicio-pagos-aprobado').textContent(),'1');
+        assert.equal(await page.locator('#inicio-pagos-pendiente').textContent(),'1');
+        assert.equal(await page.locator('#inicio-pagos-rechazado').textContent(),'1');
+        assert.equal(await page.locator('#inicio-equipo-cobertura').textContent(),'100% de cobertura');
+        for(const width of [390,320,844,1440]){
+            await page.setViewportSize({width,height:844});
+            assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true);
+        }
+        // Representante no incorpora este módulo ni el control.
+        await page.goto(baseUrl+'/admin/panel-representante.html');
+        await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
+        assert.equal(await page.locator('#inicio-exportar').count(),0);
     }finally{await browser.close();}
 });

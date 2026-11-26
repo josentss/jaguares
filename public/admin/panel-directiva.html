@@ -15,7 +15,7 @@
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=planilla-2">
-    <link rel="stylesheet" href="inicio-directiva.css?v=1">
+    <link rel="stylesheet" href="inicio-directiva.css?v=2">
     <link rel="stylesheet" href="planilla-atleta.css?v=1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=3">
     <link rel="stylesheet" href="asignaciones-equipos.css?v=5">
@@ -80,8 +80,7 @@
             line-height: 1.2;
         }
 
-        .card-status small,
-        #stat-tasa-fecha {
+        .card-status small {
             font-size: 0.72rem;
             font-weight: 500;
             color: var(--text-muted);
@@ -229,6 +228,10 @@
 
         <!-- SECCIÓN DASHBOARD -->
         <section id="sec-dashboard" class="panel-section active" aria-label="Resumen de la academia">
+            <div class="inicio-exportacion" id="inicio-exportacion" hidden>
+                <p id="inicio-exportar-estado" role="status" aria-live="polite"></p>
+                <button type="button" id="inicio-exportar" disabled><i class="fas fa-file-pdf" aria-hidden="true"></i> Exportar informe PDF</button>
+            </div>
             <div class="inicio-bloque">
                 <div class="inicio-cabecera"><h3>Club y atletas</h3><button type="button" class="inicio-enlace" data-dashboard-destino="sec-atletas">Ver atletas <span aria-hidden="true">→</span></button></div>
                 <div class="inicio-grid inicio-grid-cuatro">
@@ -247,9 +250,18 @@
                 <div class="inicio-grid inicio-grid-finanzas">
                     <article class="card-status card-money"><h3>Aprobados · USD</h3><p id="stat-total-usd">—</p><small id="stat-estimado-usd"></small></article>
                     <article class="card-status card-money"><h3>Aprobados · Bs</h3><p id="stat-total-bs">—</p><small id="stat-estimado-bs"></small></article>
-                    <article class="card-status card-rate"><h3>Referencia de mercado</h3><p id="stat-tasa-bcv">—</p><small id="stat-tasa-eur"></small><small id="stat-tasa-fecha"></small></article>
+                    <article class="card-status card-rate" id="inicio-tasas"><h3>Referencia de mercado</h3><div class="inicio-tasas-valores"><p id="stat-tasa-bcv">—</p><p id="stat-tasa-eur">—</p></div></article>
                 </div>
-                <p class="dashboard-note" id="stat-nota-pagos">Ingresos aprobados acumulados.</p>
+                <p class="dashboard-note" id="stat-nota-pagos">Ingresos acumulados.</p>
+                <div class="inicio-grafico" id="inicio-grafico-pagos" hidden>
+                    <h4>Pagos reportados por estado</h4>
+                    <div class="inicio-grafico-barras">
+                        <div class="inicio-grafico-fila"><span>Aprobados</span><div class="inicio-pista" aria-hidden="true"><span class="inicio-verde" id="inicio-pagos-barra-aprobado"></span></div><strong id="inicio-pagos-aprobado">—</strong></div>
+                        <div class="inicio-grafico-fila"><span>Pendientes</span><div class="inicio-pista" aria-hidden="true"><span class="inicio-ambar" id="inicio-pagos-barra-pendiente"></span></div><strong id="inicio-pagos-pendiente">—</strong></div>
+                        <div class="inicio-grafico-fila"><span>Rechazados</span><div class="inicio-pista" aria-hidden="true"><span class="inicio-rojo" id="inicio-pagos-barra-rechazado"></span></div><strong id="inicio-pagos-rechazado">—</strong></div>
+                        <div class="inicio-grafico-fila" id="inicio-pagos-otros-fila" hidden><span>Otros</span><div class="inicio-pista" aria-hidden="true"><span class="inicio-gris" id="inicio-pagos-barra-otros"></span></div><strong id="inicio-pagos-otros">—</strong></div>
+                    </div>
+                </div>
             </div>
             <div class="inicio-bloque" id="inicio-deportes" hidden>
                 <div class="inicio-cabecera"><h3>Organización deportiva</h3><button type="button" class="inicio-enlace" data-dashboard-destino="sec-deportes">Ver catálogos <span aria-hidden="true">→</span></button></div>
@@ -259,7 +271,11 @@
                     <article class="card-status"><h3>Equipos</h3><p id="stat-equipos">—</p></article>
                     <article class="card-status"><h3>Eventos próximos</h3><p id="stat-eventos">—</p></article>
                 </div>
-                <div class="inicio-pie-deportes"><span><strong id="stat-con-equipo">—</strong> atletas activos con equipo</span><span><strong id="stat-representantes">—</strong> representantes aprobados</span></div>
+                <div class="inicio-grafico" id="inicio-grafico-equipos" hidden>
+                    <h4>Asignación de atletas activos</h4>
+                    <div class="inicio-barra" aria-hidden="true"><span class="inicio-verde" id="inicio-equipo-con"></span><span class="inicio-ambar" id="inicio-equipo-sin"></span></div>
+                    <div class="inicio-pie-deportes"><span><strong id="stat-con-equipo">—</strong> con equipo</span><span id="inicio-equipo-cobertura"></span><span><strong id="stat-representantes">—</strong> representantes aprobados</span></div>
+                </div>
                 <p class="inicio-aviso" id="inicio-resumen-estado" role="status" aria-live="polite"></p>
             </div>
             <div class="inicio-bloque">
@@ -967,7 +983,8 @@
     <script src="fechas.js?v=eventos-limite-1"></script>
     <script src="validacion-formularios.js?v=deportes-2"></script>
     <script src="api-client.js?v=perfiles-1"></script>
-    <script src="inicio-directiva.js?v=1"></script>
+    <script src="informe-directiva.js?v=1"></script>
+    <script src="inicio-directiva.js?v=2"></script>
     <script src="sidebar-panel.js?v=4"></script>
     <script src="ficha-atleta.js?v=3"></script>
     <script src="planilla-atleta.js?v=1"></script>
@@ -1217,18 +1234,18 @@
             }
         }
 
+        let revisionAuditoriaInicio = 0;
         async function cargarAuditoria() {
+            const revision = ++revisionAuditoriaInicio;
+            window.JaguaresInicio.comenzarAuditoria();
             try {
                 const res = await apiFetch('/api/directiva/auditoria');
                 if (!res.ok) throw new Error('Auditoría no disponible');
                 const data = await res.json();
+                if (revision !== revisionAuditoriaInicio) return;
                 if (!data.metricas || !Array.isArray(data.pagos) || !Array.isArray(data.atletas))
                     throw new Error('Respuesta de auditoría inválida');
 
-                document.getElementById('stat-activos').textContent = data.metricas.activos || 0;
-                document.getElementById('stat-espera').textContent = data.metricas.espera || 0;
-                document.getElementById('stat-pendientes').textContent = data.metricas.pagos_pendientes || 0;
-                window.JaguaresInicio.atletas(data.atletas, data.metricas.espera);
 
                 // Los ingresos reales se muestran incluso sin servicio cambiario.
                 // No convertir COP con una tasa de mercado ni modificar pagos.
@@ -1255,10 +1272,12 @@
                 document.getElementById('stat-tasa-bcv').textContent =
                     tasaDisponible ? tasaUSD.toFixed(2) + ' Bs/USD' : 'No disponible';
                 document.getElementById('stat-tasa-eur').textContent =
-                    euroDisponible ? tasaEUR.toFixed(2) + ' Bs/EUR' : '';
-                document.getElementById('stat-tasa-fecha').textContent = tasaDisponible && data.tasa_fecha
-                    ? 'ExchangeRate-API · ' + String(data.tasa_fecha).slice(0,10)
-                    : 'Sin cotización vigente';
+                    euroDisponible ? tasaEUR.toFixed(2) + ' Bs/EUR' : 'EUR no disponible';
+                const fechaReferencia = /^\d{4}-\d{2}-\d{2}/.test(String(data.tasa_fecha || ''))
+                    ? String(data.tasa_fecha).slice(0,10) : null;
+                document.getElementById('inicio-tasas').title = fechaReferencia && (tasaDisponible || euroDisponible)
+                    ? 'ExchangeRate-API · ' + fechaReferencia + ' · Referencia de mercado, no oficial BCV'
+                    : 'Referencia de mercado; fecha no disponible';
 
                 // La equivalencia USD/Bs es informativa y se distingue del
                 // dinero efectivamente recibido; no es un saldo histórico.
@@ -1267,10 +1286,9 @@
                 document.getElementById('stat-estimado-bs').textContent = tasaDisponible
                     ? 'Equiv. USD/Bs: ' + (bs + usd * tasaUSD).toFixed(2) + ' Bs' : '';
                 document.getElementById('stat-nota-pagos').textContent =
-                    'Ingresos aprobados acumulados en moneda original.' +
-                    (pagosCOP ? ' Pagos aprobados (COP): ' + (totales.COP / 100).toFixed(2) + ' COP.' : '') +
-                    (tasaDisponible ? ' Equivalencias USD/Bs estimadas.' :
-                        ' Equivalencias no disponibles.');
+                    'Ingresos acumulados.' +
+                    (pagosCOP ? ' Aprobados: ' + (totales.COP / 100).toFixed(2) + ' COP.' : '') +
+                    (tasaDisponible ? ' Equivalencias estimadas.' : '');
 
                 const bodyAtletas = document.getElementById('body-atletas');
                 bodyAtletas.innerHTML = data.atletas.length === 0
@@ -1394,12 +1412,21 @@
                 // la selección de categoría del usuario.
                 aplicarFiltrosAtletas();
                 aplicarFiltrosPagos();
+                window.JaguaresInicio.registrarAuditoria(data.atletas, data.pagos, {
+                    usd, bs, cop: totales.COP / 100,
+                    tasaUSD: tasaDisponible ? tasaUSD : null, tasaEUR: euroDisponible ? tasaEUR : null,
+                    fechaReferencia,
+                    equivalenteUSD: tasaDisponible ? usd + bs / tasaUSD : null,
+                    equivalenteBs: tasaDisponible ? bs + usd * tasaUSD : null
+                });
             } catch (err) {
-                for (const id of ['stat-activos','stat-espera','stat-pendientes','stat-total-usd','stat-total-bs','stat-tasa-bcv'])
+                if (revision !== revisionAuditoriaInicio) return;
+                for (const id of ['stat-activos','stat-espera','stat-pendientes','stat-total-usd','stat-total-bs','stat-tasa-bcv','stat-tasa-eur'])
                     document.getElementById(id).textContent = '—';
-                for (const id of ['stat-estimado-usd','stat-estimado-bs','stat-tasa-eur','stat-tasa-fecha'])
+                for (const id of ['stat-estimado-usd','stat-estimado-bs'])
                     document.getElementById(id).textContent = '';
-                window.JaguaresInicio.atletas(null);
+                document.getElementById('inicio-tasas').removeAttribute('title');
+                window.JaguaresInicio.falloAuditoria();
                 document.getElementById('stat-nota-pagos').textContent = 'No se pudo consultar la auditoría.';
                 showToast('Error al cargar datos', 'error');
                 console.error(err);

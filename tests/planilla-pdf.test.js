@@ -120,7 +120,7 @@ function json(res, data) {
     res.end(JSON.stringify(data));
 }
 
-async function openDirectiva(viewport, rol='directiva') {
+async function openDirectiva(viewport, rol='directiva', informe=false) {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport, acceptDownloads: true });
     const page = await context.newPage();
@@ -135,8 +135,27 @@ async function openDirectiva(viewport, rol='directiva') {
             body: html2pdfBundle
         })
     );
+    if(informe){
+        await page.route('**/api/directiva/auditoria',route=>route.fulfill({json:{
+            metricas:{activos:1,espera:1,pagos_pendientes:1},
+            atletas:[{...fixtureAtleta,estado:'activo'},{...fixtureAtleta,id_atleta:9002,estado:'espera'}],
+            pagos:[{id_pago:1,estado_pago:'aprobado',monto:'56.00',moneda:'USD'},
+                {id_pago:2,estado_pago:'aprobado',monto:'213674.36',moneda:'Bs'},
+                {id_pago:3,estado_pago:'pendiente',monto:'30',moneda:'USD'},
+                {id_pago:4,estado_pago:'rechazado',monto:'10000',moneda:'Bs'}],
+            tasa_bcv:924.35,tasa_eur:1011.73,tasa_fecha:'2026-11-25'
+        }}));
+        await page.route('**/api/directiva/resumen',route=>route.fulfill({json:{success:true,resumen:{
+            temporadas:3,categorias:4,equipos:5,eventos_proximos:2,
+            activos_con_equipo:1,activos_sin_equipo:0,representantes_aprobados:15,representantes_pendientes:2
+        }}}));
+    }
     await page.goto(baseUrl + '/admin/panel-'+rol+'.html');
     await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
+    if(informe){
+        await page.waitForFunction(()=>!document.getElementById('inicio-exportar').disabled);
+        return {browser,context,page,pageErrors};
+    }
     await page.waitForFunction(() => typeof window.verPlanilla === 'function');
     if(rol==='representante') await page.locator('[data-ficha-ver="9001"]').click();
     else await page.evaluate(() => window.verPlanilla(9001));
@@ -317,6 +336,56 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {
             const paginas=await inspectPdfInBrowser(page,bytes);
             assert.ok(paginas.length>=1&&paginas[0].minContentX<60&&paginas[0].maxContentX>paginas[0].width-60);
             assert.ok(paginas.some(p=>p.magentaPixels>1000),'La fotografía sintética debe aparecer en el PDF renderizado');
+            assert.deepEqual(pageErrors,[]);
+        }finally{await context.close();await browser.close();}
+    });
+}
+
+for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
+    test('informe estadístico A4: dos páginas vectoriales completas y sin datos personales ('+viewport.width+'px)',async()=>{
+        const {browser,context,page,pageErrors}=await openDirectiva(viewport,'directiva',true);
+        try{
+            const boton=page.locator('#inicio-exportar');
+            const pendiente=page.waitForEvent('download');
+            await boton.click();
+            const descarga=await pendiente;
+            assert.match(descarga.suggestedFilename(),/^Informe_Jaguares_\d{4}-\d{2}-\d{2}\.pdf$/);
+            const bytes=await fs.readFile(await descarga.path());
+            assert.equal(bytes.subarray(0,5).toString(),'%PDF-');
+            const paginas=await page.evaluate(async({baseUrl,bytes})=>{
+                const pdfjs=await import(baseUrl+'/__test__/pdf.mjs');
+                pdfjs.GlobalWorkerOptions.workerSrc=baseUrl+'/__test__/pdf.worker.mjs';
+                const pdf=await pdfjs.getDocument({data:new Uint8Array(bytes)}).promise;
+                const paginas=[];
+                for(let i=1;i<=pdf.numPages;i++){
+                    const p=await pdf.getPage(i),v=p.getViewport({scale:1});
+                    const items=(await p.getTextContent()).items.filter(t=>t.str?.trim());
+                    paginas.push({texto:items.map(t=>t.str).join(' '),width:v.width,height:v.height,
+                        dentro:items.every(t=>t.transform[4]>=0&&t.transform[4]+t.width<=v.width+1&&t.transform[5]>=0&&t.transform[5]<=v.height)});
+                }
+                await pdf.destroy();
+                return paginas;
+            },{baseUrl,bytes:Array.from(bytes)});
+            assert.equal(paginas.length,2);
+            for(const p of paginas){
+                assert.ok(Math.abs(p.width-595.28)<2&&Math.abs(p.height-841.89)<2);
+                assert.equal(p.dentro,true);
+                assert.doesNotMatch(p.texto,/representante@example\.org|99000001|Atleta de prueba/);
+            }
+            assert.match(paginas[0].texto,/Distribución de atletas/);
+            assert.match(paginas[0].texto,/Organización deportiva/);
+            assert.match(paginas[0].texto,/Representantes aprobados: 15/);
+            assert.match(paginas[1].texto,/56,00 USD|56\.00 USD/);
+            assert.match(paginas[1].texto,/213\.674,36 Bs|213,674\.36 Bs|213674,36 Bs/);
+            assert.match(paginas[1].texto,/924,35 Bs\/USD|924\.35 Bs\/USD/);
+            assert.match(paginas[1].texto,/Pagos reportados por estado/);
+            assert.match(paginas[1].texto,/Total: 4/);
+            assert.match(paginas[1].texto,/Alcance del informe/);
+            const renders=await inspectPdfInBrowser(page,bytes);
+            assert.equal(renders.length,2);
+            assert.ok(renders.every(p=>p.minContentX<60&&p.maxContentX>p.width-60));
+            await page.waitForFunction(()=>!document.getElementById('inicio-exportar').disabled);
+            assert.equal(await boton.getAttribute('aria-busy'),null);
             assert.deepEqual(pageErrors,[]);
         }finally{await context.close();await browser.close();}
     });

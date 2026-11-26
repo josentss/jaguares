@@ -42,3 +42,30 @@
     #sec-dashboard .inicio-cabecera { gap: 4px 10px; }
     #sec-dashboard .inicio-accesos button { flex: 1 1 135px; }
 }
+
+/* Indicadores visuales compactos y exportación: solo Directiva. */
+#sec-dashboard .inicio-exportacion { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:8px 14px; margin-bottom:12px; }
+#sec-dashboard .inicio-exportacion p { font-size:.8rem; color:var(--text-muted); margin:0; }
+#sec-dashboard .inicio-exportacion p:empty { display:none; }
+#inicio-exportar { background:#fff; border:1px solid #d76325; border-radius:8px; padding:10px 14px; min-height:44px; color:#ad3e0b; font:inherit; font-size:.83rem; font-weight:600; cursor:pointer; }
+#inicio-exportar:disabled { opacity:.55; cursor:not-allowed; }
+#inicio-exportar i { margin-right:5px; }
+#sec-dashboard .inicio-tasas-valores { display:grid; grid-template-columns:minmax(0,1fr); gap:5px; width:100%; }
+#sec-dashboard .inicio-tasas-valores p { font-size:1.25rem; line-height:1.25; margin:0; font-weight:700; }
+#sec-dashboard .inicio-grafico { margin-top:10px; padding:12px 14px; background:#fff; border:1px solid #e8ecf1; border-radius:10px; }
+#sec-dashboard .inicio-grafico h4 { font-size:.8rem; font-weight:600; margin:0 0 9px; color:var(--text-muted); }
+#sec-dashboard .inicio-grafico-barras { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px 18px; }
+#sec-dashboard .inicio-grafico-fila { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; align-items:center; font-size:.78rem; min-width:0; }
+#sec-dashboard .inicio-grafico-fila strong { grid-column:2; grid-row:1; font-variant-numeric:tabular-nums; }
+#sec-dashboard .inicio-pista { grid-column:1/-1; grid-row:2; height:7px; background:#e2e8f0; border-radius:5px; overflow:hidden; }
+#sec-dashboard .inicio-pista span { display:block; height:100%; }
+#sec-dashboard .inicio-verde { background:#318052; }
+#sec-dashboard .inicio-ambar { background:#d68a28; }
+#sec-dashboard .inicio-rojo { background:#b45151; }
+#sec-dashboard .inicio-gris { background:#94a3b8; }
+#sec-dashboard .inicio-pie-deportes { margin-top:5px; }
+@container inicio-directiva (max-width:469px) {
+    #sec-dashboard .inicio-grafico-barras { grid-template-columns:minmax(0,1fr); gap:10px; }
+    #sec-dashboard .inicio-exportacion { justify-content:flex-start; }
+    #inicio-exportar { width:100%; }
+}

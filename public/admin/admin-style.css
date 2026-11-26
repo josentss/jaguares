@@ -1308,20 +1308,34 @@ tr:hover td { background-color: #f8fafc; }
 /* La etiqueta del interruptor y la del dato son independientes. */
 .form-group-panel .label-toggle .toggle-own { font-size: .8rem; font-weight: 500; color: var(--naranja); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }
 
-/* Sidebar de escritorio: el control queda siempre fuera de la barra.
-   En móvil conserva el cajón y el backdrop existentes. */
+/* Un único botón: en el logo con menú abierto, junto al título con menú
+   cerrado y en la barra superior fija en móvil. Nunca reserva un carril. */
+.panel-title-group { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.panel-title-group h2 { overflow-wrap: anywhere; }
+@media (max-width: 768px) {
+    .panel-title-group { width: 100%; }
+}
 @media (min-width: 993px) {
     body.panel-body .mobile-menu-toggle {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 40px; height: 40px; padding: 0; top: 34px;
-        left: calc(var(--sidebar-w) + 8px); box-shadow: none; border-radius: 8px;
+        position: static; display: inline-flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; flex: 0 0 36px; padding: 0;
+        box-shadow: none; border-radius: 8px; font-size: 1rem;
     }
-    body.panel-body .main-content { padding-left: 64px; }
+    .sidebar-logo { padding-inline: 16px; gap: 8px; }
+    .sidebar-logo img { flex-shrink: 0; width: 40px; }
+    .sidebar-logo .mobile-menu-toggle {
+        margin-left: auto; color: #e2e8f0; background: #ffffff10;
+    }
+    .sidebar-logo .mobile-menu-toggle:hover { background: #ffffff20; }
+    .panel-title-group .mobile-menu-toggle { color: #334155; background: #e2e8f0; }
+    .panel-title-group .mobile-menu-toggle:hover { background: #d5dde7; }
     body.panel-body.sidebar-colapsado .sidebar { display: none; }
     body.panel-body.sidebar-colapsado .main-content { margin-left: 0; }
-    body.panel-body.sidebar-colapsado .mobile-menu-toggle { left: 8px; }
     body.panel-body.sidebar-colapsado .panel-header,
     body.panel-body.sidebar-colapsado .panel-section { max-width: none; }
+}
+@media (min-width: 993px) and (max-width: 1200px) {
+    .main-content { padding-inline: 24px; }
 }
 .mobile-menu-toggle:focus-visible { outline: 3px solid #b45309; outline-offset: 3px; }
 .pago-icono--editar { color: #8a4c10; background: #fff8ed; border-color: #ead3b3; }

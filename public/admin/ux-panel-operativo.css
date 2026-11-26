@@ -27,16 +27,19 @@
 }
 .sidebar-menu--agrupado li[data-target]:focus-visible { outline: 2px solid var(--naranja); outline-offset: -2px; }
 
+/* Inscripción: usar el ancho real del formulario, no el viewport ni un tope
+   fijo. El sidebar puede cambiar de tamaño sin cambiar la ventana. */
+#form-dir-atleta, #form-add-atleta { container: atleta-registro / inline-size; min-width: 0; }
 #form-dir-atleta > .form-grid,
-#form-add-atleta > .form-grid,
-#form-dir-atleta > .form-grid.form-docs {
-    max-width: 1050px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 18px;
+#form-add-atleta > .form-grid {
+    width: 100%; min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 18px;
 }
+#form-dir-atleta > .form-grid > .form-medico-resumen,
+#form-add-atleta > .form-grid > .form-medico-resumen { grid-column: span 2; }
 #form-dir-atleta > .form-grid > .full-width,
 #form-add-atleta > .form-grid > .full-width { grid-column: 1 / -1; }
 #form-dir-atleta .fieldset-rep .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 #form-dir-atleta .fieldset-rep .form-grid .full-width { grid-column: 1 / -1; }
-#form-dir-atleta .form-docs { max-width: 1050px; }
 #form-dir-atleta .form-grid > .form-group-panel,
 #form-add-atleta .form-grid > .form-group-panel { min-width: 0; }
 #form-dir-atleta .form-grid > .form-group-panel input,
@@ -48,17 +51,21 @@
 #sec-atletas .table-filters select { min-width: 168px; }
 #sec-atletas .table-filters #filter-categoria-atletas { max-width: 240px; }
 
-@media (max-width: 1180px) {
+@container atleta-registro (max-width: 899px) {
     #form-dir-atleta > .form-grid,
     #form-add-atleta > .form-grid,
-    #form-dir-atleta > .form-grid.form-docs,
     #form-dir-atleta .fieldset-rep .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #form-dir-atleta > .form-grid > :is(.form-categoria-resumen, .form-medico-resumen),
+    #form-add-atleta > .form-grid > :is(.form-categoria-resumen, .form-medico-resumen) { grid-column: 1 / -1; }
+}
+@container atleta-registro (max-width: 619px) {
+    #form-dir-atleta > .form-grid,
+    #form-add-atleta > .form-grid,
+    #form-dir-atleta .fieldset-rep .form-grid { grid-template-columns: minmax(0,1fr); gap: 14px; }
+    #form-dir-atleta .form-grid > .form-group-panel,
+    #form-add-atleta .form-grid > .form-group-panel { min-width: 0; }
 }
 @media (max-width: 700px) {
-    #form-dir-atleta > .form-grid,
-    #form-add-atleta > .form-grid,
-    #form-dir-atleta > .form-grid.form-docs,
-    #form-dir-atleta .fieldset-rep .form-grid { grid-template-columns: minmax(0,1fr); gap: 14px; }
     #sec-atletas .table-filters { align-items: stretch; width: 100%; }
     #sec-atletas .table-filters select,
     #sec-atletas .table-filters #filter-categoria-atletas { width: 100%; max-width: none; }

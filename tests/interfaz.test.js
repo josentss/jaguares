@@ -1046,3 +1046,85 @@ test('ambos paneles: sidebar escritorio y móvil, ver y editar ficha sin alterar
         }
     }finally{await browser.close();}
 });
+
+for (const rol of ['directiva','representante']) {
+    test(`sidebar y registro responsive: sin espacio desperdiciado ni pérdida de datos (${rol})`, async()=>{
+        const browser=await chromium.launch({headless:true});
+        try{
+            const page=await browser.newPage({viewport:{width:1920,height:1080}});
+            await page.route('https://**/*',route=>route.abort());
+            const errores=[];page.on('pageerror',e=>errores.push(e.message));
+            await page.goto(baseUrl+'/admin/panel-'+rol+'.html');
+            await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
+            const nav=rol==='directiva'?'sec-registrar':'sec-atletas';
+            const pref=rol==='directiva'?'dir':'atl';
+            const formId=rol==='directiva'?'form-dir-atleta':'form-add-atleta';
+            const menu=page.locator('.mobile-menu-toggle');
+            const nombre=page.locator('#'+pref+'-nombres');
+            await page.evaluate(nav=>document.querySelector('[data-target="'+nav+'"]').click(),nav);
+            await nombre.fill('Prueba Responsive');
+            async function geometria(){
+                return page.evaluate(formId=>{
+                    const form=document.getElementById(formId), main=document.querySelector('.main-content');
+                    const grids=[...form.querySelectorAll(':scope > .form-grid')];
+                    const css=getComputedStyle(main), rect=form.getBoundingClientRect();
+                    const boton=document.querySelector('.mobile-menu-toggle');
+                    const card=form.closest('.form-container-panel');
+                    const cardCss=getComputedStyle(card), cardRect=card.getBoundingClientRect();
+                    return {ancho:rect.width,izquierda:rect.left,derecha:rect.right,
+                        interior:cardRect.width-parseFloat(cardCss.paddingLeft)-parseFloat(cardCss.paddingRight),
+                        margen:Number.parseFloat(css.marginLeft),padI:parseFloat(css.paddingLeft),padD:parseFloat(css.paddingRight),
+                        ventana:innerWidth,scroll:document.documentElement.scrollWidth,
+                        ubicacion:boton.parentElement.className,
+                        columnas:grids.map(g=>getComputedStyle(g).gridTemplateColumns.split(' ').length),
+                        anchos:grids.map(g=>g.getBoundingClientRect().width),
+                        desborda:grids.some(g=>g.scrollWidth>g.clientWidth+2),
+                        botones:document.querySelectorAll('.mobile-menu-toggle').length};
+                },formId);
+            }
+            function comprobar(g){
+                assert.equal(g.botones,1);
+                assert.ok(Math.abs(g.ancho-g.interior)<2,'La ficha debe ocupar todo el interior de la tarjeta');
+                assert.ok(g.anchos.every(a=>Math.abs(a-g.ancho)<2),'Ninguna rejilla conserva el límite de 1050px');
+                assert.ok(Math.abs(g.padI-g.padD)<2,'Sin carril lateral reservado al botón');
+                assert.ok(g.scroll<=g.ventana+2,'Sin desplazamiento horizontal de la página');
+                assert.equal(g.desborda,false,'Sin desbordamiento de los campos');
+                const esperadas=g.ancho>=900?3:g.ancho>=620?2:1;
+                assert.ok(g.columnas.every(n=>n===esperadas),'Columnas según el espacio real: '+JSON.stringify(g));
+            }
+            for(const width of [1920,1440,1100,993]){
+                await page.setViewportSize({width,height:900});
+                await page.waitForFunction(()=>document.querySelector('.mobile-menu-toggle').getAttribute('aria-expanded')==='true');
+                const abierto=await geometria();comprobar(abierto);
+                assert.equal(abierto.ubicacion,'sidebar-logo');
+                await menu.click();
+                const cerrado=await geometria();comprobar(cerrado);
+                assert.equal(cerrado.ubicacion,'panel-title-group');
+                assert.equal(cerrado.margen,0);
+                assert.ok(cerrado.ancho>abierto.ancho+100,'Ocultar menú debe ampliar realmente el formulario');
+                assert.equal(await nombre.inputValue(),'Prueba Responsive');
+                await menu.click();
+                assert.equal(await menu.getAttribute('aria-expanded'),'true');
+            }
+            for(const width of [992,768,390,320]){
+                await page.setViewportSize({width,height:844});
+                await page.waitForFunction(()=>document.querySelector('.mobile-menu-toggle').getAttribute('aria-expanded')==='false');
+                const movil=await geometria();comprobar(movil);
+                assert.equal(movil.margen,0);
+                assert.equal(movil.ubicacion,'panel-body');
+                await menu.click();
+                assert.equal(await menu.getAttribute('aria-expanded'),'true');
+                assert.equal(await page.locator('.main-content').evaluate(x=>x.inert),true);
+                await menu.click();
+                assert.equal(await menu.getAttribute('aria-expanded'),'false');
+                assert.equal(await nombre.inputValue(),'Prueba Responsive');
+                comprobar(await geometria());
+            }
+            await page.setViewportSize({width:1440,height:900});
+            await page.waitForFunction(()=>document.querySelector('.mobile-menu-toggle').getAttribute('aria-expanded')==='true');
+            assert.equal((await geometria()).ubicacion,'sidebar-logo');
+            assert.equal(await page.locator('#btn-logout').isVisible(),true);
+            assert.deepEqual(errores,[]);
+        }finally{await browser.close();}
+    });
+}

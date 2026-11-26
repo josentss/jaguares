@@ -6,6 +6,8 @@
         '" aria-hidden="true" focusable="false" ' + attributes + '>' + path + '</svg>';
 
     window.JaguaresIconos = Object.freeze({
+        editar: svg('0 0 24 24','<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L9 17l-4 1 1-4z"/>','fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'),
+        documentos: svg('0 0 24 24','<path d="M3 7V5h7l2 2h9v13H3z"/>','fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"'),
         aprobar: svg('0 0 24 24',
             '<path d="m5 14 4 4L19 8"/>',
             'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'),

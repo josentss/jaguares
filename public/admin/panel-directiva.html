@@ -14,7 +14,7 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=perfiles-1">
+    <link rel="stylesheet" href="admin-style.css?v=fichas-3">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=2">
     <link rel="stylesheet" href="asignaciones-equipos.css?v=4">
     <link rel="stylesheet" href="conciliacion-cobros.css?v=1">
@@ -341,13 +341,43 @@
         <noscript><p>Este panel requiere JavaScript. <a href="/admin/login.html">Ir al inicio de sesión</a>.</p></noscript>
     </main>
 
-    <button class="mobile-menu-toggle" id="mobile-menu-btn">
+    <button type="button" class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Ocultar menú" aria-controls="sidebar" aria-expanded="true">
         <i class="fas fa-bars"></i>
     </button>
 
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
     <div id="toast-container"></div>
+    <dialog id="ficha-atleta-dialog" class="ficha-atleta-dialog" aria-labelledby="ficha-atleta-titulo">
+        <div class="ficha-atleta-header">
+            <h3 id="ficha-atleta-titulo">Ficha del atleta</h3>
+            <button type="button" class="ficha-atleta-cerrar" id="ficha-cerrar" aria-label="Cerrar ficha">×</button>
+        </div>
+        <p id="ficha-estado" role="status" aria-live="polite"></p>
+        <div id="ficha-lectura" hidden>
+            <dl id="ficha-datos" class="ficha-datos"></dl>
+            <div id="ficha-documentos" class="ficha-documentos"></div>
+            <button type="button" class="btn-panel-submit" id="ficha-editar">Editar ficha</button>
+        </div>
+        <form id="ficha-form" hidden>
+            <div class="form-grid">
+                <div class="form-group-panel"><label for="ficha-nombres">Nombres</label><input id="ficha-nombres" required maxlength="80"></div>
+                <div class="form-group-panel"><label for="ficha-apellidos">Apellidos</label><input id="ficha-apellidos" required maxlength="80"></div>
+                <div class="form-group-panel">
+                    <div class="label-toggle"><label for="ficha-cedula">Cédula</label><label class="toggle-own" for="ficha-heredada"><input id="ficha-heredada" type="checkbox">Heredada</label></div>
+                    <div class="cedula-group" id="ficha-cedula-grupo"><select id="ficha-nac" required aria-label="Tipo de cédula"><option value="V-">V-</option><option value="E-">E-</option></select><input id="ficha-cedula" required minlength="7" maxlength="9" pattern="[0-9]{7,9}" inputmode="numeric" placeholder="Número"></div>
+                    <small id="ficha-cedula-nota" class="field-note" hidden></small>
+                </div>
+                <div class="form-group-panel"><label for="ficha-fecha">Fecha de nacimiento</label><input type="date" id="ficha-fecha" required></div>
+                <div class="form-group-panel"><label for="ficha-direccion">Dirección</label><input id="ficha-direccion" required maxlength="255"></div>
+                <div class="form-group-panel"><label for="ficha-telefono">Teléfono de contacto (opcional)</label><input id="ficha-telefono" inputmode="tel" maxlength="30"></div>
+                <div class="form-group-panel full-width"><label for="ficha-medico">Alergias o condiciones médicas</label><textarea id="ficha-medico" maxlength="500" rows="2"></textarea></div>
+            </div>
+            <p class="field-note">La corrección no cambia el estado, representante, documentos, equipos ni pagos. Si cambia la edad, revisa la categoría y la asignación deportiva.</p>
+            <div class="ficha-botones"><button type="button" class="btn-outline-sm" id="ficha-cancelar">Cancelar</button><button type="submit" class="btn-panel-submit">Guardar cambios</button></div>
+        </form>
+    </dialog>
+
 
     <div class="modal-overlay" id="planillaModal">
         <div class="modal-planilla">
@@ -1128,9 +1158,11 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="fechas.js?v=eventos-limite-1"></script>
-    <script src="validacion-formularios.js?v=cedulas-1"></script>
+    <script src="validacion-formularios.js?v=fichas-1"></script>
     <script src="api-client.js?v=perfiles-1"></script>
-    <script src="iconos-acciones.js?v=1"></script>
+    <script src="sidebar-panel.js?v=2"></script>
+    <script src="ficha-atleta.js?v=2"></script>
+    <script src="iconos-acciones.js?v=2"></script>
     <script src="comprobantes-ui.js?v=2"></script>
     <script src="catalogos-deportivos.js?v=5"></script>
     <script src="asignaciones-equipos.js?v=4"></script>
@@ -1152,6 +1184,7 @@
     </script>
     <script>
         let currentUser = null;
+        if (typeof apiFetch === 'function') window.JaguaresFicha?.inicializar({apiFetch, showToast, actualizar:cargarAuditoria});
         let planillaPdfEnCurso = false;
         let planillaImpresionEnCurso = false;
 
@@ -1970,6 +2003,7 @@
                             <div class="pago-acciones atleta-acciones" role="group" aria-label="Acciones de ${esc(nombreCompleto)}">
                                 <button type="button" class="pago-icono pago-icono--ver" onclick="verPlanilla(${Number(a.id_atleta)})"
                                     title="Ver planilla" aria-label="Ver planilla de ${esc(nombreCompleto)}">${window.JaguaresIconos.comprobante}</button>
+                                <button type="button" class="pago-icono pago-icono--editar" data-ficha-editar="${Number(a.id_atleta)}" title="Editar ficha" aria-label="Editar ficha de ${esc(nombreCompleto)}">${window.JaguaresIconos.editar}</button>
                                 ${btnWa}
                                 ${a.estado !== 'activo' ? `<button type="button" class="pago-icono pago-icono--aprobar js-atleta-estado" data-id="${Number(a.id_atleta)}" data-estado="activo" data-rep="${Number(a.id_representante)}" data-nombre="${esc(nombreCompleto)}" title="Aprobar atleta" aria-label="Aprobar a ${esc(nombreCompleto)}">${window.JaguaresIconos.aprobar}</button>` : ''}
                                 ${a.estado !== 'inactivo' ? `<button type="button" class="pago-icono pago-icono--rechazar js-atleta-estado" data-id="${Number(a.id_atleta)}" data-estado="inactivo" data-rep="${Number(a.id_representante)}" data-nombre="${esc(nombreCompleto)}" title="Inactivar atleta" aria-label="Inactivar a ${esc(nombreCompleto)}">${window.JaguaresIconos.rechazar}</button>` : ''}
@@ -2487,28 +2521,8 @@
             }
         });
 
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const sidebar = document.getElementById('sidebar');
-        const backdrop = document.getElementById('sidebar-backdrop');
-
-        function cerrarSidebarMovil() {
-            if (sidebar) sidebar.classList.remove('open');
-            if (backdrop) backdrop.classList.remove('show');
-        }
-
-        if (mobileMenuBtn && sidebar) {
-            mobileMenuBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sidebar.classList.toggle('open');
-                if (backdrop) {
-                    backdrop.classList.toggle('show', sidebar.classList.contains('open'));
-                }
-            });
-        }
-        if (backdrop) {
-            backdrop.addEventListener('click', cerrarSidebarMovil);
-        }
-        window.addEventListener('resize', () => { if (window.innerWidth > 992) cerrarSidebarMovil(); });
+        const menuPanel = window.JaguaresSidebar.inicializar('mobile-menu-btn');
+        function cerrarSidebarMovil() { menuPanel.cerrarMovil(); }
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (typeof exigirSesionPanel !== 'function' || typeof protegerSesionPanel !== 'function' ||

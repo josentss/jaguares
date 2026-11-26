@@ -8,6 +8,9 @@
     const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/u;
 
     const CAMPOS = {
+        'ficha-nombres': ['nombre',80], 'ficha-apellidos': ['nombre',80],
+        'ficha-cedula': ['cedula-numero',9], 'ficha-direccion': ['texto',255],
+        'ficha-telefono': ['telefono',30], 'ficha-medico': ['medico',500],
         'reg-names': ['nombre', 80], 'reg-lastnames': ['nombre', 80],
         'reg-email': ['correo', 120], 'reg-password': ['clave', 128],
         'atl-nombres': ['nombre', 80], 'atl-apellidos': ['nombre', 80],

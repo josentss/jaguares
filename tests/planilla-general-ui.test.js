@@ -97,7 +97,7 @@ async function abrir(viewport) {
     await page.goto(baseUrl + '/admin/panel-directiva.html');
     await page.waitForFunction(() => document.body.dataset.sessionState === 'ready');
     const toggleMovil = page.locator('#mobile-menu-btn');
-    if (await toggleMovil.isVisible()) await toggleMovil.click();
+    if (await toggleMovil.isVisible() && (await toggleMovil.getAttribute('aria-expanded')) === 'false') await toggleMovil.click();
     const item = page.locator('[data-target="sec-plantillas"]');
     const grupo = item.locator('xpath=ancestor::li[contains(concat(" ", normalize-space(@class), " "), " sidebar-group ")]');
     if (await grupo.count()) {

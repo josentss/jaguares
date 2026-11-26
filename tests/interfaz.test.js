@@ -164,6 +164,9 @@ for (const dispositivo of [
             assert.equal(await botonComprobante.getAttribute('data-id'), '1');
             assert.equal(await page.locator('#table-my-pagos tbody a[href*="cloudinary"]').count(), 0);
             await botonComprobante.click();
+            assert.equal(await page.locator('.comprobante-dialog').count(),1);
+            assert.equal(await page.locator('.comprobante-dialog-cerrar').count(),1);
+            assert.equal(await page.locator('#ficha-atleta-dialog').isVisible(),false);
             await page.locator('.comprobante-dialog').waitFor({state:'visible'});
             await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});
             assert.equal(await page.locator('.comprobante-dialog-abrir').getAttribute('target'), '_blank');
@@ -286,6 +289,9 @@ for (const dispositivo of [
                 Math.max(...fila.alturas) === Math.min(...fila.alturas) && fila.derecha <= fila.ancho + 1),
                 'Las acciones de pagos deben caber en una sola línea');
             await page.locator('#body-pagos button.js-pago-ver').first().click();
+            assert.equal(await page.locator('.comprobante-dialog').count(),1);
+            assert.equal(await page.locator('.comprobante-dialog-cerrar').count(),1);
+            assert.equal(await page.locator('#ficha-atleta-dialog').isVisible(),false);
             await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});
             assert.equal(await page.locator('#body-pagos a[href*="cloudinary"]').count(), 0);
             await page.locator('.comprobante-dialog-cerrar').click();
@@ -989,4 +995,54 @@ test('Mi perfil de ambos roles: carga V/E, conserva el contrato y no envía rol 
             await page.close();
         }
     } finally {await browser.close();}
+});
+
+test('ambos paneles: sidebar escritorio y móvil, ver y editar ficha sin alterar otros campos',async()=>{
+    const browser=await chromium.launch({headless:true});
+    try{
+        for(const rol of ['directiva','representante']){
+            const page=await browser.newPage({viewport:{width:1440,height:900}});
+            await page.route('https://**/*',r=>r.abort());
+            const errores=[];page.on('pageerror',e=>errores.push(e.message));
+            let enviado;
+            const ficha={id_atleta:11,version_ficha:'a'.repeat(64),nombres:'Atleta Prueba',
+                apellidos:'Sintético',cedula:'E-12345678',cedula_heredada:false,fecha_nacimiento:'2014-05-10',
+                direccion:'Calle de pruebas 12',telefono:'04141234567',alergias_medicas:'',estado:'espera',documentos:{}};
+            await page.route('**/api/atletas/11',r=>r.fulfill({json:{success:true,atleta:ficha}}));
+            await page.route('**/api/atletas/11/ficha',r=>{enviado=r.request().postDataJSON();return r.fulfill({json:{success:true}});});
+            await page.goto(baseUrl+'/admin/panel-'+rol+'.html');
+            await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
+            const menu=page.locator(rol==='directiva'?'#mobile-menu-btn':'#menu-toggle');
+            await menu.click();assert.equal(await menu.getAttribute('aria-expanded'),'false');
+            assert.equal(await page.locator('#sidebar').isVisible(),false);
+            assert.equal(await page.locator('.main-content').evaluate(x=>getComputedStyle(x).marginLeft),'0px');
+            await menu.click();assert.equal(await menu.getAttribute('aria-expanded'),'true');
+            if(rol==='directiva')await page.evaluate(()=>document.querySelector('[data-target="sec-atletas"]').click());
+            else {
+                await page.locator('#rep-atletas-buscar').fill('no-existe-sintetico');
+                await page.waitForFunction(()=>document.querySelector('#rep-atletas-resultados').textContent.startsWith('0 de'));
+                await page.locator('#rep-atletas-buscar').fill('');
+                await page.locator('[data-ficha-ver="11"]').click();
+                await page.locator('#ficha-lectura').waitFor({state:'visible'});
+                assert.match(await page.locator('#ficha-datos').textContent(),/E-12345678/);
+                await page.locator('#ficha-cerrar').click();
+            }
+            await page.locator('[data-ficha-editar="11"]').first().click();
+            await page.locator('#ficha-nombres').waitFor({state:'visible'});
+            assert.equal(await page.locator('#ficha-atleta-dialog').isVisible(),true);
+            assert.equal(await page.locator('.comprobante-dialog').isVisible(),false);
+            assert.equal(await page.locator('#ficha-nac').inputValue(),'E-');
+            await page.locator('#ficha-nombres').fill('Atleta Corregido');
+            await page.locator('#ficha-form button[type=submit]').click();
+            await page.waitForFunction(()=>!document.getElementById('ficha-atleta-dialog').open);
+            assert.equal(enviado.nombres,'Atleta Corregido');assert.equal(enviado.cedula,'E-12345678');
+            assert.equal(Object.hasOwn(enviado,'estado'),false);assert.equal(Object.hasOwn(enviado,'id_representante'),false);
+            await page.setViewportSize({width:390,height:844});
+            await page.waitForFunction(()=>document.querySelector('.mobile-menu-toggle').getAttribute('aria-expanded')==='false');
+            await menu.click();assert.equal(await menu.getAttribute('aria-expanded'),'true');
+            await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('aria-expanded'),'false');
+            assert.deepEqual(errores,[]);
+            await page.close();
+        }
+    }finally{await browser.close();}
 });

@@ -214,7 +214,7 @@ async function seccion(page, id) {
     await page.locator('.main-content').waitFor({ state: 'visible' });
     const menu = page.locator('.mobile-menu-toggle');
     const item = page.locator(`[data-target="${id}"]`);
-    if (await menu.isVisible() && !(await page.locator('#sidebar').evaluate(e=>e.classList.contains('open')))) {
+    if (await menu.isVisible() && (await menu.getAttribute('aria-expanded')) === 'false') {
         await menu.click();
     }
     // En directiva, la navegación está agrupada y cada grupo se abre

@@ -224,3 +224,61 @@ test('consulta un equipo por temporada y genera su PDF', async () => {
         assert.deepEqual(errores,[]);
     } finally { await context.close(); await browser.close(); }
 });
+
+test('consulta: mensaje breve y controles alineados con menú abierto y cerrado',async()=>{
+    const {browser,context,page,errores}=await abrir({width:1920,height:900});
+    try{
+        const menu=page.locator('#mobile-menu-btn');
+        const tipo=page.locator('#plantillas-tipo'), alcance=page.locator('#plantillas-alcance');
+        await tipo.selectOption('equipo');
+        await alcance.locator('option[value="1"]').waitFor({state:'attached'});
+        const antes=peticiones.length;
+        const submit=page.locator('#plantillas-consultar');
+        await submit.click();
+        const error=page.locator('#plantillas-consulta-form .form-validation-message');
+        await error.waitFor({state:'visible'});
+        assert.match(await error.textContent(),/^Equipo: /);
+        assert.doesNotMatch(await error.textContent(),/Jaguares A|Seleccionar equipoU-/);
+        assert.equal(peticiones.length,antes);
+        async function comprobar(){
+            const g=await page.evaluate(()=>{
+                const f=document.querySelector('.plantillas-filtros');
+                const card=f.closest('.plantillas-panel'), cs=getComputedStyle(card);
+                const a=document.getElementById('plantillas-tipo').getBoundingClientRect();
+                const b=document.getElementById('plantillas-alcance').getBoundingClientRect();
+                const c=document.getElementById('plantillas-consultar').getBoundingClientRect();
+                const e=document.querySelector('#plantillas-consulta-form .form-validation-message')?.getBoundingClientRect();
+                const pdf=document.getElementById('generar-planilla-general').getBoundingClientRect();
+                return {ancho:f.clientWidth,limite:card.getBoundingClientRect().right-parseFloat(cs.paddingRight)-parseFloat(cs.borderRightWidth),
+                    derecha:f.getBoundingClientRect().right,izquierda:f.getBoundingClientRect().left,
+                    a:a.bottom,b:b.bottom,c:c.bottom,boton:c.right,error:e?{left:e.left,right:e.right,top:e.top}:null,
+                    pdf:pdf.width?pdf.right:null,scroll:document.documentElement.scrollWidth,ventana:innerWidth};
+            });
+            assert.ok(Math.abs(g.derecha-g.limite)<2,JSON.stringify(g));
+            assert.ok(g.scroll<=g.ventana+2);
+            if(g.ancho>=640){
+                assert.ok(Math.abs(g.a-g.c)<2&&Math.abs(g.b-g.c)<2,'Filtros y consulta en una fila');
+                assert.ok(Math.abs(g.boton-g.limite)<2);
+            }
+            if(g.error){
+                assert.ok(Math.abs(g.error.left-g.izquierda)<2&&Math.abs(g.error.right-g.derecha)<2);
+                assert.ok(g.error.top>=g.c);
+            }
+            if(g.pdf!==null)assert.ok(Math.abs(g.pdf-g.limite)<2);
+        }
+        for(const width of [1920,1440,1100,993]){
+            await page.setViewportSize({width,height:900});await comprobar();
+            await menu.click();await comprobar();await menu.click();
+        }
+        await alcance.selectOption('1');
+        assert.equal(await error.count(),0);
+        assert.equal(await alcance.getAttribute('aria-invalid'),null);
+        await submit.click();
+        await page.getByText('2 atletas activos').waitFor();
+        await menu.click();await comprobar();await menu.click();
+        for(const width of [768,390,320]){
+            await page.setViewportSize({width,height:844});await comprobar();
+        }
+        assert.deepEqual(errores,[]);
+    }finally{await context.close();await browser.close();}
+});

@@ -61,6 +61,7 @@
         if (tipo === 'equipo') poblarEquipos(select);
         else poblarCategorias(select);
         if ([...select.options].some(opcion => opcion.value === anterior)) select.value = anterior;
+        select.removeAttribute('aria-invalid');
         porId('plantillas-consultar').disabled = select.options.length <= 1;
         if (!conservarResultado) limpiarResultado();
         estado(tipo === 'equipo' && select.options.length <= 1
@@ -92,7 +93,7 @@
         datosActuales = datos;
         porId('plantillas-titulo').textContent = datos.alcance.nombre;
         porId('plantillas-detalle').textContent = datos.alcance.detalle;
-        porId('plantillas-total').textContent = `${datos.total} atletas activos`;
+        porId('plantillas-total').textContent = datos.total === 1 ? '1 atleta activo' : `${datos.total} atletas activos`;
         const cuerpo = porId('plantillas-body');
         cuerpo.replaceChildren();
         for (const atleta of datos.atletas) {
@@ -191,7 +192,7 @@
         apiFetch = dependencias.apiFetch;
         showToast = dependencias.showToast;
         porId('plantillas-tipo').addEventListener('change', actualizarAlcances);
-        porId('plantillas-alcance').addEventListener('change', limpiarResultado);
+        porId('plantillas-alcance').addEventListener('change', () => { limpiarResultado(); estado(''); });
         porId('plantillas-consulta-form').addEventListener('submit', consultar);
         porId('generar-planilla-general').addEventListener('click', generar);
         actualizarAlcances();

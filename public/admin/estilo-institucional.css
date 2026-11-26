@@ -86,11 +86,12 @@
 #form-add-atleta > .form-grid > .form-categoria-resumen .categoria-automatica { margin-top: 0; box-sizing: border-box; }
 #form-dir-atleta > .form-grid > .form-medico-resumen textarea,
 #form-add-atleta > .form-grid > .form-medico-resumen textarea { min-height: 88px; }
-@media (max-width: 1199px) {
-    .deportes-grid { grid-template-columns: 1fr; }
+@container deportes-catalogos (max-width: 899px) {
     .deportes-card p { min-height: 0; }
     .deportes-form { flex: 0 1 auto; min-height: 0; }
     .deportes-form .deportes-actions { margin-top: 2px; }
+}
+@media (max-width: 1199px) {
     .atleta-acciones { flex-wrap: wrap; }
 }
 @media (max-width: 768px) {

@@ -97,6 +97,7 @@
                 (clasificacion?.estado === 'requiere_validacion' ? `${clasificacion.mensaje} ` : '') +
                 'Verifica la categoría del equipo.';
         } else aviso.textContent = '';
+        aviso.closest('.asignaciones-resumen').hidden = !porId('asignaciones-actual').textContent && !aviso.textContent;
 
         const historial = porId('asignaciones-historial');
         historial.replaceChildren();

@@ -1133,7 +1133,7 @@ test('móvil conserva identidad del menú y acciones de atletas en una fila comp
     const browser=await chromium.launch({headless:true});
     try{
         for(const rol of ['directiva','representante']){
-            const page=await browser.newPage({viewport:{width:390,height:844}});
+            const page=await browser.newPage({viewport:{width:1440,height:900},hasTouch:true});
             const errores=[];page.on('pageerror',e=>errores.push(e.message));
             await page.route('https://**/*',route=>route.abort());
             await page.goto(baseUrl+'/admin/panel-'+rol+'.html');
@@ -1141,17 +1141,25 @@ test('móvil conserva identidad del menú y acciones de atletas en una fila comp
             const menu=page.locator('.mobile-menu-toggle');
             const colores=()=>menu.evaluate(e=>({fondo:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,
                 icono:e.querySelector('i').className,ancho:e.getBoundingClientRect().width,alto:e.getBoundingClientRect().height}));
-            const cerrado=await colores();
-            assert.equal(cerrado.fondo,'rgb(226, 232, 240)');
-            assert.equal(cerrado.color,'rgb(51, 65, 85)');
-            assert.ok(cerrado.ancho>=44&&cerrado.alto>=44);
+            const identidad=({fondo,color,icono})=>({fondo,color,icono});
+            const escritorioAbierto=identidad(await colores());
             await menu.click();
+            await menu.evaluate(e=>e.blur());
+            await page.mouse.move(700,700);
+            const escritorioCerrado=identidad(await colores());
+            await menu.click();
+            await page.setViewportSize({width:390,height:844});
+            await page.waitForFunction(()=>document.querySelector('.mobile-menu-toggle').getAttribute('aria-expanded')==='false');
+            await page.mouse.move(350,700);
+            const cerrado=await colores();
+            assert.deepEqual(identidad(cerrado),escritorioCerrado);
+            assert.ok(cerrado.ancho>=44&&cerrado.alto>=44);
+            await menu.tap();
             const abierto=await colores();
-            assert.equal(abierto.icono,cerrado.icono);
-            assert.equal(abierto.color,'rgb(226, 232, 240)');
-            assert.equal(abierto.fondo,'rgba(255, 255, 255, 0.063)');
+            assert.deepEqual(identidad(abierto),escritorioAbierto);
             // Acceso a sección desde navegación real; se cierra el cajón.
-            const item=page.locator('[data-target="sec-atletas"]');
+            const destino=rol==='directiva'?'sec-atletas':'sec-inicio';
+            const item=page.locator('[data-target="'+destino+'"]');
             const grupo=item.locator('xpath=ancestor::li[contains(concat(" ", normalize-space(@class), " "), " sidebar-group ")]');
             if(await grupo.count()){
                 const toggle=grupo.locator('.sidebar-group__toggle');

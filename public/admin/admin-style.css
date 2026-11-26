@@ -977,8 +977,8 @@ tr:hover td { background-color: #f8fafc; }
 
     /* Botones de acción: al final de la tarjeta, todos visibles */
     #body-solicitudes td:nth-child(4),
-    #body-atletas td:nth-child(6),
-    #table-my-atletas tbody td:nth-child(5),
+    #body-atletas td:not([colspan]):nth-child(6),
+    #table-my-atletas tbody td:not([colspan]):nth-child(5),
     #body-eventos td:nth-child(5) {
         grid-column: 1 / -1;
         display: flex;
@@ -1399,6 +1399,8 @@ tr:hover td { background-color: #f8fafc; }
 .sidebar-menu-footer[hidden] { display: none !important; }
 @media (max-width: 768px) {
     .panel-body .form-validation-message { overflow-wrap: anywhere; }
+    #body-atletas td:not([colspan]):nth-child(6),
+    #table-my-atletas tbody td:not([colspan]):nth-child(5) { display: block; }
     .panel-body .table-container .pago-acciones { flex-wrap: wrap; }
     .panel-body .table-container .pago-icono { min-width: 44px; min-height: 44px; }
     .panel-body .table-filters { min-width: 0; }

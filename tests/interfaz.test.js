@@ -1128,3 +1128,56 @@ for (const rol of ['directiva','representante']) {
         }finally{await browser.close();}
     });
 }
+
+test('móvil conserva identidad del menú y acciones de atletas en una fila completa',async()=>{
+    const browser=await chromium.launch({headless:true});
+    try{
+        for(const rol of ['directiva','representante']){
+            const page=await browser.newPage({viewport:{width:390,height:844}});
+            const errores=[];page.on('pageerror',e=>errores.push(e.message));
+            await page.route('https://**/*',route=>route.abort());
+            await page.goto(baseUrl+'/admin/panel-'+rol+'.html');
+            await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
+            const menu=page.locator('.mobile-menu-toggle');
+            const colores=()=>menu.evaluate(e=>({fondo:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,
+                icono:e.querySelector('i').className,ancho:e.getBoundingClientRect().width,alto:e.getBoundingClientRect().height}));
+            const cerrado=await colores();
+            assert.equal(cerrado.fondo,'rgb(226, 232, 240)');
+            assert.equal(cerrado.color,'rgb(51, 65, 85)');
+            assert.ok(cerrado.ancho>=44&&cerrado.alto>=44);
+            await menu.click();
+            const abierto=await colores();
+            assert.equal(abierto.icono,cerrado.icono);
+            assert.equal(abierto.color,'rgb(226, 232, 240)');
+            assert.equal(abierto.fondo,'rgba(255, 255, 255, 0.063)');
+            // Acceso a sección desde navegación real; se cierra el cajón.
+            const item=page.locator('[data-target="sec-atletas"]');
+            const grupo=item.locator('xpath=ancestor::li[contains(concat(" ", normalize-space(@class), " "), " sidebar-group ")]');
+            if(await grupo.count()){
+                const toggle=grupo.locator('.sidebar-group__toggle');
+                if(await toggle.getAttribute('aria-expanded')!=='true')await toggle.click();
+            }
+            await item.click();
+            assert.equal(await menu.getAttribute('aria-expanded'),'false');
+            const selector=rol==='directiva'?'#body-atletas tr:not(:has(td[colspan]))':'#table-my-atletas tbody tr:not(:has(td[colspan]))';
+            const fila=page.locator(selector).first();
+            await fila.waitFor({state:'visible'});
+            for(const width of [390,320]){
+                await page.setViewportSize({width,height:844});
+                const g=await fila.evaluate(tr=>{
+                    const td=tr.lastElementChild;
+                    const rect=td.getBoundingClientRect(),r=tr.getBoundingClientRect(),cs=getComputedStyle(tr);
+                    return {a:rect.width,b:r.width-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)
+                        -parseFloat(cs.borderLeftWidth)-parseFloat(cs.borderRightWidth),
+                        acciones:[...td.querySelectorAll('.pago-icono')].map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height})),
+                        scroll:document.documentElement.scrollWidth,ventana:innerWidth};
+                });
+                assert.ok(Math.abs(g.a-g.b)<2,JSON.stringify(g));
+                assert.ok(g.acciones.length>0&&g.acciones.every(x=>x.w>=44&&x.h>=44));
+                assert.ok(g.scroll<=g.ventana+2);
+            }
+            assert.deepEqual(errores,[]);
+            await page.close();
+        }
+    }finally{await browser.close();}
+});

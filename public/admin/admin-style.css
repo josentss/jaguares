@@ -778,18 +778,27 @@ tr:hover td { background-color: #f8fafc; }
         width: 44px;
         height: 44px;
         padding: 0;
-        border-radius: 12px;
+        border-radius: 8px;
         top: calc(env(safe-area-inset-top) + (var(--topbar-h) - 44px) / 2);
         left: max(12px, env(safe-area-inset-left));
-        box-shadow: 0 3px 8px rgba(255, 102, 0, 0.35);
+        background: #e2e8f0; color: #334155; font-size: 1rem;
+        box-shadow: none;
     }
-    body:has(.sidebar.open) .mobile-menu-toggle .fa-bars::before { content: '\f00d'; }
+    body.panel-body .mobile-menu-toggle[aria-expanded="true"] {
+        background: #ffffff10; color: #e2e8f0;
+    }
 
     /* Cajón */
     .sidebar {
         width: min(300px, 86vw);
+        /* 100vh puede incluir las barras del navegador; no imponerlo como mínimo. */
+        min-height: 0;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
         padding-top: env(safe-area-inset-top);
-        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
         transform: translateX(-100%);
         visibility: hidden;
         box-shadow: none;
@@ -804,9 +813,33 @@ tr:hover td { background-color: #f8fafc; }
     }
     body:has(.sidebar.open) { overflow: hidden; }
 
-    .sidebar-logo { height: var(--topbar-h); padding: 0 16px 0 72px; box-sizing: content-box; }
-    .sidebar-logo img { width: 36px; }
-    .sidebar-menu { margin-top: 12px; }
+    .sidebar-logo {
+        height: var(--topbar-h); flex: 0 0 var(--topbar-h);
+        padding: 0 12px 0 calc(max(12px, env(safe-area-inset-left)) + 54px);
+        box-sizing: border-box; gap: 8px; min-width: 0;
+    }
+    .sidebar-logo img { width: 32px; flex-shrink: 0; }
+    .sidebar-logo h3 { font-size: 1.12rem; min-width: 0; }
+    .sidebar > .sidebar-menu--agrupado {
+        margin: 8px 0 0; padding: 0 0 8px;
+        flex: 1 1 0; min-height: 0;
+        overflow-y: auto; overflow-x: hidden;
+        overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .sidebar > .sidebar-menu--agrupado > li { flex-shrink: 0; }
+    .sidebar > .sidebar-menu--agrupado > li[data-target] { min-height: 44px; padding-block: 11px; }
+    .sidebar > .sidebar-menu--agrupado .sidebar-group__toggle { min-height: 44px; }
+    .sidebar > .sidebar-menu--agrupado .sidebar-submenu li { min-height: 44px; }
+    .sidebar > .sidebar-menu-footer {
+        flex: 0 0 auto; margin: 0; padding: 0;
+        background: #1e1e24;
+    }
+    .sidebar > .sidebar-menu-footer #btn-logout {
+        margin: 0; min-height: 48px; padding: 12px 25px;
+        padding-left: max(25px, env(safe-area-inset-left));
+    }
+    .sidebar > .sidebar-menu-footer #btn-logout:focus-visible { outline-offset: -3px; }
 
     /* Contenido a todo el ancho, bajo la barra */
     .main-content {
@@ -944,8 +977,8 @@ tr:hover td { background-color: #f8fafc; }
 
     /* Botones de acción: al final de la tarjeta, todos visibles */
     #body-solicitudes td:nth-child(4),
-    #body-atletas td:nth-child(5),
-    #body-pagos td:nth-child(9),
+    #body-atletas td:nth-child(6),
+    #table-my-atletas tbody td:nth-child(5),
     #body-eventos td:nth-child(5) {
         grid-column: 1 / -1;
         display: flex;
@@ -974,9 +1007,11 @@ tr:hover td { background-color: #f8fafc; }
         width: auto;
     }
     .notification-wrapper .notif-body { max-height: min(50vh, 340px); }
-    .header-actions { width: 100%; justify-content: space-between; gap: 12px; }
-    .header-actions .user-badge { flex: 1; min-width: 0; flex-wrap: nowrap; }
-    .notification-wrapper { padding: 6px; margin: -6px; }
+    body.panel-body .header-actions { width: 100%; justify-content: space-between; gap: 10px; min-width: 0; }
+    body.panel-body .header-actions .user-badge { flex: 1; min-width: 0; flex-wrap: wrap; }
+    .user-badge strong { min-width: 0; overflow-wrap: anywhere; }
+    .user-badge .user-role { flex-shrink: 0; }
+    .notification-wrapper { padding: 10px; margin: 0; min-width: 44px; min-height: 44px; flex-shrink: 0; display: grid; place-items: center; }
 
     /* Ventana de perfil incompleto */
     #onboardingModal { overflow-y: auto; }
@@ -1359,3 +1394,25 @@ tr:hover td { background-color: #f8fafc; }
 .ficha-filtros { margin: 8px 0; }
 .ficha-filtros input, .ficha-filtros select { min-width: 0; max-width:100%; }
 @media(max-width:600px) { .ficha-filtros { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; } }
+
+/* El pie móvil nunca debe ocupar espacio en escritorio. */
+.sidebar-menu-footer[hidden] { display: none !important; }
+@media (max-width: 768px) {
+    .panel-body .form-validation-message { overflow-wrap: anywhere; }
+    .panel-body .table-container .pago-acciones { flex-wrap: wrap; }
+    .panel-body .table-container .pago-icono { min-width: 44px; min-height: 44px; }
+    .panel-body .table-filters { min-width: 0; }
+    .panel-body .table-filters :is(input,select) { min-width: 0; max-width: 100%; }
+    .panel-body :is(.comprobante-dialog,.ficha-atleta-dialog) {
+        max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 12px));
+    }
+    .panel-body :is(.comprobante-dialog-cerrar,.ficha-atleta-cerrar) { width: 44px; height: 44px; }
+}
+@media (max-width: 480px) {
+    body.panel-body .main-content {
+        padding-top: calc(var(--topbar-h) + env(safe-area-inset-top) + 16px);
+        padding-bottom: max(24px, calc(env(safe-area-inset-bottom) + 16px));
+    }
+    .panel-body .panel-header { align-items: flex-start; }
+}

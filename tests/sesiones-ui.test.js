@@ -758,3 +758,63 @@ test('sin almacenamiento local, consulta la vigencia del servidor antes de salir
         assert.equal(state.requests.some(r=>r.pathname === '/api/auth/actividad'),false);
     } finally { await context.close(); await browser.close(); }
 });
+
+for (const role of ['directiva','representante']) {
+    test('móvil: cerrar sesión siempre visible y funcional con menú largo ('+role+')',async()=>{
+        reiniciarEstado(role);
+        const {browser,context}=await nuevoContexto({width:390,height:844});
+        try{
+            const {page,pageErrors}=await abrirPanel(context,role);
+            await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
+            const menu=page.locator('.mobile-menu-toggle'), logout=page.locator('#btn-logout');
+            assert.equal(await logout.count(),1);
+            for(const viewport of [{width:390,height:844},{width:320,height:400},{width:844,height:320},{width:992,height:400}]){
+                await page.setViewportSize(viewport);
+                await menu.click();
+                await page.waitForFunction(()=>{
+                    const salida=document.getElementById('btn-logout');
+                    const r=salida.getBoundingClientRect();
+                    return r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1
+                        && document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.closest('#btn-logout')===salida;
+                });
+                assert.equal(await logout.evaluate(e=>e.parentElement.classList.contains('sidebar-menu-footer')),true);
+                // Abrir un grupo real y desplazar solo la lista, no el pie.
+                const grupo=page.locator('.sidebar-group__toggle').first();
+                if(await grupo.getAttribute('aria-expanded')==='false')await grupo.click();
+                const g=await page.evaluate(()=>{
+                    const lista=document.querySelector('.sidebar-menu--agrupado'),salir=document.getElementById('btn-logout');
+                    const antes=salir.getBoundingClientRect();
+                    lista.scrollTop=lista.scrollHeight;
+                    const despues=salir.getBoundingClientRect();
+                    const sidebar=document.getElementById('sidebar');
+                    return {antes:antes.bottom,despues:despues.bottom,alto:despues.height,viewport:innerHeight,
+                        lista:lista.getBoundingClientRect().bottom,pie:despues.top,
+                        sidebar:sidebar.getBoundingClientRect().height,
+                        overflow:getComputedStyle(lista).overflowY,desplazable:lista.scrollHeight>lista.clientHeight,
+                        scroll:lista.scrollTop};
+                });
+                assert.ok(Math.abs(g.antes-g.despues)<2);
+                assert.ok(g.despues<=g.viewport+1&&g.alto>=48&&g.lista<=g.pie+1);
+                assert.ok(g.sidebar<=g.viewport+1);
+                assert.equal(g.overflow,'auto');
+                if(g.desplazable)assert.ok(g.scroll>0);
+                await menu.click();
+                assert.equal(await menu.getAttribute('aria-expanded'),'false');
+            }
+            // La migración del pie no duplica el control ni cambia escritorio.
+            await page.setViewportSize({width:1440,height:900});
+            await page.waitForFunction(()=>document.getElementById('btn-logout').parentElement.classList.contains('sidebar-menu--agrupado'));
+            assert.equal(await logout.count(),1);
+            await page.setViewportSize({width:320,height:400});
+            await page.waitForFunction(()=>document.querySelector('.mobile-menu-toggle').getAttribute('aria-expanded')==='false');
+            await menu.click();
+            const respuesta=page.waitForResponse(res=>new URL(res.url()).pathname==='/api/auth/logout');
+            await logout.click();
+            assert.equal((await respuesta).status(),200);
+            await page.waitForURL('**/admin/login.html');
+            assert.equal(state.requests.filter(x=>x.pathname==='/api/auth/logout'&&x.method==='POST').length,1);
+            assert.equal((await context.cookies()).some(c=>c.name==='token'),false);
+            assert.deepEqual(pageErrors,[]);
+        }finally{await context.close();await browser.close();}
+    });
+}

@@ -164,6 +164,9 @@ for (const dispositivo of [
             assert.equal(await botonComprobante.getAttribute('data-id'), '1');
             assert.equal(await page.locator('#table-my-pagos tbody a[href*="cloudinary"]').count(), 0);
             await botonComprobante.click();
+            assert.equal(await page.locator('.comprobante-dialog').count(),1);
+            assert.equal(await page.locator('.comprobante-dialog-cerrar').count(),1);
+            assert.equal(await page.locator('#ficha-atleta-dialog').isVisible(),false);
             await page.locator('.comprobante-dialog').waitFor({state:'visible'});
             await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});
             assert.equal(await page.locator('.comprobante-dialog-abrir').getAttribute('target'), '_blank');
@@ -286,6 +289,9 @@ for (const dispositivo of [
                 Math.max(...fila.alturas) === Math.min(...fila.alturas) && fila.derecha <= fila.ancho + 1),
                 'Las acciones de pagos deben caber en una sola línea');
             await page.locator('#body-pagos button.js-pago-ver').first().click();
+            assert.equal(await page.locator('.comprobante-dialog').count(),1);
+            assert.equal(await page.locator('.comprobante-dialog-cerrar').count(),1);
+            assert.equal(await page.locator('#ficha-atleta-dialog').isVisible(),false);
             await page.locator('.comprobante-dialog-abrir').waitFor({state:'visible'});
             assert.equal(await page.locator('#body-pagos a[href*="cloudinary"]').count(), 0);
             await page.locator('.comprobante-dialog-cerrar').click();
@@ -1023,6 +1029,8 @@ test('ambos paneles: sidebar escritorio y móvil, ver y editar ficha sin alterar
             }
             await page.locator('[data-ficha-editar="11"]').first().click();
             await page.locator('#ficha-nombres').waitFor({state:'visible'});
+            assert.equal(await page.locator('#ficha-atleta-dialog').isVisible(),true);
+            assert.equal(await page.locator('.comprobante-dialog').isVisible(),false);
             assert.equal(await page.locator('#ficha-nac').inputValue(),'E-');
             await page.locator('#ficha-nombres').fill('Atleta Corregido');
             await page.locator('#ficha-form button[type=submit]').click();

@@ -14,7 +14,7 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=fichas-2">
+    <link rel="stylesheet" href="admin-style.css?v=fichas-3">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=3">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
@@ -90,10 +90,10 @@
     </main>
 
     <div id="toast-container"></div>
-    <dialog id="ficha-atleta-dialog" class="comprobante-dialog ficha-atleta-dialog" aria-labelledby="ficha-atleta-titulo">
-        <div class="comprobante-dialog-header">
+    <dialog id="ficha-atleta-dialog" class="ficha-atleta-dialog" aria-labelledby="ficha-atleta-titulo">
+        <div class="ficha-atleta-header">
             <h3 id="ficha-atleta-titulo">Ficha del atleta</h3>
-            <button type="button" class="comprobante-dialog-cerrar" id="ficha-cerrar" aria-label="Cerrar ficha">×</button>
+            <button type="button" class="ficha-atleta-cerrar" id="ficha-cerrar" aria-label="Cerrar ficha">×</button>
         </div>
         <p id="ficha-estado" role="status" aria-live="polite"></p>
         <div id="ficha-lectura" hidden>

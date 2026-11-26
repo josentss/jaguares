@@ -1,0 +1,44 @@
+/* Solo Inicio de Directiva: no altera las secciones ni el panel Representante. */
+#sec-dashboard { container: inicio-directiva / inline-size; min-width: 0; }
+#sec-dashboard [hidden] { display: none !important; }
+#sec-dashboard .inicio-bloque { margin-bottom: 20px; min-width: 0; }
+#sec-dashboard .inicio-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+#sec-dashboard .inicio-cabecera h3 { margin: 0; font-size: 1rem; font-weight: 650; }
+#sec-dashboard .inicio-enlace { background: transparent; border: 0; color: #ad3e0b; font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 8px 2px; }
+#sec-dashboard .inicio-grid { display: grid; gap: 12px; min-width: 0; }
+#sec-dashboard .inicio-grid-cuatro { grid-template-columns: repeat(4,minmax(0,1fr)); }
+#sec-dashboard .inicio-grid-finanzas { grid-template-columns: repeat(3,minmax(0,1fr)); }
+#sec-dashboard .inicio-grid .card-status { min-width: 0; align-items: flex-start; text-align: left; gap: 7px; }
+#sec-dashboard .inicio-grid .card-status p { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#sec-dashboard .inicio-grid .card-status small:empty { display: none; }
+#sec-dashboard .inicio-distribucion { margin-top: 12px; color: var(--text-muted); }
+#sec-dashboard .inicio-barra { display: flex; height: 8px; border-radius: 6px; overflow: hidden; background: #e2e8f0; margin-bottom: 5px; }
+#inicio-barra-activos { background: #318052; }
+#inicio-barra-espera { background: #d68a28; }
+#inicio-barra-inactivos { background: #94a3b8; }
+#sec-dashboard .inicio-distribucion small, #sec-dashboard .inicio-pie-deportes { font-size: .78rem; }
+#sec-dashboard .inicio-pie-deportes { display: flex; flex-wrap: wrap; gap: 8px 24px; color: var(--text-muted); margin-top: 10px; }
+#sec-dashboard .inicio-aviso { color: var(--text-muted); font-size: .8rem; }
+#sec-dashboard .inicio-aviso:empty { display: none; }
+#sec-dashboard .inicio-pendientes { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; }
+#sec-dashboard .inicio-pendientes button { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 12px; background: #fff; border: 1px solid #e0e6ec; border-radius: 9px; color: var(--text-main); text-align: left; padding: 12px; min-height: 48px; font: inherit; font-size: .85rem; cursor: pointer; }
+#sec-dashboard .inicio-pendientes strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+#sec-dashboard .inicio-pendientes button > span:last-child { color: #ad3e0b; }
+#sec-dashboard .inicio-accesos { display: flex; flex-wrap: wrap; gap: 8px; }
+#sec-dashboard .inicio-accesos button { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 13px; min-height: 44px; font: inherit; font-size: .8rem; font-weight: 600; color: var(--text-main); cursor: pointer; }
+#sec-dashboard button:focus-visible { outline: 2px solid #ad3e0b; outline-offset: 3px; }
+@media (hover:hover) {
+    #sec-dashboard .inicio-accesos button:hover, #sec-dashboard .inicio-pendientes button:hover { border-color: #d76325; background: #fff9f4; }
+    #sec-dashboard .inicio-enlace:hover { text-decoration: underline; }
+}
+@container inicio-directiva (max-width: 799px) {
+    #sec-dashboard .inicio-grid-cuatro, #sec-dashboard .inicio-grid-finanzas { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    #sec-dashboard .inicio-grid-finanzas .card-rate { grid-column: 1/-1; }
+}
+@container inicio-directiva (max-width: 469px) {
+    #sec-dashboard .inicio-pendientes, #sec-dashboard .inicio-grid-finanzas { grid-template-columns: minmax(0,1fr); }
+    #sec-dashboard .inicio-grid-cuatro { gap: 8px; }
+    #sec-dashboard .inicio-grid .card-status { padding: 12px 10px; }
+    #sec-dashboard .inicio-cabecera { gap: 4px 10px; }
+    #sec-dashboard .inicio-accesos button { flex: 1 1 135px; }
+}

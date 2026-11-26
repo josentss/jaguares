@@ -1012,6 +1012,15 @@ test('ambos paneles: sidebar escritorio y móvil, ver y editar ficha sin alterar
             assert.equal(await page.locator('.main-content').evaluate(x=>getComputedStyle(x).marginLeft),'0px');
             await menu.click();assert.equal(await menu.getAttribute('aria-expanded'),'true');
             if(rol==='directiva')await page.evaluate(()=>document.querySelector('[data-target="sec-atletas"]').click());
+            else {
+                await page.locator('#rep-atletas-buscar').fill('no-existe-sintetico');
+                await page.waitForFunction(()=>document.querySelector('#rep-atletas-resultados').textContent.startsWith('0 de'));
+                await page.locator('#rep-atletas-buscar').fill('');
+                await page.locator('[data-ficha-ver="11"]').click();
+                await page.locator('#ficha-lectura').waitFor({state:'visible'});
+                assert.match(await page.locator('#ficha-datos').textContent(),/E-12345678/);
+                await page.locator('#ficha-cerrar').click();
+            }
             await page.locator('[data-ficha-editar="11"]').first().click();
             await page.locator('#ficha-nombres').waitFor({state:'visible'});
             assert.equal(await page.locator('#ficha-nac').inputValue(),'E-');

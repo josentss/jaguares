@@ -12,11 +12,18 @@
             sidebar.classList.toggle('open',!escritorio.matches&&movilAbierto);
             fondo.classList.toggle('show',!escritorio.matches&&movilAbierto);
             sidebar.inert=!abierto;
+            const principal=document.querySelector('.main-content');
+            if(principal)principal.inert=!escritorio.matches&&movilAbierto;
             boton.setAttribute('aria-expanded',String(abierto));
             boton.setAttribute('aria-label',abierto?'Ocultar menú':'Mostrar menú');
             boton.title=abierto?'Ocultar menú':'Mostrar menú';
         }
-        function cerrarMovil() { if(!escritorio.matches){movilAbierto=false;pintar();} }
+        function cerrarMovil() {
+            if(!escritorio.matches){
+                const focoEnMenu=sidebar.contains(document.activeElement);
+                movilAbierto=false;pintar();if(focoEnMenu)boton.focus();
+            }
+        }
         boton.addEventListener('click',()=>{
             if(escritorio.matches)reducido=!reducido;
             else movilAbierto=!movilAbierto;

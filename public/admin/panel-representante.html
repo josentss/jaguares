@@ -14,7 +14,7 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=fichas-1">
+    <link rel="stylesheet" href="admin-style.css?v=fichas-2">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=3">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
@@ -236,6 +236,13 @@
                     <h3 class="toolbar-title">Mis atletas</h3>
                     <button type="button" class="btn-outline-sm" onclick="document.querySelector('[data-target=sec-atletas]')?.click()">Registrar atleta</button>
                 </div>
+                <div class="table-filters ficha-filtros">
+                    <input type="search" id="rep-atletas-buscar" aria-label="Buscar atleta por nombre o cédula" placeholder="Buscar por nombre o cédula">
+                    <select id="rep-atletas-estado" aria-label="Filtrar atletas por estado">
+                        <option value="">Todos los estados</option><option value="activo">Activos</option><option value="espera">En revisión</option><option value="inactivo">Inactivos</option>
+                    </select>
+                </div>
+                <p id="rep-atletas-resultados" class="atletas-resultado-filtro" aria-live="polite"></p>
                 <div style="overflow-x: auto;">
                     <table id="table-my-atletas">
                         <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Categoría por edad</th><th>Estado</th><th>Acciones</th></tr></thead>
@@ -503,8 +510,8 @@
 <script src="fechas.js?v=fechas-1"></script>
 <script src="validacion-formularios.js?v=fichas-1"></script>
 <script src="api-client.js?v=perfiles-1"></script>
-    <script src="sidebar-panel.js?v=1"></script>
-    <script src="ficha-atleta.js?v=1"></script>
+    <script src="sidebar-panel.js?v=2"></script>
+    <script src="ficha-atleta.js?v=2"></script>
 <script src="iconos-acciones.js?v=2"></script>
 <script src="comprobantes-ui.js?v=2"></script>
 <script src="pagos-guiados.js?v=1"></script>
@@ -905,6 +912,19 @@
                     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             }
 
+            function filtrarMisAtletas() {
+                const q=document.getElementById('rep-atletas-buscar').value.trim().toLowerCase();
+                const estado=document.getElementById('rep-atletas-estado').value;
+                const filas=[...document.querySelectorAll('#table-my-atletas tbody tr[data-estado]')];
+                let visibles=0;
+                for(const fila of filas){
+                    const coincide=(!q||fila.cells[0].textContent.toLowerCase().includes(q)||fila.cells[1].textContent.toLowerCase().includes(q))&&(!estado||fila.dataset.estado===estado);
+                    fila.hidden=!coincide;if(coincide)visibles++;
+                }
+                document.getElementById('rep-atletas-resultados').textContent=filas.length?`${visibles} de ${filas.length} atletas`:'';
+            }
+            document.getElementById('rep-atletas-buscar').addEventListener('input',filtrarMisAtletas);
+            document.getElementById('rep-atletas-estado').addEventListener('change',filtrarMisAtletas);
             async function cargarAtletasPanel() {
                 try {
                     const response = await apiFetch(`/api/atletas/representante/${userData.id_usuario}`, {
@@ -946,7 +966,7 @@
                             let badgeClass = atleta.estado === 'activo' ? 'estado-activo' : (atleta.estado === 'inactivo' ? 'estado-inactivo' : 'estado-espera');
                             let estadoTexto = atleta.estado === 'activo' ? 'Activo' : (atleta.estado === 'inactivo' ? 'Inactivo' : 'En Revisión');
 
-                            htmlContenido += `<tr>
+                            htmlContenido += `<tr data-estado="${esc(atleta.estado)}">
                                 <td><strong>${esc(atleta.nombres)} ${esc(atleta.apellidos)}</strong></td>
                                 <td>${esc(atleta.cedula || 'N/A')}</td>
                                 <td><span class="categoria-etaria-inline${atleta.clasificacion?.estado !== 'orientativa' ? ' categoria-etaria-inline--pendiente' : ''}" title="Clasificación orientativa por edad, sin asignación de temporada">${esc(atleta.clasificacion?.categoria?.nombre || 'Por definir')}</span></td>
@@ -966,6 +986,7 @@
                         });
 
                         tbody.innerHTML = htmlContenido;
+                        filtrarMisAtletas();
                         if ([...selectAtleta.options].some(o=>o.value===atletaSeleccionado)) selectAtleta.value=atletaSeleccionado;
                         window.JaguaresPagosGuiados?.refrescar();
                     }
@@ -974,7 +995,7 @@
                 }
             }
 
-            window.JaguaresFicha.inicializar({apiFetch,showToast,actualizar:cargarAtletasPanel});
+            window.JaguaresFicha?.inicializar({apiFetch,showToast,actualizar:cargarAtletasPanel});
             const modalDocumentos = document.getElementById('documentos-atleta-modal');
             const enlacesDocumentos = document.getElementById('documentos-atleta-enlaces');
             const cerrarDocumentos = document.getElementById('documentos-atleta-cerrar');

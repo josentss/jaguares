@@ -936,7 +936,7 @@ tr:hover td { background-color: #f8fafc; }
     #table-my-atletas tbody td:not([colspan]):nth-child(2)::before { content: 'Cédula'; }
     #table-my-atletas tbody td:not([colspan]):nth-child(3)::before { content: 'Categoría'; }
     #table-my-atletas tbody td:not([colspan]):nth-child(4)::before { content: 'Estado'; }
-    #table-my-atletas tbody td:not([colspan]):nth-child(5)::before { content: 'Documentos'; }
+    #table-my-atletas tbody td:not([colspan]):nth-child(5)::before { content: 'Acciones'; }
     #table-my-pagos tbody td:not([colspan]):nth-child(1)::before { content: 'Fecha reporte'; }
     #table-my-pagos tbody td:not([colspan]):nth-child(3)::before { content: 'Mes'; }
     #table-my-pagos tbody td:not([colspan]):nth-child(4)::before { content: 'Monto'; }
@@ -1313,12 +1313,12 @@ tr:hover td { background-color: #f8fafc; }
     body.panel-body .mobile-menu-toggle {
         display: inline-flex; align-items: center; justify-content: center;
         width: 40px; height: 40px; padding: 0; top: 34px;
-        left: calc(var(--sidebar-w) + 14px); box-shadow: none; border-radius: 8px;
+        left: calc(var(--sidebar-w) + 8px); box-shadow: none; border-radius: 8px;
     }
-    body.panel-body .panel-header { padding-left: 28px; }
+    body.panel-body .main-content { padding-left: 64px; }
     body.panel-body.sidebar-colapsado .sidebar { display: none; }
     body.panel-body.sidebar-colapsado .main-content { margin-left: 0; }
-    body.panel-body.sidebar-colapsado .mobile-menu-toggle { left: 14px; }
+    body.panel-body.sidebar-colapsado .mobile-menu-toggle { left: 8px; }
     body.panel-body.sidebar-colapsado .panel-header,
     body.panel-body.sidebar-colapsado .panel-section { max-width: none; }
 }
@@ -1339,3 +1339,8 @@ tr:hover td { background-color: #f8fafc; }
     .ficha-atleta-dialog .full-width {grid-column:1/-1;}
     .ficha-botones > button { flex:1 1 100%; min-height:44px; }
 }
+
+#table-my-atletas tr[hidden] { display:none !important; }
+.ficha-filtros { margin: 8px 0; }
+.ficha-filtros input, .ficha-filtros select { min-width: 0; max-width:100%; }
+@media(max-width:600px) { .ficha-filtros { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; } }

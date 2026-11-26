@@ -18,7 +18,9 @@
                 ['Fecha de nacimiento',root.FechasJaguares?.formatearFechaCivil(atleta.fecha_nacimiento)||atleta.fecha_nacimiento],
                 ['Categoría por edad',atleta.clasificacion?.categoria?.nombre],
                 ['Estado',atleta.estado],['Teléfono',atleta.telefono],
-                ['Dirección',atleta.direccion],['Condiciones médicas',atleta.alergias_medicas]
+                ['Dirección',atleta.direccion],['Condiciones médicas',atleta.alergias_medicas],
+                ['Representante',[atleta.representante?.nombres,atleta.representante?.apellidos].filter(Boolean).join(' ')],
+                ['Teléfono del representante',atleta.representante?.telefono1]
             ]){
                 const bloque=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');
                 dt.textContent=titulo;dd.textContent=valor||'—';bloque.append(dt,dd);datos.append(bloque);
@@ -82,6 +84,10 @@
                 cedula:heredada?null:leerCedulaJaguares('ficha'),fecha_nac:el('ficha-fecha').value,
                 direccion:el('ficha-direccion').value,telefono:el('ficha-telefono').value,
                 alergias_medicas:el('ficha-medico').value};
+            if(body.fecha_nac!==atleta.fecha_nacimiento && root.ValidacionJaguares && !root.ValidacionJaguares.esEdadValida(body.fecha_nac)){
+                estado.textContent='La fecha corregida debe corresponder a un atleta de 5 a 18 años.';
+                el('ficha-fecha').focus();return;
+            }
             ocupado=true;guardar.disabled=true;el('ficha-cerrar').disabled=true;el('ficha-cancelar').disabled=true;
             estado.textContent='Guardando…';
             try{

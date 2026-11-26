@@ -14,7 +14,7 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=fichas-1">
+    <link rel="stylesheet" href="admin-style.css?v=fichas-2">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=2">
     <link rel="stylesheet" href="asignaciones-equipos.css?v=4">
     <link rel="stylesheet" href="conciliacion-cobros.css?v=1">
@@ -1160,8 +1160,8 @@
     <script src="fechas.js?v=eventos-limite-1"></script>
     <script src="validacion-formularios.js?v=fichas-1"></script>
     <script src="api-client.js?v=perfiles-1"></script>
-    <script src="sidebar-panel.js?v=1"></script>
-    <script src="ficha-atleta.js?v=1"></script>
+    <script src="sidebar-panel.js?v=2"></script>
+    <script src="ficha-atleta.js?v=2"></script>
     <script src="iconos-acciones.js?v=2"></script>
     <script src="comprobantes-ui.js?v=2"></script>
     <script src="catalogos-deportivos.js?v=5"></script>
@@ -1184,7 +1184,7 @@
     </script>
     <script>
         let currentUser = null;
-        window.JaguaresFicha.inicializar({apiFetch, showToast, actualizar:cargarAuditoria});
+        if (typeof apiFetch === 'function') window.JaguaresFicha?.inicializar({apiFetch, showToast, actualizar:cargarAuditoria});
         let planillaPdfEnCurso = false;
         let planillaImpresionEnCurso = false;
 

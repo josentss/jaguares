@@ -8,6 +8,19 @@
         const logo=sidebar.querySelector('.sidebar-logo');
         const titulo=document.querySelector('.panel-title-group');
         const principal=document.querySelector('.main-content');
+        const lista=sidebar.querySelector('.sidebar-menu--agrupado');
+        const salir=document.getElementById('btn-logout');
+        // Reutilizar el mismo control y sus listeners. En escritorio vuelve a
+        // su posición original; en móvil solo se desplaza la lista de navegación.
+        const pie=document.createElement('ul');
+        pie.className='sidebar-menu sidebar-menu-footer';
+        pie.hidden=true;
+        sidebar.append(pie);
+        function ubicarSalida() {
+            const destino=escritorio.matches?lista:pie;
+            if(salir.parentElement!==destino)destino.append(salir);
+            pie.hidden=escritorio.matches;
+        }
         // El mismo botón conserva ID, eventos y estado accesible al cambiar
         // de ubicación. En móvil debe quedar fuera del contenido inerte.
         function ubicarBoton(abierto) {
@@ -22,6 +35,8 @@
         let reducido=false, movilAbierto=false;
         function pintar() {
             const abierto=escritorio.matches?!reducido:movilAbierto;
+            const focoEnMenu=sidebar.contains(document.activeElement);
+            ubicarSalida();
             document.body.classList.toggle('sidebar-colapsado',escritorio.matches&&reducido);
             sidebar.classList.toggle('open',!escritorio.matches&&movilAbierto);
             fondo.classList.toggle('show',!escritorio.matches&&movilAbierto);
@@ -33,7 +48,7 @@
             boton.setAttribute('aria-expanded',String(abierto));
             boton.setAttribute('aria-label',abierto?'Ocultar menú':'Mostrar menú');
             boton.title=abierto?'Ocultar menú':'Mostrar menú';
-            if(recuperarFoco)boton.focus({preventScroll:true});
+            if(recuperarFoco||(!abierto&&focoEnMenu))boton.focus({preventScroll:true});
         }
         function cerrarMovil() {
             if(!escritorio.matches){

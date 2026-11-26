@@ -14,13 +14,13 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
+    <link rel="stylesheet" href="admin-style.css?v=perfiles-1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=2">
     <link rel="stylesheet" href="asignaciones-equipos.css?v=4">
     <link rel="stylesheet" href="conciliacion-cobros.css?v=1">
     <link rel="stylesheet" href="gestion-cobros.css?v=1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
-    <link rel="stylesheet" href="ux-panel-operativo.css?v=2">
+    <link rel="stylesheet" href="ux-panel-operativo.css?v=3">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
     <link rel="icon" href="../img/logo-favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -397,6 +397,7 @@
                     <li data-target="sec-cms" role="button" tabindex="0">Gestión web y eventos</li>
                 </ul>
             </li>
+            <li data-target="sec-perfil" role="button" tabindex="0"><i class="fas fa-user" aria-hidden="true"></i> Mi perfil</li>
             <li id="btn-logout" role="button" tabindex="0" aria-label="Cerrar sesión"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión</li>
         </ul>
     </div>
@@ -510,11 +511,11 @@
                                 <div class="form-group-panel">
                                     <label for="dir-rep-cedula">Cédula</label>
                                     <div class="cedula-group">
-                                        <select id="dir-rep-nac" aria-label="Nacionalidad">
+                                        <select id="dir-rep-nac" aria-label="Tipo de cédula" required>
                                             <option value="V-">V-</option>
                                             <option value="E-">E-</option>
                                         </select>
-                                        <input type="text" id="dir-rep-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9" required>
+                                        <input type="text" id="dir-rep-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9" pattern="[0-9]{7,9}" required>
                                     </div>
                                 </div>
                                 <div class="form-group-panel">
@@ -545,7 +546,7 @@
                         </div>
 
                         <div class="form-group-panel">
-                            <label class="label-toggle">
+                            <label class="label-toggle" for="dir-cedula">
                                 Cédula de Identidad
                                 <span class="toggle-own">
                                     <input type="checkbox" id="dir-has-cedula" checked>
@@ -553,11 +554,11 @@
                                 </span>
                             </label>
                             <div class="cedula-group" id="dir-group-cedula">
-                                <select id="dir-nac" aria-label="Nacionalidad">
+                                <select id="dir-nac" aria-label="Tipo de cédula" required>
                                     <option value="V-">V-</option>
                                     <option value="E-">E-</option>
                                 </select>
-                                <input type="text" id="dir-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9" required>
+                                <input type="text" id="dir-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9" pattern="[0-9]{7,9}" required>
                             </div>
                             <input type="text" id="dir-cedula-off" class="disabled-input" style="display:none;" disabled
                                    placeholder="Se asignará con la cédula del representante (ej. V-12345678-1)">
@@ -574,7 +575,7 @@
                         </div>
 
                         <div class="form-group-panel">
-                            <label class="label-toggle">
+                            <label class="label-toggle" for="dir-telefono">
                                 Teléfono de Contacto
                                 <span class="toggle-own">
                                     <input type="checkbox" id="dir-has-telefono" checked>
@@ -601,18 +602,18 @@
 
                     <div class="form-grid form-docs">
                         <div class="form-group-panel">
-                            <label for="dir-foto">Foto del atleta <small>(JPG, PNG o WebP)</small></label>
+                            <label for="dir-foto">Foto del atleta <small>(JPG, PNG o WebP, máx. 5 MB)</small></label>
                             <input type="file" id="dir-foto" accept="image/jpeg,image/png,image/webp">
                             <div id="dir-preview-box" style="display:none; margin-top:8px; text-align:center;">
                                 <img id="dir-preview" alt="Vista previa" style="max-height:120px; border-radius:8px; object-fit:cover;">
                             </div>
                         </div>
                         <div class="form-group-panel">
-                            <label for="dir-cedula-archivo">Cédula escaneada <small>(imagen o PDF)</small></label>
+                            <label for="dir-cedula-archivo">Cédula escaneada <small>(imagen o PDF, máx. 5 MB)</small></label>
                             <input type="file" id="dir-cedula-archivo" accept="image/jpeg,image/png,image/webp,application/pdf">
                         </div>
                         <div class="form-group-panel">
-                            <label for="dir-partida">Partida de nacimiento <small>(imagen o PDF)</small></label>
+                            <label for="dir-partida">Partida de nacimiento <small>(imagen o PDF, máx. 5 MB)</small></label>
                             <input type="file" id="dir-partida" accept="image/jpeg,image/png,image/webp,application/pdf">
                         </div>
                     </div>
@@ -1099,12 +1100,36 @@
                 </div>
             </div>
         </section>
+        <section id="sec-perfil" class="panel-section">
+            <div class="form-container-panel">
+                <p id="perfil-estado" role="status" aria-live="polite"></p>
+                <form id="form-mi-perfil">
+                    <fieldset id="perfil-campos" class="perfil-campos" disabled>
+                    <div class="form-grid">
+                        <div class="form-group-panel"><label for="perfil-nombres">Nombres</label><input type="text" id="perfil-nombres" maxlength="80" required></div>
+                        <div class="form-group-panel"><label for="perfil-apellidos">Apellidos</label><input type="text" id="perfil-apellidos" maxlength="80" required></div>
+                        <div class="form-group-panel"><label for="perfil-cedula">Cédula</label><div class="cedula-group">
+                            <select id="perfil-nac" aria-label="Tipo de cédula" required>
+                                <option value="V-">V-</option>
+                                <option value="E-">E-</option>
+                            </select>
+                            <input type="text" id="perfil-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9" pattern="[0-9]{7,9}" required>
+                        </div></div>
+                        <div class="form-group-panel"><label for="perfil-correo">Correo</label><input type="email" id="perfil-correo" disabled style="background:#f4f4f4;"></div>
+                        <div class="form-group-panel"><label for="perfil-tel1">Teléfono Principal</label><input type="text" id="perfil-tel1" inputmode="tel" maxlength="30" required></div>
+                        <div class="form-group-panel"><label for="perfil-tel2">Teléfono Secundario</label><input type="text" id="perfil-tel2" inputmode="tel" maxlength="30"></div>
+                    </div>
+                    <button type="submit" class="btn-panel-submit" style="margin-top: 20px; background:#2ecc71;">Actualizar mis Datos </button>
+                </fieldset>
+                </form>
+            </div>
+        </section>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="fechas.js?v=eventos-limite-1"></script>
-    <script src="validacion-formularios.js?v=fechas-1"></script>
-    <script src="api-client.js?v=sesion-aviso-1"></script>
+    <script src="validacion-formularios.js?v=cedulas-1"></script>
+    <script src="api-client.js?v=perfiles-1"></script>
     <script src="iconos-acciones.js?v=1"></script>
     <script src="comprobantes-ui.js?v=2"></script>
     <script src="catalogos-deportivos.js?v=5"></script>
@@ -2214,6 +2239,7 @@
             document.getElementById('dir-cedula-off').style.display = propia ? 'none' : 'block';
             document.getElementById('dir-cedula').required = propia;
             document.getElementById('dir-cedula').disabled = !propia;
+            document.getElementById('dir-nac').disabled = !propia;
             if (!propia) document.getElementById('dir-cedula').setCustomValidity('');
         }
 
@@ -2275,7 +2301,7 @@
                 fd.append('representante_nuevo', '1');
                 fd.append('rep_nombres', document.getElementById('dir-rep-nombres').value.trim());
                 fd.append('rep_apellidos', document.getElementById('dir-rep-apellidos').value.trim());
-                fd.append('rep_cedula', document.getElementById('dir-rep-nac').value + document.getElementById('dir-rep-cedula').value.trim().replace(/\s+/g, ''));
+                fd.append('rep_cedula', leerCedulaJaguares('dir-rep'));
                 fd.append('rep_telefono', rep.telefono1);
                 fd.append('rep_correo', correoNuevo);
                 fd.append('rep_password', claveNueva);
@@ -2290,7 +2316,7 @@
             fd.append('allergies_medicas', document.getElementById('dir-alergias').value.trim());
             fd.append('hereda_cedula', propiaCedula ? '0' : '1');
             if (propiaCedula) {
-                fd.append('cedula', document.getElementById('dir-nac').value + document.getElementById('dir-cedula').value.trim().replace(/\s+/g, ''));
+                fd.append('cedula', leerCedulaJaguares('dir'));
             }
             const foto = document.getElementById('dir-foto').files[0];
             const ced = document.getElementById('dir-cedula-archivo').files[0];
@@ -2368,6 +2394,7 @@
                 document.getElementById(item.dataset.target).classList.add('active');
                 document.getElementById('panel-title').textContent = item.dataset.title || item.textContent.trim();
                 if (item.dataset.target === 'sec-registrar') cargarRepresentantes();
+                if (item.dataset.target === 'sec-perfil') cargarMiPerfilDirectiva();
                 if (item.dataset.target === 'sec-deportes') window.JaguaresCatalogos?.cargar();
                 if (item.dataset.target === 'sec-asignaciones') window.JaguaresAsignaciones?.cargar();
                 if (item.dataset.target === 'sec-cobros') {
@@ -2387,6 +2414,63 @@
                     navegar();
                 }
             });
+        });
+
+        let perfilCargado = false;
+        let perfilCargando = false;
+        async function cargarMiPerfilDirectiva() {
+            if (!currentUser || perfilCargando || perfilCargado) return;
+            const estado = document.getElementById('perfil-estado');
+            const campos = document.getElementById('perfil-campos');
+            perfilCargando = true;
+            campos.disabled = true;
+            estado.textContent = 'Cargando perfil…';
+            try {
+                const res = await apiFetch('/api/usuarios/perfil/' + encodeURIComponent(currentUser.id_usuario));
+                const data = await res.json();
+                if (!res.ok || !data.success || !data.perfil) throw new Error('Perfil no disponible');
+                const p = data.perfil;
+                for (const [id, valor] of Object.entries({
+                    nombres:p.nombres, apellidos:p.apellidos, correo:p.correo,
+                    tel1:p.telefono1, tel2:p.telefono2
+                })) document.getElementById('perfil-' + id).value = valor || '';
+                cargarCedulaJaguares('perfil', p.cedula);
+                perfilCargado = true;
+                campos.disabled = false;
+                estado.textContent = '';
+            } catch {
+                estado.textContent = 'No se pudo cargar el perfil. Vuelve a seleccionar Mi perfil para reintentar.';
+            } finally { perfilCargando = false; }
+        }
+
+        document.getElementById('form-mi-perfil').addEventListener('submit', async event => {
+            event.preventDefault();
+            const form = event.target;
+            const btn = form.querySelector('button[type="submit"]');
+            if (!perfilCargado || btn.disabled || !validarFormularioJaguares(form)) return;
+            const texto = btn.textContent;
+            const valor = id => document.getElementById('perfil-' + id).value;
+            const datos = { nombres:valor('nombres'), apellidos:valor('apellidos'),
+                cedula:leerCedulaJaguares('perfil'), telefono1:valor('tel1'), telefono2:valor('tel2') };
+            btn.disabled = true;
+            btn.textContent = 'Guardando…';
+            try {
+                const res = await apiFetch('/api/usuarios/perfil', {method:'PUT',body:JSON.stringify(datos)});
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    showToast(data.message || 'No se pudo actualizar el perfil', 'error');
+                    return;
+                }
+                currentUser.nombres = datos.nombres;
+                currentUser.apellidos = datos.apellidos;
+                const nombre = document.querySelector('#user-info strong');
+                if (nombre) nombre.textContent = datos.nombres + ' ' + datos.apellidos;
+                showToast('¡Perfil actualizado!', 'success');
+                perfilCargado = false;
+                await cargarMiPerfilDirectiva();
+            } catch {
+                showToast('Error de conexión con el servidor', 'error');
+            } finally { btn.disabled = false; btn.textContent = texto; }
         });
 
         const logoutButton = document.getElementById('btn-logout');

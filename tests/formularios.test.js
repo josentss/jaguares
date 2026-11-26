@@ -97,7 +97,7 @@ test('perfil: cédula, teléfono y nombres incorrectos se rechazan sin actualiza
     const base = {nombres: 'Ana María', apellidos: 'Pérez', cedula: 'V-12345678',
         telefono1: '04141234567', telefono2: '', password: ''};
     for (const alter of [
-        {nombres:'Ana1'}, {apellidos:'Pérez 💣'}, {cedula:'V-12'},
+        {nombres:'Ana1'}, {apellidos:'Pérez 💣'}, {cedula:'V-12'}, {cedula:'X-12345678'}, {cedula:'V-12345678-1'}, {cedula:"V-1234' OR 1=1"},
         {telefono1:'abc123'}, {telefono2:'0414asdasdas'},
         {password:'corta'}, {nombres:'A'.repeat(81)}
     ]) {

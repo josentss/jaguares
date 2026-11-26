@@ -15,9 +15,9 @@
         'atl-fecha-nac': ['fecha-atleta', 10],
         'atl-telefono': ['telefono', 30], 'atl-alergias': ['medico', 500],
         'perfil-nombres': ['nombre', 80], 'perfil-apellidos': ['nombre', 80],
-        'perfil-cedula': ['cedula', 11], 'perfil-tel1': ['telefono', 30],
+        'perfil-cedula': ['cedula-numero', 9], 'perfil-tel1': ['telefono', 30],
         'perfil-tel2': ['telefono', 30], 'perfil-password': ['clave', 128],
-        'ob-cedula': ['cedula', 11], 'ob-tel1': ['telefono', 30],
+        'ob-cedula': ['cedula-numero', 9], 'ob-tel1': ['telefono', 30],
         'ob-tel2': ['telefono', 30],
         'dir-rep-nombres': ['nombre', 80], 'dir-rep-apellidos': ['nombre', 80],
         'dir-rep-cedula': ['cedula-numero', 9],
@@ -131,7 +131,10 @@
             campo.value = campo.value.toUpperCase();
         }
         if (tipo === 'fecha-atleta') actualizarLimitesNacimiento(campo);
-        const mensaje = errorCampo(tipo, campo.value, campo.required);
+        const selector = tipo === 'cedula-numero' ?
+            document.getElementById(campo.id.replace(/-cedula$/, '-nac')) : null;
+        const mensaje = selector && !['V-', 'E-'].includes(selector.value) ?
+            'Selecciona V- o E-.' : errorCampo(tipo, campo.value, campo.required);
         campo.setCustomValidity(mensaje);
         if (mensaje) campo.setAttribute('aria-invalid', 'true');
         else campo.removeAttribute('aria-invalid');
@@ -175,6 +178,28 @@
                 actualizarLimitesNacimiento(campo);
                 campo.addEventListener('focus', () => actualizarLimitesNacimiento(campo));
             }
+            if (tipo === 'cedula-numero') {
+                const selector = document.getElementById(id.replace(/-cedula$/, '-nac'));
+                if (selector) {
+                    selector.addEventListener('change', () => validarCampo(campo));
+                    campo.addEventListener('paste', evento => {
+                        const texto = evento.clipboardData?.getData('text')?.trim().toUpperCase();
+                        if (!texto) return;
+                        const partes = /^([VE]-)([0-9]{7,9})$/.exec(texto);
+                        if (partes) {
+                            evento.preventDefault();
+                            selector.value = partes[1];
+                            campo.value = partes[2];
+                            campo.dispatchEvent(new Event('input', {bubbles:true}));
+                        } else if (!/^[0-9]{1,9}$/.test(texto)) {
+                            evento.preventDefault();
+                        } else {
+                            const anterior = campo.value.length - (campo.selectionEnd - campo.selectionStart);
+                            if (anterior + texto.length > 9) evento.preventDefault();
+                        }
+                    });
+                }
+            }
             campo.addEventListener('beforeinput', (evento) => {
                 if (!evento.data || evento.isComposing) return;
                 const permitido = {
@@ -188,9 +213,6 @@
                 if (permitido && !permitido.test(evento.data)) evento.preventDefault();
             });
             campo.addEventListener('input', () => {
-                if (tipo === 'cedula-numero' && /\D/.test(campo.value)) {
-                    campo.value = campo.value.replace(/\D/g, '');
-                }
                 validarCampo(campo);
             });
             campo.addEventListener('blur', () => validarCampo(campo));

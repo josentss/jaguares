@@ -15,7 +15,7 @@
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
     <link rel="stylesheet" href="admin-style.css?v=planilla-2">
-    <link rel="stylesheet" href="inicio-directiva.css?v=2">
+    <link rel="stylesheet" href="inicio-directiva.css?v=3">
     <link rel="stylesheet" href="planilla-atleta.css?v=1">
     <link rel="stylesheet" href="catalogos-deportivos.css?v=3">
     <link rel="stylesheet" href="asignaciones-equipos.css?v=5">
@@ -228,10 +228,6 @@
 
         <!-- SECCIÓN DASHBOARD -->
         <section id="sec-dashboard" class="panel-section active" aria-label="Resumen de la academia">
-            <div class="inicio-exportacion" id="inicio-exportacion" hidden>
-                <p id="inicio-exportar-estado" role="status" aria-live="polite"></p>
-                <button type="button" id="inicio-exportar" disabled><i class="fas fa-file-pdf" aria-hidden="true"></i> Exportar informe PDF</button>
-            </div>
             <div class="inicio-bloque">
                 <div class="inicio-cabecera"><h3>Club y atletas</h3><button type="button" class="inicio-enlace" data-dashboard-destino="sec-atletas">Ver atletas <span aria-hidden="true">→</span></button></div>
                 <div class="inicio-grid inicio-grid-cuatro">
@@ -287,12 +283,18 @@
                     <button type="button" id="inicio-sin-equipo" data-dashboard-destino="sec-asignaciones" hidden><span>Activos sin asignación abierta</span><strong id="stat-sin-equipo">—</strong><span aria-hidden="true">→</span></button>
                 </div>
             </div>
-            <div class="inicio-accesos">
-                <button type="button" data-dashboard-destino="sec-registrar">Registrar atleta</button>
-                <button type="button" id="inicio-acceso-asignar" data-dashboard-destino="sec-asignaciones" hidden>Asignar equipo</button>
-                <button type="button" data-dashboard-destino="sec-plantillas">Consultar plantillas</button>
-                <button type="button" data-dashboard-destino="sec-cms">Gestionar eventos</button>
-                <button type="button" id="inicio-acceso-cobros" data-dashboard-destino="sec-cobros" hidden>Gestión de cobros</button>
+            <div class="inicio-acciones">
+                <div class="inicio-accesos">
+                    <button type="button" data-dashboard-destino="sec-registrar">Registrar atleta</button>
+                    <button type="button" id="inicio-acceso-asignar" data-dashboard-destino="sec-asignaciones" hidden>Asignar equipo</button>
+                    <button type="button" data-dashboard-destino="sec-plantillas">Consultar plantillas</button>
+                    <button type="button" data-dashboard-destino="sec-cms">Gestionar eventos</button>
+                    <button type="button" id="inicio-acceso-cobros" data-dashboard-destino="sec-cobros" hidden>Gestión de cobros</button>
+                </div>
+                <div class="inicio-exportacion" id="inicio-exportacion" hidden>
+                    <button type="button" id="inicio-exportar" disabled><i class="fas fa-file-pdf" aria-hidden="true"></i> Exportar informe PDF</button>
+                    <p id="inicio-exportar-estado" role="status" aria-live="polite"></p>
+                </div>
             </div>
         </section>
 
@@ -983,7 +985,7 @@
     <script src="fechas.js?v=eventos-limite-1"></script>
     <script src="validacion-formularios.js?v=deportes-2"></script>
     <script src="api-client.js?v=perfiles-1"></script>
-    <script src="informe-directiva.js?v=1"></script>
+    <script src="informe-directiva.js?v=2"></script>
     <script src="inicio-directiva.js?v=2"></script>
     <script src="sidebar-panel.js?v=4"></script>
     <script src="ficha-atleta.js?v=3"></script>
@@ -1276,8 +1278,8 @@
                 const fechaReferencia = /^\d{4}-\d{2}-\d{2}/.test(String(data.tasa_fecha || ''))
                     ? String(data.tasa_fecha).slice(0,10) : null;
                 document.getElementById('inicio-tasas').title = fechaReferencia && (tasaDisponible || euroDisponible)
-                    ? 'ExchangeRate-API · ' + fechaReferencia + ' · Referencia de mercado, no oficial BCV'
-                    : 'Referencia de mercado; fecha no disponible';
+                    ? fechaReferencia.split('-').reverse().join('/')
+                    : 'Fecha no disponible';
 
                 // La equivalencia USD/Bs es informativa y se distingue del
                 // dinero efectivamente recibido; no es un saldo histórico.

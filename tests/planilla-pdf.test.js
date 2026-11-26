@@ -360,7 +360,15 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
                 for(let i=1;i<=pdf.numPages;i++){
                     const p=await pdf.getPage(i),v=p.getViewport({scale:1});
                     const items=(await p.getTextContent()).items.filter(t=>t.str?.trim());
-                    paginas.push({texto:items.map(t=>t.str).join(' '),width:v.width,height:v.height,
+                    const canvas=document.createElement('canvas');
+                    canvas.width=Math.ceil(v.width);canvas.height=Math.ceil(v.height);
+                    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+                    await p.render({canvasContext:ctx,viewport:v}).promise;
+                    // Región del escudo: no incluye el texto ni el separador.
+                    const px=ctx.getImageData(40,35,44,44).data;
+                    let pixelesLogo=0;
+                    for(let k=0;k<px.length;k+=4)if(px[k]<220||px[k+1]<220||px[k+2]<220)pixelesLogo++;
+                    paginas.push({texto:items.map(t=>t.str).join(' '),width:v.width,height:v.height,pixelesLogo,
                         dentro:items.every(t=>t.transform[4]>=0&&t.transform[4]+t.width<=v.width+1&&t.transform[5]>=0&&t.transform[5]<=v.height)});
                 }
                 await pdf.destroy();
@@ -371,6 +379,11 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
                 assert.ok(Math.abs(p.width-595.28)<2&&Math.abs(p.height-841.89)<2);
                 assert.equal(p.dentro,true);
                 assert.doesNotMatch(p.texto,/representante@example\.org|99000001|Atleta de prueba/);
+                assert.match(p.texto,/CLUB DE VOLEIBOL JAGUARES/);
+                assert.match(p.texto,/Informe de gestión/);
+                assert.match(p.texto,/\d{2}\/\d{2}\/\d{4}/);
+                assert.doesNotMatch(p.texto,/Consulta:|Caracas|Organización consultada:|ExchangeRate-API|BCV/);
+                assert.ok(p.pixelesLogo>100,'El escudo institucional debe aparecer en cada página');
             }
             assert.match(paginas[0].texto,/Distribución de atletas/);
             assert.match(paginas[0].texto,/Organización deportiva/);
@@ -381,6 +394,9 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
             assert.match(paginas[1].texto,/Pagos reportados por estado/);
             assert.match(paginas[1].texto,/Total: 4/);
             assert.match(paginas[1].texto,/Alcance del informe/);
+            assert.match(paginas[1].texto,/Ingresos aprobados acumulados; no saldos por cobrar/);
+            assert.match(paginas[1].texto,/Equivalencias estimadas, sin COP ni ingresos adicionales/);
+            assert.match(paginas[1].texto,/Gráficos: cantidad de pagos. N\/D: no disponible/);
             const renders=await inspectPdfInBrowser(page,bytes);
             assert.equal(renders.length,2);
             assert.ok(renders.every(p=>p.minContentX<60&&p.maxContentX>p.width-60));

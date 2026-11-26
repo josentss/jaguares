@@ -44,8 +44,10 @@
 }
 
 /* Indicadores visuales compactos y exportación: solo Directiva. */
-#sec-dashboard .inicio-exportacion { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:8px 14px; margin-bottom:12px; }
-#sec-dashboard .inicio-exportacion p { font-size:.8rem; color:var(--text-muted); margin:0; }
+#sec-dashboard .inicio-acciones { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:12px; min-width:0; }
+#sec-dashboard .inicio-acciones .inicio-accesos { flex:1 1 540px; min-width:0; }
+#sec-dashboard .inicio-exportacion { display:flex; flex:0 0 auto; flex-direction:column; align-items:flex-end; gap:6px; margin-left:auto; max-width:100%; }
+#sec-dashboard .inicio-exportacion p { font-size:.8rem; color:var(--text-muted); margin:0; max-width:220px; overflow-wrap:anywhere; text-align:right; }
 #sec-dashboard .inicio-exportacion p:empty { display:none; }
 #inicio-exportar { background:#fff; border:1px solid #d76325; border-radius:8px; padding:10px 14px; min-height:44px; color:#ad3e0b; font:inherit; font-size:.83rem; font-weight:600; cursor:pointer; }
 #inicio-exportar:disabled { opacity:.55; cursor:not-allowed; }
@@ -66,6 +68,8 @@
 #sec-dashboard .inicio-pie-deportes { margin-top:5px; }
 @container inicio-directiva (max-width:469px) {
     #sec-dashboard .inicio-grafico-barras { grid-template-columns:minmax(0,1fr); gap:10px; }
-    #sec-dashboard .inicio-exportacion { justify-content:flex-start; }
+    #sec-dashboard .inicio-acciones .inicio-accesos { flex-basis:100%; }
+    #sec-dashboard .inicio-exportacion { flex-basis:100%; align-items:stretch; margin-left:0; }
+    #sec-dashboard .inicio-exportacion p { max-width:none; text-align:left; }
     #inicio-exportar { width:100%; }
 }

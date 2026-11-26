@@ -1306,3 +1306,36 @@ tr:hover td { background-color: #f8fafc; }
 
 /* La etiqueta del interruptor y la del dato son independientes. */
 .form-group-panel .label-toggle .toggle-own { font-size: .8rem; font-weight: 500; color: var(--naranja); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }
+
+/* Sidebar de escritorio: el control queda siempre fuera de la barra.
+   En móvil conserva el cajón y el backdrop existentes. */
+@media (min-width: 993px) {
+    body.panel-body .mobile-menu-toggle {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 40px; height: 40px; padding: 0; top: 34px;
+        left: calc(var(--sidebar-w) + 14px); box-shadow: none; border-radius: 8px;
+    }
+    body.panel-body .panel-header { padding-left: 28px; }
+    body.panel-body.sidebar-colapsado .sidebar { display: none; }
+    body.panel-body.sidebar-colapsado .main-content { margin-left: 0; }
+    body.panel-body.sidebar-colapsado .mobile-menu-toggle { left: 14px; }
+    body.panel-body.sidebar-colapsado .panel-header,
+    body.panel-body.sidebar-colapsado .panel-section { max-width: none; }
+}
+.mobile-menu-toggle:focus-visible { outline: 3px solid #b45309; outline-offset: 3px; }
+.pago-icono--editar { color: #8a4c10; background: #fff8ed; border-color: #ead3b3; }
+.ficha-atleta-dialog { width: min(720px,calc(100% - 24px)); overflow: auto; }
+.ficha-atleta-dialog [hidden] { display:none !important; }
+.ficha-atleta-dialog .form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.ficha-datos { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:12px; margin:14px 0; }
+.ficha-datos div { min-width:0; }
+.ficha-datos dt { font-weight:600; font-size:.8rem; color:var(--text-muted); }
+.ficha-datos dd { margin:3px 0 0; overflow-wrap:anywhere; white-space:pre-wrap; }
+.ficha-documentos { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
+.ficha-botones { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:12px; }
+#ficha-estado:not(:empty) { margin:10px 0; font-size:.88rem; }
+@media(max-width:600px) {
+    .ficha-atleta-dialog .form-grid,.ficha-datos { grid-template-columns:minmax(0,1fr); }
+    .ficha-atleta-dialog .full-width {grid-column:1/-1;}
+    .ficha-botones > button { flex:1 1 100%; min-height:44px; }
+}

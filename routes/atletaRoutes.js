@@ -24,6 +24,8 @@ router.get(
     atletaController.obtenerAtletaPorId
 );
 
+router.put('/:id/ficha', verificarSesionRole(['representante','directiva','staff','admin']), atletaController.editarFicha);
+
 router.post(
     '/registrar-atleta',
     verificarSesionRole(['representante']),

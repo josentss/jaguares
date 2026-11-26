@@ -14,7 +14,7 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=perfiles-1">
+    <link rel="stylesheet" href="admin-style.css?v=fichas-1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
     <link rel="stylesheet" href="ux-panel-operativo.css?v=3">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
@@ -90,6 +90,36 @@
     </main>
 
     <div id="toast-container"></div>
+    <dialog id="ficha-atleta-dialog" class="comprobante-dialog ficha-atleta-dialog" aria-labelledby="ficha-atleta-titulo">
+        <div class="comprobante-dialog-header">
+            <h3 id="ficha-atleta-titulo">Ficha del atleta</h3>
+            <button type="button" class="comprobante-dialog-cerrar" id="ficha-cerrar" aria-label="Cerrar ficha">×</button>
+        </div>
+        <p id="ficha-estado" role="status" aria-live="polite"></p>
+        <div id="ficha-lectura" hidden>
+            <dl id="ficha-datos" class="ficha-datos"></dl>
+            <div id="ficha-documentos" class="ficha-documentos"></div>
+            <button type="button" class="btn-panel-submit" id="ficha-editar">Editar ficha</button>
+        </div>
+        <form id="ficha-form" hidden>
+            <div class="form-grid">
+                <div class="form-group-panel"><label for="ficha-nombres">Nombres</label><input id="ficha-nombres" required maxlength="80"></div>
+                <div class="form-group-panel"><label for="ficha-apellidos">Apellidos</label><input id="ficha-apellidos" required maxlength="80"></div>
+                <div class="form-group-panel">
+                    <div class="label-toggle"><label for="ficha-cedula">Cédula</label><label class="toggle-own" for="ficha-heredada"><input id="ficha-heredada" type="checkbox">Heredada</label></div>
+                    <div class="cedula-group" id="ficha-cedula-grupo"><select id="ficha-nac" required aria-label="Tipo de cédula"><option value="V-">V-</option><option value="E-">E-</option></select><input id="ficha-cedula" required minlength="7" maxlength="9" pattern="[0-9]{7,9}" inputmode="numeric" placeholder="Número"></div>
+                    <small id="ficha-cedula-nota" class="field-note" hidden></small>
+                </div>
+                <div class="form-group-panel"><label for="ficha-fecha">Fecha de nacimiento</label><input type="date" id="ficha-fecha" required></div>
+                <div class="form-group-panel"><label for="ficha-direccion">Dirección</label><input id="ficha-direccion" required maxlength="255"></div>
+                <div class="form-group-panel"><label for="ficha-telefono">Teléfono de contacto (opcional)</label><input id="ficha-telefono" inputmode="tel" maxlength="30"></div>
+                <div class="form-group-panel full-width"><label for="ficha-medico">Alergias o condiciones médicas</label><textarea id="ficha-medico" maxlength="500" rows="2"></textarea></div>
+            </div>
+            <p class="field-note">La corrección no cambia el estado, representante, documentos, equipos ni pagos. Si cambia la edad, revisa la categoría y la asignación deportiva.</p>
+            <div class="ficha-botones"><button type="button" class="btn-outline-sm" id="ficha-cancelar">Cancelar</button><button type="submit" class="btn-panel-submit">Guardar cambios</button></div>
+        </form>
+    </dialog>
+
     <dialog id="documentos-atleta-modal" class="docs-modal" aria-labelledby="documentos-atleta-titulo">
         <div class="docs-modal-cabecera">
             <h3 id="documentos-atleta-titulo">Documentos del atleta</h3>
@@ -133,7 +163,7 @@
             </form>
         </div>
     </div>
-    <button class="mobile-menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></button>
+    <button type="button" class="mobile-menu-toggle" id="menu-toggle" aria-label="Mostrar menú" aria-controls="sidebar" aria-expanded="false"><i class="fas fa-bars"></i></button>
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
     <div class="sidebar" id="sidebar">
@@ -208,7 +238,7 @@
                 </div>
                 <div style="overflow-x: auto;">
                     <table id="table-my-atletas">
-                        <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Categoría por edad</th><th>Estado</th><th>Documentos</th></tr></thead>
+                        <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Categoría por edad</th><th>Estado</th><th>Acciones</th></tr></thead>
                         <tbody><tr><td colspan="5" style="text-align: center;">Cargando...</td></tr></tbody>
                     </table>
                 </div>
@@ -471,9 +501,11 @@
     </div>
 
 <script src="fechas.js?v=fechas-1"></script>
-<script src="validacion-formularios.js?v=cedulas-1"></script>
+<script src="validacion-formularios.js?v=fichas-1"></script>
 <script src="api-client.js?v=perfiles-1"></script>
-<script src="iconos-acciones.js?v=1"></script>
+    <script src="sidebar-panel.js?v=1"></script>
+    <script src="ficha-atleta.js?v=1"></script>
+<script src="iconos-acciones.js?v=2"></script>
 <script src="comprobantes-ui.js?v=2"></script>
 <script src="pagos-guiados.js?v=1"></script>
 <script src="estado-cuenta.js?v=1"></script>
@@ -598,26 +630,8 @@
             document.getElementById('atl-telefono').required = true;
 
             // --- NAVEGACIÓN TABS SIDEBAR ---
-            const menuToggle = document.getElementById('menu-toggle');
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('sidebar-backdrop');
-
-            function cerrarSidebarMovil() {
-                if (sidebar) sidebar.classList.remove('open');
-                if (backdrop) backdrop.classList.remove('show');
-            }
-
-            if (menuToggle && sidebar) {
-                menuToggle.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    sidebar.classList.toggle('open');
-                    if (backdrop) backdrop.classList.toggle('show', sidebar.classList.contains('open'));
-                });
-            }
-            if (backdrop) {
-                backdrop.addEventListener('click', cerrarSidebarMovil);
-            }
-            window.addEventListener('resize', () => { if (window.innerWidth > 992) cerrarSidebarMovil(); });
+            const menuPanel = window.JaguaresSidebar.inicializar('menu-toggle');
+            function cerrarSidebarMovil() { menuPanel.cerrarMovil(); }
 
             const menuItems = document.querySelectorAll('.sidebar-menu li[data-target]');
             const sections = document.querySelectorAll('.panel-section');
@@ -909,6 +923,7 @@
                         document.getElementById('stat-total').textContent = data.atletas.length;
                         document.getElementById('stat-activos').textContent = data.atletas.filter(x => x.estado === 'activo').length;
                         document.getElementById('stat-revision').textContent = data.atletas.filter(x => x.estado === 'espera').length;
+                        const atletaSeleccionado = selectAtleta.value;
                         selectAtleta.innerHTML = '<option value="">-- Seleccione --</option>';
                         const botonReportar = document.querySelector('#form-report-pago button[type="submit"]');
                         if (botonReportar) botonReportar.disabled = !data.atletas.some(a => a.estado === 'activo');
@@ -936,8 +951,11 @@
                                 <td>${esc(atleta.cedula || 'N/A')}</td>
                                 <td><span class="categoria-etaria-inline${atleta.clasificacion?.estado !== 'orientativa' ? ' categoria-etaria-inline--pendiente' : ''}" title="Clasificación orientativa por edad, sin asignación de temporada">${esc(atleta.clasificacion?.categoria?.nombre || 'Por definir')}</span></td>
                                 <td><span class="status-badge ${badgeClass}">${estadoTexto}</span></td>
-                                <td><button type="button" class="docs-atleta-btn" data-docs-atleta="${Number(atleta.id_atleta)}"
-                                    aria-label="Ver documentos de ${esc(atleta.nombres)} ${esc(atleta.apellidos)}">Documentos</button></td>
+                                <td><div class="pago-acciones atleta-acciones" role="group" aria-label="Acciones de ${esc(atleta.nombres)} ${esc(atleta.apellidos)}">
+                                    <button type="button" class="pago-icono pago-icono--ver" data-ficha-ver="${Number(atleta.id_atleta)}" title="Ver ficha" aria-label="Ver ficha de ${esc(atleta.nombres)} ${esc(atleta.apellidos)}">${window.JaguaresIconos.comprobante}</button>
+                                    <button type="button" class="pago-icono pago-icono--editar" data-ficha-editar="${Number(atleta.id_atleta)}" title="Editar ficha" aria-label="Editar ficha de ${esc(atleta.nombres)} ${esc(atleta.apellidos)}">${window.JaguaresIconos.editar}</button>
+                                    <button type="button" class="pago-icono" data-docs-atleta="${Number(atleta.id_atleta)}" title="Documentos" aria-label="Ver documentos de ${esc(atleta.nombres)} ${esc(atleta.apellidos)}">${window.JaguaresIconos.documentos}</button>
+                                </div></td>
                             </tr>`;
 
                             if (atleta.estado === 'activo') {
@@ -948,6 +966,7 @@
                         });
 
                         tbody.innerHTML = htmlContenido;
+                        if ([...selectAtleta.options].some(o=>o.value===atletaSeleccionado)) selectAtleta.value=atletaSeleccionado;
                         window.JaguaresPagosGuiados?.refrescar();
                     }
                 } catch (error) {
@@ -955,6 +974,7 @@
                 }
             }
 
+            window.JaguaresFicha.inicializar({apiFetch,showToast,actualizar:cargarAtletasPanel});
             const modalDocumentos = document.getElementById('documentos-atleta-modal');
             const enlacesDocumentos = document.getElementById('documentos-atleta-enlaces');
             const cerrarDocumentos = document.getElementById('documentos-atleta-cerrar');

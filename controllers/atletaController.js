@@ -1,8 +1,9 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
-const { inscribir } = require('../utils/inscripcion');
-const { responderError } = require('../utils/integridad');
-const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esEdadAtletaValida, esDireccionValida, esCondicionMedicaValida, esIndicadorFormularioValido } = require('../utils/validators');
+const { inscribir, generarCedulaHeredada, nombreCompletoNormalizado } = require('../utils/inscripcion');
+const { createHash } = require('node:crypto');
+const { responderError, conIdentidades, ErrorIntegridad } = require('../utils/integridad');
+const { normalizarTexto, esEnteroPositivo, esEmailValido, esPasswordValida, esNombreValido, esCedulaValida, esTelefonoValido, normalizarTelefono, esEdadAtletaValida, esFechaISOValida, esDireccionValida, esCondicionMedicaValida, esIndicadorFormularioValido } = require('../utils/validators');
 const { crearNotificacion } = require('./notificacionesController');
 const { enlaceAutorizado } = require('../utils/cloudinaryPrivado');
 const { clasificar } = require('../public/admin/categorias-formativas');
@@ -189,6 +190,74 @@ exports.registrarAtletaDirectiva = async (req, res) => {
     });
 };
 
+// Solo los datos de la ficha participan en la versión. No se exponen URLs ni
+// se sobrescriben estado, propietario, documentos, pagos o asignaciones.
+function versionFicha(a) {
+    return createHash('sha256').update(JSON.stringify([
+        String(a.id_atleta), String(a.id_representante), a.nombres, a.apellidos,
+        a.cedula, Boolean(a.cedula_heredada), a.fecha_nacimiento,
+        a.direccion, a.telefono, a.alergias_medicas
+    ])).digest('hex');
+}
+
+const ROLES_EDICION = new Set(['representante','directiva','staff','admin']);
+exports.editarFicha = async (req, res) => {
+    const id = req.params.id;
+    if (!esEnteroPositivo(id)) return res.status(400).json({success:false,message:'ID de atleta no válido'});
+    if (!ROLES_EDICION.has(req.usuarioRol)) return res.status(403).json({success:false,message:'No autorizado'});
+    const d = req.body;
+    const campos = new Set(['version','nombres','apellidos','cedula','hereda_cedula',
+        'fecha_nac','direccion','telefono','alergias_medicas']);
+    if (!validarCuerpo(req) || Object.keys(d).some(k=>!campos.has(k)) ||
+        typeof d.version !== 'string' || !/^[a-f0-9]{64}$/.test(d.version) ||
+        typeof d.hereda_cedula !== 'boolean' ||
+        !esNombreValido(d.nombres) || !esNombreValido(d.apellidos) ||
+        !esFechaISOValida(d.fecha_nac) || !esDireccionValida(d.direccion) ||
+        !esCondicionMedicaValida(d.alergias_medicas) ||
+        typeof d.telefono !== 'string' || (d.telefono !== '' && !esTelefonoValido(d.telefono)) ||
+        (d.hereda_cedula ? d.cedula !== null : !esCedulaValida(d.cedula))) {
+        return res.status(400).json({success:false,message:'Revisa los datos de la ficha. No se permiten campos adicionales.'});
+    }
+    try {
+        const resultado = await conIdentidades(async client => {
+            const {rows} = await client.query(`SELECT id_atleta,id_representante,nombres,apellidos,cedula,
+                cedula_heredada,fecha_nacimiento,direccion,telefono,alergias_medicas,estado
+                FROM atletas WHERE id_atleta=$1 FOR UPDATE`,[Number(id)]);
+            const anterior=rows[0];
+            if (!anterior) throw new ErrorIntegridad(404,'Atleta no encontrado');
+            if (req.usuarioRol==='representante' && String(req.usuarioId)!==String(anterior.id_representante))
+                throw new ErrorIntegridad(403,'No tienes permiso para editar esta ficha');
+            if (versionFicha(anterior)!==d.version)
+                throw new ErrorIntegridad(409,'La ficha cambió. Vuelve a abrirla antes de guardar.');
+            // Un atleta que ha cumplido 19 años puede corregir otros datos sin
+            // alterar su fecha histórica; una fecha nueva debe cumplir la regla.
+            if (d.fecha_nac!==anterior.fecha_nacimiento && !esEdadAtletaValida(d.fecha_nac))
+                throw new ErrorIntegridad(400,'La fecha corregida debe corresponder a un atleta de 5 a 18 años.');
+            const nombres=d.nombres.trim(), apellidos=d.apellidos.trim();
+            const candidatos=await client.query(`SELECT nombres,apellidos FROM atletas
+                WHERE id_representante=$1 AND fecha_nacimiento=$2::date AND id_atleta<>$3`,
+                [anterior.id_representante,d.fecha_nac,Number(id)]);
+            if (candidatos.rows.some(x=>nombreCompletoNormalizado(x)===nombreCompletoNormalizado({nombres,apellidos})))
+                throw new ErrorIntegridad(409,'Este atleta ya está registrado con el representante');
+            let cedula=d.hereda_cedula ? anterior.cedula : d.cedula.trim().toUpperCase();
+            if (d.hereda_cedula && !anterior.cedula_heredada) {
+                const representante=await client.query('SELECT cedula FROM usuarios WHERE id_usuario=$1 FOR UPDATE',[anterior.id_representante]);
+                cedula=await generarCedulaHeredada(client,representante.rows[0]?.cedula);
+            }
+            const duplicada=await client.query('SELECT id_atleta FROM atletas WHERE UPPER(TRIM(cedula))=$1 AND id_atleta<>$2 LIMIT 1',
+                [String(cedula).trim().toUpperCase(),Number(id)]);
+            if(duplicada.rowCount) throw new ErrorIntegridad(409,'Ya existe un atleta con esa cédula');
+            await client.query(`UPDATE atletas SET nombres=$1,apellidos=$2,cedula=$3,cedula_heredada=$4,
+                fecha_nacimiento=$5,direccion=$6,telefono=$7,alergias_medicas=$8 WHERE id_atleta=$9`,
+                [nombres,apellidos,cedula,d.hereda_cedula?1:0,d.fecha_nac,d.direccion.trim(),
+                normalizarTelefono(d.telefono)||null,d.alergias_medicas.trim()||null,Number(id)]);
+            return {id_atleta:Number(id),cedula,clasificacion:clasificar(d.fecha_nac)};
+        });
+        // No registrar datos personales/medicos ni cambios de cédula en logs.
+        return res.json({success:true,message:'Ficha actualizada',...resultado});
+    } catch(error) {return responderError(res,error);}
+};
+
 // ── Ficha completa (planilla) ──────────────────────────────────────────────
 exports.obtenerAtletaPorId = (req, res) => {
     const { id } = req.params;
@@ -249,6 +318,7 @@ exports.obtenerAtletaPorId = (req, res) => {
             success: true,
             atleta: {
                 id_atleta: a.id_atleta,
+                version_ficha: versionFicha(a),
                 nombres: a.nombres,
                 apellidos: a.apellidos,
                 cedula: a.cedula,

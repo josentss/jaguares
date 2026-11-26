@@ -484,3 +484,36 @@ test('PG: DATE se devuelve como fecha civil y TIMESTAMPTZ conserva su instante',
         fecha:'2026-11-02',instante:'2026-11-02T13:00:00.000Z'
     });
 });
+
+async function leerFicha(id,usuarioId=1,usuarioRol='representante') {
+    return new Promise(resolve=>atletas.obtenerAtletaPorId({params:{id},usuarioId,usuarioRol},{
+        codigo:200,status(n){this.codigo=n;return this;},json(body){resolve({codigo:this.codigo,body});}
+    }));
+}
+test('PG: editar ficha conserva propietario, estado y documentos; impide terceros, duplicados y versiones obsoletas',async()=>{
+    const alta=await ejecutar(atletas.registrarAtleta,{...atletaBase,nombres:'Edicion Atleta',cedula:'E-89123456'},
+        {files:{foto:[{path:'https://example.org/sintetico/foto'}]}});
+    assert.equal(alta.codigo,200);
+    const id=alta.body.id_atleta, antes=(await leerFicha(id)).body.atleta;
+    const body={version:antes.version_ficha,nombres:'Atleta Corregido',apellidos:'Sintético',
+        cedula:'E-89123456',hereda_cedula:false,fecha_nac:'2014-05-10',
+        direccion:'Calle nueva 12',telefono:'04141234567',alergias_medicas:'Asma'};
+    const extras={params:{id}};
+    assert.equal((await ejecutar(atletas.editarFicha,body,{...extras,usuarioId:2})).codigo,403);
+    assert.equal((await ejecutar(atletas.editarFicha,{...body,estado:'activo'},extras)).codigo,400);
+    assert.equal((await ejecutar(atletas.editarFicha,{...body,cedula:'V-12'},extras)).codigo,400);
+    assert.equal((await ejecutar(atletas.editarFicha,{...body,fecha_nac:'1900-01-01'},extras)).codigo,400);
+    const ok=await ejecutar(atletas.editarFicha,body,extras);assert.equal(ok.codigo,200);
+    assert.equal((await ejecutar(atletas.editarFicha,body,extras)).codigo,409);
+    const after=(await leerFicha(id)).body.atleta;
+    assert.equal(after.nombres,'Atleta Corregido');assert.equal(after.estado,antes.estado);
+    assert.deepEqual(after.documentos,antes.documentos);
+    assert.equal(after.representante.id_representante,1);
+    const duplicada=await ejecutar(atletas.registrarAtleta,{...atletaBase,nombres:'Otro Documento',cedula:'E-89123457'});
+    assert.equal(duplicada.codigo,200);
+    assert.equal((await ejecutar(atletas.editarFicha,{...body,version:after.version_ficha,cedula:'E-89123457'},{...extras,usuarioId:4,usuarioRol:'staff'})).codigo,409);
+    const hereda=await ejecutar(atletas.editarFicha,{...body,version:after.version_ficha,hereda_cedula:true,cedula:null},{...extras,usuarioId:4,usuarioRol:'staff'});
+    assert.equal(hereda.codigo,200);assert.match(hereda.body.cedula,/^V-83000001-\d+$/);
+    const actual=(await leerFicha(id)).body.atleta;
+    assert.equal((await ejecutar(atletas.editarFicha,{...body,version:actual.version_ficha,hereda_cedula:true,cedula:null},extras)).body.cedula,hereda.body.cedula);
+});

@@ -5,6 +5,30 @@ function nombreCompletoNormalizado({ nombres, apellidos }) {
     return `${nombres ?? ''} ${apellidos ?? ''}`.normalize('NFC').trim().replace(/\s+/gu, ' ').toLowerCase();
 }
 
+async function generarCedulaHeredada(client, cedulaRepresentante) {
+    const base = String(cedulaRepresentante || '').trim().toUpperCase();
+    if (!esCedulaValida(base)) {
+        throw new ErrorIntegridad(400, 'El representante no tiene cédula válida en su perfil. Actualízala primero.');
+    }
+    const { rows } = await client.query(`SELECT UPPER(TRIM(cedula)) AS cedula FROM atletas
+        WHERE UPPER(TRIM(cedula)) LIKE $1 OR UPPER(TRIM(cedula)) = $2`,
+    [`${base}-%`, `H-${base}`]);
+    let max = 0;
+    let antiguas = 0;
+    for (const row of rows) {
+        if (row.cedula === `H-${base}`) { antiguas++; continue; }
+        const sufijo = row.cedula.slice(base.length + 1);
+        if (/^\d+$/.test(sufijo)) {
+            const numero = Number(sufijo);
+            if (!Number.isSafeInteger(numero) || numero >= Number.MAX_SAFE_INTEGER) {
+                throw new ErrorIntegridad(409, 'La secuencia heredada requiere revisión administrativa');
+            }
+            max = Math.max(max, numero);
+        }
+    }
+    return `${base}-${Math.max(max, antiguas) + 1}`;
+}
+
 async function inscribir({ idRepresentante, representanteNuevo, atleta, estado }) {
     return conIdentidades(async client => {
         let id = idRepresentante;
@@ -37,27 +61,7 @@ async function inscribir({ idRepresentante, representanteNuevo, atleta, estado }
 
         let cedula = atleta.cedula;
         if (atleta.heredada) {
-            const base = String(representantes[0].cedula || '').trim().toUpperCase();
-            if (!esCedulaValida(base)) {
-                throw new ErrorIntegridad(400, 'El representante no tiene cédula válida en su perfil. Actualízala primero.');
-            }
-            const { rows } = await client.query(`SELECT UPPER(TRIM(cedula)) AS cedula FROM atletas
-                WHERE UPPER(TRIM(cedula)) LIKE $1 OR UPPER(TRIM(cedula)) = $2`,
-            [`${base}-%`, `H-${base}`]);
-            let max = 0;
-            let antiguas = 0;
-            for (const row of rows) {
-                if (row.cedula === `H-${base}`) { antiguas++; continue; }
-                const sufijo = row.cedula.slice(base.length + 1);
-                if (/^\d+$/.test(sufijo)) {
-                    const numero = Number(sufijo);
-                    if (!Number.isSafeInteger(numero) || numero >= Number.MAX_SAFE_INTEGER) {
-                        throw new ErrorIntegridad(409, 'La secuencia heredada requiere revisión administrativa');
-                    }
-                    max = Math.max(max, numero);
-                }
-            }
-            cedula = `${base}-${Math.max(max, antiguas) + 1}`;
+            cedula = await generarCedulaHeredada(client, representantes[0].cedula);
         }
         const { rows: cedulas } = await client.query(
             'SELECT id_atleta FROM atletas WHERE UPPER(TRIM(cedula)) = $1 LIMIT 1', [cedula]);
@@ -75,4 +79,4 @@ async function inscribir({ idRepresentante, representanteNuevo, atleta, estado }
     });
 }
 
-module.exports = { inscribir };
+module.exports = { inscribir, generarCedulaHeredada, nombreCompletoNormalizado };

@@ -4,35 +4,12 @@
     const el=id=>document.getElementById(id);
     function inicializar({apiFetch,showToast,actualizar}) {
         const dialog=el('ficha-atleta-dialog'), form=el('ficha-form'),
-            lectura=el('ficha-lectura'), estado=el('ficha-estado'),
+            estado=el('ficha-estado'),
             guardar=form.querySelector('button[type=submit]');
         let atleta=null, id=null, ocupado=false, secuencia=0, origen=null;
         const campos={nombres:'ficha-nombres',apellidos:'ficha-apellidos',
             fecha_nacimiento:'ficha-fecha',direccion:'ficha-direccion',
             telefono:'ficha-telefono',alergias_medicas:'ficha-medico'};
-        function mostrarDatos() {
-            form.hidden=true;lectura.hidden=false;
-            const datos=el('ficha-datos');datos.replaceChildren();
-            for(const [titulo,valor] of [
-                ['Nombre',atleta.nombres+' '+atleta.apellidos],['Cédula',atleta.cedula],
-                ['Fecha de nacimiento',root.FechasJaguares?.formatearFechaCivil(atleta.fecha_nacimiento)||atleta.fecha_nacimiento],
-                ['Categoría por edad',atleta.clasificacion?.categoria?.nombre],
-                ['Estado',atleta.estado],['Teléfono',atleta.telefono],
-                ['Dirección',atleta.direccion],['Condiciones médicas',atleta.alergias_medicas],
-                ['Representante',[atleta.representante?.nombres,atleta.representante?.apellidos].filter(Boolean).join(' ')],
-                ['Teléfono del representante',atleta.representante?.telefono1]
-            ]){
-                const bloque=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');
-                dt.textContent=titulo;dd.textContent=valor||'—';bloque.append(dt,dd);datos.append(bloque);
-            }
-            const docs=el('ficha-documentos');docs.replaceChildren();
-            for(const [campo,tipo,etiqueta] of [['foto_url','foto','Foto'],['cedula_archivo_url','cedula_archivo','Cédula'],['partida_nacimiento_url','partida_nacimiento','Partida de nacimiento']]){
-                const ruta='/api/atletas/'+id+'/documentos/'+tipo;
-                if(atleta.documentos?.[campo]!==ruta)continue;
-                const enlace=document.createElement('a');enlace.href=ruta;enlace.target='_blank';enlace.rel='noopener noreferrer';enlace.textContent=etiqueta;docs.append(enlace);
-            }
-            el('ficha-editar').disabled=!atleta.version_ficha;
-        }
         function alternarCedula(){
             const heredada=el('ficha-heredada').checked;
             el('ficha-cedula-grupo').hidden=heredada;
@@ -43,7 +20,7 @@
         }
         function editar(){
             if(!atleta?.version_ficha)return;
-            lectura.hidden=true;form.hidden=false;estado.textContent='';
+            form.hidden=false;estado.textContent='';
             for(const [k,campo] of Object.entries(campos)){
                 el(campo).value=atleta[k]||'';
                 el(campo).setCustomValidity('');
@@ -52,29 +29,28 @@
             cargarCedulaJaguares('ficha',atleta.cedula_heredada?'':atleta.cedula);
             alternarCedula();el('ficha-nombres').focus();
         }
-        async function abrir(nuevoId,edicion,boton){
+        async function abrir(nuevoId,boton){
             if(ocupado||dialog.open||!Number.isSafeInteger(nuevoId)||nuevoId<=0)return;
             id=nuevoId;atleta=null;origen=boton;const revision=++secuencia;
-            lectura.hidden=true;form.hidden=true;estado.textContent='Cargando ficha…';
+            form.hidden=true;estado.textContent='Cargando ficha…';
             dialog.showModal();
             try{
                 const res=await apiFetch('/api/atletas/'+id),data=await res.json();
                 if(revision!==secuencia||!dialog.open)return;
                 if(!res.ok||!data.success||!data.atleta)throw Error('Ficha no disponible');
                 atleta=data.atleta;estado.textContent='';
-                if(edicion&&atleta.version_ficha)editar();else mostrarDatos();
+                if(atleta.version_ficha)editar();else estado.textContent='No se puede editar esta ficha. Vuelve a consultarla.';
             }catch{if(revision===secuencia&&dialog.open)estado.textContent='No se pudo consultar la ficha. Cierra e inténtalo de nuevo.';}
         }
         document.addEventListener('click',e=>{
-            const boton=e.target.closest('button[data-ficha-editar],button[data-ficha-ver]');
-            if(boton)abrir(Number(boton.dataset.fichaEditar||boton.dataset.fichaVer),boton.hasAttribute('data-ficha-editar'),boton);
+            const boton=e.target.closest('button[data-ficha-editar]');
+            if(boton)abrir(Number(boton.dataset.fichaEditar),boton);
         });
-        el('ficha-editar').addEventListener('click',editar);
-        el('ficha-cancelar').addEventListener('click',()=>{if(!ocupado){estado.textContent='';mostrarDatos();}});
+        el('ficha-cancelar').addEventListener('click',()=>{if(!ocupado)dialog.close();});
         el('ficha-heredada').addEventListener('change',alternarCedula);
         el('ficha-cerrar').addEventListener('click',()=>{if(!ocupado)dialog.close();});
         dialog.addEventListener('cancel',e=>{if(ocupado)e.preventDefault();});
-        dialog.addEventListener('close',()=>{++secuencia;atleta=null;form.reset();lectura.hidden=true;form.hidden=true;el('ficha-datos').replaceChildren();el('ficha-documentos').replaceChildren();estado.textContent='';origen?.focus();});
+        dialog.addEventListener('close',()=>{++secuencia;atleta=null;form.reset();form.hidden=true;estado.textContent='';origen?.focus();});
         form.addEventListener('submit',async e=>{
             e.preventDefault();
             if(ocupado||!atleta||!validarFormularioJaguares(form))return;

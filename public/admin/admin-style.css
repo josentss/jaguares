@@ -1377,15 +1377,10 @@ tr:hover td { background-color: #f8fafc; }
 .ficha-atleta-dialog { width: min(720px,calc(100% - 24px)); overflow: auto; }
 .ficha-atleta-dialog [hidden] { display:none !important; }
 .ficha-atleta-dialog .form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-.ficha-datos { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:12px; margin:14px 0; }
-.ficha-datos div { min-width:0; }
-.ficha-datos dt { font-weight:600; font-size:.8rem; color:var(--text-muted); }
-.ficha-datos dd { margin:3px 0 0; overflow-wrap:anywhere; white-space:pre-wrap; }
-.ficha-documentos { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
 .ficha-botones { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:12px; }
 #ficha-estado:not(:empty) { margin:10px 0; font-size:.88rem; }
 @media(max-width:600px) {
-    .ficha-atleta-dialog .form-grid,.ficha-datos { grid-template-columns:minmax(0,1fr); }
+    .ficha-atleta-dialog .form-grid { grid-template-columns:minmax(0,1fr); }
     .ficha-atleta-dialog .full-width {grid-column:1/-1;}
     .ficha-botones > button { flex:1 1 100%; min-height:44px; }
 }
@@ -1417,4 +1412,22 @@ tr:hover td { background-color: #f8fafc; }
         padding-bottom: max(24px, calc(env(safe-area-inset-bottom) + 16px));
     }
     .panel-body .panel-header { align-items: flex-start; }
+}
+
+/* Controles de búsqueda compartidos por Directiva y Representante. */
+.search-box { width: 100%; max-width: 300px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.3s; }
+.search-box:focus { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1); }
+#sec-inicio .ficha-filtros { margin: 0 0 10px; align-items: stretch; }
+#sec-inicio .ficha-filtros input.search-box { flex: 1 1 260px; max-width: none; min-height: 42px; }
+#sec-inicio .ficha-filtros select.search-box { flex: 0 1 220px; min-height: 42px; min-width: 0; }
+#rep-atletas-resultados { margin: 0 0 14px; }
+#table-my-atletas .atleta-sin-resultados td { padding: 18px; text-align: center; color: var(--text-muted); }
+.ficha-atleta-header { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+.ficha-atleta-dialog .form-grid { gap: 14px 16px; }
+.ficha-atleta-dialog .field-note { font-size: .8rem; color: var(--text-muted); line-height: 1.5; }
+.ficha-atleta-dialog .ficha-botones { border-top: 1px solid #e2e8f0; padding-top: 12px; }
+.ficha-atleta-dialog .ficha-botones button { min-height: 44px; }
+@media (max-width: 768px) {
+    #sec-inicio .ficha-filtros { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
+    #sec-inicio .ficha-filtros :is(input,select).search-box { width: 100%; max-width: none; min-height: 46px; }
 }

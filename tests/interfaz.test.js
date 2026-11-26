@@ -1021,11 +1021,16 @@ test('ambos paneles: sidebar escritorio y móvil, ver y editar ficha sin alterar
             else {
                 await page.locator('#rep-atletas-buscar').fill('no-existe-sintetico');
                 await page.waitForFunction(()=>document.querySelector('#rep-atletas-resultados').textContent.startsWith('0 de'));
+                await page.locator('#table-my-atletas .atleta-sin-resultados').waitFor({state:'visible'});
                 await page.locator('#rep-atletas-buscar').fill('');
+                assert.equal(await page.locator('#table-my-atletas .atleta-sin-resultados').isVisible(),false);
+                const estilo=await page.locator('#rep-atletas-buscar').evaluate(e=>({alto:e.getBoundingClientRect().height,radio:parseFloat(getComputedStyle(e).borderRadius)}));
+                assert.ok(estilo.alto>=42&&estilo.radio>=8);
                 await page.locator('[data-ficha-ver="11"]').click();
-                await page.locator('#ficha-lectura').waitFor({state:'visible'});
-                assert.match(await page.locator('#ficha-datos').textContent(),/E-12345678/);
-                await page.locator('#ficha-cerrar').click();
+                await page.locator('#planilla-print-root').waitFor({state:'visible'});
+                assert.match(await page.locator('#planilla-print-root').textContent(),/E-12345678/);
+                assert.equal(await page.locator('#planillaModal a[href*="/documentos/"]').count(),0);
+                await page.locator('#planillaModal .planilla-toolbar button').last().click();
             }
             await page.locator('[data-ficha-editar="11"]').first().click();
             await page.locator('#ficha-nombres').waitFor({state:'visible'});
@@ -1037,6 +1042,10 @@ test('ambos paneles: sidebar escritorio y móvil, ver y editar ficha sin alterar
             await page.waitForFunction(()=>!document.getElementById('ficha-atleta-dialog').open);
             assert.equal(enviado.nombres,'Atleta Corregido');assert.equal(enviado.cedula,'E-12345678');
             assert.equal(Object.hasOwn(enviado,'estado'),false);assert.equal(Object.hasOwn(enviado,'id_representante'),false);
+            await page.locator('[data-ficha-editar="11"]').first().click();
+            await page.locator('#ficha-nombres').waitFor({state:'visible'});
+            await page.locator('#ficha-cancelar').click();
+            assert.equal(await page.locator('#ficha-atleta-dialog').isVisible(),false);
             await page.setViewportSize({width:390,height:844});
             await page.waitForFunction(()=>document.querySelector('.mobile-menu-toggle').getAttribute('aria-expanded')==='false');
             await menu.click();assert.equal(await menu.getAttribute('aria-expanded'),'true');

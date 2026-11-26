@@ -61,7 +61,7 @@ test.before(async () => {
                     sesion: { id: 'sesion-sintetica-planilla', servidor: ahora,
                         vence: ahora + 900000, limite: ahora + 43200000 },
                     usuario: {
-                    id_usuario: 9, rol: 'directiva', nombres: 'Directiva', apellidos: 'Sintética'
+                    id_usuario: 9, rol: (req.headers.referer || '').includes('panel-representante.html') ? 'representante' : 'directiva', nombres: 'Usuario', apellidos: 'Sintético'
                 } });
             }
             if (pathname === '/api/directiva/auditoria') {
@@ -107,7 +107,7 @@ function json(res, data) {
     res.end(JSON.stringify(data));
 }
 
-async function openDirectiva(viewport) {
+async function openDirectiva(viewport, rol='directiva') {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport, acceptDownloads: true });
     const page = await context.newPage();
@@ -122,7 +122,8 @@ async function openDirectiva(viewport) {
             body: html2pdfBundle
         })
     );
-    await page.goto(baseUrl + '/admin/panel-directiva.html');
+    await page.goto(baseUrl + '/admin/panel-'+rol+'.html');
+    await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
     await page.waitForFunction(() => typeof window.verPlanilla === 'function');
     await page.evaluate(() => window.verPlanilla(9001));
     await page.locator('#planillaModal .planilla-toolbar button[onclick="descargarPlanillaPDF()"]')
@@ -269,5 +270,27 @@ for (const device of [
             await context.close();
             await browser.close();
         }
+    });
+}
+
+for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {
+    test('representante exporta la misma planilla institucional a PDF ('+viewport.width+'px)',async()=>{
+        const {browser,context,page,pageErrors}=await openDirectiva(viewport,'representante');
+        try {
+            const hoja=page.locator('#planilla-print-root');
+            assert.match(await hoja.innerText(),/Club de Voleibol Jaguares/);
+            assert.match(await hoja.innerText(),/U-13 Mini Voleibol/);
+            assert.match(await hoja.innerText(),/representante@example.org/);
+            assert.equal(await hoja.locator('a').count(),0);
+            const downloadPromise=page.waitForEvent('download');
+            await page.locator('#planillaModal .planilla-toolbar button[onclick="descargarPlanillaPDF()"]').click();
+            const download=await downloadPromise;
+            assert.equal(download.suggestedFilename(),'Planilla_Jaguares_Atleta_de_prueba_PDF_completo_9001.pdf');
+            const bytes=await fs.readFile(await download.path());
+            assert.ok(bytes.length>10000);
+            const paginas=await inspectPdfInBrowser(page,bytes);
+            assert.ok(paginas.length>=1&&paginas[0].minContentX<60&&paginas[0].maxContentX>paginas[0].width-60);
+            assert.deepEqual(pageErrors,[]);
+        }finally{await context.close();await browser.close();}
     });
 }

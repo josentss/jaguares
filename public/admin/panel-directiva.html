@@ -546,13 +546,13 @@
                         </div>
 
                         <div class="form-group-panel">
-                            <label class="label-toggle" for="dir-cedula">
-                                Cédula de Identidad
-                                <span class="toggle-own">
+                            <div class="label-toggle">
+                                <label for="dir-cedula">Cédula de Identidad</label>
+                                <label class="toggle-own" for="dir-has-cedula">
                                     <input type="checkbox" id="dir-has-cedula" checked>
                                     ¿Tiene propia?
-                                </span>
-                            </label>
+                                </label>
+                            </div>
                             <div class="cedula-group" id="dir-group-cedula">
                                 <select id="dir-nac" aria-label="Tipo de cédula" required>
                                     <option value="V-">V-</option>
@@ -575,13 +575,13 @@
                         </div>
 
                         <div class="form-group-panel">
-                            <label class="label-toggle" for="dir-telefono">
-                                Teléfono de Contacto
-                                <span class="toggle-own">
+                            <div class="label-toggle">
+                                <label for="dir-telefono">Teléfono de Contacto</label>
+                                <label class="toggle-own" for="dir-has-telefono">
                                     <input type="checkbox" id="dir-has-telefono" checked>
                                     ¿Tiene propio?
-                                </span>
-                            </label>
+                                </label>
+                            </div>
                             <input type="text" id="dir-telefono" inputmode="tel" maxlength="30" required>
                             <input type="text" id="dir-telefono-off" class="disabled-input" style="display:none;" disabled
                                    placeholder="Usará el teléfono del representante">

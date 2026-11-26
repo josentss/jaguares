@@ -962,7 +962,20 @@ test('Mi perfil de ambos roles: carga V/E, conserva el contrato y no envía rol 
                 document.getElementById('perfil-cedula')?.value==='12345678');
             assert.equal(await page.locator('#perfil-correo').isDisabled(),true);
             assert.equal(await page.locator('#perfil-cedula').getAttribute('maxlength'),'9');
-            await page.locator('#perfil-nac').selectOption('V-');
+            const campo = page.locator('#perfil-cedula');
+            await campo.evaluate(el => {
+                const datos = new DataTransfer();
+                datos.setData('text/plain','V-87654321');
+                el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:datos,bubbles:true,cancelable:true}));
+            });
+            assert.equal(await page.locator('#perfil-nac').inputValue(),'V-');
+            assert.equal(await campo.inputValue(),'87654321');
+            await campo.evaluate(el => {
+                const datos = new DataTransfer();
+                datos.setData('text/plain','X-12345678');
+                el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:datos,bubbles:true,cancelable:true}));
+            });
+            assert.equal(await campo.inputValue(),'87654321');
             await page.locator('#perfil-cedula').fill('123');
             await page.locator('#form-mi-perfil button[type=submit]').click();
             assert.equal(guardado,undefined);

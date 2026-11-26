@@ -229,13 +229,13 @@
                         </div>
 
                         <div class="form-group-panel">
-                            <label class="label-toggle" for="atl-cedula">
-                                Cédula de Identidad
-                                <span class="toggle-own">
+                            <div class="label-toggle">
+                                <label for="atl-cedula">Cédula de Identidad</label>
+                                <label class="toggle-own" for="atl-has-cedula">
                                     <input type="checkbox" id="atl-has-cedula" onchange="toggleCedulaAtleta()" checked>
                                     ¿Tiene propia?
-                                </span>
-                            </label>
+                                </label>
+                            </div>
                             <div class="cedula-group" id="group-cedula-input">
                                 <select id="atl-nac" aria-label="Tipo de cédula" required>
                                     <option value="V-">V-</option>
@@ -259,13 +259,13 @@
                         </div>
 
                         <div class="form-group-panel">
-                            <label class="label-toggle" for="atl-telefono">
-                                Teléfono de Contacto
-                                <span class="toggle-own">
+                            <div class="label-toggle">
+                                <label for="atl-telefono">Teléfono de Contacto</label>
+                                <label class="toggle-own" for="atl-has-telefono">
                                     <input type="checkbox" id="atl-has-telefono" onchange="toggleTelefonoAtleta()" checked>
                                     ¿Tiene propio?
-                                </span>
-                            </label>
+                                </label>
+                            </div>
                             <input type="text" id="atl-telefono" name="telefono" inputmode="tel" maxlength="30" required>
                             <input type="text" id="atl-telefono-disabled" class="disabled-input"
                                    style="display:none;" disabled
@@ -1096,6 +1096,7 @@
                 e.preventDefault();
                 if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
+                if (btn.disabled) return;
                 const btnText = btn.innerHTML;
                 btn.innerHTML = 'Guardando... <i class="fas fa-spinner fa-spin"></i>';
                 btn.disabled = true;
@@ -1147,6 +1148,7 @@
                 e.preventDefault();
                 if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
+                if (btn.disabled) return;
                 const btnText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = 'Guardando...';
@@ -1208,6 +1210,7 @@
                 e.preventDefault();
                 if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
+                if (btn.disabled) return;
                 const btnText = btn.innerHTML;
 
                 const hasCedula = document.getElementById('atl-has-cedula').checked;
@@ -1284,6 +1287,7 @@
                  }
 
                 const btn = form.querySelector('button[type="submit"]');
+                if (btn.disabled) return;
                 const btnText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = 'Enviando... <i class="fas fa-spinner fa-spin"></i>';

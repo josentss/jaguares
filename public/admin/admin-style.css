@@ -1303,3 +1303,6 @@ tr:hover td { background-color: #f8fafc; }
     #table-my-pagos tbody td:nth-child(6) { display: block; }
     .pago-acciones { gap: 9px; }
 }
+
+/* La etiqueta del interruptor y la del dato son independientes. */
+.form-group-panel .label-toggle .toggle-own { font-size: .8rem; font-weight: 500; color: var(--naranja); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }

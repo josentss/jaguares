@@ -1,3 +1,5 @@
 # PR 63 — Coherencia de formularios
 
 Se revisaron los formularios de ambos paneles y los contratos de perfil/inscripción. Identificación personal: selector V-/E- y 7–9 dígitos; pegado de cédula completa válida; sin conversión silenciosa de datos malformados. El backend mantiene las validaciones y consultas parametrizadas; no cambia el contrato ni la generación de cédulas heredadas. Mi perfil de Directiva usa únicamente el ID de sesión y el endpoint propio existente. Correo de solo lectura; cambio de contraseña de Directiva reservado al siguiente PR de autenticación segura. No se agregan privilegios de gestión de terceros. Se unifican etiquetas, documentos, controles de teléfono y presentación. Los campos de pago solo ajustan longitud de referencia y tipos de archivo al contrato existente. Sin SQL ni cambios de autorización. Verificar en Preview aislado, con datos sintéticos, en móvil y escritorio.
+
+Los toggles de cédula y teléfono tienen etiquetas independientes y se evitan envíos repetidos de formularios de Representante mientras una solicitud está en curso.

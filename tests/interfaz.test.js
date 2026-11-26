@@ -1198,3 +1198,22 @@ test('móvil conserva identidad del menú y acciones de atletas en una fila comp
         }
     }finally{await browser.close();}
 });
+
+test('representante: planilla denegada no muestra datos ni permite exportar; cierre y reapertura seguros',async()=>{
+    const browser=await chromium.launch({headless:true});
+    try {
+        const page=await browser.newPage({viewport:{width:390,height:844}});
+        await page.route('https://**/*',route=>route.abort());
+        await page.route('**/api/atletas/11',route=>route.fulfill({status:403,json:{success:false,message:'No autorizado'}}));
+        await page.goto(baseUrl+'/admin/panel-representante.html');
+        await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
+        await page.locator('[data-ficha-ver="11"]').click();
+        await page.locator('#planillaModal [role=alert]').waitFor();
+        assert.match(await page.locator('#planillaModal [role=alert]').textContent(),/No autorizado/);
+        assert.equal(await page.locator('#planilla-print-root').count(),0);
+        assert.equal(await page.locator('#planillaModal button[onclick="descargarPlanillaPDF()"]').count(),0);
+        await page.locator('#planillaModal button[onclick="cerrarPlanilla()"]').click();
+        assert.equal(await page.locator('#planillaModal').isVisible(),false);
+        assert.equal(await page.locator('#planilla-contenido').textContent(),'');
+    } finally {await browser.close();}
+});

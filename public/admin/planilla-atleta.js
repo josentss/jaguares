@@ -187,7 +187,7 @@ async function verPlanilla(idAtleta) {
                         <button type="button" class="btn-action btn-aprob" onclick="descargarPlanillaPDF()">
                             Descargar PDF
                         </button>
-                        <button type="button" class="btn-action" style="background:#7f8c8d;color:#fff;" onclick="cerrarPlanilla()">
+                        <button type="button" class="btn-action planilla-cerrar" onclick="cerrarPlanilla()">
                             Cerrar
                         </button>
                     </div>`;

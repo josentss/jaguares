@@ -28,7 +28,7 @@ const fixtureAtleta = {
         telefono1: '04140000002',
         cedula: 'V-99000002'
     },
-    documentos: { foto_url: 'https://imagenes.invalid.example/foto-sintetica.png' }
+    documentos: { foto_url: '/api/atletas/9001/documentos/foto' }
 };
 
 let server;
@@ -69,6 +69,16 @@ test.before(async () => {
                     metricas: { activos: 0, espera: 0, pagos_pendientes: 0 },
                     tasa_bcv: 36.5, tasa_fecha: null, atletas: [], pagos: []
                 });
+            }
+            if (pathname === '/api/usuarios/perfil/9') {
+                return json(res, {success:true, perfil:{...fixtureAtleta.representante}});
+            }
+            if (pathname === '/api/atletas/representante/9') {
+                return json(res, {success:true, atletas:[fixtureAtleta]});
+            }
+            if (pathname === '/api/atletas/9001/documentos/foto') {
+                res.writeHead(200, {'Content-Type':'image/png'});
+                return res.end(await fs.readFile(path.join(publicRoot,'img/logo-sinfondo.png')));
             }
             if (pathname === '/api/atletas/9001') {
                 return json(res, { success: true, atleta: fixtureAtleta });
@@ -125,7 +135,8 @@ async function openDirectiva(viewport, rol='directiva') {
     await page.goto(baseUrl + '/admin/panel-'+rol+'.html');
     await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
     await page.waitForFunction(() => typeof window.verPlanilla === 'function');
-    await page.evaluate(() => window.verPlanilla(9001));
+    if(rol==='representante') await page.locator('[data-ficha-ver="9001"]').click();
+    else await page.evaluate(() => window.verPlanilla(9001));
     await page.locator('#planillaModal .planilla-toolbar button[onclick="descargarPlanillaPDF()"]')
         .waitFor({ state: 'visible' });
     return { browser, context, page, pageErrors };
@@ -282,6 +293,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {
             assert.match(await hoja.innerText(),/U-13 Mini Voleibol/);
             assert.match(await hoja.innerText(),/representante@example.org/);
             assert.equal(await hoja.locator('a').count(),0);
+            await page.waitForFunction(()=>document.querySelector('.planilla-foto-box img')?.naturalWidth>0);
             const downloadPromise=page.waitForEvent('download');
             await page.locator('#planillaModal .planilla-toolbar button[onclick="descargarPlanillaPDF()"]').click();
             const download=await downloadPromise;

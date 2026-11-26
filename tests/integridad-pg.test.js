@@ -513,7 +513,17 @@ test('PG: editar ficha conserva propietario, estado y documentos; impide tercero
     assert.equal(duplicada.codigo,200);
     assert.equal((await ejecutar(atletas.editarFicha,{...body,version:after.version_ficha,cedula:'E-89123457'},{...extras,usuarioId:4,usuarioRol:'staff'})).codigo,409);
     const hereda=await ejecutar(atletas.editarFicha,{...body,version:after.version_ficha,hereda_cedula:true,cedula:null},{...extras,usuarioId:4,usuarioRol:'staff'});
-    assert.equal(hereda.codigo,200);assert.match(hereda.body.cedula,/^V-83000001-\d+$/);
+    assert.equal(hereda.codigo,200);
+    // Otra prueba modifica concurrentemente la cédula de uno de los representantes.
+    // La identidad heredada debe partir del propietario actual, no del seed inicial.
+    const baseActual=antes.representante.cedula;
+    assert.match(baseActual,/^[VE]-\d{7,9}$/);
+    assert.ok(hereda.body.cedula.startsWith(baseActual+'-'));
+    assert.match(hereda.body.cedula.slice(baseActual.length+1),/^[1-9]\d*$/);
+    const {rows:identidades}=await db.pool.query(
+        'SELECT id_atleta FROM atletas WHERE UPPER(TRIM(cedula))=$1',[hereda.body.cedula]);
+    assert.equal(identidades.length,1);
+    assert.equal(Number(identidades[0].id_atleta),Number(id));
     const actual=(await leerFicha(id)).body.atleta;
     assert.equal((await ejecutar(atletas.editarFicha,{...body,version:actual.version_ficha,hereda_cedula:true,cedula:null},extras)).body.cedula,hereda.body.cedula);
 });

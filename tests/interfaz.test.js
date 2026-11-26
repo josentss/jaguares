@@ -1030,6 +1030,7 @@ test('ambos paneles: sidebar escritorio y móvil, ver y editar ficha sin alterar
             assert.equal(enviado.nombres,'Atleta Corregido');assert.equal(enviado.cedula,'E-12345678');
             assert.equal(Object.hasOwn(enviado,'estado'),false);assert.equal(Object.hasOwn(enviado,'id_representante'),false);
             await page.setViewportSize({width:390,height:844});
+            await page.waitForFunction(()=>document.querySelector('.mobile-menu-toggle').getAttribute('aria-expanded')==='false');
             await menu.click();assert.equal(await menu.getAttribute('aria-expanded'),'true');
             await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('aria-expanded'),'false');
             assert.deepEqual(errores,[]);

@@ -79,7 +79,7 @@ test.after(async()=>{
 
 async function abrirApartado(page, id) {
     const toggleMovil = page.locator('#mobile-menu-btn');
-    if (await toggleMovil.isVisible() && !(await page.locator('#sidebar').evaluate(x => x.classList.contains('open')))) {
+    if (await toggleMovil.isVisible() && (await toggleMovil.getAttribute('aria-expanded')) === 'false') {
         await toggleMovil.click();
     }
     const item = page.locator('[data-target="' + id + '"]');

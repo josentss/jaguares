@@ -642,7 +642,7 @@ async function comprobarFechasPanel(browser, { panel, timezoneId, viewport, lega
             assert.equal((await page.locator('#body-pagos tr').first().locator('td').nth(2).textContent()).trim(), '2/11/2026');
             // La referencia comercial conserva su fecha publicada, no se
             // convierte como fecha civil del pago ni se etiqueta tasa BCV.
-            assert.match(await page.locator('#inicio-tasas').getAttribute('title'),/2026-11-02.*no oficial BCV/);
+            assert.equal(await page.locator('#inicio-tasas').getAttribute('title'),'02/11/2026');
             assert.doesNotMatch(await page.locator('#inicio-tasas').innerText(),/ExchangeRate-API/);
         } else {
             await page.waitForFunction(() => document.querySelector('#table-my-pagos tbody')?.textContent.includes('Noviembre'));
@@ -1285,6 +1285,29 @@ test('Directiva: gráficos coherentes con los registros y exportación disponibl
             await page.setViewportSize({width,height:844});
             assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true);
         }
+        // La exportación es la última acción del Inicio. En escritorio
+        // comparte línea con los accesos; en móvil se apila a todo el ancho.
+        await page.setViewportSize({width:1920,height:900});
+        await page.waitForFunction(()=>innerWidth===1920);
+        const geometria=()=>page.evaluate(()=>{
+            const grupo=document.querySelector('.inicio-acciones'),accesos=document.querySelector('.inicio-accesos'),
+                boton=document.getElementById('inicio-exportar');
+            const g=grupo.getBoundingClientRect(),a=accesos.getBoundingClientRect(),b=boton.getBoundingClientRect();
+            return {izquierda:g.left,derecha:g.right,ancho:g.width,
+                accesos:{left:a.left,right:a.right,top:a.top,bottom:a.bottom},
+                boton:{left:b.left,right:b.right,top:b.top,width:b.width},
+                alFinal:grupo===document.querySelector('#sec-dashboard').lastElementChild};
+        });
+        const escritorio=await geometria();
+        assert.equal(escritorio.alFinal,true);
+        assert.ok(Math.abs(escritorio.accesos.left-escritorio.izquierda)<2);
+        assert.ok(Math.abs(escritorio.boton.right-escritorio.derecha)<2);
+        assert.ok(Math.abs(escritorio.accesos.top-escritorio.boton.top)<2);
+        assert.ok(escritorio.accesos.right<=escritorio.boton.left);
+        await page.setViewportSize({width:320,height:650});
+        const movil=await geometria();
+        assert.ok(movil.boton.top>=movil.accesos.bottom);
+        assert.ok(Math.abs(movil.boton.width-movil.ancho)<2);
         // Representante no incorpora este módulo ni el control.
         await page.goto(baseUrl+'/admin/panel-representante.html');
         await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');

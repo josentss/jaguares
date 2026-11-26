@@ -7,7 +7,7 @@
     const fmt=new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
     const moneda=(n,s)=>Number.isFinite(n)?fmt.format(n)+' '+s:'N/D';
     const porcentaje=(n,t)=>t?Math.round(n/t*100)+'%':'0%';
-    const fecha=iso=>new Intl.DateTimeFormat('es-VE',{timeZone:'America/Caracas',dateStyle:'short',timeStyle:'short'}).format(new Date(iso));
+    const fecha=iso=>new Intl.DateTimeFormat('es-VE',{timeZone:'America/Caracas',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(iso));
     function texto(doc,s,x,y,{size=10,bold=false,color=tinta,max=180,align='left'}={}){
         const str=String(s);
         doc.setFont('helvetica',bold?'bold':'normal');
@@ -29,15 +29,22 @@
             texto(doc,value,x+3,y+17,{size:15,bold:true,max:w-6});
         });
     }
-    function cabecera(doc,titulo,sub,captura,n){
+    function cabecera(doc,logo,sub,captura,n){
         doc.setFillColor(255,255,255);doc.rect(0,0,210,297,'F');
-        doc.setFillColor(...naranja);doc.rect(14,13,182,1.2,'F');
-        texto(doc,'CLUB DE VOLEIBOL JAGUARES',14,21,{bold:true,size:10,color:naranja});
-        texto(doc,titulo,14,32,{size:21,bold:true});
-        texto(doc,sub,14,39,{size:10,color:gris});
-        texto(doc,'Consulta: '+fecha(captura)+' (Caracas)',196,21,{align:'right',size:8,max:85,color:gris});
+        // Misma marca y orden visual de las planillas: escudo, club,
+        // tipo de documento y separador institucional.
+        const imagen=doc.getImageProperties(logo);
+        const escala=Math.min(16/imagen.width,16/imagen.height);
+        const w=imagen.width*escala,h=imagen.height*escala;
+        doc.addImage(logo,'PNG',14+(16-w)/2,12+(16-h)/2,w,h,'jaguares-logo');
+        texto(doc,'CLUB DE VOLEIBOL JAGUARES',34,19,{bold:true,size:13,max:125});
+        texto(doc,'Informe de gestión',34,25,{size:10,color:gris});
+        texto(doc,fecha(captura),196,19,{align:'right',size:9,max:27,color:gris});
+        doc.setDrawColor(...tinta);doc.setLineWidth(.28);
+        doc.line(14,30,196,30);doc.line(14,31.2,196,31.2);
+        texto(doc,sub,14,41,{size:16,bold:true});
         doc.setDrawColor(...borde);doc.line(14,276,196,276);
-        texto(doc,'Uso interno | Estadísticas acumuladas de la academia',14,283,{size:8,color:gris});
+        texto(doc,'Uso interno',14,283,{size:8,color:gris});
         texto(doc,n+' / 2',196,283,{size:8,color:gris,align:'right'});
     }
     function donut(doc,items,total){
@@ -87,6 +94,10 @@
     }
     async function descargar({auditoria:a,resumen:r}){
         if(typeof root.html2pdf!=='function')throw Error('Exportación PDF no disponible');
+        // Reutilizar el cargador seguro de la ficha institucional y el mismo
+        // logotipo local. No generar un documento sin la marca requerida.
+        const logo=await root.imagenPdfSegura('../img/logo-sinfondo.png',240);
+        if(!logo)throw Error('No se pudo cargar el logotipo institucional');
         // Obtener la instancia jsPDF de la dependencia fijada. Una semilla blanca
         // inicializa una sola página; todo el contenido posterior es vectorial.
         const canvas=document.createElement('canvas');
@@ -99,7 +110,7 @@
         if(doc.getNumberOfPages()!==1)throw Error('Página inicial inválida');
         doc.setProperties({title:'Informe estadístico - Club Jaguares',subject:'Resumen administrativo',author:'Club Jaguares'});
         const atletas=a.atletas,pagos=a.pagos,f=a.finanzas;
-        cabecera(doc,'Informe de gestión','Club y organización deportiva',a.consultado,1);
+        cabecera(doc,logo,'Club y organización deportiva',a.consultado,1);
         tarjetas(doc,[['Registrados',atletas.total],['Activos',atletas.activo],['En espera',atletas.espera],['Inactivos',atletas.inactivo]],46);
         texto(doc,'Distribución de atletas',14,79,{bold:true,size:12});
         const estados=[['Activos',atletas.activo,verde],['En espera',atletas.espera,ambar],['Inactivos',atletas.inactivo,neutro]];
@@ -121,29 +132,36 @@
             caja(doc,x,y,89,12);texto(doc,label,x+3,y+7.6,{size:9,max:65});texto(doc,n,x+86,y+7.6,{bold:true,align:'right',max:18});
         });
         texto(doc,'Representantes aprobados: '+r.representantes_aprobados,14,257,{bold:true,size:10});
-        texto(doc,'Organización consultada: '+fecha(r.consultado)+' (Caracas)',14,266,{size:8,color:gris});
+        // Solo señalar otra fecha si las consultas corresponden a días distintos.
+        if(fecha(r.consultado)!==fecha(a.consultado))
+            texto(doc,fecha(r.consultado),196,257,{size:8,color:gris,align:'right',max:27});
 
         doc.addPage('a4','portrait');
-        cabecera(doc,'Informe de gestión','Administración financiera',a.consultado,2);
+        cabecera(doc,logo,'Administración financiera',a.consultado,2);
         texto(doc,'Ingresos aprobados por moneda original',14,48,{bold:true,size:12});
         tarjetas(doc,[['USD',moneda(f.usd,'USD')],['Bolívares',moneda(f.bs,'Bs')],['Pesos colombianos',moneda(f.cop,'COP')]],53);
         texto(doc,'Referencias de mercado',14,87,{bold:true,size:12});
         tarjetas(doc,[['USD',moneda(f.tasaUSD,'Bs/USD')],['EUR',moneda(f.tasaEUR,'Bs/EUR')]],93);
-        texto(doc,'ExchangeRate-API | '+(f.fechaReferencia||'Fecha no disponible')+' | No es tasa oficial BCV',14,123,{size:8,color:gris});
-        texto(doc,'Equivalencias estimadas (USD y Bs)',14,135,{bold:true,size:11});
-        texto(doc,moneda(f.equivalenteUSD,'USD'),14,144,{bold:true,size:12,max:87});
-        texto(doc,moneda(f.equivalenteBs,'Bs'),107,144,{bold:true,size:12,max:89});
-        texto(doc,'Excluyen COP y no representan ingresos adicionales.',14,151,{size:8,color:gris});
-        texto(doc,'Pagos reportados por estado',14,165,{bold:true,size:12});
-        texto(doc,'Total: '+pagos.total,196,165,{align:'right',bold:true,size:10,max:40});
+        texto(doc,'Equivalencias estimadas (USD y Bs)',14,128,{bold:true,size:11});
+        texto(doc,moneda(f.equivalenteUSD,'USD'),14,138,{bold:true,size:12,max:87});
+        texto(doc,moneda(f.equivalenteBs,'Bs'),107,138,{bold:true,size:12,max:89});
+        texto(doc,'Pagos reportados por estado',14,154,{bold:true,size:12});
+        texto(doc,'Total: '+pagos.total,196,154,{align:'right',bold:true,size:10,max:40});
         const filas=[['Aprobados',pagos.aprobado,verde],['Pendientes',pagos.pendiente,ambar],['Rechazados',pagos.rechazado,rojo]];
         if(pagos.otros)filas.push(['Otros',pagos.otros,neutro]);
-        barras(doc,filas,pagos.total,175);
-        doc.setDrawColor(...borde);doc.line(14,231,196,231);
-        texto(doc,'Alcance del informe',14,240,{bold:true,size:11});
-        texto(doc,'Los importes corresponden a pagos aprobados acumulados, no a saldos por cobrar.',14,249,{size:9,color:gris});
-        texto(doc,'Los gráficos cuentan reportes, no montos. Las monedas se mantienen separadas.',14,256,{size:9,color:gris});
-        texto(doc,'N/D indica referencia o equivalencia no disponible.',14,263,{size:9,color:gris});
+        barras(doc,filas,pagos.total,164);
+        doc.setDrawColor(...borde);doc.line(14,221,196,221);
+        texto(doc,'Alcance del informe',14,231,{bold:true,size:11});
+        const notas=[
+            'Ingresos aprobados acumulados; no saldos por cobrar.',
+            'Equivalencias estimadas, sin COP ni ingresos adicionales.',
+            'Gráficos: cantidad de pagos. N/D: no disponible.'
+        ];
+        notas.forEach((nota,i)=>{
+            const y=240+i*8;
+            doc.setFillColor(...gris);doc.circle(15,y-.9,.65,'F');
+            texto(doc,nota,19,y,{size:9,color:gris,max:177});
+        });
         const dia=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'})
             .formatToParts(new Date()).filter(p=>p.type!=='literal');
         const partes=Object.fromEntries(dia.map(p=>[p.type,p.value]));

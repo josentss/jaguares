@@ -424,9 +424,10 @@ test('perfil web: cédulas, teléfonos y nombres deben ser válidos', async () =
         assert.equal(await page.locator('#perfil-nombres').evaluate(el => el.validity.customError), true);
         await page.locator('#perfil-nombres').fill('Ana María');
         assert.equal(await page.locator('#perfil-nombres').evaluate(el => el.validity.customError), false);
-        await page.locator('#perfil-cedula').fill('V-12');
+        await page.locator('#perfil-cedula').fill('12');
         assert.equal(await page.locator('#perfil-cedula').evaluate(el => el.validity.customError), true);
-        await page.locator('#perfil-cedula').fill('V-12345678');
+        await page.locator('#perfil-nac').selectOption('E-');
+        await page.locator('#perfil-cedula').fill('12345678');
         assert.equal(await page.locator('#perfil-cedula').evaluate(el => el.validity.customError), false);
         await page.locator('#perfil-tel1').evaluate(el => {
             el.value = 'abc999';
@@ -932,5 +933,60 @@ test('Directiva: ingresos por moneda visibles aunque la referencia falle', async
         await page.reload();
         await page.waitForFunction(()=>document.getElementById('stat-total-usd')?.textContent==='0.00 $');
         assert.equal(await page.locator('#stat-total-bs').textContent(),'0.00 Bs');
+    } finally {await browser.close();}
+});
+
+test('Mi perfil de ambos roles: carga V/E, conserva el contrato y no envía rol ni ID', async () => {
+    const browser = await chromium.launch({headless:true});
+    try {
+        for (const rol of ['representante','directiva']) {
+            const page=await browser.newPage({viewport:{width:390,height:844}});
+            const errores=[];
+            page.on('pageerror',err=>errores.push(err.message));
+            await page.route('https://**/*',route=>route.abort());
+            let guardado;
+            const perfil={nombres:'Ana María',apellidos:'Prueba',correo:'ana@example.org',
+                cedula:'E-12345678',telefono1:'04141234567',telefono2:''};
+            await page.route('**/api/usuarios/perfil**', async route=>{
+                if(route.request().method()==='PUT'){
+                    guardado=route.request().postDataJSON();
+                    Object.assign(perfil,guardado);
+                    return route.fulfill({json:{success:true}});
+                }
+                return route.fulfill({json:{success:true,perfil}});
+            });
+            await page.goto(baseUrl+'/admin/panel-'+rol+'.html');
+            await page.waitForFunction(()=>document.body.dataset.sessionState==='ready');
+            await page.evaluate(()=>document.querySelector('[data-target="sec-perfil"]').click());
+            await page.waitForFunction(()=>document.getElementById('perfil-nac')?.value==='E-' &&
+                document.getElementById('perfil-cedula')?.value==='12345678');
+            assert.equal(await page.locator('#perfil-correo').isDisabled(),true);
+            assert.equal(await page.locator('#perfil-cedula').getAttribute('maxlength'),'9');
+            const campo = page.locator('#perfil-cedula');
+            await campo.evaluate(el => {
+                const datos = new DataTransfer();
+                datos.setData('text/plain','V-87654321');
+                el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:datos,bubbles:true,cancelable:true}));
+            });
+            assert.equal(await page.locator('#perfil-nac').inputValue(),'V-');
+            assert.equal(await campo.inputValue(),'87654321');
+            await campo.evaluate(el => {
+                const datos = new DataTransfer();
+                datos.setData('text/plain','X-12345678');
+                el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:datos,bubbles:true,cancelable:true}));
+            });
+            assert.equal(await campo.inputValue(),'87654321');
+            await page.locator('#perfil-cedula').fill('123');
+            await page.locator('#form-mi-perfil button[type=submit]').click();
+            assert.equal(guardado,undefined);
+            await page.locator('#perfil-cedula').fill('87654321');
+            await page.locator('#form-mi-perfil button[type=submit]').click();
+            await page.waitForFunction(()=>document.querySelector('#toast-container')?.textContent.includes('Perfil actualizado'));
+            assert.equal(guardado.cedula,'V-87654321');
+            assert.equal(Object.hasOwn(guardado,'rol'),false);
+            assert.equal(Object.hasOwn(guardado,'id_usuario'),false);
+            assert.deepEqual(errores,[]);
+            await page.close();
+        }
     } finally {await browser.close();}
 });

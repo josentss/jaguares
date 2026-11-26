@@ -14,9 +14,9 @@
         body.panel-body[data-session-state="starting"] #session-gate { display: none; }
     </style>
     <noscript><style>body.panel-body[data-session-state="starting"] #session-gate { display: block; } #session-gate-message { display: none; }</style></noscript>
-    <link rel="stylesheet" href="admin-style.css?v=acciones-pagos-1">
+    <link rel="stylesheet" href="admin-style.css?v=perfiles-1">
     <link rel="stylesheet" href="categorias-formativas.css?v=1">
-    <link rel="stylesheet" href="ux-panel-operativo.css?v=1">
+    <link rel="stylesheet" href="ux-panel-operativo.css?v=3">
     <link rel="stylesheet" href="estilo-institucional.css?v=1">
     <link rel="stylesheet" href="estado-cuenta.css?v=1">
     <link rel="stylesheet" href="pagos-guiados.css?v=1">
@@ -109,20 +109,23 @@
                 Completa estos datos para continuar.
             </p>
             <form id="form-onboarding">
-                <div style="margin-bottom:12px;">
-                    <label style="font-weight:600; font-size:0.85rem;">Cédula *</label>
-                    <input type="text" id="ob-cedula" required maxlength="11" placeholder="V-12345678"
-                           style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:4px; box-sizing:border-box;">
+                <div class="form-group-panel onboarding-campo">
+                    <label for="ob-cedula">Cédula *</label>
+                    <div class="cedula-group">
+                            <select id="ob-nac" aria-label="Tipo de cédula" required>
+                                <option value="V-">V-</option>
+                                <option value="E-">E-</option>
+                            </select>
+                            <input type="text" id="ob-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9" pattern="[0-9]{7,9}" required>
+                        </div>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-weight:600; font-size:0.85rem;">Teléfono principal (WhatsApp) *</label>
-                    <input type="text" id="ob-tel1" required maxlength="30" placeholder="Ej: 04141234567"
-                           style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:4px; box-sizing:border-box;">
+                <div class="form-group-panel onboarding-campo">
+                    <label for="ob-tel1">Teléfono principal (WhatsApp) *</label>
+                    <input type="text" id="ob-tel1" required maxlength="30" placeholder="Ej: 04141234567">
                 </div>
-                <div style="margin-bottom:16px;">
-                    <label style="font-weight:600; font-size:0.85rem;">Teléfono secundario (opcional)</label>
-                    <input type="text" id="ob-tel2" maxlength="30"
-                           style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:4px; box-sizing:border-box;">
+                <div class="form-group-panel onboarding-campo">
+                    <label for="ob-tel2">Teléfono secundario (opcional)</label>
+                    <input type="text" id="ob-tel2" maxlength="30">
                 </div>
                 <button type="submit" class="btn-panel-submit" style="width:100%; background:#2ecc71;">
                     Guardar y continuar
@@ -217,28 +220,28 @@
                 <form id="form-add-atleta" enctype="multipart/form-data">
                     <div class="form-grid">
                         <div class="form-group-panel">
-                            <label>Nombres</label>
+                            <label for="atl-nombres">Nombres</label>
                             <input type="text" id="atl-nombres" name="nombres" required maxlength="80">
                         </div>
                         <div class="form-group-panel">
-                            <label>Apellidos</label>
+                            <label for="atl-apellidos">Apellidos</label>
                             <input type="text" id="atl-apellidos" name="apellidos" required maxlength="80">
                         </div>
 
                         <div class="form-group-panel">
-                            <label style="display:flex; justify-content:space-between; align-items:center;">
-                                Cédula de Identidad
-                                <span style="font-size:0.8rem; color:#ff6600;">
+                            <div class="label-toggle">
+                                <label for="atl-cedula">Cédula de Identidad</label>
+                                <label class="toggle-own" for="atl-has-cedula">
                                     <input type="checkbox" id="atl-has-cedula" onchange="toggleCedulaAtleta()" checked>
                                     ¿Tiene propia?
-                                </span>
-                            </label>
+                                </label>
+                            </div>
                             <div class="cedula-group" id="group-cedula-input">
-                                <select id="atl-nac">
+                                <select id="atl-nac" aria-label="Tipo de cédula" required>
                                     <option value="V-">V-</option>
                                     <option value="E-">E-</option>
                                 </select>
-                                <input type="text" id="atl-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9">
+                                <input type="text" id="atl-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9" pattern="[0-9]{7,9}" required>
                             </div>
                             <input type="text" id="atl-cedula-disabled" class="disabled-input"
                                    style="display:none;" disabled
@@ -246,24 +249,24 @@
                         </div>
 
                         <div class="form-group-panel">
-                            <label>Fecha Nacimiento</label>
+                            <label for="atl-fecha-nac">Fecha Nacimiento</label>
                             <input type="date" id="atl-fecha-nac" name="fecha_nac" required>
                         </div>
 
                         <div class="form-group-panel">
-                            <label>Dirección</label>
+                            <label for="atl-direccion">Dirección</label>
                             <input type="text" id="atl-direccion" name="direccion" required maxlength="255">
                         </div>
 
                         <div class="form-group-panel">
-                            <label style="display:flex; justify-content:space-between; align-items:center;">
-                                Teléfono de Contacto
-                                <span style="font-size:0.8rem; color:#ff6600;">
+                            <div class="label-toggle">
+                                <label for="atl-telefono">Teléfono de Contacto</label>
+                                <label class="toggle-own" for="atl-has-telefono">
                                     <input type="checkbox" id="atl-has-telefono" onchange="toggleTelefonoAtleta()" checked>
                                     ¿Tiene propio?
-                                </span>
-                            </label>
-                            <input type="text" id="atl-telefono" name="telefono" maxlength="30">
+                                </label>
+                            </div>
+                            <input type="text" id="atl-telefono" name="telefono" inputmode="tel" maxlength="30" required>
                             <input type="text" id="atl-telefono-disabled" class="disabled-input"
                                    style="display:none;" disabled
                                    placeholder="Heredará el teléfono del representante">
@@ -282,20 +285,20 @@
                     </div>
 
                     <!-- Documentos -->
-                    <div class="form-grid" style="margin-top:10px; border-top:1px dashed #ddd; padding-top:15px;">
+                    <div class="form-grid form-docs">
                         <div class="form-group-panel">
-                            <label>Foto del atleta <small style="color:#888;">(JPG/PNG/WebP, máx. 5 MB)</small></label>
+                            <label for="atl-foto">Foto del atleta <small>(JPG, PNG o WebP, máx. 5 MB)</small></label>
                             <input type="file" id="atl-foto" name="foto" accept="image/jpeg,image/png,image/webp">
                             <div id="preview-foto" style="display:none; margin-top:8px; text-align:center;">
                                 <img id="atl-preview-foto" alt="Vista previa" style="max-height:120px; border-radius:8px; object-fit:cover;">
                             </div>
                         </div>
                         <div class="form-group-panel">
-                            <label>Cédula (escaneada) <small style="color:#888;">(imagen o PDF)</small></label>
+                            <label for="atl-cedula-archivo">Cédula escaneada <small>(imagen o PDF, máx. 5 MB)</small></label>
                             <input type="file" id="atl-cedula-archivo" name="cedula_archivo" accept="image/jpeg,image/png,image/webp,application/pdf">
                         </div>
                         <div class="form-group-panel">
-                            <label>Partida de nacimiento <small style="color:#888;">(imagen o PDF)</small></label>
+                            <label for="atl-partida">Partida de nacimiento <small>(imagen o PDF, máx. 5 MB)</small></label>
                             <input type="file" id="atl-partida" name="partida_nacimiento" accept="image/jpeg,image/png,image/webp,application/pdf">
                         </div>
                     </div>
@@ -335,11 +338,11 @@
                         <legend>Datos de la operación</legend>
                         <div class="form-grid">
                             <div class="form-group-panel"><label for="pay-monto-trans">Monto en bolívares (Bs)</label><input type="number" min="0.01" max="999999999" step="0.01" id="pay-monto-trans" placeholder="Monto fijo del club" inputmode="decimal" required readonly><small class="field-note">Se calcula según la fecha del pago.</small></div>
-                            <div class="form-group-panel"><label for="pay-referencia">Número de referencia</label><input type="text" id="pay-referencia" placeholder="Ej: 123456" inputmode="numeric"><small class="field-note">Los últimos dígitos de la operación.</small></div>
+                            <div class="form-group-panel"><label for="pay-referencia">Número de referencia</label><input type="text" id="pay-referencia" maxlength="80" placeholder="Ej: 123456" inputmode="numeric"><small class="field-note">Los últimos dígitos de la operación.</small></div>
                             <div class="form-group-panel"><label for="pay-fecha-trans">Fecha de la operación</label><input type="date" id="pay-fecha-trans" required></div>
                             <div class="form-group-panel">
                                 <label for="pay-captura">Comprobante</label>
-                                <input type="file" id="pay-captura" accept="image/*" required>
+                                <input type="file" id="pay-captura" accept="image/jpeg,image/png,image/gif,image/webp" required>
                                 <small class="field-note">Captura de pantalla legible del pago. Imagen, máximo 5 MB.</small>
                                 <div id="preview-container" style="display:none; margin-top:10px; text-align: center; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
                                     <p style="font-size:0.75rem; color:#666; margin-bottom:5px;">Vista previa del comprobante:</p>
@@ -437,20 +440,26 @@
             <div class="form-container-panel">
                 <form id="form-mi-perfil">
                     <div class="form-grid">
-                        <div class="form-group-panel"><label>Nombres</label><input type="text" id="perfil-nombres" maxlength="80" required></div>
-                        <div class="form-group-panel"><label>Apellidos</label><input type="text" id="perfil-apellidos" maxlength="80" required></div>
-                        <div class="form-group-panel"><label>Cédula</label><input type="text" id="perfil-cedula" placeholder="V-12345678" maxlength="11" required></div>
-                        <div class="form-group-panel"><label>Correo</label><input type="email" id="perfil-correo" disabled style="background:#f4f4f4;"></div>
-                        <div class="form-group-panel"><label>Teléfono Principal</label><input type="text" id="perfil-tel1" required></div>
-                        <div class="form-group-panel"><label>Teléfono Secundario</label><input type="text" id="perfil-tel2"></div>
+                        <div class="form-group-panel"><label for="perfil-nombres">Nombres</label><input type="text" id="perfil-nombres" maxlength="80" required></div>
+                        <div class="form-group-panel"><label for="perfil-apellidos">Apellidos</label><input type="text" id="perfil-apellidos" maxlength="80" required></div>
+                        <div class="form-group-panel"><label for="perfil-cedula">Cédula</label><div class="cedula-group">
+                            <select id="perfil-nac" aria-label="Tipo de cédula" required>
+                                <option value="V-">V-</option>
+                                <option value="E-">E-</option>
+                            </select>
+                            <input type="text" id="perfil-cedula" placeholder="Número" inputmode="numeric" minlength="7" maxlength="9" pattern="[0-9]{7,9}" required>
+                        </div></div>
+                        <div class="form-group-panel"><label for="perfil-correo">Correo</label><input type="email" id="perfil-correo" disabled style="background:#f4f4f4;"></div>
+                        <div class="form-group-panel"><label for="perfil-tel1">Teléfono Principal</label><input type="text" id="perfil-tel1" inputmode="tel" maxlength="30" required></div>
+                        <div class="form-group-panel"><label for="perfil-tel2">Teléfono Secundario</label><input type="text" id="perfil-tel2" inputmode="tel" maxlength="30"></div>
 
                         <div class="form-group-panel full-width" style="border-top: 1px dashed #ccc; margin-top: 15px; padding-top: 15px;">
-                            <button type="button" class="btn-toggle-password" id="btn-toggle-password">
+                            <button type="button" class="btn-toggle-password" id="btn-toggle-password" aria-expanded="false" aria-controls="password-field-container">
                                 ¿Desea cambiar su contraseña?
                             </button>
                             <div id="password-field-container" style="display: none; margin-top: 15px;">
-                                <label>Nueva Contraseña</label>
-                                <input type="password" id="perfil-password" placeholder="Escriba nueva clave" maxlength="128">
+                                <label for="perfil-password">Nueva Contraseña</label>
+                                <input type="password" id="perfil-password" autocomplete="new-password" minlength="8" placeholder="Escriba nueva clave" maxlength="128">
                                 <small style="color: #666;">Deje vacío si cambió de opinión.</small>
                             </div>
                         </div>
@@ -462,8 +471,8 @@
     </div>
 
 <script src="fechas.js?v=fechas-1"></script>
-<script src="validacion-formularios.js?v=fechas-1"></script>
-<script src="api-client.js?v=sesion-aviso-1"></script>
+<script src="validacion-formularios.js?v=cedulas-1"></script>
+<script src="api-client.js?v=perfiles-1"></script>
 <script src="iconos-acciones.js?v=1"></script>
 <script src="comprobantes-ui.js?v=2"></script>
 <script src="pagos-guiados.js?v=1"></script>
@@ -540,6 +549,7 @@
             document.getElementById('atl-cedula-disabled').style.display = hasCedula ? 'none' : 'block';
             document.getElementById('atl-cedula').required = hasCedula;
             document.getElementById('atl-cedula').disabled = !hasCedula;
+            document.getElementById('atl-nac').disabled = !hasCedula;
             if (!hasCedula) document.getElementById('atl-cedula').setCustomValidity('');
         }
 
@@ -793,11 +803,13 @@
                 const container = document.getElementById('password-field-container');
                 if (container.style.display === 'none') {
                     container.style.display = 'block';
+                    this.setAttribute('aria-expanded', 'true');
                     this.innerHTML = 'Cancelar cambio de contraseña';
                     this.style.color = '#e74c3c';
                 } else {
                     container.style.display = 'none';
                     document.getElementById('perfil-password').value = '';
+                    this.setAttribute('aria-expanded', 'false');
                     this.innerHTML = '¿Desea cambiar su contraseña?';
                     this.style.color = 'var(--primary)';
                 }
@@ -830,7 +842,7 @@
             function mostrarOnboarding(perfil) {
                 const modal = document.getElementById('onboardingModal');
                 if (!modal) return;
-                document.getElementById('ob-cedula').value = (perfil && perfil.cedula) || '';
+                cargarCedulaJaguares('ob', perfil?.cedula);
                 document.getElementById('ob-tel1').value = (perfil && perfil.telefono1) || '';
                 document.getElementById('ob-tel2').value = (perfil && perfil.telefono2) || '';
                 modal.style.display = 'flex';
@@ -864,7 +876,7 @@
                         repCache = data.perfil;
                         document.getElementById('perfil-nombres').value = data.perfil.nombres || '';
                         document.getElementById('perfil-apellidos').value = data.perfil.apellidos || '';
-                        document.getElementById('perfil-cedula').value = data.perfil.cedula || '';
+                        cargarCedulaJaguares('perfil', data.perfil.cedula);
                         document.getElementById('perfil-correo').value = data.perfil.correo || '';
                         document.getElementById('perfil-tel1').value = data.perfil.telefono1 || '';
                         document.getElementById('perfil-tel2').value = data.perfil.telefono2 || '';
@@ -1084,15 +1096,15 @@
                 e.preventDefault();
                 if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
+                if (btn.disabled) return;
                 const btnText = btn.innerHTML;
                 btn.innerHTML = 'Guardando... <i class="fas fa-spinner fa-spin"></i>';
                 btn.disabled = true;
 
                 const updatedData = {
-                    id_usuario: userData.id_usuario,
                     nombres: document.getElementById('perfil-nombres').value,
                     apellidos: document.getElementById('perfil-apellidos').value,
-                    cedula: document.getElementById('perfil-cedula').value,
+                    cedula: leerCedulaJaguares('perfil'),
                     telefono1: document.getElementById('perfil-tel1').value,
                     telefono2: document.getElementById('perfil-tel2').value,
                     password: document.getElementById('perfil-password').value
@@ -1113,10 +1125,12 @@
                         userData.apellidos = updatedData.apellidos;
                         try { localStorage.setItem('usuario', JSON.stringify(userData)); } catch (_) {}
                         actualizarTitulo();
+                        if (userBadge?.querySelector('strong')) userBadge.querySelector('strong').textContent = `${updatedData.nombres} ${updatedData.apellidos}`;
                         document.getElementById('perfil-password').value = "";
 
                         const pContainer = document.getElementById('password-field-container');
                         if(pContainer) pContainer.style.display = "none";
+                        document.getElementById('btn-toggle-password').setAttribute('aria-expanded', 'false');
                         document.getElementById('btn-toggle-password').innerHTML = '¿Desea cambiar su contraseña?';
                         document.getElementById('btn-toggle-password').style.color = 'var(--primary)';
                         await cargarPerfil();
@@ -1134,6 +1148,7 @@
                 e.preventDefault();
                 if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
+                if (btn.disabled) return;
                 const btnText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = 'Guardando...';
@@ -1141,7 +1156,7 @@
                 const body = {
                     nombres: document.getElementById('perfil-nombres').value || userData.nombres,
                     apellidos: document.getElementById('perfil-apellidos').value || userData.apellidos,
-                    cedula: document.getElementById('ob-cedula').value.trim(),
+                    cedula: leerCedulaJaguares('ob'),
                     telefono1: document.getElementById('ob-tel1').value.trim(),
                     telefono2: document.getElementById('ob-tel2').value.trim(),
                     password: ''
@@ -1195,6 +1210,7 @@
                 e.preventDefault();
                 if (!validarFormularioJaguares(e.target)) return;
                 const btn = e.target.querySelector('button[type="submit"]');
+                if (btn.disabled) return;
                 const btnText = btn.innerHTML;
 
                 const hasCedula = document.getElementById('atl-has-cedula').checked;
@@ -1217,9 +1233,7 @@
                 fd.append('hereda_cedula', hasCedula ? '0' : '1');
 
                 if (hasCedula) {
-                    const nac = document.getElementById('atl-nac').value;
-                    const num = document.getElementById('atl-cedula').value.trim().replace(/\s+/g, '');
-                    fd.append('cedula', nac + num);
+                    fd.append('cedula', leerCedulaJaguares('atl'));
                 }
 
                 const foto = document.getElementById('atl-foto').files[0];
@@ -1273,6 +1287,7 @@
                  }
 
                 const btn = form.querySelector('button[type="submit"]');
+                if (btn.disabled) return;
                 const btnText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = 'Enviando... <i class="fas fa-spinner fa-spin"></i>';

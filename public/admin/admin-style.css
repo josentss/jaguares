@@ -574,9 +574,12 @@ body.panel-body {
     .form-group-panel input[type="file"]::file-selector-button:hover { background: #e2e8f0; }
 }
 
-.cedula-group { display: flex; gap: 10px; }
-.cedula-group select { width: 80px; flex-shrink: 0; }
-.cedula-group input { flex: 1; min-width: 0; }
+.cedula-group { display: flex; gap: 10px; min-width: 0; }
+.cedula-group select { width: 80px; flex: 0 0 80px; padding-inline: 10px; }
+.cedula-group input { flex: 1; min-width: 0; width: 0; }
+.perfil-campos { border: 0; padding: 0; margin: 0; min-width: 0; }
+.onboarding-campo { margin-bottom: 12px; }
+#perfil-estado:empty { display: none; }
 .hidden-section { display: none; }
 
 .disabled-input {
@@ -1017,7 +1020,7 @@ tr:hover td { background-color: #f8fafc; }
     .input-group input { font-size: 16px; padding-top: 14px; padding-bottom: 14px; }
     .btn-auth { padding: 15px; }
 
-    .cedula-group select { width: 72px; }
+    .cedula-group select { width: 72px; flex-basis: 72px; }
     .panel-header h2 { font-size: 1.2rem; }
 }
 
@@ -1300,3 +1303,6 @@ tr:hover td { background-color: #f8fafc; }
     #table-my-pagos tbody td:nth-child(6) { display: block; }
     .pago-acciones { gap: 9px; }
 }
+
+/* La etiqueta del interruptor y la del dato son independientes. */
+.form-group-panel .label-toggle .toggle-own { font-size: .8rem; font-weight: 500; color: var(--naranja); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }

@@ -285,7 +285,7 @@ for (const [nombre,viewport] of [
     test(`flujo real ${nombre}: validar, corregir, heredar y registrar dos atletas desde representante`, async () => {
         const page = await entrar('alfa@example.org',viewport);
         try {
-            await page.waitForFunction(()=>document.querySelector('#perfil-cedula')?.value==='V-91000002');
+            await page.waitForFunction(()=>document.querySelector('#perfil-cedula')?.value==='91000002' && document.querySelector('#perfil-nac')?.value==='V-');
             await seccion(page,'sec-atletas');
             await rellenarAtleta(page,'atl','Hermana '+nombre);
             await page.locator('#atl-direccion').fill('2356');
@@ -514,7 +514,8 @@ test('flujo real: registro pendiente, aprobación, perfil, inscripción, activac
         await enviar(rep,'#form-login','/api/auth/login');
         await rep.waitForURL('**/panel-representante.html');
         await rep.locator('#onboardingModal').waitFor({state:'visible'});
-        await rep.locator('#ob-cedula').fill('V-93000001');
+        await rep.locator('#ob-nac').selectOption('V-');
+        await rep.locator('#ob-cedula').fill('93000001');
         await rep.locator('#ob-tel1').fill('04140000002');
         const perfil = rep.waitForResponse(r=>r.url().endsWith('/api/usuarios/perfil')&&r.request().method()==='PUT');
         await rep.locator('#form-onboarding button[type=submit]').click();
@@ -831,7 +832,7 @@ for (const [nombre,viewport,timezoneId] of [
         const nacimiento = '2014-05-10';
         const fechaPago = '2026-11-02';
         try {
-            await rep.waitForFunction(()=>document.querySelector('#perfil-cedula')?.value==='V-91000002');
+            await rep.waitForFunction(()=>document.querySelector('#perfil-cedula')?.value==='91000002' && document.querySelector('#perfil-nac')?.value==='V-');
             await seccion(rep,'sec-atletas');
             await rellenarAtleta(rep,'atl',nombres);
             const alta = await enviar(rep,'#form-add-atleta','/api/atletas/registrar-atleta');

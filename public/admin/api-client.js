@@ -25,6 +25,25 @@ function validarFormularioJaguares(formulario) {
     return formulario.reportValidity();
 }
 
+// El contrato con el servidor sigue siendo una única cédula V-/E- + número.
+// Nunca convertir un prefijo desconocido en uno válido ni recortar dígitos.
+function leerCedulaJaguares(prefijo) {
+    const tipo = document.getElementById(prefijo + '-nac').value;
+    const numero = document.getElementById(prefijo + '-cedula').value.trim();
+    return tipo + numero;
+}
+
+function cargarCedulaJaguares(prefijo, valor) {
+    const tipo = document.getElementById(prefijo + '-nac');
+    const numero = document.getElementById(prefijo + '-cedula');
+    const texto = String(valor ?? '').trim().toUpperCase();
+    const partes = /^([VE]-)([0-9]{7,9})$/.exec(texto);
+    tipo.value = partes ? partes[1] : (texto ? '' : 'V-');
+    numero.value = partes ? partes[2] : '';
+    numero.setCustomValidity('');
+    numero.removeAttribute('aria-invalid');
+}
+
 const CLAVE_CIERRE_SESION = 'jaguares:sesion-cerrada';
 const TIEMPO_MAXIMO_SESION_MS = 10000;
 let sesionPanelFinalizada = false;
